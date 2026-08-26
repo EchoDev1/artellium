@@ -100,8 +100,10 @@ export default function Under1MPage() {
       dimensions: '140 × 90 cm',
       price: 340000, // ₦340K
       country: 'Nigeria 🇳🇬',
-      image: 'https://images.unsplash.com/photo-1579783902614-a3fb3927b675?auto=format&fit=crop&q=80&w=1000',
       description: 'Traditional resist-dyed textile artwork bearing ancestral Yoruba proverbs and botanical motifs.'
+    }
+  ];
+
   const catalogUnder1M = artworks.filter(a => (a.price || 0) <= 1000000 && a.status !== 'sold');
   const under1MArtworks = catalogUnder1M.length > 0 ? catalogUnder1M : fallbackUnder1M;
 
