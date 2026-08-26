@@ -376,7 +376,7 @@ export default function Footer() {
               <img
                 src="/artellium_brand_logo.png"
                 alt="ARTELLIUM"
-                className="h-10 w-auto object-contain group-hover:scale-105 transition duration-300"
+                className="h-11 sm:h-12 w-auto max-w-[280px] object-contain object-left filter contrast-115 brightness-110 group-hover:scale-105 transition duration-300"
               />
             </Link>
 

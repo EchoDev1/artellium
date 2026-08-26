@@ -148,11 +148,15 @@ export default function Navbar() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
         <div className="flex items-center justify-between gap-4 sm:gap-6">
           {/* Brand Logo */}
-          <Link href="/" className="flex items-center group shrink-0" title="ARTELLIUM - Fine Art & Auctions">
+          <Link 
+            href="/" 
+            className="flex items-center group shrink-0 py-0.5" 
+            title="ARTELLIUM - Fine Art & Auctions"
+          >
             <img
               src="/artellium_brand_logo.png"
               alt="ARTELLIUM Fine Art & Auctions"
-              className="h-10 sm:h-12 w-auto object-contain transition-transform duration-300 group-hover:scale-105"
+              className="h-11 sm:h-13 md:h-14 lg:h-16 w-auto max-w-[210px] sm:max-w-[280px] md:max-w-[340px] lg:max-w-[380px] object-contain object-left filter contrast-115 brightness-110 drop-shadow-[0_2px_12px_rgba(0,0,0,0.8)] transition-all duration-300 group-hover:scale-[1.02]"
             />
           </Link>
 
