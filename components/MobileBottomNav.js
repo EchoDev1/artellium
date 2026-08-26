@@ -55,10 +55,10 @@ export default function MobileBottomNav() {
     <div className="md:hidden fixed bottom-3 inset-x-3 z-40">
       <nav 
         aria-label="Mobile Bottom Navigation"
-        className="bg-[#0C1017]/92 backdrop-blur-xl border border-art-gold/30 rounded-2xl p-1.5 shadow-[0_12px_36px_rgba(0,0,0,0.75)] flex items-center justify-around relative"
+        className="bg-gradient-to-r from-[#04180F]/95 via-[#08291A]/95 to-[#04180F]/95 backdrop-blur-xl border border-emerald-600/50 rounded-2xl p-1.5 shadow-[0_12px_36px_rgba(4,24,15,0.85)] flex items-center justify-around relative"
       >
-        {/* Subtle top gold accent glow */}
-        <div className="absolute top-0 inset-x-8 h-[1px] bg-gradient-to-r from-transparent via-art-gold/60 to-transparent" />
+        {/* Subtle top emerald/gold accent glow */}
+        <div className="absolute top-0 inset-x-8 h-[1px] bg-gradient-to-r from-transparent via-emerald-400/70 to-transparent" />
 
         {navItems.map((item) => {
           const Icon = item.icon;
@@ -68,8 +68,8 @@ export default function MobileBottomNav() {
               href={item.href}
               className={`relative flex flex-col items-center justify-center py-1.5 px-3 rounded-xl transition-all duration-200 active:scale-90 ${
                 item.isActive 
-                  ? 'text-art-gold bg-art-gold/10 font-bold' 
-                  : 'text-slate-400 hover:text-slate-200'
+                  ? 'text-art-gold bg-emerald-950/80 border border-emerald-500/40 font-bold shadow-inner' 
+                  : 'text-emerald-100/70 hover:text-white'
               }`}
             >
               <div className="relative">
@@ -91,18 +91,18 @@ export default function MobileBottomNav() {
         <button
           type="button"
           onClick={() => setIsCartOpen(true)}
-          className="relative flex flex-col items-center justify-center py-1.5 px-3 rounded-xl text-slate-400 hover:text-art-gold transition-all duration-200 active:scale-90 cursor-pointer"
+          className="relative flex flex-col items-center justify-center py-1.5 px-3 rounded-xl text-emerald-100/70 hover:text-art-gold transition-all duration-200 active:scale-90 cursor-pointer"
           aria-label="Open Shopping Bag"
         >
           <div className="relative">
             <ShoppingBag className="w-4 h-4 text-art-gold" />
             {cartCount > 0 && (
-              <span className="absolute -top-1.5 -right-2 bg-red-600 text-white font-black text-[9px] w-4 h-4 rounded-full flex items-center justify-center shadow-md border border-[#0C1017]">
+              <span className="absolute -top-1.5 -right-2 bg-red-600 text-white font-black text-[9px] w-4 h-4 rounded-full flex items-center justify-center shadow-md border border-[#04180F]">
                 {cartCount}
               </span>
             )}
           </div>
-          <span className="text-[10px] mt-0.5 tracking-tight font-medium text-slate-300">
+          <span className="text-[10px] mt-0.5 tracking-tight font-medium text-emerald-100/80">
             Cart
           </span>
         </button>
