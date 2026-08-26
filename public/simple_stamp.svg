@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
+  <!-- Outer border with slight unevenness to look like an inked stamp -->
+  <circle cx="100" cy="100" r="95" fill="none" stroke="#BA160C" stroke-width="6" stroke-dasharray="80 2 40 1 70 3"/>
+  
+  <!-- Main red background -->
+  <circle cx="100" cy="100" r="85" fill="#BA160C"/>
+  
+  <!-- Inner gold ring with a traditional lattice/dash pattern -->
+  <circle cx="100" cy="100" r="76" fill="none" stroke="#D4AF37" stroke-width="2" stroke-dasharray="8,4,2,4"/>
+  
+  <!-- Large Traditional Chinese Characters (Foek Wing) -->
+  <text x="100" y="95" font-family="'Kaiti SC', 'STKaiti', 'KaiTi', 'SimSun', serif" font-weight="bold" font-size="52" fill="#FDFBF7" text-anchor="middle">福榮</text>
+  
+  <!-- English name -->
+  <text x="100" y="125" font-family="Arial, sans-serif" font-weight="bold" font-size="14" fill="#D4AF37" text-anchor="middle" letter-spacing="1">FOEK WING</text>
+  
+  <!-- Separator line -->
+  <rect x="65" y="135" width="70" height="1" fill="#D4AF37" />
+  
+  <!-- Subtitle -->
+  <text x="100" y="152" font-family="Arial, sans-serif" font-weight="bold" font-size="10" fill="#FDFBF7" text-anchor="middle" letter-spacing="2">SUPERMARKET</text>
+  
+  <!-- Top decorative pattern (stylized cloud/knot) -->
+  <path d="M 90 38 Q 100 28 110 38 Q 105 45 100 42 Q 95 45 90 38 Z" fill="#D4AF37" />
+</svg>
