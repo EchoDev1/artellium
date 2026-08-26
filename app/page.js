@@ -80,29 +80,27 @@ export default function HomePage() {
         if (auctionsList.length === 0) return null;
         return (
           <section key={sec.id} className="space-y-6">
-            {/* Dark Green Luxury Heading Banner */}
-            <div className="bg-gradient-to-r from-[#04180F]/95 via-[#08291A]/95 to-[#04180F]/95 border border-emerald-600/40 rounded-2xl sm:rounded-3xl p-5 sm:p-6 shadow-xl relative overflow-hidden flex flex-col sm:flex-row sm:items-center justify-between gap-4 backdrop-blur-md">
-              <div className="absolute top-0 inset-x-8 h-[1px] bg-gradient-to-r from-transparent via-emerald-400/60 to-transparent" />
-              <div className="space-y-1 relative z-10">
+            <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 border-b border-white/10 pb-4">
+              <div>
                 <div className="flex items-center gap-2 mb-1 font-sans">
-                  <span className="p-1.5 rounded-lg bg-red-950/80 text-red-400 border border-red-500/40 shadow-sm">
+                  <span className="p-1.5 rounded-lg bg-red-950/60 text-red-400 border border-red-800/60 shadow-sm">
                     <Flame className="w-4 h-4 text-red-500 animate-pulse" />
                   </span>
-                  <span className="text-xs font-bold text-red-400 uppercase tracking-widest font-mono">
+                  <span className="text-xs font-bold text-red-400 uppercase tracking-widest">
                     {sec.badge || 'LIVE BIDDING ARENA'}
                   </span>
                 </div>
-                <h2 className="font-serif text-2xl sm:text-3xl font-bold text-red-500 tracking-wide">
+                <h2 className="font-serif text-2xl sm:text-3xl font-bold text-white tracking-wide">
                   {sec.title || 'Live Fine Art Auctions'}
                 </h2>
-                <p className="text-xs sm:text-sm text-emerald-100/70 font-sans max-w-2xl leading-relaxed">
+                <p className="text-xs sm:text-sm text-slate-400 font-sans">
                   {sec.subtitle || 'Participate in real-time competitive bidding for high-value African masterworks.'}
                 </p>
               </div>
 
               <Link
                 href="/auctions"
-                className="text-xs font-bold text-art-gold hover:text-white flex items-center gap-1.5 bg-emerald-950/80 hover:bg-emerald-900/90 border border-emerald-500/50 px-4 py-2.5 rounded-xl transition font-sans shadow-md shrink-0 relative z-10"
+                className="text-xs font-bold text-red-400 hover:text-red-300 flex items-center gap-1.5 bg-red-950/40 hover:bg-red-900/50 border border-red-800/60 px-4 py-2 rounded-xl transition font-sans shadow-sm"
               >
                 <span>View All Live Lots</span>
                 <ArrowRight className="w-4 h-4" />
@@ -122,29 +120,27 @@ export default function HomePage() {
         const newlyListed = getNewlyListed(sec.maxItems || 9);
         return (
           <section key={sec.id} className="space-y-6">
-            {/* Dark Green Luxury Heading Banner */}
-            <div className="bg-gradient-to-r from-[#04180F]/95 via-[#08291A]/95 to-[#04180F]/95 border border-emerald-600/40 rounded-2xl sm:rounded-3xl p-5 sm:p-6 shadow-xl relative overflow-hidden flex flex-col sm:flex-row sm:items-center justify-between gap-4 backdrop-blur-md">
-              <div className="absolute top-0 inset-x-8 h-[1px] bg-gradient-to-r from-transparent via-emerald-400/60 to-transparent" />
-              <div className="space-y-1 relative z-10">
+            <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 border-b border-white/10 pb-4">
+              <div>
                 <div className="flex items-center gap-2 mb-1 font-sans">
-                  <span className="p-1.5 rounded-lg bg-emerald-950/80 text-emerald-300 border border-emerald-500/40 shadow-sm">
-                    <Sparkles className="w-4 h-4 text-emerald-400 animate-pulse" />
+                  <span className="p-1.5 rounded-lg bg-amber-950/60 text-art-gold border border-art-gold/40 shadow-sm">
+                    <Sparkles className="w-4 h-4 text-art-gold" />
                   </span>
-                  <span className="text-xs font-bold text-emerald-300 uppercase tracking-widest font-mono">
+                  <span className="text-xs font-bold text-art-gold uppercase tracking-widest">
                     {sec.badge || 'CURATED MARKETPLACE'}
                   </span>
                 </div>
                 <h2 className="font-serif text-2xl sm:text-3xl font-bold text-white tracking-wide">
                   {sec.title || 'Newly Listed Artworks'}
                 </h2>
-                <p className="text-xs sm:text-sm text-emerald-100/70 font-sans max-w-2xl leading-relaxed">
+                <p className="text-xs sm:text-sm text-slate-400 font-sans">
                   {sec.subtitle || 'Fresh creations uploaded directly by verified master painters, sculptors, and digital artists.'}
                 </p>
               </div>
 
               <Link
                 href="/explore"
-                className="text-xs font-bold text-art-gold hover:text-white flex items-center gap-1.5 bg-emerald-950/80 hover:bg-emerald-900/90 border border-emerald-500/50 px-4 py-2.5 rounded-xl transition font-sans shadow-md shrink-0 relative z-10"
+                className="text-xs font-bold text-art-gold hover:text-white flex items-center gap-1.5 bg-amber-950/40 hover:bg-amber-900/50 border border-art-gold/40 px-4 py-2 rounded-xl transition font-sans shadow-sm"
               >
                 <span>Explore All Artworks</span>
                 <ArrowRight className="w-4 h-4" />
@@ -247,29 +243,22 @@ export default function HomePage() {
         if (recentlySold.length === 0) return null;
         return (
           <section key={sec.id} className="space-y-6">
-            {/* Dark Green Luxury Heading Banner */}
-            <div className="bg-gradient-to-r from-[#04180F]/95 via-[#08291A]/95 to-[#04180F]/95 border border-emerald-600/40 rounded-2xl sm:rounded-3xl p-5 sm:p-6 shadow-xl relative overflow-hidden flex flex-col sm:flex-row sm:items-center justify-between gap-4 backdrop-blur-md">
-              <div className="absolute top-0 inset-x-8 h-[1px] bg-gradient-to-r from-transparent via-emerald-400/60 to-transparent" />
-              <div className="space-y-1 relative z-10">
-                <div className="flex items-center gap-2 mb-1 font-sans">
-                  <span className="p-1.5 rounded-lg bg-emerald-950/80 text-emerald-300 border border-emerald-500/40 shadow-sm">
-                    <ShieldCheck className="w-4 h-4 text-emerald-400 animate-pulse" />
-                  </span>
-                  <span className="text-xs font-bold text-emerald-300 uppercase tracking-widest font-mono">
-                    {sec.badge || 'HISTORICAL LEDGER & PROVENANCE'}
-                  </span>
-                </div>
+            <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 border-b border-white/10 pb-4">
+              <div>
+                <span className="text-xs font-bold text-slate-400 uppercase tracking-widest block mb-1 font-sans">
+                  {sec.badge || 'HISTORICAL LEDGER & PROVENANCE'}
+                </span>
                 <h2 className="font-serif text-2xl sm:text-3xl font-bold text-white tracking-wide">
                   {sec.title || 'Recently Sold Masterpieces'}
                 </h2>
-                <p className="text-xs sm:text-sm text-emerald-100/70 font-sans max-w-2xl leading-relaxed">
+                <p className="text-xs sm:text-sm text-slate-400 font-sans">
                   {sec.subtitle || 'Transactions logged in our immutable ledger of African creative heritage and authenticity registry.'}
                 </p>
               </div>
 
               <Link
                 href="/recently-sold"
-                className="text-xs font-bold text-art-gold hover:text-white flex items-center gap-1.5 bg-emerald-950/80 hover:bg-emerald-900/90 border border-emerald-500/50 px-4 py-2.5 rounded-xl transition shrink-0 font-sans shadow-md relative z-10"
+                className="text-xs font-bold text-art-gold hover:text-white flex items-center gap-1.5 bg-amber-950/40 hover:bg-amber-900/50 border border-art-gold/40 px-4 py-2 rounded-xl transition shrink-0 font-sans shadow-sm"
               >
                 <span>View More Recently Sold</span>
                 <ArrowRight className="w-4 h-4" />
@@ -289,29 +278,27 @@ export default function HomePage() {
         const exList = exhibitions.slice(0, sec.maxItems || 4);
         return (
           <section key={sec.id} className="space-y-6">
-            {/* Dark Green Luxury Heading Banner */}
-            <div className="bg-gradient-to-r from-[#04180F]/95 via-[#08291A]/95 to-[#04180F]/95 border border-emerald-600/40 rounded-2xl sm:rounded-3xl p-5 sm:p-6 shadow-xl relative overflow-hidden flex flex-col sm:flex-row sm:items-center justify-between gap-4 backdrop-blur-md">
-              <div className="absolute top-0 inset-x-8 h-[1px] bg-gradient-to-r from-transparent via-emerald-400/60 to-transparent" />
-              <div className="space-y-1 relative z-10">
+            <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 border-b border-white/10 pb-4">
+              <div>
                 <div className="flex items-center gap-2 mb-1 font-sans">
-                  <span className="p-1.5 rounded-lg bg-emerald-950/80 text-emerald-300 border border-emerald-500/40 shadow-sm">
+                  <span className="p-1.5 rounded-lg bg-emerald-950/60 text-emerald-300 border border-emerald-800/60 shadow-sm">
                     <Eye className="w-4 h-4 text-emerald-400" />
                   </span>
-                  <span className="text-xs font-bold text-emerald-300 uppercase tracking-widest font-mono">
+                  <span className="text-xs font-bold text-emerald-300 uppercase tracking-widest">
                     {sec.badge || 'VIRTUAL GALLERY ROOMS'}
                   </span>
                 </div>
                 <h2 className="font-serif text-2xl sm:text-3xl font-bold text-white tracking-wide">
                   {sec.title || 'Current Exhibitions'}
                 </h2>
-                <p className="text-xs sm:text-sm text-emerald-100/70 font-sans max-w-2xl leading-relaxed">
+                <p className="text-xs sm:text-sm text-slate-400 font-sans">
                   {sec.subtitle || 'Explore curated virtual gallery halls from top African museum directors and curators.'}
                 </p>
               </div>
 
               <Link
                 href="/exhibitions"
-                className="text-xs font-bold text-art-gold hover:text-white flex items-center gap-1.5 bg-emerald-950/80 hover:bg-emerald-900/90 border border-emerald-500/50 px-4 py-2.5 rounded-xl transition font-sans shadow-md relative z-10"
+                className="text-xs font-bold text-emerald-300 hover:text-emerald-200 flex items-center gap-1.5 bg-emerald-950/40 hover:bg-emerald-900/50 border border-emerald-800/60 px-4 py-2 rounded-xl transition font-sans shadow-sm"
               >
                 <span>View All Exhibitions</span>
                 <ArrowRight className="w-4 h-4" />

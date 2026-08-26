@@ -372,13 +372,14 @@ export default function Footer() {
           
           {/* Brand Info & Newsletter */}
           <div className="md:col-span-4 space-y-4">
-            <Link href="/" className="inline-block group" title="ARTELLIUM Fine Art & Auctions">
-              <img
-                src="/artellium_brand_logo.png"
-                alt="ARTELLIUM"
-                className="h-11 sm:h-12 w-auto max-w-[280px] object-contain object-left filter contrast-115 brightness-110 group-hover:scale-105 transition duration-300"
-              />
-            </Link>
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 rounded-lg bg-art-gold flex items-center justify-center text-art-black font-bold">
+                <Sparkles className="w-4 h-4" />
+              </div>
+              <span className="font-serif text-xl font-bold text-white tracking-wider">
+                {cfg.brandTitle || 'ARTELLIUM'}
+              </span>
+            </div>
 
             <p className="text-xs text-slate-400 leading-relaxed max-w-sm">
               {cfg.brandDescription || "ARTELLIUM bridges ancient African artistic royalty with cutting-edge global fine art commerce."}

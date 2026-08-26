@@ -222,13 +222,21 @@ export default function SidebarDrawer() {
       <div className="relative w-full max-w-md bg-[#08090D] border-l border-art-gold/30 shadow-2xl h-full flex flex-col z-10 animate-slide-in-right overflow-hidden">
         {/* Drawer Header */}
         <div className="p-5 border-b border-white/10 flex items-center justify-between bg-[#0D0F15]/95 backdrop-blur-md">
-          <Link href="/" onClick={() => setIsSidebarOpen(false)} className="flex items-center group">
-            <img
-              src="/artellium_brand_logo.png"
-              alt="ARTELLIUM"
-              className="h-8 w-auto object-contain group-hover:scale-105 transition duration-300"
-            />
-          </Link>
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-art-gold via-amber-600 to-art-green p-0.5 shadow-gold-glow">
+              <div className="w-full h-full bg-art-black rounded-[10px] flex items-center justify-center">
+                <Sparkles className="w-4 h-4 text-art-gold animate-pulse" />
+              </div>
+            </div>
+            <div>
+              <span className="font-serif text-sm font-black text-white tracking-widest block">
+                ARTELLIUM
+              </span>
+              <span className="text-[9px] text-art-gold uppercase tracking-widest font-semibold block -mt-0.5">
+                ONLINE ART MARKETPLACE
+              </span>
+            </div>
+          </div>
           <button
             onClick={() => setIsSidebarOpen(false)}
             className="p-2 rounded-xl bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white border border-white/10 transition"
