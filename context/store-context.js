@@ -51,6 +51,7 @@ export function StoreProvider({ children }) {
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [isAccountMenuOpen, setIsAccountMenuOpen] = useState(false);
 
   // Search & Filters
   const [searchQuery, setSearchQuery] = useState('');
@@ -2053,6 +2054,8 @@ export function StoreProvider({ children }) {
         setIsCheckoutOpen,
         isSidebarOpen,
         setIsSidebarOpen,
+        isAccountMenuOpen,
+        setIsAccountMenuOpen,
         searchQuery,
         setSearchQuery,
         selectedCategory,
