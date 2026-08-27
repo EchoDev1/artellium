@@ -25,7 +25,7 @@ import {
 
 export default function RegisterPage() {
   const router = useRouter();
-  const { signup } = useStore();
+  const { requestVerificationOtp, verifyOtpAndRegister } = useStore();
 
   const [step, setStep] = useState('register'); // 'register' | 'verify_otp' | 'success'
   const [email, setEmail] = useState('');
@@ -148,42 +148,26 @@ export default function RegisterPage() {
     setIsLoading(true);
 
     try {
-      const verifyRes = await submitVerificationCode(email.trim(), cleanCode);
+      const res = await verifyOtpAndRegister({
+        email: email.trim(),
+        code: cleanCode,
+        name: name.trim(),
+        password,
+        role
+      });
       setIsLoading(false);
 
-      if (verifyRes.success) {
-        // Complete account registration in Store & Database
-        const res = signup(name.trim(), email.trim(), password, role);
+      if (res.success) {
+        setStep('success');
+        setAuthSuccess('Account verified & activated successfully with artellium.africa!');
 
-        if (res.success) {
-          // Trigger Login Alert on First Activation
-          triggerEmailNotification('login_alert', email.trim(), {
-            name: name.trim(),
-            role: role
-          });
-
-          // If Artist, also trigger Welcome Onboarding email
-          if (role === 'artist') {
-            triggerEmailNotification('artist_welcome', email.trim(), {
-              name: name.trim(),
-              plan: 'Standard Artist Atelier',
-              billingCycle: 'Monthly'
-            });
-          }
-
-          setStep('success');
-          setAuthSuccess('Account verified & activated successfully with artellium.africa!');
-
-          setTimeout(() => {
-            if (res.user.role === 'admin') router.push('/admin/dashboard');
-            else if (res.user.role === 'artist') router.push('/artist/dashboard');
-            else router.push('/buyer/account');
-          }, 1200);
-        } else {
-          setAuthError(res.message || 'Registration failed.');
-        }
+        setTimeout(() => {
+          if (res.user.role === 'admin') router.push('/admin/dashboard');
+          else if (res.user.role === 'artist') router.push('/artist/dashboard');
+          else router.push('/buyer/account');
+        }, 1200);
       } else {
-        setAuthError(verifyRes.error || 'Invalid verification code. Please check your inbox.');
+        setAuthError(res.error || 'Invalid verification code. Please check your inbox.');
       }
     } catch (err) {
       setIsLoading(false);

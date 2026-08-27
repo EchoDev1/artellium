@@ -90,17 +90,17 @@ export default function BuyerAccountPage() {
 
   // Collector Auction Registration Form state
   const [bidderRegForm, setBidderRegForm] = useState({
-    fullName: currentUser?.name || 'Dr. Evelyn Carter',
-    email: currentUser?.email || 'evelyn@artellium.com',
-    phone: currentUser?.phone || '+234 803 123 4567',
+    fullName: currentUser?.name || '',
+    email: currentUser?.email || '',
+    phone: currentUser?.phone || '',
     country: currentUser?.country || 'Nigeria',
-    city: 'Lagos',
-    address: '15 Victoria Island Blvd, Lagos',
-    idType: 'International Passport',
-    idNumber: 'A08942184',
+    city: '',
+    address: '',
+    idType: 'National ID / BVN / Passport',
+    idNumber: '',
     biddingTier: 'Sovereign',
-    bankName: 'Wema Bank PLC',
-    accountNumber: '0123456789',
+    bankName: '',
+    accountNumber: '',
     categories: ['Paintings', 'Sculptures', 'Bronze', 'Textiles', 'Limited edition collections'],
     consentAlerts: true
   });
@@ -127,11 +127,11 @@ export default function BuyerAccountPage() {
 
   // Profile Settings Form state
   const [profileForm, setProfileForm] = useState({
-    name: currentUser?.name || 'Dr. Evelyn Carter',
-    email: currentUser?.email || 'evelyn@artellium.com',
-    phone: currentUser?.phone || '+234 803 123 4567',
+    name: currentUser?.name || '',
+    email: currentUser?.email || '',
+    phone: currentUser?.phone || '',
     country: currentUser?.country || 'Nigeria',
-    defaultAddress: '15 Victoria Island Blvd, Lagos'
+    defaultAddress: ''
   });
   const [profileSaveMsg, setProfileSaveMsg] = useState(false);
   const [isPhotoStudioOpen, setIsPhotoStudioOpen] = useState(false);
@@ -171,17 +171,17 @@ export default function BuyerAccountPage() {
     return `₦${amount?.toLocaleString() || '0'}`;
   };
 
-  const cleanName = currentUser.name.split(' (')[0];
+  const cleanName = currentUser?.name ? currentUser.name.split(' (')[0] : '';
   const myCollection = artworks.filter(art => {
     return art.status === 'sold' && (
-      (art.soldTo && art.soldTo.toLowerCase().includes(cleanName.toLowerCase())) ||
-      (transactions.some(tx => tx.artworkTitle === art.title && tx.buyerName?.toLowerCase().includes(cleanName.toLowerCase()))) ||
-      (orders.some(o => (o.buyer_name?.toLowerCase().includes(cleanName.toLowerCase()) || o.buyer_id === currentUser.id) && o.items?.some(i => i.id === art.id)))
+      (cleanName && art.soldTo && art.soldTo.toLowerCase().includes(cleanName.toLowerCase())) ||
+      (cleanName && transactions.some(tx => tx.artworkTitle === art.title && tx.buyerName?.toLowerCase().includes(cleanName.toLowerCase()))) ||
+      (orders.some(o => (o.buyer_id === currentUser.id || (cleanName && o.buyer_name?.toLowerCase().includes(cleanName.toLowerCase()))) && o.items?.some(i => i.id === art.id)))
     );
   });
 
-  const portfolioValuation = myCollection.reduce((sum, art) => sum + (art.soldPrice || art.price), 1850000);
-  const totalItems = myCollection.length + 1;
+  const portfolioValuation = myCollection.reduce((sum, art) => sum + (art.soldPrice || art.price || 0), 0);
+  const totalItems = myCollection.length;
 
   // Active auction lots
   const activeAuctionLots = artworks.filter(art => art.status === 'auction');
@@ -190,25 +190,22 @@ export default function BuyerAccountPage() {
 
   // Orders placed by this collector
   const myOrders = orders.filter(o => 
-    o.buyer_id === currentUser.id || 
-    (o.buyer_name && o.buyer_name.toLowerCase().includes(cleanName.toLowerCase())) ||
-    o.buyer_email === currentUser.email ||
-    o.buyer_name === 'Dr. Evelyn Carter'
+    (currentUser?.id && o.buyer_id === currentUser.id) || 
+    (currentUser?.email && o.buyer_email?.toLowerCase() === currentUser.email.toLowerCase()) ||
+    (cleanName && o.buyer_name && o.buyer_name.toLowerCase().includes(cleanName.toLowerCase()))
   );
 
   // Offers sent by this collector
   const mySentOffers = collectorOffers.filter(o => 
-    o.buyerId === currentUser.id || 
-    (o.buyerName && o.buyerName.toLowerCase().includes(cleanName.toLowerCase())) ||
-    o.buyerName === 'Dr. Evelyn Carter' ||
-    o.buyerName === 'Verified Collector'
+    (currentUser?.id && o.buyerId === currentUser.id) || 
+    (currentUser?.email && o.buyerEmail?.toLowerCase() === currentUser.email.toLowerCase()) ||
+    (cleanName && o.buyerName && o.buyerName.toLowerCase().includes(cleanName.toLowerCase()))
   );
 
   // Questions asked by this collector
   const myQuestions = artworkQuestions.filter(q =>
-    (q.askedBy && q.askedBy.toLowerCase().includes(cleanName.toLowerCase())) ||
-    q.askedBy === 'Dr. Evelyn Carter' ||
-    q.askedBy === 'Dr. Yewande Okafor'
+    (currentUser?.id && q.askedById === currentUser.id) ||
+    (cleanName && q.askedBy && q.askedBy.toLowerCase().includes(cleanName.toLowerCase()))
   );
 
   // Master Artists Catalog for Following
@@ -265,7 +262,7 @@ export default function BuyerAccountPage() {
 
   const handleExecuteQuickBid = (lot, amount) => {
     const bidVal = parseFloat(amount);
-    placeBid(lot.id, bidVal, currentUser?.name || 'Dr. Evelyn Carter');
+    placeBid(lot.id, bidVal, currentUser?.name || 'Verified Collector');
     setBidSuccessNotice(`Your bid of ${formatPrice(bidVal)} on ${lot.title} has been logged as leading high bid!`);
     setBiddingLot(null);
     setCustomBidAmount('');

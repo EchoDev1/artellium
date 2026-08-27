@@ -25,9 +25,9 @@ import {
 
 export default function LoginPage() {
   const router = useRouter();
-  const { login, signup, isLoggedIn, currentUser } = useStore();
+  const { login, requestVerificationOtp, verifyOtpAndRegister, isLoggedIn, currentUser } = useStore();
 
-  const [authMode, setAuthMode] = useState('login'); // 'login' | 'signup' | 'forgot'
+  const [authMode, setAuthMode] = useState('login'); // 'login' | 'signup' | 'verify_otp' | 'forgot'
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -40,6 +40,22 @@ export default function LoginPage() {
   const [authError, setAuthError] = useState('');
   const [authSuccess, setAuthSuccess] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+
+  // OTP Verification States
+  const [otpCode, setOtpCode] = useState('');
+  const [resendTimer, setResendTimer] = useState(60);
+  const [isResending, setIsResending] = useState(false);
+
+  // Countdown timer for OTP Resend
+  React.useEffect(() => {
+    let interval;
+    if (authMode === 'verify_otp' && resendTimer > 0) {
+      interval = setInterval(() => {
+        setResendTimer((prev) => prev - 1);
+      }, 1000);
+    }
+    return () => clearInterval(interval);
+  }, [authMode, resendTimer]);
 
   // Password strength calculation
   const getPasswordStrength = (pass) => {
@@ -89,11 +105,6 @@ export default function LoginPage() {
 
       if (res.success) {
         setAuthSuccess(`Welcome back, ${res.user.name || 'Collector'}!`);
-        // Dispatch security notification to the user's email
-        triggerEmailNotification('login_alert', email.trim(), {
-          name: res.user.name || 'Collector',
-          role: res.user.role || 'buyer'
-        });
         setTimeout(() => {
           if (res.user.role === 'admin') router.push('/admin/dashboard');
           else if (res.user.role === 'artist') router.push('/artist/dashboard');
@@ -105,7 +116,8 @@ export default function LoginPage() {
     }, 500);
   };
 
-  const handleSignupSubmit = (e) => {
+  // Step 1: Submit Details & Request 6-digit OTP Code via Resend
+  const handleSignupSubmit = async (e) => {
     if (e) e.preventDefault();
     setAuthError('');
     setAuthSuccess('');
@@ -142,38 +154,77 @@ export default function LoginPage() {
 
     setIsLoading(true);
 
-    setTimeout(() => {
-      const res = signup(name.trim(), email.trim(), password, role);
+    try {
+      const otpRes = await requestVerificationOtp(email.trim(), name.trim(), role);
+      setIsLoading(false);
+
+      if (otpRes.success) {
+        setAuthMode('verify_otp');
+        setResendTimer(60);
+        setAuthSuccess(`Verification email with 6-digit code dispatched to ${email.trim()}!`);
+      } else {
+        setAuthError(otpRes.error || 'Failed to dispatch verification email. Please try again.');
+      }
+    } catch (err) {
+      setIsLoading(false);
+      setAuthError('Network error while dispatching verification email.');
+    }
+  };
+
+  // Step 2: Verify 6-digit OTP Code & Complete Account Creation
+  const handleVerifyOtp = async (e) => {
+    if (e) e.preventDefault();
+    setAuthError('');
+    setAuthSuccess('');
+
+    const cleanCode = otpCode.trim();
+    if (cleanCode.length !== 6) {
+      setAuthError('Please enter the complete 6-digit verification code.');
+      return;
+    }
+
+    setIsLoading(true);
+
+    try {
+      const res = await verifyOtpAndRegister({
+        email: email.trim(),
+        code: cleanCode,
+        name: name.trim(),
+        password,
+        role
+      });
       setIsLoading(false);
 
       if (res.success) {
-        setAuthSuccess('Account registered successfully with Cloudflare validation!');
+        setAuthSuccess('Account verified and created successfully!');
         setTimeout(() => {
           if (res.user.role === 'admin') router.push('/admin/dashboard');
           else if (res.user.role === 'artist') router.push('/artist/dashboard');
           else router.push('/buyer/account');
-        }, 700);
+        }, 800);
       } else {
-        setAuthError(res.message || 'Registration failed. Please try again.');
+        setAuthError(res.error || 'Invalid verification code. Please check your email.');
       }
-    }, 600);
+    } catch (err) {
+      setIsLoading(false);
+      setAuthError('Error validating verification code.');
+    }
   };
 
-  const fillFastDemo = (userType) => {
-    setAuthMode('login');
+  // Resend OTP Code
+  const handleResendCode = async () => {
+    if (resendTimer > 0 || isResending) return;
+    setIsResending(true);
     setAuthError('');
-    setAuthSuccess('');
-    setCloudflareVerified(true);
 
-    if (userType === 'admin') {
-      setEmail('admin@artellium.com');
-      setPassword('admin123');
-    } else if (userType === 'artist') {
-      setEmail('amina.diallo@artellium.com');
-      setPassword('artist123');
+    const res = await requestVerificationOtp(email.trim(), name.trim(), role);
+    setIsResending(false);
+
+    if (res.success) {
+      setResendTimer(60);
+      setAuthSuccess(`A fresh 6-digit verification code has been dispatched to ${email.trim()}!`);
     } else {
-      setEmail('evelyn.carter@heritage.org');
-      setPassword('buyer123');
+      setAuthError(res.error || 'Failed to resend code.');
     }
   };
 
@@ -236,25 +287,25 @@ export default function LoginPage() {
                 setAuthSuccess('');
               }}
               className={`flex-1 pb-3 text-center font-bold tracking-wider uppercase transition border-b-2 ${
-                authMode === 'signup'
+                authMode === 'signup' || authMode === 'verify_otp'
                   ? 'text-art-gold border-art-gold'
                   : 'text-slate-400 border-transparent hover:text-white'
               }`}
             >
-              Create Account
+              {authMode === 'verify_otp' ? '2. Verify Email' : 'Create Account'}
             </button>
           </div>
 
           {/* Feedback Messages */}
           {authError && (
-            <div className="p-3.5 bg-red-950/70 border border-red-500/50 rounded-xl text-red-300 text-xs font-medium flex items-center gap-2 animate-shake">
+            <div className="p-3.5 bg-red-950/70 border border-red-500/50 rounded-xl text-red-300 text-xs font-medium flex items-center gap-2.5 animate-shake">
               <AlertCircle className="w-4 h-4 text-red-400 shrink-0" />
               <span>{authError}</span>
             </div>
           )}
 
           {authSuccess && (
-            <div className="p-3.5 bg-emerald-950/70 border border-emerald-500/50 rounded-xl text-emerald-300 text-xs font-medium flex items-center gap-2 animate-fade-in">
+            <div className="p-3.5 bg-emerald-950/70 border border-emerald-500/50 rounded-xl text-emerald-300 text-xs font-medium flex items-center gap-2.5 animate-fade-in">
               <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
               <span>{authSuccess}</span>
             </div>
@@ -335,50 +386,20 @@ export default function LoginPage() {
               <button
                 type="submit"
                 disabled={isLoading}
-                className="w-full py-3.5 bg-gradient-to-r from-art-gold via-amber-400 to-art-gold text-art-black font-bold uppercase tracking-wider rounded-xl transition shadow-gold-glow hover:brightness-110 flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+                className="w-full py-4 bg-gradient-to-r from-art-gold via-amber-400 to-art-gold text-art-black font-bold uppercase tracking-wider rounded-xl transition shadow-gold-glow hover:brightness-110 flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
               >
                 {isLoading ? (
                   <>
-                    <RefreshCw className="w-4 h-4 animate-spin" />
+                    <RefreshCw className="w-4 h-4 animate-spin text-black" />
                     <span>Verifying & Signing In...</span>
                   </>
                 ) : (
                   <>
-                    <ShieldCheck className="w-4 h-4" />
+                    <ShieldCheck className="w-4 h-4 text-black" />
                     <span>Sign In to Account</span>
                   </>
                 )}
               </button>
-
-              {/* Fast Sandbox Credentials */}
-              <div className="pt-4 border-t border-white/10 space-y-2">
-                <span className="text-[10px] text-slate-400 block font-semibold uppercase tracking-wider text-center">
-                  Instant 1-Click Demo Accounts:
-                </span>
-                <div className="grid grid-cols-3 gap-2 text-[11px]">
-                  <button
-                    type="button"
-                    onClick={() => fillFastDemo('buyer')}
-                    className="py-2 bg-emerald-950/40 hover:bg-emerald-950/70 border border-emerald-500/40 rounded-xl text-emerald-300 font-semibold text-center transition"
-                  >
-                    Collector
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => fillFastDemo('artist')}
-                    className="py-2 bg-art-gold/10 hover:bg-art-gold/20 border border-art-gold/40 rounded-xl text-art-gold font-semibold text-center transition"
-                  >
-                    Artist
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => fillFastDemo('admin')}
-                    className="py-2 bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/40 rounded-xl text-amber-300 font-semibold text-center transition"
-                  >
-                    Admin
-                  </button>
-                </div>
-              </div>
             </form>
           )}
 
@@ -541,7 +562,7 @@ export default function LoginPage() {
                   {isLoading ? (
                     <>
                       <RefreshCw className="w-5 h-5 animate-spin text-black" />
-                      <span>Creating Your Account...</span>
+                      <span>Sending Verification Code...</span>
                     </>
                   ) : (
                     <>
@@ -550,6 +571,77 @@ export default function LoginPage() {
                       <ArrowRight className="w-5 h-5 text-black shrink-0" />
                     </>
                   )}
+                </button>
+              </div>
+            </form>
+          )}
+
+          {/* ========================================================================= */}
+          {/* STEP 2: 6-DIGIT EMAIL VERIFICATION OTP                                    */}
+          {/* ========================================================================= */}
+          {authMode === 'verify_otp' && (
+            <form onSubmit={handleVerifyOtp} className="space-y-4 text-xs text-center animate-fade-in">
+              <div className="w-14 h-14 rounded-2xl bg-art-gold/15 border border-art-gold/40 text-art-gold flex items-center justify-center mx-auto shadow-gold-glow">
+                <Mail className="w-7 h-7 animate-pulse" />
+              </div>
+
+              <div>
+                <h3 className="font-serif text-lg font-bold text-white">Check Your Email</h3>
+                <p className="text-xs text-slate-400 mt-1">
+                  We sent a 6-digit verification code to <span className="text-art-gold font-mono font-semibold">{email}</span>
+                </p>
+              </div>
+
+              <div>
+                <label className="block text-xs text-slate-300 font-medium mb-2 text-left">
+                  Enter 6-Digit Code
+                </label>
+                <input
+                  type="text"
+                  maxLength={6}
+                  required
+                  value={otpCode}
+                  onChange={(e) => setOtpCode(e.target.value.replace(/[^0-9]/g, ''))}
+                  placeholder="• • • • • •"
+                  className="w-full text-center text-2xl tracking-[0.5em] font-mono font-bold bg-[#06070a] border-2 border-art-gold/60 rounded-xl py-3 text-art-gold focus:border-art-gold focus:outline-none shadow-gold-glow"
+                />
+              </div>
+
+              <button
+                type="submit"
+                disabled={isLoading || otpCode.length !== 6}
+                style={{ minHeight: '52px' }}
+                className="w-full py-4 px-6 bg-gradient-to-r from-art-gold via-amber-300 to-art-gold hover:brightness-110 active:scale-[0.99] text-art-black font-black text-sm uppercase tracking-widest rounded-xl transition shadow-[0_0_25px_rgba(212,175,55,0.7)] flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+              >
+                {isLoading ? (
+                  <>
+                    <RefreshCw className="w-5 h-5 animate-spin text-black" />
+                    <span>Activating Account...</span>
+                  </>
+                ) : (
+                  <>
+                    <CheckCircle2 className="w-5 h-5 text-black" />
+                    <span>Verify & Activate Account</span>
+                  </>
+                )}
+              </button>
+
+              <div className="flex items-center justify-between text-xs text-slate-400 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setAuthMode('signup')}
+                  className="text-slate-400 hover:text-white transition"
+                >
+                  ← Back to Details
+                </button>
+
+                <button
+                  type="button"
+                  onClick={handleResendCode}
+                  disabled={resendTimer > 0 || isResending}
+                  className="text-art-gold hover:underline disabled:opacity-50 font-semibold"
+                >
+                  {resendTimer > 0 ? `Resend code in ${resendTimer}s` : isResending ? 'Resending...' : 'Resend Code'}
                 </button>
               </div>
             </form>

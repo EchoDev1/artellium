@@ -121,8 +121,8 @@ export default function ArtistDashboardPage() {
   const [notesSaveMsg, setNotesSaveMsg] = useState(false);
 
   // Digital Signature State & Drawing Canvas
-  const myArtistName = currentUser?.name ? currentUser.name.split(' (')[0] : 'Kofi Mensah';
-  const mySignatureData = artistSignatures[currentUser?.name] || { style: 'Heritage Calligraphy', signed: true, drawn: null };
+  const myArtistName = currentUser?.name ? currentUser.name.split(' (')[0] : '';
+  const mySignatureData = (currentUser?.name && artistSignatures[currentUser.name]) || { style: 'Heritage Calligraphy', signed: false, drawn: null };
   const [sigMode, setSigMode] = useState('draw'); // 'draw' or 'font'
   const [sigStyle, setSigStyle] = useState(mySignatureData.style || 'Heritage Calligraphy');
   const [drawnSigUrl, setDrawnSigUrl] = useState(mySignatureData.drawn || null);
@@ -134,42 +134,42 @@ export default function ArtistDashboardPage() {
   const [activeArtistTab, setActiveArtistTab] = useState('studio_operations');
 
   // Payout Bank Settings state (Account Name, Bank Name, Account Number)
-  const mySellerProfile = sellers.find(s => s.name?.toLowerCase().includes(myArtistName.toLowerCase()) || s.user_id === currentUser?.id) || {
-    payout_account_name: `${myArtistName} Studio Enterprises`,
-    payout_bank: 'Standard Chartered Ghana',
-    payout_account: '01002345678',
-    artistTitle: 'Master Painter & 24k Gold Leaf Specialist',
-    bio: 'Renowned contemporary Ghanaian master artist whose signature combines ancient Akan metaphysical iconography with monumental abstraction and 24-karat gold leaf embellishment.',
-    country: 'Ghana',
-    city: 'Accra',
-    country_flag: '🇬🇭',
-    guildLineage: 'Royal Akan Guild of Master Craftsmen'
+  const mySellerProfile = sellers.find(s => (myArtistName && s.name?.toLowerCase().includes(myArtistName.toLowerCase())) || (currentUser?.id && s.user_id === currentUser.id)) || {
+    payout_account_name: myArtistName ? `${myArtistName} Studio` : '',
+    payout_bank: '',
+    payout_account: '',
+    artistTitle: 'Master Visual Artist',
+    bio: '',
+    country: currentUser?.country || 'Nigeria',
+    city: '',
+    country_flag: '🌍',
+    guildLineage: ''
   };
   
   const [bankForm, setBankForm] = useState({
-    payout_account_name: mySellerProfile.payout_account_name || `${myArtistName} Fine Art Enterprise`,
-    payout_bank: mySellerProfile.payout_bank || 'Standard Chartered Ghana',
-    payout_account: mySellerProfile.payout_account || '01002345678'
+    payout_account_name: mySellerProfile.payout_account_name || (myArtistName ? `${myArtistName} Studio` : ''),
+    payout_bank: mySellerProfile.payout_bank || '',
+    payout_account: mySellerProfile.payout_account || ''
   });
   const [bankSaveMsg, setBankSaveMsg] = useState(false);
 
   // Dedicated Master Artist Profile Form State
   const [artistProfileForm, setArtistProfileForm] = useState({
-    name: myArtistName || 'Kofi Mensah',
-    artistTitle: mySellerProfile?.artistTitle || 'Master Painter & 24k Gold Leaf Specialist',
-    bio: mySellerProfile?.bio || 'Renowned contemporary Ghanaian master artist whose signature combines ancient Akan metaphysical iconography with monumental abstraction and 24-karat gold leaf embellishment.',
-    country: mySellerProfile?.country || 'Ghana',
-    city: mySellerProfile?.city || 'Accra',
-    countryFlag: mySellerProfile?.country_flag || '🇬🇭',
-    guildLineage: mySellerProfile?.guildLineage || 'Royal Akan Guild of Master Craftsmen',
-    primaryMediums: 'Oil, Acrylic & 24K Gold Leaf on Linen Canvas',
-    exhibitionsHistory: "Venice Biennale (African Pavilion), Dakar Biennale (Dak'Art), Lagos National Museum Salon, Accra Art Centre",
-    studioAddress: 'Atelier 4, Heritage Crafts Quarter, Accra, Ghana',
-    instagram: '@kofimensah_atelier',
-    website: 'https://artellium.com/artists/kofi-mensah',
-    phone: '+233 24 123 4567',
-    email: currentUser?.email || 'kofi@artellium.com',
-    experienceYears: '25+ Years Master Practice'
+    name: myArtistName || '',
+    artistTitle: mySellerProfile?.artistTitle || 'Contemporary Master Visual Artist',
+    bio: mySellerProfile?.bio || '',
+    country: mySellerProfile?.country || currentUser?.country || 'Nigeria',
+    city: mySellerProfile?.city || '',
+    countryFlag: mySellerProfile?.country_flag || '🌍',
+    guildLineage: mySellerProfile?.guildLineage || '',
+    primaryMediums: 'Oil, Acrylic & Mixed Media on Canvas',
+    exhibitionsHistory: '',
+    studioAddress: '',
+    instagram: '',
+    website: '',
+    phone: currentUser?.phone || '',
+    email: currentUser?.email || '',
+    experienceYears: ''
   });
   const [artistProfileSaveMsg, setArtistProfileSaveMsg] = useState(false);
 
@@ -299,18 +299,17 @@ export default function ArtistDashboardPage() {
 
   // Commissions and earnings for this artist (85% net payout)
   const myCommissions = commissions.filter(c => 
-    c.seller_name?.toLowerCase().includes(myArtistName.toLowerCase()) || 
-    c.seller_id === currentUser?.id ||
-    c.seller_id === 'artist-1'
+    (myArtistName && c.seller_name?.toLowerCase().includes(myArtistName.toLowerCase())) || 
+    (currentUser?.id && c.seller_id === currentUser.id)
   );
 
-  const totalEarned = myCommissions.reduce((sum, c) => sum + (c.seller_net_payout || 0), 1572500);
-  const pendingSettlement = myCommissions.filter(c => c.payout_status !== 'disbursed').reduce((sum, c) => sum + (c.seller_net_payout || 0), 1572500);
+  const totalEarned = myCommissions.reduce((sum, c) => sum + (c.seller_net_payout || 0), 0);
+  const pendingSettlement = myCommissions.filter(c => c.payout_status !== 'disbursed').reduce((sum, c) => sum + (c.seller_net_payout || 0), 0);
   const disbursedPayouts = myCommissions.filter(c => c.payout_status === 'disbursed').reduce((sum, c) => sum + (c.seller_net_payout || 0), 0);
 
   // Orders containing this artist's artworks
   const myOrders = orders.filter(o => 
-    o.items?.some(i => i.artistName?.toLowerCase().includes(myArtistName.toLowerCase()) || i.artistId === currentUser?.id || myArtistName === 'Kofi Mensah')
+    o.items?.some(i => (myArtistName && i.artistName?.toLowerCase().includes(myArtistName.toLowerCase())) || (currentUser?.id && i.artistId === currentUser.id))
   );
 
   // Questions relating to this artist's artworks
@@ -321,7 +320,7 @@ export default function ArtistDashboardPage() {
 
   // Priority banner placements for this artist
   const myArtistBannerPlacements = (priorityBannerPlacements || []).filter(p => 
-    p.artistName?.toLowerCase().includes(myArtistName.toLowerCase()) || p.artistId === currentUser?.id
+    (myArtistName && p.artistName?.toLowerCase().includes(myArtistName.toLowerCase())) || (currentUser?.id && p.artistId === currentUser.id)
   );
 
   const handleBannerSubmit = (e) => {
@@ -340,7 +339,7 @@ export default function ArtistDashboardPage() {
       title: art.title,
       artistName: art.artistName || myArtistName,
       artistId: art.artistId || currentUser?.id || 'artist-1',
-      country: art.country || 'Nigeria',
+      country: art.country || currentUser?.country || 'Nigeria',
       countryFlag: art.countryFlag || '🇳🇬',
       medium: art.medium || 'Fine Art',
       dimensions: art.dimensions || '',
@@ -362,11 +361,11 @@ export default function ArtistDashboardPage() {
     const created = addArtwork({
       ...artForm,
       price: parseFloat(artForm.price),
-      artistName: currentUser.name || 'Kofi Mensah',
-      artistId: currentUser.id || 'artist-1',
-      artistType: currentUser.subscriptionTier === 'premium' ? 'Premium' : 'Standard',
-      artistAvatar: currentUser.avatar_url || 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=300',
-      verificationBadge: currentUser.subscriptionTier === 'premium' ? 'gold' : 'verified'
+      artistName: currentUser?.name || myArtistName || 'Master Artist',
+      artistId: currentUser?.id || `artist-${Date.now()}`,
+      artistType: currentUser?.subscriptionTier === 'premium' ? 'Premium' : 'Standard',
+      artistAvatar: currentUser?.avatar_url || 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=300',
+      verificationBadge: currentUser?.subscriptionTier === 'premium' ? 'gold' : 'verified'
     });
 
     setSuccessMsg(`Artwork "${created.title}" published! Available in catalogue.`);

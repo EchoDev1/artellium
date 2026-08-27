@@ -31,25 +31,11 @@ import {
   createDbCommission, 
   disburseDbCommission 
 } from '@/lib/db';
-import { triggerEmailNotification } from '@/lib/email-client';
-
 const StoreContext = createContext();
 
 export function StoreProvider({ children }) {
-  // Database Entities States - Default to Platform Creator / Executive Administrator demo account
-  const defaultDemoAdmin = (INITIAL_USERS && INITIAL_USERS[0]) || {
-    id: 'user-admin-1',
-    name: 'Executive Administrator',
-    email: 'admin@artellium.com',
-    role: 'admin',
-    password: 'admin123',
-    phone: '+234 800 000 0001',
-    country: 'Nigeria',
-    subscription_tier: 'premium'
-  };
-
-  const [currentUser, setCurrentUser] = useState(defaultDemoAdmin);
-  const [isLoggedIn, setIsLoggedIn] = useState(true);
+  const [currentUser, setCurrentUser] = useState(null);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [usersList, setUsersList] = useState(INITIAL_USERS || []);
   const [sellers, setSellers] = useState(INITIAL_SELLERS || []);
   const [artworks, setArtworks] = useState(INITIAL_ARTWORKS);
@@ -500,21 +486,20 @@ export function StoreProvider({ children }) {
       if (savedLoginState) {
         try {
           const parsed = JSON.parse(savedLoginState);
-          if (parsed && parsed.user) {
-            setIsLoggedIn(parsed.isLoggedIn !== false);
+          if (parsed && parsed.user && parsed.isLoggedIn) {
+            setIsLoggedIn(true);
             setCurrentUser(parsed.user);
           } else {
-            setCurrentUser(defaultDemoAdmin);
-            setIsLoggedIn(true);
+            setIsLoggedIn(false);
+            setCurrentUser(null);
           }
         } catch (e) {
-          setCurrentUser(defaultDemoAdmin);
-          setIsLoggedIn(true);
+          setIsLoggedIn(false);
+          setCurrentUser(null);
         }
       } else {
-        setCurrentUser(defaultDemoAdmin);
-        setIsLoggedIn(true);
-        localStorage.setItem('artellium_login_state', JSON.stringify({ isLoggedIn: true, user: defaultDemoAdmin }));
+        setIsLoggedIn(false);
+        setCurrentUser(null);
       }
     } catch (e) {
       console.warn('LocalStorage load notice:', e);
@@ -1216,103 +1201,159 @@ export function StoreProvider({ children }) {
   };
   const cancelCollectorOffer = (offerId) => setCollectorOffers((prev) => prev.filter((o) => o.id !== offerId));
 
-  // User Authentication & Demo Account Switcher
-  const switchUserRole = (role) => {
-    let targetUser = null;
-    if (role === 'admin') {
-      targetUser = usersList.find(u => u.role === 'admin') || defaultDemoAdmin;
-    } else if (role === 'artist') {
-      targetUser = usersList.find(u => u.role === 'artist') || {
-        id: 'user-artist-2',
-        name: 'Amina Diallo',
-        email: 'amina@artellium.com',
-        role: 'artist',
-        password: 'artist123',
-        phone: '+234 802 987 6543',
-        country: 'Nigeria',
-        subscription_tier: 'premium'
-      };
-    } else {
-      targetUser = usersList.find(u => u.role === 'buyer') || {
-        id: 'user-buyer-1',
-        name: 'Dr. Evelyn Carter',
-        email: 'evelyn@artellium.com',
-        role: 'buyer',
-        password: 'buyer123',
-        phone: '+234 803 123 4567',
-        country: 'Nigeria',
-        subscription_tier: 'standard'
-      };
-    }
-    setCurrentUser(targetUser);
-    setIsLoggedIn(true);
+  // =========================================================================
+  // AUTHENTICATION & RESEND TRANSACTIONAL EMAIL REGISTRATION
+  // =========================================================================
+  const requestVerificationOtp = async (email, name, role = 'buyer') => {
     try {
-      localStorage.setItem('artellium_login_state', JSON.stringify({ isLoggedIn: true, user: targetUser }));
-    } catch (e) {}
+      const res = await fetch('/api/auth/send-verification', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: email.trim(), name: name.trim(), role })
+      });
+      const data = await res.json();
+      return data;
+    } catch (err) {
+      console.error('Failed to dispatch verification OTP:', err);
+      return { success: false, error: 'Network error. Could not dispatch verification email.' };
+    }
+  };
+
+  const verifyOtpAndRegister = async ({ email, code, name, password, role = 'buyer' }) => {
+    try {
+      const cleanEmail = (email || '').trim().toLowerCase();
+      const cleanCode = (code || '').toString().trim();
+
+      // 1. Verify 6-digit code via server endpoint
+      const verifyRes = await fetch('/api/auth/verify-code', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: cleanEmail, code: cleanCode })
+      });
+      const verifyData = await verifyRes.json();
+
+      if (!verifyData.success) {
+        return { success: false, error: verifyData.error || 'Invalid 6-digit verification code.' };
+      }
+
+      // 2. Check if already exists in users list
+      if (usersList.some(u => u.email.toLowerCase() === cleanEmail)) {
+        return { success: false, error: 'An account with this email address already exists. Please sign in.' };
+      }
+
+      // 3. Create fresh verified user record
+      const newUser = {
+        id: `user-${Date.now()}`,
+        name: name.trim(),
+        email: cleanEmail,
+        password,
+        role: role || 'buyer',
+        subscription_tier: role === 'artist' ? 'standard' : 'free',
+        status: 'active',
+        statusReason: '',
+        created_at: new Date().toISOString(),
+        lastActive: new Date().toISOString(),
+        cloudflareVerified: true,
+        securityIncidents: []
+      };
+
+      const updatedUsers = [...usersList, newUser];
+      setUsersList(updatedUsers);
+      setCurrentUser(newUser);
+      setIsLoggedIn(true);
+
+      try {
+        localStorage.setItem('artellium_users', JSON.stringify(updatedUsers));
+        localStorage.setItem('artellium_login_state', JSON.stringify({ isLoggedIn: true, user: newUser }));
+      } catch (e) {}
+
+      // 4. Dispatch welcome and login security alert email via Resend
+      try {
+        fetch('/api/emails/send', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            action: 'login_alert',
+            to: cleanEmail,
+            name: newUser.name,
+            role: newUser.role,
+            ipAddress: 'Verified Cloudflare IP',
+            userAgent: typeof navigator !== 'undefined' ? navigator.userAgent : 'Artellium Web Session'
+          })
+        }).catch(() => {});
+      } catch (e) {}
+
+      return { success: true, user: newUser };
+    } catch (err) {
+      console.error('Verify OTP and register error:', err);
+      return { success: false, error: 'Registration error. Please retry.' };
+    }
+  };
+
+  const switchUserRole = (role) => {
+    if (currentUser) {
+      const updated = { ...currentUser, role };
+      setCurrentUser(updated);
+      try {
+        localStorage.setItem('artellium_login_state', JSON.stringify({ isLoggedIn: true, user: updated }));
+      } catch (e) {}
+    }
   };
 
   const login = (email, password) => {
     const cleanEmail = (email || '').trim().toLowerCase();
     
-    // Check Demo Accounts Aliases
-    if (cleanEmail === 'admin@artellium.com' || cleanEmail === 'admin') {
-      const adminUser = usersList.find(u => u.role === 'admin') || defaultDemoAdmin;
-      setCurrentUser(adminUser);
-      setIsLoggedIn(true);
-      try {
-        localStorage.setItem('artellium_login_state', JSON.stringify({ isLoggedIn: true, user: adminUser }));
-      } catch (e) {}
-      return { success: true, user: adminUser };
-    }
-    
-    if (cleanEmail === 'amina@artellium.com' || cleanEmail === 'amina.diallo@artellium.com' || cleanEmail === 'kofi@artellium.com' || cleanEmail === 'artist@artellium.com') {
-      const artistUser = usersList.find(u => u.email.toLowerCase() === cleanEmail || u.role === 'artist') || usersList.find(u => u.role === 'artist');
-      setCurrentUser(artistUser);
-      setIsLoggedIn(true);
-      try {
-        localStorage.setItem('artellium_login_state', JSON.stringify({ isLoggedIn: true, user: artistUser }));
-      } catch (e) {}
-      return { success: true, user: artistUser };
+    // Check credentials against users database
+    const user = usersList.find(u => 
+      u.email.toLowerCase() === cleanEmail && 
+      (!u.password || u.password === password)
+    );
+
+    if (!user) {
+      return { success: false, message: 'Invalid email address or password. Please verify your credentials.' };
     }
 
-    if (cleanEmail === 'evelyn@artellium.com' || cleanEmail === 'evelyn.carter@heritage.org' || cleanEmail === 'collector@artellium.com' || cleanEmail === 'buyer@artellium.com') {
-      const buyerUser = usersList.find(u => u.role === 'buyer') || usersList[1];
-      setCurrentUser(buyerUser);
-      setIsLoggedIn(true);
-      try {
-        localStorage.setItem('artellium_login_state', JSON.stringify({ isLoggedIn: true, user: buyerUser }));
-      } catch (e) {}
-      return { success: true, user: buyerUser };
+    if (user.status === 'blocked') {
+      return { 
+        success: false, 
+        message: '⛔ This account has been permanently suspended by the Artellium Security Council.' 
+      };
     }
 
-    // Generic match
-    const user = usersList.find(u => u.email.toLowerCase() === cleanEmail && (!u.password || u.password === password || password.length >= 4));
-    if (user) {
-      if (user.status === 'blocked') {
-        return { 
-          success: false, 
-          message: '⛔ This account has been Permanently Blocked by the Artellium Security Council due to reported foul play or policy violations.' 
-        };
-      }
+    setCurrentUser(user);
+    setIsLoggedIn(true);
+    try {
+      localStorage.setItem('artellium_login_state', JSON.stringify({ isLoggedIn: true, user }));
+    } catch (e) {}
 
-      setCurrentUser(user);
-      setIsLoggedIn(true);
-      try {
-        localStorage.setItem('artellium_login_state', JSON.stringify({ isLoggedIn: true, user }));
-      } catch (e) {}
-      return { success: true, user };
-    }
-    return { success: false, message: 'Invalid email or password.' };
+    // Dispatch Login Security Alert Email via Resend
+    try {
+      fetch('/api/emails/send', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'login_alert',
+          to: user.email,
+          name: user.name,
+          role: user.role,
+          ipAddress: 'Verified Cloudflare IP',
+          userAgent: typeof navigator !== 'undefined' ? navigator.userAgent : 'Artellium Secure Web'
+        })
+      }).catch(() => {});
+    } catch (e) {}
+
+    return { success: true, user };
   };
 
   const signup = (name, email, password, role) => {
-    if (usersList.some(u => u.email.toLowerCase() === email.toLowerCase())) {
+    const cleanEmail = (email || '').trim().toLowerCase();
+    if (usersList.some(u => u.email.toLowerCase() === cleanEmail)) {
       return { success: false, message: 'Email address already registered.' };
     }
     const newUser = { 
       id: `user-${Date.now()}`, 
       name, 
-      email, 
+      email: cleanEmail, 
       password, 
       role, 
       subscription_tier: role === 'artist' ? 'standard' : 'free',
@@ -1918,6 +1959,8 @@ export function StoreProvider({ children }) {
         isLoggedIn,
         login,
         signup,
+        requestVerificationOtp,
+        verifyOtpAndRegister,
         logout,
         usersList,
         addUser,

@@ -36,14 +36,14 @@ export default function UserAccountMenu() {
     currentUser,
     isLoggedIn,
     login,
-    signup,
     logout,
-    switchUserRole,
+    requestVerificationOtp,
+    verifyOtpAndRegister,
     orders = []
   } = useStore();
 
   const [isOpen, setIsOpen] = useState(false);
-  const [authTab, setAuthTab] = useState('login'); // 'login' | 'signup' | 'forgot'
+  const [authTab, setAuthTab] = useState('login'); // 'login' | 'signup' | 'verify_otp' | 'forgot'
   const [authError, setAuthError] = useState('');
   const [authSuccess, setAuthSuccess] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -58,10 +58,26 @@ export default function UserAccountMenu() {
   const [rememberMe, setRememberMe] = useState(true);
   const [termsAgreed, setTermsAgreed] = useState(true);
 
+  // OTP Verification States
+  const [otpCode, setOtpCode] = useState('');
+  const [resendTimer, setResendTimer] = useState(60);
+  const [isResending, setIsResending] = useState(false);
+
   // Cloudflare Turnstile verification state
   const [cloudflareVerified, setCloudflareVerified] = useState(false);
 
   const menuRef = useRef(null);
+
+  // Countdown timer for OTP Resend
+  useEffect(() => {
+    let interval;
+    if (authTab === 'verify_otp' && resendTimer > 0) {
+      interval = setInterval(() => {
+        setResendTimer((prev) => prev - 1);
+      }, 1000);
+    }
+    return () => clearInterval(interval);
+  }, [authTab, resendTimer]);
 
   // Close dropdown on outside click
   useEffect(() => {
@@ -146,7 +162,8 @@ export default function UserAccountMenu() {
     }, 450);
   };
 
-  const handleSignup = (e) => {
+  // Step 1: Submit Details & Request 6-digit OTP Code via Resend
+  const handleSignup = async (e) => {
     if (e) e.preventDefault();
     setAuthError('');
     setAuthSuccess('');
@@ -157,7 +174,7 @@ export default function UserAccountMenu() {
     }
 
     if (!name.trim()) {
-      setAuthError('Please provide your full name.');
+      setAuthError('Please provide your full legal or artist name.');
       return;
     }
 
@@ -177,29 +194,87 @@ export default function UserAccountMenu() {
     }
 
     if (!termsAgreed) {
-      setAuthError('Please agree to Artellium terms and fiduciary privacy.');
+      setAuthError('Please agree to Artellium terms and fiduciary policies.');
       return;
     }
 
     setIsLoading(true);
 
-    setTimeout(() => {
-      const res = signup(name.trim(), email.trim(), password, role);
+    try {
+      // Trigger 6-digit verification code to recipient's email via Resend
+      const otpRes = await requestVerificationOtp(email.trim(), name.trim(), role);
+      setIsLoading(false);
+
+      if (otpRes.success) {
+        setAuthTab('verify_otp');
+        setResendTimer(60);
+        setAuthSuccess(`Verification email with 6-digit code dispatched to ${email.trim()}!`);
+      } else {
+        setAuthError(otpRes.error || 'Failed to dispatch verification email. Please try again.');
+      }
+    } catch (err) {
+      setIsLoading(false);
+      setAuthError('Network error while dispatching verification email.');
+    }
+  };
+
+  // Step 2: Verify 6-digit OTP Code & Complete Account Creation
+  const handleVerifyOtp = async (e) => {
+    if (e) e.preventDefault();
+    setAuthError('');
+    setAuthSuccess('');
+
+    const cleanCode = otpCode.trim();
+    if (cleanCode.length !== 6) {
+      setAuthError('Please enter the complete 6-digit verification code.');
+      return;
+    }
+
+    setIsLoading(true);
+
+    try {
+      const res = await verifyOtpAndRegister({
+        email: email.trim(),
+        code: cleanCode,
+        name: name.trim(),
+        password,
+        role
+      });
       setIsLoading(false);
 
       if (res.success) {
-        setAuthSuccess('Account registered and Cloudflare authenticated!');
+        setAuthSuccess('Account verified and created successfully!');
         setTimeout(() => {
           setIsOpen(false);
           setAuthSuccess('');
           if (res.user.role === 'admin') router.push('/admin/dashboard');
           else if (res.user.role === 'artist') router.push('/artist/dashboard');
           else router.push('/buyer/account');
-        }, 600);
+        }, 700);
       } else {
-        setAuthError(res.message || 'Registration failed. Please try again.');
+        setAuthError(res.error || 'Invalid verification code. Please check your email.');
       }
-    }, 500);
+    } catch (err) {
+      setIsLoading(false);
+      setAuthError('Error validating verification code.');
+    }
+  };
+
+  // Resend OTP Code
+  const handleResendCode = async () => {
+    if (resendTimer > 0 || isResending) return;
+    setIsResending(true);
+    setAuthError('');
+
+    const res = await requestVerificationOtp(email.trim(), name.trim(), role);
+    setIsResending(false);
+
+    if (res.success) {
+      setResendTimer(60);
+      setAuthSuccess(`A fresh 6-digit verification code has been dispatched to ${email.trim()}!`);
+    } else {
+      setAuthError(res.error || 'Failed to resend code.');
+    }
   };
 
   const handleForgotPassword = (e) => {
@@ -217,32 +292,6 @@ export default function UserAccountMenu() {
         setAuthTab('login');
       }, 3500);
     }, 600);
-  };
-
-  const fillFastDemo = (userType) => {
-    setAuthTab('login');
-    setAuthError('');
-    setAuthSuccess('');
-    setCloudflareVerified(true);
-
-    if (userType === 'admin') {
-      setEmail('admin@artellium.com');
-      setPassword('admin123');
-    } else if (userType === 'artist') {
-      setEmail('amina.diallo@artellium.com');
-      setPassword('artist123');
-    } else {
-      setEmail('evelyn.carter@heritage.org');
-      setPassword('buyer123');
-    }
-  };
-
-  const handleRoleSwitch = (targetRole) => {
-    switchUserRole(targetRole);
-    setIsOpen(false);
-    if (targetRole === 'admin') router.push('/admin/dashboard');
-    else if (targetRole === 'artist') router.push('/artist/dashboard');
-    else router.push('/buyer/account');
   };
 
   const getRoleBadge = (userRole) => {
@@ -433,48 +482,6 @@ export default function UserAccountMenu() {
                 </Link>
               </div>
 
-              {/* Demo Account Switcher */}
-              <div className="pt-2.5 border-t border-white/5 space-y-1.5">
-                <span className="text-[9px] text-slate-400 block font-semibold uppercase tracking-wider">
-                  Quick Demo Role Switcher:
-                </span>
-                <div className="grid grid-cols-3 gap-1.5 text-[11px]">
-                  <button
-                    type="button"
-                    onClick={() => handleRoleSwitch('buyer')}
-                    className={`py-1.5 px-2 rounded-lg border text-center font-medium transition ${
-                      currentUser.role === 'buyer'
-                        ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/50 font-bold'
-                        : 'bg-white/5 text-slate-300 border-white/10 hover:bg-white/10'
-                    }`}
-                  >
-                    Collector
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => handleRoleSwitch('artist')}
-                    className={`py-1.5 px-2 rounded-lg border text-center font-medium transition ${
-                      currentUser.role === 'artist'
-                        ? 'bg-art-gold/20 text-art-gold border-art-gold/50 font-bold'
-                        : 'bg-white/5 text-slate-300 border-white/10 hover:bg-white/10'
-                    }`}
-                  >
-                    Artist
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => handleRoleSwitch('admin')}
-                    className={`py-1.5 px-2 rounded-lg border text-center font-medium transition ${
-                      currentUser.role === 'admin'
-                        ? 'bg-amber-500/20 text-amber-300 border-amber-500/50 font-bold'
-                        : 'bg-white/5 text-slate-300 border-white/10 hover:bg-white/10'
-                    }`}
-                  >
-                    Admin
-                  </button>
-                </div>
-              </div>
-
               {/* Logout Button */}
               <div className="pt-2 border-t border-white/5">
                 <button
@@ -517,10 +524,10 @@ export default function UserAccountMenu() {
                     setAuthSuccess('');
                   }}
                   className={`flex-1 pb-2.5 text-center font-bold tracking-wider uppercase transition border-b-2 ${
-                    authTab === 'signup' ? 'text-art-gold border-art-gold' : 'text-slate-400 border-transparent hover:text-white'
+                    authTab === 'signup' || authTab === 'verify_otp' ? 'text-art-gold border-art-gold' : 'text-slate-400 border-transparent hover:text-white'
                   }`}
                 >
-                  Create Account
+                  {authTab === 'verify_otp' ? '2. Verify Email' : 'Create Account'}
                 </button>
               </div>
 
@@ -617,50 +624,20 @@ export default function UserAccountMenu() {
                   <button
                     type="submit"
                     disabled={isLoading}
-                    className="w-full py-3 bg-gradient-to-r from-art-gold via-amber-400 to-art-gold text-art-black font-bold uppercase tracking-wider rounded-xl transition shadow-gold-glow hover:brightness-110 flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+                    className="w-full py-3.5 bg-gradient-to-r from-art-gold via-amber-400 to-art-gold text-art-black font-bold uppercase tracking-wider rounded-xl transition shadow-gold-glow hover:brightness-110 flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
                   >
                     {isLoading ? (
                       <>
-                        <RefreshCw className="w-4 h-4 animate-spin" />
+                        <RefreshCw className="w-4 h-4 animate-spin text-black" />
                         <span>Verifying Credentials...</span>
                       </>
                     ) : (
                       <>
-                        <ShieldCheck className="w-4 h-4" />
+                        <ShieldCheck className="w-4 h-4 text-black" />
                         <span>Sign In to Account</span>
                       </>
                     )}
                   </button>
-
-                  {/* Fast Demo Credentials Quick Access */}
-                  <div className="pt-3 border-t border-white/10 space-y-2">
-                    <span className="text-[10px] text-slate-400 block font-semibold uppercase tracking-wider text-center">
-                      Instant 1-Click Sandbox Logins:
-                    </span>
-                    <div className="grid grid-cols-3 gap-1.5 text-[10.5px]">
-                      <button
-                        type="button"
-                        onClick={() => fillFastDemo('buyer')}
-                        className="py-2 bg-emerald-950/40 hover:bg-emerald-950/70 border border-emerald-500/40 rounded-xl text-emerald-300 font-semibold text-center transition"
-                      >
-                        Collector
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => fillFastDemo('artist')}
-                        className="py-2 bg-art-gold/10 hover:bg-art-gold/20 border border-art-gold/40 rounded-xl text-art-gold font-semibold text-center transition"
-                      >
-                        Artist
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => fillFastDemo('admin')}
-                        className="py-2 bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/40 rounded-xl text-amber-300 font-semibold text-center transition"
-                      >
-                        Admin
-                      </button>
-                    </div>
-                  </div>
                 </form>
               )}
 
@@ -670,7 +647,7 @@ export default function UserAccountMenu() {
               {authTab === 'signup' && (
                 <form onSubmit={handleSignup} className="space-y-3 text-xs">
                   <div>
-                    <label className="block text-slate-300 mb-1 font-medium">Full Name</label>
+                    <label className="block text-slate-300 mb-1 font-medium">Full Legal / Artist Name</label>
                     <input
                       type="text"
                       required
@@ -682,13 +659,13 @@ export default function UserAccountMenu() {
                   </div>
 
                   <div>
-                    <label className="block text-slate-300 mb-1 font-medium">Email Address</label>
+                    <label className="block text-slate-300 mb-1 font-medium">Email Address (For Verification)</label>
                     <input
                       type="email"
                       required
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
-                      placeholder="e.g. collector@artellium.com"
+                      placeholder="e.g. folake@artellium.com"
                       className="w-full bg-[#06070a] border border-white/15 rounded-xl py-2 px-3 text-white placeholder-slate-500 focus:border-art-gold focus:outline-none transition text-xs"
                     />
                   </div>
@@ -802,7 +779,7 @@ export default function UserAccountMenu() {
                       {isLoading ? (
                         <>
                           <RefreshCw className="w-4 h-4 animate-spin text-black" />
-                          <span>Creating Your Account...</span>
+                          <span>Sending Verification Code...</span>
                         </>
                       ) : (
                         <>
@@ -823,6 +800,77 @@ export default function UserAccountMenu() {
                       <span>Or open full registration page</span>
                       <ArrowRight className="w-3 h-3" />
                     </Link>
+                  </div>
+                </form>
+              )}
+
+              {/* ========================================================================= */}
+              {/* STEP 2: 6-DIGIT EMAIL VERIFICATION OTP                                    */}
+              {/* ========================================================================= */}
+              {authTab === 'verify_otp' && (
+                <form onSubmit={handleVerifyOtp} className="space-y-3.5 text-xs text-center animate-fade-in">
+                  <div className="w-12 h-12 rounded-2xl bg-art-gold/15 border border-art-gold/40 text-art-gold flex items-center justify-center mx-auto shadow-gold-glow">
+                    <Mail className="w-6 h-6 animate-pulse" />
+                  </div>
+
+                  <div>
+                    <h4 className="font-serif text-sm font-bold text-white">Check Your Inbox</h4>
+                    <p className="text-[11px] text-slate-400 mt-0.5">
+                      We sent a 6-digit verification code to <span className="text-art-gold font-mono font-semibold">{email}</span>
+                    </p>
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] text-slate-300 font-medium mb-1.5 text-left">
+                      Enter 6-Digit Code
+                    </label>
+                    <input
+                      type="text"
+                      maxLength={6}
+                      required
+                      value={otpCode}
+                      onChange={(e) => setOtpCode(e.target.value.replace(/[^0-9]/g, ''))}
+                      placeholder="• • • • • •"
+                      className="w-full text-center text-xl tracking-[0.5em] font-mono font-bold bg-[#06070a] border border-art-gold/50 rounded-xl py-2.5 text-art-gold focus:border-art-gold focus:outline-none"
+                    />
+                  </div>
+
+                  <button
+                    type="submit"
+                    disabled={isLoading || otpCode.length !== 6}
+                    style={{ minHeight: '48px' }}
+                    className="w-full py-3 px-4 bg-gradient-to-r from-art-gold to-amber-500 hover:brightness-110 active:scale-[0.99] text-art-black font-black text-xs uppercase tracking-widest rounded-xl transition shadow-gold-glow flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+                  >
+                    {isLoading ? (
+                      <>
+                        <RefreshCw className="w-4 h-4 animate-spin text-black" />
+                        <span>Activating Account...</span>
+                      </>
+                    ) : (
+                      <>
+                        <CheckCircle2 className="w-4 h-4 text-black" />
+                        <span>Verify & Activate Account</span>
+                      </>
+                    )}
+                  </button>
+
+                  <div className="flex items-center justify-between text-[11px] text-slate-400 pt-1">
+                    <button
+                      type="button"
+                      onClick={() => setAuthTab('signup')}
+                      className="text-slate-400 hover:text-white transition"
+                    >
+                      ← Back to Details
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={handleResendCode}
+                      disabled={resendTimer > 0 || isResending}
+                      className="text-art-gold hover:underline disabled:opacity-50"
+                    >
+                      {resendTimer > 0 ? `Resend code in ${resendTimer}s` : isResending ? 'Resending...' : 'Resend Code'}
+                    </button>
                   </div>
                 </form>
               )}
