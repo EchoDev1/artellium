@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React, { useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
@@ -64,7 +64,7 @@ function ResetPasswordContent() {
   };
 
   return (
-    <div className="min-h-screen bg-[#07080A] py-16 px-4 sm:px-6 lg:px-8 flex items-center justify-center relative overflow-hidden">
+    <div className="min-h-screen bg-[#07080A] py-10 pb-32 px-4 sm:px-6 lg:px-8 flex items-center justify-center relative">
       <div className="absolute top-1/3 left-1/2 -translate-x-1/2 w-96 h-96 bg-art-gold/10 blur-[130px] pointer-events-none" />
 
       <div className="w-full max-w-md space-y-6 relative z-10">

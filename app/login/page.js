@@ -178,7 +178,7 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#07080A] py-12 px-4 sm:px-6 lg:px-8 flex items-center justify-center relative overflow-hidden">
+    <div className="min-h-screen bg-[#07080A] py-10 pb-32 px-4 sm:px-6 lg:px-8 flex items-center justify-center relative">
       
       {/* Ambient Lighting */}
       <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-art-gold/10 blur-[120px] pointer-events-none" />
