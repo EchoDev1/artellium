@@ -11,7 +11,7 @@ export default function CloudflareTurnstile({ onVerify, verified, setVerified, a
   const widgetIdRef = useRef(null);
   const [isLoaded, setIsLoaded] = useState(false);
 
-  const siteKey = process.env.NEXT_PUBLIC_CLOUDFLARE_SITE_KEY || '0x4AAAAAAAEdoUh9Vayh00QTv';
+  const siteKey = process.env.NEXT_PUBLIC_CLOUDFLARE_SITE_KEY || '0x4AAAAAAEdoUh9Vayh00QTv';
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
