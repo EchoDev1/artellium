@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
@@ -418,17 +418,18 @@ export default function RegisterPage() {
                 <button
                   type="submit"
                   disabled={isLoading}
-                  className="w-full py-3.5 bg-gradient-to-r from-art-gold via-amber-400 to-art-gold text-art-black font-bold uppercase tracking-wider rounded-xl transition shadow-gold-glow hover:brightness-110 flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+                  className="w-full py-4 bg-gradient-to-r from-art-gold via-amber-400 to-art-gold text-art-black font-black text-sm uppercase tracking-wider rounded-xl transition shadow-gold-glow hover:brightness-110 flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 mt-2"
                 >
                   {isLoading ? (
                     <>
-                      <RefreshCw className="w-4 h-4 animate-spin" />
-                      <span>Sending Verification Code...</span>
+                      <RefreshCw className="w-5 h-5 animate-spin" />
+                      <span>Creating Account...</span>
                     </>
                   ) : (
                     <>
-                      <Send className="w-4 h-4" />
-                      <span>Verify Email & Register</span>
+                      <Sparkles className="w-5 h-5 text-art-black" />
+                      <span>Create Account</span>
+                      <ArrowRight className="w-5 h-5 ml-1" />
                     </>
                   )}
                 </button>
