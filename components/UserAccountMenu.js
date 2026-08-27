@@ -39,9 +39,7 @@ export default function UserAccountMenu() {
     logout,
     requestVerificationOtp,
     verifyOtpAndRegister,
-    orders = [],
-    isAccountMenuOpen,
-    setIsAccountMenuOpen
+    orders = []
   } = useStore();
 
   const [isOpen, setIsOpen] = useState(false);
@@ -49,20 +47,6 @@ export default function UserAccountMenu() {
   const [authError, setAuthError] = useState('');
   const [authSuccess, setAuthSuccess] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-
-  // Sync internal isOpen with global isAccountMenuOpen
-  const toggleMenu = () => {
-    setIsOpen((prev) => {
-      const next = !prev;
-      if (setIsAccountMenuOpen) setIsAccountMenuOpen(next);
-      return next;
-    });
-  };
-
-  const closeMenu = () => {
-    setIsOpen(false);
-    if (setIsAccountMenuOpen) setIsAccountMenuOpen(false);
-  };
 
   // Form states
   const [email, setEmail] = useState('');
@@ -83,17 +67,6 @@ export default function UserAccountMenu() {
   const [cloudflareVerified, setCloudflareVerified] = useState(false);
 
   const menuRef = useRef(null);
-  const submitBtnRef = useRef(null);
-
-  // Auto-scroll to CREATE ACCOUNT button once Cloudflare verification is completed
-  useEffect(() => {
-    if (cloudflareVerified && authTab === 'signup' && submitBtnRef.current) {
-      const timer = setTimeout(() => {
-        submitBtnRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      }, 200);
-      return () => clearTimeout(timer);
-    }
-  }, [cloudflareVerified, authTab]);
 
   // Countdown timer for OTP Resend
   useEffect(() => {
@@ -110,7 +83,7 @@ export default function UserAccountMenu() {
   useEffect(() => {
     function handleClickOutside(event) {
       if (menuRef.current && !menuRef.current.contains(event.target)) {
-        closeMenu();
+        setIsOpen(false);
       }
     }
     document.addEventListener('mousedown', handleClickOutside);
@@ -121,11 +94,11 @@ export default function UserAccountMenu() {
   useEffect(() => {
     function handleKeyDown(e) {
       if (e.key === 'Escape') {
-        closeMenu();
+        setIsOpen(false);
       }
     }
-    document.addEventListener('keydown', handleKeyDown);
-    return () => document.removeEventListener('keydown', handleKeyDown);
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
 
   // Calculate password strength
@@ -339,7 +312,7 @@ export default function UserAccountMenu() {
     <div className="relative" ref={menuRef}>
       {/* Account Menu Trigger Button */}
       <button
-        onClick={toggleMenu}
+        onClick={() => setIsOpen(!isOpen)}
         aria-expanded={isOpen}
         aria-haspopup="true"
         className={`flex items-center gap-2 px-3 py-2 rounded-xl transition text-xs font-semibold select-none ${
@@ -375,52 +348,43 @@ export default function UserAccountMenu() {
               <User className="w-3.5 h-3.5" />
             </div>
             <span className="hidden sm:inline font-medium">Account</span>
-            <ChevronDown className={`w-3.5 h-3.5 text-slate-400 transition-transform duration-200 ${isOpen ? 'rotate-180 text-art-gold' : ''}`} />
+            <ChevronDown className={`w-3.5 h-3.5 text-slate-400 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />
           </>
         )}
       </button>
 
       {/* Account Dropdown Modal / Popover */}
       {isOpen && (
-        <>
-          {/* Fullscreen Backdrop for Mobile & Desktop */}
-          <div
-            onClick={closeMenu}
-            className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[990] animate-fade-in"
-            aria-hidden="true"
-          />
-
-          {/* Account Modal Container */}
-          <div className="fixed inset-x-2.5 top-12 bottom-3 sm:bottom-auto sm:top-auto sm:absolute sm:right-0 sm:mt-2 sm:w-[420px] max-h-[calc(100dvh-3.5rem)] sm:max-h-[85vh] rounded-3xl bg-[#090b10] border-2 border-art-gold/50 shadow-[0_0_60px_rgba(0,0,0,0.95)] z-[999] overflow-hidden flex flex-col animate-fade-in backdrop-blur-2xl">
-            
-            {/* Top Security Banner with Cloudflare Indicator */}
-            <div className="p-3.5 bg-gradient-to-r from-[#11141a] via-[#161c24] to-[#0d131a] border-b border-white/10 flex items-center justify-between shrink-0">
-              <div className="flex items-center gap-2">
-                <div className="w-6 h-6 rounded-lg bg-[#f6821f]/20 border border-[#f6821f]/40 flex items-center justify-center">
-                  <Shield className="w-3.5 h-3.5 text-[#f6821f]" />
-                </div>
-                <div>
-                  <span className="font-serif text-xs font-bold text-white tracking-wider block">
-                    {isLoggedIn ? 'ARTELLIUM AUTHENTICATED' : 'ARTELLIUM SECURE ACCESS'}
-                  </span>
-                  <span className="text-[9px] text-emerald-400 font-mono flex items-center gap-1">
-                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                    <span>Cloudflare SSL & DDoS Protected</span>
-                  </span>
-                </div>
+        <div className="absolute right-0 mt-2 w-80 sm:w-[410px] rounded-2xl bg-[#090b10] border border-art-gold/40 shadow-2xl z-50 overflow-hidden animate-fade-in backdrop-blur-2xl">
+          
+          {/* Top Security Banner with Cloudflare Indicator */}
+          <div className="p-3.5 bg-gradient-to-r from-[#11141a] via-[#161c24] to-[#0d131a] border-b border-white/10 flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <div className="w-6 h-6 rounded-lg bg-[#f6821f]/20 border border-[#f6821f]/40 flex items-center justify-center">
+                <Shield className="w-3.5 h-3.5 text-[#f6821f]" />
               </div>
-              <button
-                onClick={closeMenu}
-                className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-white/10 transition cursor-pointer"
-                aria-label="Close menu"
-              >
-                <X className="w-4 h-4" />
-              </button>
+              <div>
+                <span className="font-serif text-xs font-bold text-white tracking-wider block">
+                  {isLoggedIn ? 'ARTELLIUM AUTHENTICATED' : 'ARTELLIUM SECURE ACCESS'}
+                </span>
+                <span className="text-[9px] text-emerald-400 font-mono flex items-center gap-1">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                  <span>Cloudflare SSL & DDoS Protected</span>
+                </span>
+              </div>
             </div>
+            <button
+              onClick={() => setIsOpen(false)}
+              className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-white/10 transition"
+              aria-label="Close menu"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
 
           {isLoggedIn && currentUser ? (
             /* Logged-In User Profile & Actions */
-            <div className="flex-1 overflow-y-auto p-4 space-y-4 pb-28 sm:pb-6 scrollbar-thin">
+            <div className="p-4 space-y-4">
               {/* User Profile Card */}
               <div className="p-3.5 rounded-xl bg-white/[0.03] border border-white/10 flex items-center gap-3">
                 <div className="w-12 h-12 rounded-xl overflow-hidden bg-gradient-to-br from-art-gold via-amber-600 to-art-green p-0.5 shadow-gold-glow flex-shrink-0">
@@ -451,7 +415,7 @@ export default function UserAccountMenu() {
                 {currentUser.role === 'buyer' && (
                   <Link
                     href="/buyer/account"
-                    onClick={closeMenu}
+                    onClick={() => setIsOpen(false)}
                     className="w-full p-3 rounded-xl bg-gradient-to-r from-emerald-950/60 to-teal-950/40 border border-emerald-500/40 hover:border-emerald-400 text-emerald-200 hover:text-white flex items-center justify-between text-xs font-semibold transition group"
                   >
                     <div className="flex items-center gap-2.5">
@@ -465,7 +429,7 @@ export default function UserAccountMenu() {
                 {currentUser.role === 'artist' && (
                   <Link
                     href="/artist/dashboard"
-                    onClick={closeMenu}
+                    onClick={() => setIsOpen(false)}
                     className="w-full p-3 rounded-xl bg-gradient-to-r from-art-gold/15 to-amber-950/40 border border-art-gold/40 hover:border-art-gold text-art-gold hover:text-white flex items-center justify-between text-xs font-semibold transition group"
                   >
                     <div className="flex items-center gap-2.5">
@@ -479,7 +443,7 @@ export default function UserAccountMenu() {
                 {currentUser.role === 'admin' && (
                   <Link
                     href="/admin/dashboard"
-                    onClick={closeMenu}
+                    onClick={() => setIsOpen(false)}
                     className="w-full p-3 rounded-xl bg-gradient-to-r from-amber-950/60 to-yellow-950/40 border border-amber-500/40 hover:border-amber-400 text-amber-200 hover:text-white flex items-center justify-between text-xs font-semibold transition group"
                   >
                     <div className="flex items-center gap-2.5">
@@ -497,7 +461,7 @@ export default function UserAccountMenu() {
                   type="button"
                   onClick={() => {
                     logout();
-                    closeMenu();
+                    setIsOpen(false);
                   }}
                   className="w-full py-2 px-3 rounded-lg bg-red-950/30 hover:bg-red-950/60 border border-red-800/30 text-red-300 hover:text-red-200 text-xs font-semibold flex items-center justify-center gap-2 transition cursor-pointer"
                 >
@@ -507,8 +471,8 @@ export default function UserAccountMenu() {
               </div>
             </div>
           ) : (
-            /* Logged-Out Sign In / Create Account View */
-            <div className="flex-1 overflow-y-auto p-4 sm:p-5 space-y-4 pb-32 sm:pb-8 scrollbar-thin">
+            /* Logged-Out Sign In / Create Account View - Generous scroll space for mobile */
+            <div className="p-4 sm:p-5 space-y-4 max-h-[85vh] overflow-y-auto scrollbar-thin pb-48 sm:pb-16">
               
               {/* Tab Selector */}
               <div className="flex border-b border-white/10 text-xs">
@@ -772,35 +736,20 @@ export default function UserAccountMenu() {
                   </label>
 
                   {/* Cloudflare Turnstile Bot Security Widget */}
-                  <div className="pt-1">
-                    <CloudflareTurnstile
-                      verified={cloudflareVerified}
-                      setVerified={setCloudflareVerified}
-                    />
-                  </div>
+                  <CloudflareTurnstile
+                    verified={cloudflareVerified}
+                    setVerified={setCloudflareVerified}
+                  />
 
-                  {/* Cloudflare Verification Status Banner */}
-                  {cloudflareVerified ? (
-                    <div className="flex items-center justify-center gap-2 py-2 px-3.5 bg-emerald-950/90 border-2 border-emerald-400 rounded-xl text-emerald-200 text-xs font-bold shadow-[0_0_22px_rgba(16,185,129,0.4)] animate-fade-in text-center">
-                      <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0 animate-pulse" />
-                      <span>Security Verified! Ready to Create Account</span>
-                    </div>
-                  ) : (
-                    <div className="flex items-center justify-center gap-1.5 py-1.5 px-3 bg-white/[0.04] border border-white/10 rounded-xl text-[11px] text-amber-300/90 font-medium text-center">
-                      <ShieldCheck className="w-3.5 h-3.5 text-art-gold shrink-0" />
-                      <span>Complete Cloudflare verification above to proceed</span>
-                    </div>
-                  )}
-
-                  {/* ULTRA-VISIBLE GOLD CREATE ACCOUNT BUTTON */}
-                  <div ref={submitBtnRef} className="pt-2 pb-6 w-full">
+                  {/* HIGH-VISIBILITY GOLD CREATE ACCOUNT BUTTON */}
+                  <div className="pt-3 pb-2 w-full">
                     <button
                       type="submit"
                       disabled={isLoading}
-                      style={{ minHeight: '62px' }}
+                      style={{ minHeight: '58px' }}
                       className={`w-full py-4 px-5 rounded-2xl font-black text-sm uppercase tracking-widest transition-all duration-300 flex items-center justify-center gap-2.5 cursor-pointer disabled:opacity-60 relative overflow-hidden group shadow-2xl ${
                         cloudflareVerified
-                          ? 'bg-gradient-to-r from-[#FFF59D] via-[#FFD700] to-[#F59E0B] text-black border-2 border-amber-100 shadow-[0_0_40px_rgba(255,215,0,0.95)] scale-[1.02] ring-4 ring-amber-300/80 animate-create-account-pulse'
+                          ? 'bg-gradient-to-r from-[#FFF59D] via-[#FFD700] to-[#F59E0B] text-black border-2 border-amber-200 shadow-[0_0_35px_rgba(255,215,0,0.9)] scale-[1.01] ring-4 ring-amber-300/60'
                           : 'bg-gradient-to-r from-art-gold via-amber-300 to-art-gold text-black border-2 border-amber-200 shadow-[0_0_25px_rgba(212,175,55,0.7)] hover:brightness-110 active:scale-[0.99]'
                       }`}
                     >
@@ -814,7 +763,7 @@ export default function UserAccountMenu() {
                         </>
                       ) : (
                         <>
-                          <Sparkles className="w-4 h-4 text-black shrink-0 animate-spin-slow" />
+                          <Sparkles className="w-4 h-4 text-black shrink-0" />
                           <span className="font-black text-black tracking-widest text-sm">
                             {cloudflareVerified ? 'CREATE ACCOUNT NOW' : 'CREATE ACCOUNT'}
                           </span>
@@ -827,13 +776,16 @@ export default function UserAccountMenu() {
                   <div className="text-center pt-1 pb-4">
                     <Link
                       href="/register"
-                      onClick={closeMenu}
+                      onClick={() => setIsOpen(false)}
                       className="text-[11px] text-art-gold hover:underline font-medium inline-flex items-center gap-1"
                     >
                       <span>Or open full registration page</span>
                       <ArrowRight className="w-3 h-3" />
                     </Link>
                   </div>
+
+                  {/* Extra bottom scroll buffer for mobile */}
+                  <div className="h-16 sm:h-6 w-full pointer-events-none select-none" aria-hidden="true" />
                 </form>
               )}
 
@@ -957,14 +909,13 @@ export default function UserAccountMenu() {
                       {isLoading ? <RefreshCw className="w-4 h-4 animate-spin" /> : <KeyRound className="w-4 h-4" />}
                       <span>Send Recovery Link</span>
                     </button>
-                    </div>
-                  </form>
-                )}
+                  </div>
+                </form>
+              )}
 
-              </div>
-            )}
-          </div>
-        </>
+            </div>
+          )}
+        </div>
       )}
     </div>
   );

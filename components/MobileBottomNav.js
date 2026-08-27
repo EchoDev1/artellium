@@ -16,18 +16,10 @@ import {
 
 export default function MobileBottomNav() {
   const pathname = usePathname();
-  const { cart = [], setIsCartOpen, isAccountMenuOpen, isCartOpen, isSidebarOpen } = useStore();
+  const { cart = [], setIsCartOpen } = useStore();
 
-  // Hide mobile bottom nav on authentication pages and when modals/menus are active
-  if (
-    pathname === '/login' || 
-    pathname === '/register' || 
-    pathname === '/reset-password' || 
-    pathname === '/verify-email' ||
-    isAccountMenuOpen || 
-    isCartOpen || 
-    isSidebarOpen
-  ) {
+  // Hide mobile bottom nav on authentication pages to maximize screen space for forms & CTA buttons
+  if (pathname === '/login' || pathname === '/register' || pathname === '/reset-password') {
     return null;
   }
 
