@@ -421,15 +421,15 @@ export default function UserAccountMenu() {
                 </Link>
 
                 <Link
-                  href="/artist/register"
+                  href="/register"
                   onClick={() => setIsOpen(false)}
-                  className="flex items-center justify-between px-3 py-2 rounded-lg hover:bg-white/5 hover:text-white transition"
+                  className="flex items-center justify-between px-3 py-2 rounded-lg hover:bg-white/5 text-art-gold hover:text-white transition"
                 >
                   <div className="flex items-center gap-2.5">
-                    <Crown className="w-3.5 h-3.5 text-art-gold" />
-                    <span>Sell Artwork (Subscription)</span>
+                    <Sparkles className="w-3.5 h-3.5 text-art-gold" />
+                    <span className="font-semibold">Register New Account</span>
                   </div>
-                  <span className="text-[9px] bg-art-gold/10 text-art-gold px-1.5 py-0.5 rounded border border-art-gold/30">From ₦30k</span>
+                  <ArrowRight className="w-3 h-3 text-art-gold" />
                 </Link>
               </div>
 
@@ -677,7 +677,7 @@ export default function UserAccountMenu() {
                       value={name}
                       onChange={(e) => setName(e.target.value)}
                       placeholder="e.g. Dr. Folake Davies"
-                      className="w-full bg-[#06070a] border border-white/15 rounded-xl py-2.5 px-3 text-white placeholder-slate-500 focus:border-art-gold focus:outline-none transition"
+                      className="w-full bg-[#06070a] border border-white/15 rounded-xl py-2 px-3 text-white placeholder-slate-500 focus:border-art-gold focus:outline-none transition text-xs"
                     />
                   </div>
 
@@ -689,51 +689,51 @@ export default function UserAccountMenu() {
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       placeholder="e.g. collector@artellium.com"
-                      className="w-full bg-[#06070a] border border-white/15 rounded-xl py-2.5 px-3 text-white placeholder-slate-500 focus:border-art-gold focus:outline-none transition"
+                      className="w-full bg-[#06070a] border border-white/15 rounded-xl py-2 px-3 text-white placeholder-slate-500 focus:border-art-gold focus:outline-none transition text-xs"
                     />
                   </div>
 
                   {/* Role Selector with Visual Explanations */}
                   <div>
-                    <label className="block text-slate-300 mb-1.5 font-medium">Select Account Type</label>
+                    <label className="block text-slate-300 mb-1 font-medium">Select Account Type</label>
                     <div className="grid grid-cols-2 gap-2">
                       <button
                         type="button"
                         onClick={() => setRole('buyer')}
-                        className={`p-2.5 rounded-xl border text-left transition flex items-center gap-2 ${
+                        className={`p-2 rounded-xl border text-left transition flex items-center gap-2 cursor-pointer ${
                           role === 'buyer'
                             ? 'bg-emerald-950/60 border-emerald-400 text-emerald-200'
                             : 'bg-black/40 border-white/10 text-slate-400 hover:text-white'
                         }`}
                       >
-                        <UserCheck className="w-4 h-4 text-emerald-400 shrink-0" />
+                        <UserCheck className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
                         <div>
-                          <span className="font-bold text-[11px] block text-white">Art Collector</span>
-                          <span className="text-[9px] text-slate-400 block">Acquire & Bid</span>
+                          <span className="font-bold text-[11px] block text-white">Collector</span>
+                          <span className="text-[8px] text-slate-400 block">Acquire & Bid</span>
                         </div>
                       </button>
 
                       <button
                         type="button"
                         onClick={() => setRole('artist')}
-                        className={`p-2.5 rounded-xl border text-left transition flex items-center gap-2 ${
+                        className={`p-2 rounded-xl border text-left transition flex items-center gap-2 cursor-pointer ${
                           role === 'artist'
                             ? 'bg-art-gold/20 border-art-gold text-art-gold'
                             : 'bg-black/40 border-white/10 text-slate-400 hover:text-white'
                         }`}
                       >
-                        <Palette className="w-4 h-4 text-art-gold shrink-0" />
+                        <Palette className="w-3.5 h-3.5 text-art-gold shrink-0" />
                         <div>
-                          <span className="font-bold text-[11px] block text-white">Master Artist</span>
-                          <span className="text-[9px] text-slate-400 block">Sell & Exhibit</span>
+                          <span className="font-bold text-[11px] block text-white">Artist</span>
+                          <span className="text-[8px] text-slate-400 block">Sell & Exhibit</span>
                         </div>
                       </button>
                     </div>
                   </div>
 
-                  {/* Password & Strength Meter */}
+                  {/* Password */}
                   <div>
-                    <label className="block text-slate-300 mb-1 font-medium">Create Secure Password</label>
+                    <label className="block text-slate-300 mb-1 font-medium">Create Password</label>
                     <div className="relative">
                       <input
                         type={showPassword ? 'text' : 'password'}
@@ -741,38 +741,16 @@ export default function UserAccountMenu() {
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
                         placeholder="••••••••"
-                        className="w-full bg-[#06070a] border border-white/15 rounded-xl py-2.5 pl-3 pr-10 text-white placeholder-slate-500 focus:border-art-gold focus:outline-none transition font-mono"
+                        className="w-full bg-[#06070a] border border-white/15 rounded-xl py-2 pl-3 pr-10 text-white placeholder-slate-500 focus:border-art-gold focus:outline-none transition font-mono text-xs"
                       />
                       <button
                         type="button"
                         onClick={() => setShowPassword(!showPassword)}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white"
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white cursor-pointer"
                       >
-                        {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                        {showPassword ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
                       </button>
                     </div>
-
-                    {/* Password Strength Bar */}
-                    {password && (
-                      <div className="mt-1.5 space-y-1">
-                        <div className="flex items-center justify-between text-[9.5px] font-mono">
-                          <span className="text-slate-400">Strength:</span>
-                          <span className={passStrength.score >= 3 ? 'text-emerald-400 font-bold' : 'text-amber-400'}>
-                            {passStrength.label}
-                          </span>
-                        </div>
-                        <div className="h-1 w-full bg-white/10 rounded-full overflow-hidden flex gap-1">
-                          {[1, 2, 3, 4].map((step) => (
-                            <div
-                              key={step}
-                              className={`h-full flex-1 transition-colors duration-300 ${
-                                passStrength.score >= step ? passStrength.color : 'bg-white/10'
-                              }`}
-                            />
-                          ))}
-                        </div>
-                      </div>
-                    )}
                   </div>
 
                   {/* Confirm Password */}
@@ -784,7 +762,7 @@ export default function UserAccountMenu() {
                       value={confirmPassword}
                       onChange={(e) => setConfirmPassword(e.target.value)}
                       placeholder="••••••••"
-                      className={`w-full bg-[#06070a] border rounded-xl py-2.5 px-3 text-white placeholder-slate-500 focus:outline-none transition font-mono ${
+                      className={`w-full bg-[#06070a] border rounded-xl py-2 px-3 text-white placeholder-slate-500 focus:outline-none transition font-mono text-xs ${
                         confirmPassword && confirmPassword !== password
                           ? 'border-red-500'
                           : confirmPassword && confirmPassword === password
@@ -795,7 +773,7 @@ export default function UserAccountMenu() {
                   </div>
 
                   {/* Terms & Conditions */}
-                  <label className="flex items-start gap-2 text-[11px] text-slate-400 cursor-pointer pt-1 select-none">
+                  <label className="flex items-start gap-2 text-[10.5px] text-slate-400 cursor-pointer pt-0.5 select-none">
                     <input
                       type="checkbox"
                       checked={termsAgreed}
@@ -803,7 +781,7 @@ export default function UserAccountMenu() {
                       className="mt-0.5 rounded bg-[#06070a] border-white/20 text-art-gold focus:ring-0 cursor-pointer"
                     />
                     <span>
-                      I agree to the <Link href="/policies" className="text-art-gold hover:underline">Terms of Service</Link> and WEMA Fiduciary Policies.
+                      I agree to the <Link href="/policies" className="text-art-gold hover:underline">Terms of Service</Link>.
                     </span>
                   </label>
 
@@ -813,23 +791,39 @@ export default function UserAccountMenu() {
                     setVerified={setCloudflareVerified}
                   />
 
-                  <button
-                    type="submit"
-                    disabled={isLoading}
-                    className="w-full py-3 bg-gradient-to-r from-art-gold via-amber-400 to-art-gold text-art-black font-bold uppercase tracking-wider rounded-xl transition shadow-gold-glow hover:brightness-110 flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
-                  >
-                    {isLoading ? (
-                      <>
-                        <RefreshCw className="w-4 h-4 animate-spin" />
-                        <span>Registering Account...</span>
-                      </>
-                    ) : (
-                      <>
-                        <CheckCircle2 className="w-4 h-4" />
-                        <span>Create Verified Account</span>
-                      </>
-                    )}
-                  </button>
+                  {/* HIGH-VISIBILITY GOLD CREATE ACCOUNT BUTTON */}
+                  <div className="pt-2 w-full">
+                    <button
+                      type="submit"
+                      disabled={isLoading}
+                      style={{ minHeight: '52px' }}
+                      className="w-full py-3.5 px-5 bg-gradient-to-r from-art-gold via-amber-300 to-art-gold hover:brightness-110 active:scale-[0.99] text-art-black font-black text-sm uppercase tracking-widest rounded-xl transition-all shadow-[0_0_25px_rgba(212,175,55,0.7)] border-2 border-amber-200 flex items-center justify-center gap-2.5 cursor-pointer disabled:opacity-60"
+                    >
+                      {isLoading ? (
+                        <>
+                          <RefreshCw className="w-4 h-4 animate-spin text-black" />
+                          <span>Creating Your Account...</span>
+                        </>
+                      ) : (
+                        <>
+                          <Sparkles className="w-4 h-4 text-black shrink-0" />
+                          <span className="font-black text-black">CREATE ACCOUNT</span>
+                          <ArrowRight className="w-4 h-4 text-black shrink-0" />
+                        </>
+                      )}
+                    </button>
+                  </div>
+
+                  <div className="text-center pt-1">
+                    <Link
+                      href="/register"
+                      onClick={() => setIsOpen(false)}
+                      className="text-[11px] text-art-gold hover:underline font-medium inline-flex items-center gap-1"
+                    >
+                      <span>Or open full registration page</span>
+                      <ArrowRight className="w-3 h-3" />
+                    </Link>
+                  </div>
                 </form>
               )}
 

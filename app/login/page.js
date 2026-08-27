@@ -530,24 +530,28 @@ export default function LoginPage() {
                 setVerified={setCloudflareVerified}
               />
 
-              <button
-                type="submit"
-                disabled={isLoading}
-                className="w-full py-4 bg-gradient-to-r from-art-gold via-amber-400 to-art-gold text-art-black font-black text-sm uppercase tracking-wider rounded-xl transition shadow-gold-glow hover:brightness-110 flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 mt-2"
-              >
-                {isLoading ? (
-                  <>
-                    <RefreshCw className="w-5 h-5 animate-spin" />
-                    <span>Creating Account...</span>
-                  </>
-                ) : (
-                  <>
-                    <Sparkles className="w-5 h-5 text-art-black" />
-                    <span>Create Account</span>
-                    <ArrowRight className="w-5 h-5 ml-1" />
-                  </>
-                )}
-              </button>
+              {/* High-Visibility Guaranteed Create Account Button */}
+              <div className="pt-3 w-full">
+                <button
+                  type="submit"
+                  disabled={isLoading}
+                  style={{ minHeight: '56px' }}
+                  className="w-full py-4 px-6 bg-gradient-to-r from-art-gold via-amber-300 to-art-gold hover:brightness-110 active:scale-[0.99] text-art-black font-black text-sm sm:text-base uppercase tracking-widest rounded-xl transition-all shadow-[0_0_30px_rgba(212,175,55,0.7)] border-2 border-amber-200 flex items-center justify-center gap-3 cursor-pointer disabled:opacity-60"
+                >
+                  {isLoading ? (
+                    <>
+                      <RefreshCw className="w-5 h-5 animate-spin text-black" />
+                      <span>Creating Your Account...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="w-5 h-5 text-black shrink-0" />
+                      <span className="font-black text-black">CREATE ACCOUNT</span>
+                      <ArrowRight className="w-5 h-5 text-black shrink-0" />
+                    </>
+                  )}
+                </button>
+              </div>
             </form>
           )}
 
