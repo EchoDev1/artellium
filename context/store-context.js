@@ -486,7 +486,18 @@ export function StoreProvider({ children }) {
       if (savedLoginState) {
         try {
           const parsed = JSON.parse(savedLoginState);
-          if (parsed && parsed.user && parsed.isLoggedIn) {
+          // Purge legacy demo auto-login states from previous sessions
+          if (
+            parsed?.user?.id === 'user-admin-1' || 
+            parsed?.user?.email === 'admin@artellium.com' || 
+            parsed?.user?.name === 'Executive Administrator' ||
+            parsed?.user?.name === 'Dr. Evelyn Carter' ||
+            parsed?.user?.email === 'evelyn@artellium.com'
+          ) {
+            localStorage.removeItem('artellium_login_state');
+            setIsLoggedIn(false);
+            setCurrentUser(null);
+          } else if (parsed && parsed.user && parsed.isLoggedIn) {
             setIsLoggedIn(true);
             setCurrentUser(parsed.user);
           } else {

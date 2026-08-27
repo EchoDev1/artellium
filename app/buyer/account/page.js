@@ -154,11 +154,43 @@ export default function BuyerAccountPage() {
     }
   }, [currentUser, router]);
 
-  if (!currentUser) {
+  if (!currentUser || (currentUser.role !== 'buyer' && currentUser.role !== 'collector')) {
     return (
-      <div className="min-h-screen bg-white flex items-center justify-center text-slate-600 text-xs font-sans">
-        <div className="text-center space-y-3">
-          <p>Please sign in to view your collector account.</p>
+      <div className="min-h-screen bg-[#07080A] flex items-center justify-center p-4 font-sans text-xs">
+        <div className="max-w-md w-full p-8 rounded-3xl bg-[#0c0f17] border border-emerald-500/30 text-center space-y-4 shadow-2xl">
+          <div className="w-14 h-14 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center mx-auto">
+            <UserCheck className="w-7 h-7 text-emerald-400" />
+          </div>
+          <h2 className="font-serif text-lg font-bold text-white">Collector Portal Restricted</h2>
+          <p className="text-slate-400 leading-relaxed text-xs">
+            Please sign in with a verified Collector account to view your acquisitions, orders, and authenticity certificates.
+          </p>
+          <div className="pt-2 flex items-center justify-center gap-3">
+            {currentUser?.role === 'admin' && (
+              <Link
+                href="/admin/dashboard"
+                className="py-2.5 px-4 bg-amber-500 text-black font-bold rounded-xl hover:brightness-110 transition"
+              >
+                Go to Admin Center
+              </Link>
+            )}
+            {currentUser?.role === 'artist' && (
+              <Link
+                href="/artist/dashboard"
+                className="py-2.5 px-4 bg-art-gold text-art-black font-bold rounded-xl hover:brightness-110 transition"
+              >
+                Go to Artist Studio
+              </Link>
+            )}
+            {!currentUser && (
+              <Link
+                href="/login"
+                className="py-2.5 px-5 bg-gradient-to-r from-art-gold to-amber-500 text-art-black font-bold rounded-xl hover:brightness-110 transition uppercase tracking-wider"
+              >
+                Sign In to Account
+              </Link>
+            )}
+          </div>
         </div>
       </div>
     );

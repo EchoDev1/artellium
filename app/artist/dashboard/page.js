@@ -282,11 +282,43 @@ export default function ArtistDashboardPage() {
     setTimeout(() => setSigSaveMsg(false), 3500);
   };
 
-  if (!currentUser) {
+  if (!currentUser || currentUser.role !== 'artist') {
     return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center text-slate-500 text-xs font-sans">
-        <div className="text-center space-y-3">
-          <p>Please sign in to view your artist dashboard.</p>
+      <div className="min-h-screen bg-[#07080A] flex items-center justify-center p-4 font-sans text-xs">
+        <div className="max-w-md w-full p-8 rounded-3xl bg-[#0c0f17] border border-art-gold/30 text-center space-y-4 shadow-2xl">
+          <div className="w-14 h-14 rounded-2xl bg-art-gold/10 border border-art-gold/30 flex items-center justify-center mx-auto">
+            <Palette className="w-7 h-7 text-art-gold" />
+          </div>
+          <h2 className="font-serif text-lg font-bold text-white">Artist Atelier Restricted</h2>
+          <p className="text-slate-400 leading-relaxed text-xs">
+            The Artist Studio Console is strictly accessible to verified Master Artists.
+          </p>
+          <div className="pt-2 flex items-center justify-center gap-3">
+            {currentUser?.role === 'admin' && (
+              <Link
+                href="/admin/dashboard"
+                className="py-2.5 px-4 bg-amber-500 text-black font-bold rounded-xl hover:brightness-110 transition"
+              >
+                Go to Admin Center
+              </Link>
+            )}
+            {currentUser?.role === 'buyer' && (
+              <Link
+                href="/buyer/account"
+                className="py-2.5 px-4 bg-emerald-500 text-white font-bold rounded-xl hover:brightness-110 transition"
+              >
+                Go to Collector Portal
+              </Link>
+            )}
+            {!currentUser && (
+              <Link
+                href="/login"
+                className="py-2.5 px-5 bg-gradient-to-r from-art-gold to-amber-500 text-art-black font-bold rounded-xl hover:brightness-110 transition uppercase tracking-wider"
+              >
+                Sign In to Account
+              </Link>
+            )}
+          </div>
         </div>
       </div>
     );

@@ -491,9 +491,41 @@ export default function AdminDashboardPage() {
 
   if (!currentUser || currentUser.role !== 'admin') {
     return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center text-slate-500 text-xs font-sans">
-        <div className="text-center space-y-3">
-          <p>Security scope warning: Restricted to platform executives.</p>
+      <div className="min-h-screen bg-[#07080A] flex items-center justify-center p-4 font-sans text-xs">
+        <div className="max-w-md w-full p-8 rounded-3xl bg-[#0c0f17] border border-amber-500/30 text-center space-y-4 shadow-2xl">
+          <div className="w-14 h-14 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center mx-auto">
+            <ShieldAlert className="w-7 h-7 text-amber-400" />
+          </div>
+          <h2 className="font-serif text-lg font-bold text-white">Access Restricted</h2>
+          <p className="text-slate-400 leading-relaxed text-xs">
+            The Admin Executive Center is strictly restricted to platform administrators.
+          </p>
+          <div className="pt-2 flex items-center justify-center gap-3">
+            {currentUser?.role === 'artist' && (
+              <Link
+                href="/artist/dashboard"
+                className="py-2.5 px-4 bg-art-gold text-art-black font-bold rounded-xl hover:brightness-110 transition"
+              >
+                Go to Artist Studio
+              </Link>
+            )}
+            {currentUser?.role === 'buyer' && (
+              <Link
+                href="/buyer/account"
+                className="py-2.5 px-4 bg-emerald-500 text-white font-bold rounded-xl hover:brightness-110 transition"
+              >
+                Go to Collector Portal
+              </Link>
+            )}
+            {!currentUser && (
+              <Link
+                href="/login"
+                className="py-2.5 px-5 bg-gradient-to-r from-art-gold to-amber-500 text-art-black font-bold rounded-xl hover:brightness-110 transition uppercase tracking-wider"
+              >
+                Sign In to Account
+              </Link>
+            )}
+          </div>
         </div>
       </div>
     );

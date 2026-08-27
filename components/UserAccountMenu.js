@@ -410,13 +410,13 @@ export default function UserAccountMenu() {
                 </div>
               </div>
 
-              {/* Main Role Action Link */}
-              <div className="space-y-1.5">
+              {/* Role-Specific Portal Navigation (Strictly Isolated - No Cross-Portal Overlaps) */}
+              <div>
                 {currentUser.role === 'buyer' && (
                   <Link
                     href="/buyer/account"
                     onClick={() => setIsOpen(false)}
-                    className="w-full p-2.5 rounded-xl bg-gradient-to-r from-emerald-950/60 to-teal-950/40 border border-emerald-500/40 hover:border-emerald-400 text-emerald-200 hover:text-white flex items-center justify-between text-xs font-semibold transition group"
+                    className="w-full p-3 rounded-xl bg-gradient-to-r from-emerald-950/60 to-teal-950/40 border border-emerald-500/40 hover:border-emerald-400 text-emerald-200 hover:text-white flex items-center justify-between text-xs font-semibold transition group"
                   >
                     <div className="flex items-center gap-2.5">
                       <UserCheck className="w-4 h-4 text-emerald-400 group-hover:scale-110 transition" />
@@ -430,7 +430,7 @@ export default function UserAccountMenu() {
                   <Link
                     href="/artist/dashboard"
                     onClick={() => setIsOpen(false)}
-                    className="w-full p-2.5 rounded-xl bg-gradient-to-r from-art-gold/15 to-amber-950/40 border border-art-gold/40 hover:border-art-gold text-art-gold hover:text-white flex items-center justify-between text-xs font-semibold transition group"
+                    className="w-full p-3 rounded-xl bg-gradient-to-r from-art-gold/15 to-amber-950/40 border border-art-gold/40 hover:border-art-gold text-art-gold hover:text-white flex items-center justify-between text-xs font-semibold transition group"
                   >
                     <div className="flex items-center gap-2.5">
                       <Palette className="w-4 h-4 text-art-gold group-hover:scale-110 transition" />
@@ -444,7 +444,7 @@ export default function UserAccountMenu() {
                   <Link
                     href="/admin/dashboard"
                     onClick={() => setIsOpen(false)}
-                    className="w-full p-2.5 rounded-xl bg-gradient-to-r from-amber-950/60 to-yellow-950/40 border border-amber-500/40 hover:border-amber-400 text-amber-200 hover:text-white flex items-center justify-between text-xs font-semibold transition group"
+                    className="w-full p-3 rounded-xl bg-gradient-to-r from-amber-950/60 to-yellow-950/40 border border-amber-500/40 hover:border-amber-400 text-amber-200 hover:text-white flex items-center justify-between text-xs font-semibold transition group"
                   >
                     <div className="flex items-center gap-2.5">
                       <ShieldCheck className="w-4 h-4 text-amber-400 group-hover:scale-110 transition" />
@@ -453,33 +453,6 @@ export default function UserAccountMenu() {
                     <ArrowRight className="w-3.5 h-3.5 text-amber-400" />
                   </Link>
                 )}
-              </div>
-
-              {/* Secondary Navigation Links */}
-              <div className="pt-2 border-t border-white/5 space-y-1 text-xs text-slate-300">
-                <Link
-                  href="/buyer/account"
-                  onClick={() => setIsOpen(false)}
-                  className="flex items-center justify-between px-3 py-2 rounded-lg hover:bg-white/5 hover:text-white transition"
-                >
-                  <div className="flex items-center gap-2.5">
-                    <ShoppingBag className="w-3.5 h-3.5 text-slate-400" />
-                    <span>My Orders & Provenance</span>
-                  </div>
-                  <span className="text-[10px] text-slate-500 font-mono">{(orders || []).length} orders</span>
-                </Link>
-
-                <Link
-                  href="/register"
-                  onClick={() => setIsOpen(false)}
-                  className="flex items-center justify-between px-3 py-2 rounded-lg hover:bg-white/5 text-art-gold hover:text-white transition"
-                >
-                  <div className="flex items-center gap-2.5">
-                    <Sparkles className="w-3.5 h-3.5 text-art-gold" />
-                    <span className="font-semibold">Register New Account</span>
-                  </div>
-                  <ArrowRight className="w-3 h-3 text-art-gold" />
-                </Link>
               </div>
 
               {/* Logout Button */}
