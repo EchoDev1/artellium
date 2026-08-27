@@ -439,7 +439,24 @@ export function StoreProvider({ children }) {
       }
 
       const savedHome = localStorage.getItem('artellium_home_config');
-      if (savedHome) setHomePageConfig(JSON.parse(savedHome));
+      if (savedHome) {
+        try {
+          const parsed = JSON.parse(savedHome);
+          if (parsed && Array.isArray(parsed.sections)) {
+            const mergedSections = INITIAL_HOMEPAGE_CONFIG.sections.map(initSec => {
+              const existing = parsed.sections.find(s => s.id === initSec.id || s.type === initSec.type);
+              return existing ? { ...initSec, ...existing, isVisible: existing.isVisible !== false } : initSec;
+            });
+            setHomePageConfig({ ...INITIAL_HOMEPAGE_CONFIG, ...parsed, sections: mergedSections });
+          } else {
+            setHomePageConfig(INITIAL_HOMEPAGE_CONFIG);
+          }
+        } catch (e) {
+          setHomePageConfig(INITIAL_HOMEPAGE_CONFIG);
+        }
+      } else {
+        setHomePageConfig(INITIAL_HOMEPAGE_CONFIG);
+      }
 
       const savedFooter = localStorage.getItem('artellium_footer_config');
       if (savedFooter) {

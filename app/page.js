@@ -42,10 +42,15 @@ export default function HomePage() {
     return art.category === selectedCategory;
   });
 
-  const getNewlyListed = (limit = 9) => filteredArtworks
-    .filter((art) => art.isNewlyListed || art.status === 'available')
-    .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
-    .slice(0, limit);
+  const getNewlyListed = (limit = 9) => {
+    const list = filteredArtworks.filter((art) => art.isNewlyListed || art.status === 'available');
+    if (list.length === 0) {
+      return artworks.filter((art) => art.status !== 'sold').slice(0, limit);
+    }
+    return list
+      .sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0))
+      .slice(0, limit);
+  };
 
   const getLiveAuctions = (limit = 3) => artworks
     .filter((art) => art.status === 'auction')
@@ -121,7 +126,7 @@ export default function HomePage() {
       case 'newly_listed': {
         const newlyListed = getNewlyListed(sec.maxItems || 9);
         return (
-          <section key={sec.id} className="space-y-6">
+          <section key={sec.id} id="curated-marketplace" className="space-y-6 scroll-mt-24">
             {/* Dark Green Luxury Heading Banner */}
             <div className="bg-gradient-to-r from-[#04180F]/95 via-[#08291A]/95 to-[#04180F]/95 border border-emerald-600/40 rounded-2xl sm:rounded-3xl p-5 sm:p-6 shadow-xl relative overflow-hidden flex flex-col sm:flex-row sm:items-center justify-between gap-4 backdrop-blur-md">
               <div className="absolute top-0 inset-x-8 h-[1px] bg-gradient-to-r from-transparent via-emerald-400/60 to-transparent" />
