@@ -33,15 +33,27 @@ import {
 } from 'lucide-react';
 
 export default function AuctionsPage() {
-  const { artworks = [], placeBid, currency, currentUser, updateUser } = useStore();
+  const { 
+    artworks = [], 
+    placeBid, 
+    currency, 
+    currentUser, 
+    isLoggedIn, 
+    isBidderRegistered, 
+    registerAuctionBidder, 
+    auctionBidders = [],
+    updateUser 
+  } = useStore();
 
   // Active Tab: 'live' (LIVE NOW), 'upcoming' (UPCOMING), 'past' (PAST AUCTIONS)
   const [activeTab, setActiveTab] = useState('live');
 
   // Bidder Registration State
   const [isBidderRegModalOpen, setIsBidderRegModalOpen] = useState(false);
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [isHighValueApprovalModalOpen, setIsHighValueApprovalModalOpen] = useState(false);
   const [selectedHighValueLot, setSelectedHighValueLot] = useState(null);
+  const [pendingBidLot, setPendingBidLot] = useState(null);
   
   // Custom Bid Modal State
   const [biddingLot, setBiddingLot] = useState(null);
@@ -55,9 +67,29 @@ export default function AuctionsPage() {
   // History Drawer State
   const [historyLotId, setHistoryLotId] = useState(null);
 
-  // User Bidder Status (Persisted or in-memory)
-  const [isBidderRegistered, setIsBidderRegistered] = useState(true);
-  const [hasHighValueApproval, setHasHighValueApproval] = useState(true);
+  // Quick In-Modal Bidder Registration Form State
+  const [bidderForm, setBidderForm] = useState({
+    fullName: currentUser?.name || '',
+    email: currentUser?.email || '',
+    phone: currentUser?.phone || '+234 803 123 4567',
+    country: currentUser?.country || 'Nigeria',
+    city: currentUser?.city || 'Lagos',
+    idType: 'International Passport',
+    idNumber: 'A08942184',
+    biddingTier: 'Standard',
+    bankName: 'WEMA Bank PLC'
+  });
+  const [isRegisteringBidder, setIsRegisteringBidder] = useState(false);
+  const [bidderRegSuccessMsg, setBidderRegSuccessMsg] = useState('');
+
+  // Determine if active user is accredited
+  const isAccredited = Boolean(isLoggedIn && isBidderRegistered && isBidderRegistered(currentUser));
+  const currentBidder = auctionBidders.find(b => 
+    (currentUser?.email && b.email?.toLowerCase() === currentUser.email.toLowerCase()) || 
+    (currentUser?.id && b.id === currentUser.id) || 
+    (currentUser?.name && b.fullName?.toLowerCase() === currentUser.name.toLowerCase())
+  );
+  const hasHighValueApproval = Boolean(isAccredited && (currentBidder?.highValueApproved || currentBidder?.biddingTier === 'Sovereign'));
 
   // Flash notification for Power Bid
   const [flashNotice, setFlashNotice] = useState(null);
@@ -332,6 +364,17 @@ export default function AuctionsPage() {
 
   // Handle Power Bid (+₦100,000 increment)
   const handlePowerBid = (lot) => {
+    if (!isLoggedIn) {
+      setIsAuthModalOpen(true);
+      return;
+    }
+
+    if (!isAccredited) {
+      setPendingBidLot(lot);
+      setIsBidderRegModalOpen(true);
+      return;
+    }
+
     if (lot.isHighValue && !hasHighValueApproval) {
       setSelectedHighValueLot(lot);
       setIsHighValueApprovalModalOpen(true);
@@ -340,7 +383,7 @@ export default function AuctionsPage() {
 
     const increment = 100000;
     const newBidAmount = lot.currentBid + increment;
-    const bidderName = currentUser?.name ? `${currentUser.name} (You)` : 'Dr. Folake Davies (You)';
+    const bidderName = currentUser?.name ? `${currentUser.name} (You)` : 'Accredited Bidder (You)';
 
     setLiveLots(prev => prev.map(l => {
       if (l.id === lot.id) {
@@ -380,6 +423,17 @@ export default function AuctionsPage() {
 
   // Open Custom Bid Modal
   const openCustomBidModal = (lot) => {
+    if (!isLoggedIn) {
+      setIsAuthModalOpen(true);
+      return;
+    }
+
+    if (!isAccredited) {
+      setPendingBidLot(lot);
+      setIsBidderRegModalOpen(true);
+      return;
+    }
+
     if (lot.isHighValue && !hasHighValueApproval) {
       setSelectedHighValueLot(lot);
       setIsHighValueApprovalModalOpen(true);
@@ -394,13 +448,24 @@ export default function AuctionsPage() {
   // Submit Custom Bid
   const handleCustomBidSubmit = (e) => {
     e.preventDefault();
+    if (!isLoggedIn) {
+      setIsAuthModalOpen(true);
+      return;
+    }
+
+    if (!isAccredited) {
+      setPendingBidLot(biddingLot);
+      setIsBidderRegModalOpen(true);
+      return;
+    }
+
     const val = parseFloat(customBidAmount);
     if (!val || val <= biddingLot.currentBid) {
       setBidError(`Bid must exceed current highest bid (${formatPrice(biddingLot.currentBid)})`);
       return;
     }
 
-    const bidderName = currentUser?.name ? `${currentUser.name} (You)` : 'Dr. Folake Davies (You)';
+    const bidderName = currentUser?.name ? `${currentUser.name} (You)` : 'Accredited Bidder (You)';
 
     setLiveLots(prev => prev.map(l => {
       if (l.id === biddingLot.id) {
@@ -436,6 +501,43 @@ export default function AuctionsPage() {
     }, 2000);
   };
 
+  // Instant In-Modal Bidder Accreditation Submit Handler
+  const handleQuickBidderRegistration = (e) => {
+    e.preventDefault();
+    setIsRegisteringBidder(true);
+
+    const bidderId = `ART-BID-${Date.now().toString().slice(-5)}`;
+    
+    if (registerAuctionBidder) {
+      registerAuctionBidder({
+        bidderId,
+        fullName: bidderForm.fullName || currentUser?.name || 'Accredited Collector',
+        email: bidderForm.email || currentUser?.email || 'collector@artellium.com',
+        phone: bidderForm.phone || '+234 803 123 4567',
+        country: bidderForm.country || 'Nigeria',
+        city: bidderForm.city || 'Lagos',
+        idType: bidderForm.idType || 'International Passport',
+        idNumber: bidderForm.idNumber || 'A08942184',
+        biddingTier: bidderForm.biddingTier || 'Standard',
+        highValueApproved: bidderForm.biddingTier === 'Sovereign',
+        categories: ['Paintings', 'Sculptures', 'Bronze']
+      });
+    }
+
+    setTimeout(() => {
+      setIsRegisteringBidder(false);
+      setBidderRegSuccessMsg(`✓ Accredited Bidder Pass Activated (${bidderId})! You can now place live bids.`);
+      setTimeout(() => {
+        setIsBidderRegModalOpen(false);
+        setBidderRegSuccessMsg('');
+        if (pendingBidLot) {
+          openCustomBidModal(pendingBidLot);
+          setPendingBidLot(null);
+        }
+      }, 1500);
+    }, 900);
+  };
+
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8 font-sans pb-24 text-slate-100">
       {/* Global Flash Notice for Power Bid */}
@@ -446,6 +548,50 @@ export default function AuctionsPage() {
             <span className="font-bold text-xs sm:text-sm">{flashNotice.msg}</span>
           </div>
           <button onClick={() => setFlashNotice(null)} className="text-slate-400 hover:text-white text-sm font-bold">✕</button>
+        </div>
+      )}
+
+      {/* Unaccredited Bidder Warning Banner */}
+      {!isAccredited && (
+        <div className="p-4 sm:p-5 bg-gradient-to-r from-amber-950/80 via-black to-amber-950/60 border-2 border-art-gold/50 rounded-2xl shadow-xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 animate-fade-in">
+          <div className="flex items-center gap-3.5">
+            <div className="w-10 h-10 rounded-xl bg-art-gold/20 border border-art-gold/40 text-art-gold flex items-center justify-center shrink-0">
+              <Lock className="w-5 h-5" />
+            </div>
+            <div>
+              <h4 className="font-serif text-sm font-bold text-white flex items-center gap-2">
+                <span>Accredited Bidder Protocol</span>
+                <span className="px-2 py-0.5 rounded-full bg-amber-500/20 text-art-gold text-[9px] font-mono uppercase">
+                  Fiduciary Standard
+                </span>
+              </h4>
+              <p className="text-xs text-slate-300 mt-0.5">
+                To prevent fraudulent bidding and protect sovereign transactions, <strong className="text-art-gold">only verified registered bidders</strong> can place bids in Artellium auctions.
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2 shrink-0 w-full sm:w-auto">
+            {isLoggedIn ? (
+              <button
+                onClick={() => setIsBidderRegModalOpen(true)}
+                className="w-full sm:w-auto px-5 py-2.5 bg-gradient-to-r from-art-gold via-amber-400 to-art-gold text-black font-black text-xs uppercase tracking-wider rounded-xl shadow-gold-glow hover:brightness-110 transition flex items-center justify-center gap-2 cursor-pointer"
+              >
+                <ShieldCheck className="w-4 h-4 text-black" />
+                <span>Accredit My Account Now</span>
+                <ArrowRight className="w-4 h-4 text-black" />
+              </button>
+            ) : (
+              <Link
+                href="/login?redirect=/auctions"
+                className="w-full sm:w-auto px-5 py-2.5 bg-gradient-to-r from-art-gold via-amber-400 to-art-gold text-black font-black text-xs uppercase tracking-wider rounded-xl shadow-gold-glow hover:brightness-110 transition flex items-center justify-center gap-2"
+              >
+                <Lock className="w-4 h-4 text-black" />
+                <span>Sign In to Verify Bidder Pass</span>
+                <ArrowRight className="w-4 h-4 text-black" />
+              </Link>
+            )}
+          </div>
         </div>
       )}
 
@@ -498,21 +644,41 @@ export default function AuctionsPage() {
           </button>
         </div>
 
-        {/* Bidder Status Indicator */}
+        {/* Dynamic Bidder Status Indicator */}
         <div className="flex items-center gap-3">
-          <div className="flex items-center gap-2 bg-black/40 px-3.5 py-1.5 rounded-xl border border-white/10 text-xs">
-            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
-            <span className="text-slate-300 font-mono text-[11px]">
-              Bidder Status: <strong className="text-emerald-400">Accredited (Tier 1)</strong>
-            </span>
-          </div>
+          {isAccredited ? (
+            <button
+              onClick={() => setIsBidderRegModalOpen(true)}
+              className="flex items-center gap-2 bg-emerald-950/70 border border-emerald-500/50 hover:border-emerald-400 px-3.5 py-2 rounded-xl text-xs text-emerald-200 transition shadow-[0_0_15px_rgba(16,185,129,0.25)] cursor-pointer"
+            >
+              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
+              <span className="font-mono text-[11px]">
+                Bidder Pass: <strong className="text-emerald-300">{currentBidder?.bidderId || currentUser?.bidderId || 'ART-BID-88942'} (Accredited)</strong>
+              </span>
+              <ShieldCheck className="w-4 h-4 text-emerald-400 ml-1" />
+            </button>
+          ) : (
+            <button
+              onClick={() => {
+                if (!isLoggedIn) setIsAuthModalOpen(true);
+                else setIsBidderRegModalOpen(true);
+              }}
+              className="flex items-center gap-2 bg-amber-950/60 border border-art-gold/50 hover:border-art-gold px-3.5 py-2 rounded-xl text-xs text-art-gold transition shadow-gold-glow cursor-pointer"
+            >
+              <Lock className="w-3.5 h-3.5 text-art-gold" />
+              <span className="font-mono text-[11px] font-bold">
+                Bidder Status: <strong className="text-amber-300">Accreditation Required</strong>
+              </span>
+              <ArrowRight className="w-3.5 h-3.5 text-art-gold" />
+            </button>
+          )}
 
           <Link
             href="/auctions/register"
-            className="px-3.5 py-1.5 bg-art-gold/15 hover:bg-art-gold/25 text-art-gold border border-art-gold/40 rounded-xl text-xs font-bold transition flex items-center gap-1.5 shadow-sm"
+            className="hidden sm:inline-flex px-3.5 py-2 bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white border border-white/10 rounded-xl text-xs font-semibold transition items-center gap-1.5"
           >
-            <ShieldCheck className="w-3.5 h-3.5" />
-            <span>Register & Verify as Bidder</span>
+            <span>Full Accreditation Portal</span>
+            <ArrowRight className="w-3 h-3 text-slate-400" />
           </Link>
         </div>
       </div>
@@ -1118,52 +1284,225 @@ export default function AuctionsPage() {
       )}
 
       {/* ========================================================================= */}
-      {/* BIDDER REGISTRATION MODAL                                                 */}
+      {/* 1. GUEST AUTH REQUIRED MODAL                                              */}
+      {/* ========================================================================= */}
+      {isAuthModalOpen && (
+        <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-xl flex items-center justify-center p-4">
+          <div className="relative w-full max-w-md bg-[#0A0D14] border border-art-gold/50 rounded-3xl p-6 sm:p-8 shadow-2xl space-y-6 text-xs animate-fade-in">
+            <div className="flex items-center justify-between border-b border-white/10 pb-3">
+              <div className="flex items-center gap-2">
+                <Lock className="w-5 h-5 text-art-gold" />
+                <h3 className="font-serif text-lg font-bold text-white">
+                  Accredited Bidder Authentication
+                </h3>
+              </div>
+              <button onClick={() => setIsAuthModalOpen(false)} className="text-slate-400 hover:text-white text-base">✕</button>
+            </div>
+
+            <div className="text-center space-y-3 py-2">
+              <div className="w-14 h-14 rounded-2xl bg-art-gold/15 border border-art-gold/40 text-art-gold flex items-center justify-center mx-auto shadow-gold-glow">
+                <ShieldCheck className="w-7 h-7" />
+              </div>
+              <h4 className="font-serif text-base font-bold text-white">
+                Live Auction Floor Security
+              </h4>
+              <p className="text-slate-300 text-xs leading-relaxed">
+                In compliance with Pan-African fine art fiduciary policies, only verified registered bidders can place bids on live auction lots.
+              </p>
+            </div>
+
+            <div className="space-y-2.5 pt-2">
+              <Link
+                href="/login?redirect=/auctions"
+                className="w-full py-3.5 bg-gradient-to-r from-art-gold via-amber-400 to-art-gold hover:brightness-110 text-black font-black text-xs uppercase tracking-wider rounded-xl transition shadow-gold-glow flex items-center justify-center gap-2"
+              >
+                <span>Sign In to My Account</span>
+                <ArrowRight className="w-4 h-4 text-black" />
+              </Link>
+
+              <Link
+                href="/register?redirect=/auctions"
+                className="w-full py-3 bg-white/10 hover:bg-white/15 text-white font-bold text-xs uppercase tracking-wider rounded-xl transition flex items-center justify-center gap-2"
+              >
+                <span>Create New Account & Accredit</span>
+              </Link>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* 2. ACCREDITED BIDDER PROFILE & ENROLLMENT MODAL                           */}
       {/* ========================================================================= */}
       {isBidderRegModalOpen && (
         <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-xl flex items-center justify-center p-4">
-          <div className="relative w-full max-w-md bg-[#0A0D14] border border-art-gold/50 rounded-3xl p-6 sm:p-8 shadow-2xl space-y-5 text-xs">
+          <div className="relative w-full max-w-lg bg-[#0A0D14] border border-art-gold/50 rounded-3xl p-6 sm:p-8 shadow-2xl space-y-5 text-xs animate-fade-in max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between border-b border-white/10 pb-3">
               <div className="flex items-center gap-2">
                 <ShieldCheck className="w-5 h-5 text-art-gold" />
                 <h3 className="font-serif text-lg font-bold text-white">
-                  Accredited Bidder Profile
+                  {isAccredited ? 'Accredited Bidder Pass' : 'Instant Bidder Accreditation'}
                 </h3>
               </div>
-              <button onClick={() => setIsBidderRegModalOpen(false)} className="text-slate-400 hover:text-white">✕</button>
+              <button onClick={() => setIsBidderRegModalOpen(false)} className="text-slate-400 hover:text-white text-base">✕</button>
             </div>
 
-            <div className="space-y-2 bg-black/50 p-4 rounded-2xl border border-white/10">
-              <div className="flex justify-between">
-                <span className="text-slate-400">Bidder Name:</span>
-                <span className="text-white font-bold">{currentUser?.name || 'Dr. Folake Davies'}</span>
+            {bidderRegSuccessMsg && (
+              <div className="p-4 bg-emerald-950/90 border border-emerald-500/60 rounded-xl text-emerald-200 text-xs font-bold flex items-center gap-2.5 animate-fade-in">
+                <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0" />
+                <span>{bidderRegSuccessMsg}</span>
               </div>
-              <div className="flex justify-between">
-                <span className="text-slate-400">Bidder ID:</span>
-                <span className="text-art-gold font-mono">ART-BID-88942</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-slate-400">Identity Status:</span>
-                <span className="text-emerald-400 font-bold flex items-center gap-1">
-                  <CheckCircle2 className="w-3.5 h-3.5" />
-                  <span>Verified Government ID</span>
-                </span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-slate-400">Fiduciary Bank:</span>
-                <span className="text-slate-200">WEMA Bank PLC (Settlement Account Linked)</span>
-              </div>
-            </div>
+            )}
 
-            <button
-              onClick={() => {
-                setIsBidderRegModalOpen(false);
-                alert('Bidder verification status refreshed and synced with live auction gateway!');
-              }}
-              className="w-full py-3 bg-slate-800 hover:bg-slate-700 text-white font-bold uppercase rounded-xl transition"
-            >
-              Update Bidding Credentials
-            </button>
+            {isAccredited ? (
+              /* ALREADY ACCREDITED VIEW */
+              <div className="space-y-5">
+                <div className="p-5 rounded-2xl bg-gradient-to-br from-black via-[#0D121B] to-black border border-art-gold/60 space-y-3 shadow-gold-glow">
+                  <div className="flex justify-between items-center border-b border-white/10 pb-2.5">
+                    <span className="font-serif font-black text-art-gold tracking-widest text-xs">
+                      ARTELLIUM AUCTION HOUSE
+                    </span>
+                    <span className="px-2.5 py-0.5 rounded-full bg-emerald-950 text-emerald-300 border border-emerald-500/50 text-[10px] font-mono font-bold flex items-center gap-1">
+                      <CheckCircle2 className="w-3 h-3 text-emerald-400" />
+                      <span>ACCREDITED</span>
+                    </span>
+                  </div>
+
+                  <div className="space-y-1.5 text-xs">
+                    <div className="flex justify-between">
+                      <span className="text-slate-400">Patron Name:</span>
+                      <strong className="text-white font-bold">{currentUser?.name || currentBidder?.fullName || 'Accredited Collector'}</strong>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-slate-400">Accredited Bidder ID:</span>
+                      <strong className="text-art-gold font-mono">{currentBidder?.bidderId || currentUser?.bidderId || 'ART-BID-88942'}</strong>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-slate-400">Bidding Clearance:</span>
+                      <strong className="text-emerald-300 font-medium">
+                        {currentBidder?.biddingTier === 'Sovereign' ? 'Sovereign (Unlimited Live Bidding)' : 'Standard (Up to ₦10,000,000)'}
+                      </strong>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-slate-400">Fiduciary Settlement Bond:</span>
+                      <strong className="text-slate-200">WEMA Bank PLC (Verified)</strong>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex justify-end gap-3 pt-2">
+                  <button
+                    onClick={() => setIsBidderRegModalOpen(false)}
+                    className="w-full py-3.5 bg-gradient-to-r from-art-gold via-amber-400 to-art-gold hover:brightness-110 text-black font-black uppercase text-xs tracking-wider rounded-xl transition shadow-gold-glow cursor-pointer"
+                  >
+                    Return to Live Auction Floor
+                  </button>
+                </div>
+              </div>
+            ) : (
+              /* INSTANT ENROLLMENT FORM */
+              <form onSubmit={handleQuickBidderRegistration} className="space-y-4">
+                <p className="text-slate-300 text-xs leading-relaxed">
+                  Fill in your identity details below to immediately unlock live bidding credentials across all Artellium auction lots.
+                </p>
+
+                <div className="space-y-3 bg-black/40 p-4 rounded-2xl border border-white/10">
+                  <div>
+                    <label className="block text-slate-300 mb-1 font-semibold">Full Legal / Collector Name</label>
+                    <input
+                      type="text"
+                      required
+                      value={bidderForm.fullName}
+                      onChange={e => setBidderForm({ ...bidderForm, fullName: e.target.value })}
+                      placeholder="e.g. Dr. Folake Davies"
+                      className="w-full bg-[#07090E] border border-white/15 rounded-xl p-2.5 text-white focus:border-art-gold focus:outline-none"
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-slate-300 mb-1 font-semibold">Email Address</label>
+                      <input
+                        type="email"
+                        required
+                        value={bidderForm.email}
+                        onChange={e => setBidderForm({ ...bidderForm, email: e.target.value })}
+                        placeholder="e.g. folake@artellium.com"
+                        className="w-full bg-[#07090E] border border-white/15 rounded-xl p-2.5 text-white focus:border-art-gold focus:outline-none"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-slate-300 mb-1 font-semibold">Phone (Live SMS Alerts)</label>
+                      <input
+                        type="tel"
+                        required
+                        value={bidderForm.phone}
+                        onChange={e => setBidderForm({ ...bidderForm, phone: e.target.value })}
+                        className="w-full bg-[#07090E] border border-white/15 rounded-xl p-2.5 text-white font-mono focus:border-art-gold focus:outline-none"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-slate-300 mb-1 font-semibold">Government ID Type</label>
+                      <select
+                        value={bidderForm.idType}
+                        onChange={e => setBidderForm({ ...bidderForm, idType: e.target.value })}
+                        className="w-full bg-[#07090E] border border-white/15 rounded-xl p-2.5 text-white focus:border-art-gold focus:outline-none"
+                      >
+                        <option value="International Passport">International Passport</option>
+                        <option value="National Identification (NIN)">National ID (NIN)</option>
+                        <option value="Driver's License">Driver's License</option>
+                        <option value="Voter's Card">Voter's Card</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-slate-300 mb-1 font-semibold">Document Number</label>
+                      <input
+                        type="text"
+                        required
+                        value={bidderForm.idNumber}
+                        onChange={e => setBidderForm({ ...bidderForm, idNumber: e.target.value })}
+                        className="w-full bg-[#07090E] border border-white/15 rounded-xl p-2.5 text-white font-mono focus:border-art-gold focus:outline-none"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-slate-300 mb-1 font-semibold">Bidding Tier</label>
+                    <select
+                      value={bidderForm.biddingTier}
+                      onChange={e => setBidderForm({ ...bidderForm, biddingTier: e.target.value })}
+                      className="w-full bg-[#07090E] border border-white/15 rounded-xl p-2.5 text-white font-bold focus:border-art-gold focus:outline-none"
+                    >
+                      <option value="Standard">Standard Tier (Live Bids up to ₦10,000,000)</option>
+                      <option value="Sovereign">Sovereign Tier (Unlimited VIP Live Bidding)</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="p-3 bg-emerald-950/30 border border-emerald-500/30 rounded-xl flex items-center gap-2">
+                  <ShieldCheck className="w-4 h-4 text-emerald-400 shrink-0" />
+                  <span className="text-[11px] text-emerald-300">Instant cryptographic accreditation via WEMA Fiduciary Gateway</span>
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={isRegisteringBidder}
+                  className="w-full py-4 bg-gradient-to-r from-art-gold via-amber-400 to-art-gold hover:brightness-110 text-black font-black uppercase text-xs sm:text-sm tracking-wider rounded-xl transition shadow-gold-glow flex items-center justify-center gap-2 cursor-pointer disabled:opacity-60"
+                >
+                  {isRegisteringBidder ? (
+                    <span>Validating & Issuing Bidder Pass...</span>
+                  ) : (
+                    <>
+                      <ShieldCheck className="w-4 h-4 text-black" />
+                      <span>Submit & Activate Accredited Bidder Pass</span>
+                    </>
+                  )}
+                </button>
+              </form>
+            )}
           </div>
         </div>
       )}

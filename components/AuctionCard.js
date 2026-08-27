@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import Link from 'next/link';
 import { useStore } from '@/context/store-context';
 import { 
   Flame, 
@@ -16,17 +17,53 @@ import {
   History, 
   FileText, 
   Download,
-  X 
+  X,
+  Lock,
+  ArrowRight,
+  CheckCircle2
 } from 'lucide-react';
 
 export default function AuctionCard({ artwork }) {
-  const { placeBid, currency, currentUser } = useStore();
+  const { 
+    placeBid, 
+    currency, 
+    currentUser, 
+    isLoggedIn, 
+    isBidderRegistered, 
+    registerAuctionBidder, 
+    auctionBidders = [] 
+  } = useStore();
+
   const [bidAmount, setBidAmount] = useState('');
   const [biddingOpen, setBiddingOpen] = useState(false);
   const [isInvoiceOpen, setIsInvoiceOpen] = useState(false);
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
   const [bidSuccessMessage, setBidSuccessMessage] = useState('');
+  const [bidError, setBidError] = useState('');
   const [flashNotice, setFlashNotice] = useState(null);
+
+  // Accreditation & Auth Modals
+  const [isBidderRegModalOpen, setIsBidderRegModalOpen] = useState(false);
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const [isRegisteringBidder, setIsRegisteringBidder] = useState(false);
+  const [bidderRegSuccessMsg, setBidderRegSuccessMsg] = useState('');
+  const [bidderForm, setBidderForm] = useState({
+    fullName: currentUser?.name || '',
+    email: currentUser?.email || '',
+    phone: currentUser?.phone || '+234 803 123 4567',
+    country: currentUser?.country || 'Nigeria',
+    city: currentUser?.city || 'Lagos',
+    idType: 'International Passport',
+    idNumber: 'A08942184',
+    biddingTier: 'Standard'
+  });
+
+  const isAccredited = Boolean(isLoggedIn && isBidderRegistered && isBidderRegistered(currentUser));
+  const currentBidder = auctionBidders.find(b => 
+    (currentUser?.email && b.email?.toLowerCase() === currentUser.email.toLowerCase()) || 
+    (currentUser?.id && b.id === currentUser.id) || 
+    (currentUser?.name && b.fullName?.toLowerCase() === currentUser.name.toLowerCase())
+  );
 
   // Dynamic values
   const currentBid = artwork.auction?.currentBid || artwork.price;
@@ -72,10 +109,23 @@ export default function AuctionCard({ artwork }) {
 
   const handlePlaceBidSubmit = (e) => {
     e.preventDefault();
-    const parsedBid = parseFloat(bidAmount);
-    if (!parsedBid || parsedBid <= currentBid) return;
+    if (!isLoggedIn) {
+      setIsAuthModalOpen(true);
+      return;
+    }
 
-    const bidderName = currentUser?.name ? `${currentUser.name} (You)` : 'Dr. Folake Davies (You)';
+    if (!isAccredited) {
+      setIsBidderRegModalOpen(true);
+      return;
+    }
+
+    const parsedBid = parseFloat(bidAmount);
+    if (!parsedBid || parsedBid <= currentBid) {
+      setBidError(`Bid must exceed current highest bid (${formatPrice(currentBid)})`);
+      return;
+    }
+
+    const bidderName = currentUser?.name ? `${currentUser.name} (You)` : 'Accredited Bidder (You)';
     placeBid(artwork.id, parsedBid, bidderName);
     
     setBidsFeed(prev => [
@@ -88,12 +138,23 @@ export default function AuctionCard({ artwork }) {
       setBidSuccessMessage('');
       setBiddingOpen(false);
       setBidAmount('');
+      setBidError('');
     }, 2000);
   };
 
   const handlePowerBid = () => {
+    if (!isLoggedIn) {
+      setIsAuthModalOpen(true);
+      return;
+    }
+
+    if (!isAccredited) {
+      setIsBidderRegModalOpen(true);
+      return;
+    }
+
     const newAmount = currentBid + 100000;
-    const bidderName = currentUser?.name ? `${currentUser.name} (You)` : 'Dr. Folake Davies (You)';
+    const bidderName = currentUser?.name ? `${currentUser.name} (You)` : 'Accredited Bidder (You)';
     placeBid(artwork.id, newAmount, bidderName);
 
     setBidsFeed(prev => [
@@ -103,6 +164,39 @@ export default function AuctionCard({ artwork }) {
 
     setFlashNotice(`⚡ Power Bid Placed! You are leading ${lotNumber} at ${formatPrice(newAmount)}.`);
     setTimeout(() => setFlashNotice(null), 4000);
+  };
+
+  const handleQuickBidderRegistration = (e) => {
+    e.preventDefault();
+    setIsRegisteringBidder(true);
+
+    const bidderId = `ART-BID-${Date.now().toString().slice(-5)}`;
+    
+    if (registerAuctionBidder) {
+      registerAuctionBidder({
+        bidderId,
+        fullName: bidderForm.fullName || currentUser?.name || 'Accredited Collector',
+        email: bidderForm.email || currentUser?.email || 'collector@artellium.com',
+        phone: bidderForm.phone || '+234 803 123 4567',
+        country: bidderForm.country || 'Nigeria',
+        city: bidderForm.city || 'Lagos',
+        idType: bidderForm.idType || 'International Passport',
+        idNumber: bidderForm.idNumber || 'A08942184',
+        biddingTier: bidderForm.biddingTier || 'Standard',
+        highValueApproved: bidderForm.biddingTier === 'Sovereign',
+        categories: ['Paintings', 'Sculptures']
+      });
+    }
+
+    setTimeout(() => {
+      setIsRegisteringBidder(false);
+      setBidderRegSuccessMsg(`✓ Accredited Bidder Pass Activated (${bidderId})! You can now place live bids.`);
+      setTimeout(() => {
+        setIsBidderRegModalOpen(false);
+        setBidderRegSuccessMsg('');
+        setBiddingOpen(true);
+      }, 1500);
+    }, 900);
   };
 
   const isHighest = bidsFeed[0]?.bidder?.includes('You') || bidsFeed[0]?.bidder?.includes(currentUser?.name || 'Folake');
@@ -461,6 +555,165 @@ export default function AuctionCard({ artwork }) {
                 <span>Download PDF Statement</span>
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Guest Auth Required Modal */}
+      {isAuthModalOpen && (
+        <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-xl flex items-center justify-center p-4">
+          <div className="relative w-full max-w-md bg-[#0A0D14] border border-art-gold/50 rounded-3xl p-6 sm:p-8 shadow-2xl space-y-6 text-xs animate-fade-in text-left">
+            <div className="flex items-center justify-between border-b border-white/10 pb-3">
+              <div className="flex items-center gap-2">
+                <Lock className="w-5 h-5 text-art-gold" />
+                <h3 className="font-serif text-lg font-bold text-white">
+                  Accredited Bidder Required
+                </h3>
+              </div>
+              <button onClick={() => setIsAuthModalOpen(false)} className="text-slate-400 hover:text-white text-base">✕</button>
+            </div>
+
+            <div className="text-center space-y-3 py-2">
+              <div className="w-14 h-14 rounded-2xl bg-art-gold/15 border border-art-gold/40 text-art-gold flex items-center justify-center mx-auto shadow-gold-glow">
+                <ShieldCheck className="w-7 h-7" />
+              </div>
+              <h4 className="font-serif text-base font-bold text-white">
+                Live Bidding Access Restricted
+              </h4>
+              <p className="text-slate-300 text-xs leading-relaxed">
+                Only verified, accredited bidders can place bids on live auction lots. Please sign in or create an account to activate your bidder pass.
+              </p>
+            </div>
+
+            <div className="space-y-2.5 pt-2">
+              <Link
+                href="/login?redirect=/auctions"
+                className="w-full py-3.5 bg-gradient-to-r from-art-gold via-amber-400 to-art-gold hover:brightness-110 text-black font-black text-xs uppercase tracking-wider rounded-xl transition shadow-gold-glow flex items-center justify-center gap-2"
+              >
+                <span>Sign In to Account</span>
+                <ArrowRight className="w-4 h-4 text-black" />
+              </Link>
+
+              <Link
+                href="/register?redirect=/auctions"
+                className="w-full py-3 bg-white/10 hover:bg-white/15 text-white font-bold text-xs uppercase tracking-wider rounded-xl transition flex items-center justify-center gap-2"
+              >
+                <span>Create New Account</span>
+              </Link>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Quick Bidder Accreditation Modal */}
+      {isBidderRegModalOpen && (
+        <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-xl flex items-center justify-center p-4">
+          <div className="relative w-full max-w-lg bg-[#0A0D14] border border-art-gold/50 rounded-3xl p-6 sm:p-8 shadow-2xl space-y-5 text-xs animate-fade-in text-left max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between border-b border-white/10 pb-3">
+              <div className="flex items-center gap-2">
+                <ShieldCheck className="w-5 h-5 text-art-gold" />
+                <h3 className="font-serif text-lg font-bold text-white">
+                  Instant Bidder Accreditation
+                </h3>
+              </div>
+              <button onClick={() => setIsBidderRegModalOpen(false)} className="text-slate-400 hover:text-white text-base">✕</button>
+            </div>
+
+            {bidderRegSuccessMsg && (
+              <div className="p-4 bg-emerald-950/90 border border-emerald-500/60 rounded-xl text-emerald-200 text-xs font-bold flex items-center gap-2.5 animate-fade-in">
+                <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0" />
+                <span>{bidderRegSuccessMsg}</span>
+              </div>
+            )}
+
+            <form onSubmit={handleQuickBidderRegistration} className="space-y-4">
+              <p className="text-slate-300 text-xs leading-relaxed">
+                Complete your quick accreditation below to activate your official Artellium Bidder Pass and place live bids immediately.
+              </p>
+
+              <div className="space-y-3 bg-black/40 p-4 rounded-2xl border border-white/10">
+                <div>
+                  <label className="block text-slate-300 mb-1 font-semibold">Full Legal / Collector Name</label>
+                  <input
+                    type="text"
+                    required
+                    value={bidderForm.fullName}
+                    onChange={e => setBidderForm({ ...bidderForm, fullName: e.target.value })}
+                    placeholder="e.g. Dr. Folake Davies"
+                    className="w-full bg-[#07090E] border border-white/15 rounded-xl p-2.5 text-white focus:border-art-gold focus:outline-none"
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-slate-300 mb-1 font-semibold">Email Address</label>
+                    <input
+                      type="email"
+                      required
+                      value={bidderForm.email}
+                      onChange={e => setBidderForm({ ...bidderForm, email: e.target.value })}
+                      placeholder="e.g. folake@artellium.com"
+                      className="w-full bg-[#07090E] border border-white/15 rounded-xl p-2.5 text-white focus:border-art-gold focus:outline-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-slate-300 mb-1 font-semibold">Phone Number</label>
+                    <input
+                      type="tel"
+                      required
+                      value={bidderForm.phone}
+                      onChange={e => setBidderForm({ ...bidderForm, phone: e.target.value })}
+                      className="w-full bg-[#07090E] border border-white/15 rounded-xl p-2.5 text-white font-mono focus:border-art-gold focus:outline-none"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-slate-300 mb-1 font-semibold">ID Type</label>
+                    <select
+                      value={bidderForm.idType}
+                      onChange={e => setBidderForm({ ...bidderForm, idType: e.target.value })}
+                      className="w-full bg-[#07090E] border border-white/15 rounded-xl p-2.5 text-white focus:border-art-gold focus:outline-none"
+                    >
+                      <option value="International Passport">International Passport</option>
+                      <option value="National Identification (NIN)">National ID (NIN)</option>
+                      <option value="Driver's License">Driver's License</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-slate-300 mb-1 font-semibold">Document Number</label>
+                    <input
+                      type="text"
+                      required
+                      value={bidderForm.idNumber}
+                      onChange={e => setBidderForm({ ...bidderForm, idNumber: e.target.value })}
+                      className="w-full bg-[#07090E] border border-white/15 rounded-xl p-2.5 text-white font-mono focus:border-art-gold focus:outline-none"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div className="p-3 bg-emerald-950/30 border border-emerald-500/30 rounded-xl flex items-center gap-2">
+                <ShieldCheck className="w-4 h-4 text-emerald-400 shrink-0" />
+                <span className="text-[11px] text-emerald-300">Identity cryptographically cleared under WEMA Fiduciary standards</span>
+              </div>
+
+              <button
+                type="submit"
+                disabled={isRegisteringBidder}
+                className="w-full py-3.5 bg-gradient-to-r from-art-gold via-amber-400 to-art-gold hover:brightness-110 text-black font-black uppercase text-xs tracking-wider rounded-xl transition shadow-gold-glow flex items-center justify-center gap-2 cursor-pointer disabled:opacity-60"
+              >
+                {isRegisteringBidder ? (
+                  <span>Activating Bidder Pass...</span>
+                ) : (
+                  <>
+                    <ShieldCheck className="w-4 h-4 text-black" />
+                    <span>Submit & Activate Accredited Bidder Pass</span>
+                  </>
+                )}
+              </button>
+            </form>
           </div>
         </div>
       )}

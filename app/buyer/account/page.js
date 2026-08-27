@@ -71,6 +71,7 @@ export default function BuyerAccountPage() {
     toggleAuctionReminder,
     placeBid,
     registerAuctionBidder,
+    isBidderRegistered,
     auctionBidders = [],
     addToCart, 
     notifications = [], 
@@ -293,8 +294,14 @@ export default function BuyerAccountPage() {
   };
 
   const handleExecuteQuickBid = (lot, amount) => {
+    const isAccredited = Boolean(isBidderRegistered && isBidderRegistered(currentUser));
+    if (!isAccredited) {
+      setActiveTab('bidding_profile');
+      alert('⚠️ Bidder Accreditation Required: Please complete your identity accreditation profile below before placing live bids.');
+      return;
+    }
     const bidVal = parseFloat(amount);
-    placeBid(lot.id, bidVal, currentUser?.name || 'Verified Collector');
+    placeBid(lot.id, bidVal, currentUser?.name || 'Accredited Collector');
     setBidSuccessNotice(`Your bid of ${formatPrice(bidVal)} on ${lot.title} has been logged as leading high bid!`);
     setBiddingLot(null);
     setCustomBidAmount('');

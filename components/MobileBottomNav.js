@@ -18,6 +18,11 @@ export default function MobileBottomNav() {
   const pathname = usePathname();
   const { cart = [], setIsCartOpen } = useStore();
 
+  // Hide mobile bottom nav on authentication pages to maximize screen space for forms & CTA buttons
+  if (pathname === '/login' || pathname === '/register' || pathname === '/reset-password') {
+    return null;
+  }
+
   const cartCount = cart.reduce((sum, item) => sum + (item.quantity || 1), 0);
 
   const navItems = [

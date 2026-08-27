@@ -948,6 +948,17 @@ export function StoreProvider({ children }) {
   };
   const deleteVideo = (id) => setVideos((prev) => prev.filter((v) => v.id !== id));
 
+  // Check if a given user or current user is an accredited registered bidder
+  const isBidderRegistered = (user = currentUser) => {
+    if (!user) return false;
+    if (user.isBidder || user.isBidderRegistered || user.bidderId) return true;
+    return auctionBidders.some(b => 
+      (b.email && user.email && b.email.toLowerCase() === user.email.toLowerCase()) ||
+      (b.id && user.id && b.id === user.id) ||
+      (b.fullName && user.name && b.fullName.toLowerCase() === user.name.toLowerCase())
+    );
+  };
+
   // Auction Bidding & Bidder Lead Tracking
   const registerAuctionBidder = (bidderData) => {
     const newBidder = {
@@ -955,7 +966,7 @@ export function StoreProvider({ children }) {
       bidderId: bidderData.bidderId || `ART-BID-${Date.now().toString().slice(-5)}`,
       fullName: bidderData.fullName,
       email: bidderData.email,
-      phone: bidderData.phone,
+      phone: bidderData.phone || '+234 803 123 4567',
       country: bidderData.country || 'Nigeria',
       city: bidderData.city || 'Lagos',
       idType: bidderData.idType || 'International Passport',
@@ -971,7 +982,21 @@ export function StoreProvider({ children }) {
       lastBidPlaced: null
     };
 
-    setAuctionBidders(prev => [newBidder, ...prev]);
+    setAuctionBidders(prev => [newBidder, ...prev.filter(b => b.email !== newBidder.email && b.bidderId !== newBidder.bidderId)]);
+
+    if (currentUser) {
+      const updatedUser = {
+        ...currentUser,
+        isBidder: true,
+        isBidderRegistered: true,
+        bidderId: newBidder.bidderId,
+        biddingTier: newBidder.biddingTier,
+        highValueApproved: newBidder.highValueApproved
+      };
+      setCurrentUser(updatedUser);
+      setUsersList(prev => prev.map(u => u.id === currentUser.id || u.email === currentUser.email ? updatedUser : u));
+    }
+
     broadcastNotification(`New accredited bidder registered: ${newBidder.fullName} (${newBidder.bidderId})`);
     return newBidder;
   };
@@ -986,6 +1011,13 @@ export function StoreProvider({ children }) {
   };
 
   const placeBid = (artworkId, bidAmount, bidderName = currentUser?.name || 'Verified Collector') => {
+    // Strict Fiduciary Rule: Only accredited registered bidders can place bids in any live auction
+    const hasBidderCredentials = isBidderRegistered(currentUser) || auctionBidders.some(b => b.fullName.toLowerCase() === bidderName.toLowerCase());
+    if (!hasBidderCredentials) {
+      console.warn(`[Live Auction Security]: Bid rejected for ${bidderName}. User is not an accredited registered bidder.`);
+      return { success: false, error: 'Only accredited registered bidders can place bids in live auctions.' };
+    }
+
     const targetArt = artworks.find(a => a.id === artworkId);
     const artTitle = targetArt?.title || 'Fine Art Lot';
     const lotNum = targetArt?.lotNumber || `Lot #${artworkId?.replace('art-', '80') || '801'}`;
@@ -2061,6 +2093,7 @@ export function StoreProvider({ children }) {
         setArtistCuratorSubmissions,
         placeBid,
         auctionBidders,
+        isBidderRegistered,
         registerAuctionBidder,
         updateBidderHighValueApproval,
         deleteAuctionBidder,

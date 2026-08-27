@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useStore } from '@/context/store-context';
@@ -41,10 +41,22 @@ export default function LoginPage() {
   const [authSuccess, setAuthSuccess] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
+  const submitBtnRef = useRef(null);
+
   // OTP Verification States
   const [otpCode, setOtpCode] = useState('');
   const [resendTimer, setResendTimer] = useState(60);
   const [isResending, setIsResending] = useState(false);
+
+  // Auto-scroll to CREATE ACCOUNT button once Cloudflare verification is completed
+  React.useEffect(() => {
+    if (cloudflareVerified && authMode === 'signup' && submitBtnRef.current) {
+      const timer = setTimeout(() => {
+        submitBtnRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }, 250);
+      return () => clearTimeout(timer);
+    }
+  }, [cloudflareVerified, authMode]);
 
   // Countdown timer for OTP Resend
   React.useEffect(() => {
@@ -546,29 +558,53 @@ export default function LoginPage() {
               </label>
 
               {/* Cloudflare Turnstile Bot Security Widget */}
-              <CloudflareTurnstile
-                verified={cloudflareVerified}
-                setVerified={setCloudflareVerified}
-              />
+              <div className="pt-1">
+                <CloudflareTurnstile
+                  verified={cloudflareVerified}
+                  setVerified={setCloudflareVerified}
+                />
+              </div>
 
-              {/* High-Visibility Guaranteed Create Account Button */}
-              <div className="pt-3 w-full">
+              {/* Cloudflare Verification Status Banner */}
+              {cloudflareVerified ? (
+                <div className="flex items-center justify-center gap-2 py-2 px-3.5 bg-emerald-950/80 border-2 border-emerald-400 rounded-xl text-emerald-200 text-xs font-bold shadow-[0_0_20px_rgba(16,185,129,0.35)] animate-fade-in text-center">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0 animate-pulse" />
+                  <span>Security Verified! Tap Below to Create Account</span>
+                </div>
+              ) : (
+                <div className="flex items-center justify-center gap-1.5 py-1 px-3 bg-white/[0.03] border border-white/10 rounded-xl text-[11px] text-amber-300/80 font-medium text-center">
+                  <ShieldCheck className="w-3.5 h-3.5 text-art-gold shrink-0" />
+                  <span>Complete Cloudflare verification above to proceed</span>
+                </div>
+              )}
+
+              {/* Ultra-Visible Guaranteed Create Account Button */}
+              <div ref={submitBtnRef} className="pt-2 pb-1 w-full">
                 <button
                   type="submit"
                   disabled={isLoading}
-                  style={{ minHeight: '56px' }}
-                  className="w-full py-4 px-6 bg-gradient-to-r from-art-gold via-amber-300 to-art-gold hover:brightness-110 active:scale-[0.99] text-art-black font-black text-sm sm:text-base uppercase tracking-widest rounded-xl transition-all shadow-[0_0_30px_rgba(212,175,55,0.7)] border-2 border-amber-200 flex items-center justify-center gap-3 cursor-pointer disabled:opacity-60"
+                  style={{ minHeight: '62px' }}
+                  className={`w-full py-4 px-6 rounded-2xl font-black text-sm sm:text-base uppercase tracking-widest transition-all duration-300 flex items-center justify-center gap-3 cursor-pointer disabled:opacity-60 relative overflow-hidden group shadow-2xl ${
+                    cloudflareVerified
+                      ? 'bg-gradient-to-r from-[#FFF59D] via-[#FFD700] to-[#F59E0B] text-black border-2 border-amber-200 shadow-[0_0_40px_rgba(255,215,0,0.9)] scale-[1.02] ring-4 ring-amber-300/70 animate-create-account-pulse'
+                      : 'bg-gradient-to-r from-art-gold via-amber-300 to-art-gold text-black border-2 border-amber-200 shadow-[0_0_28px_rgba(212,175,55,0.7)] hover:brightness-110 active:scale-[0.99]'
+                  }`}
                 >
+                  {/* Animated Shimmer Flare Effect */}
+                  <div className="absolute inset-0 -translate-x-full group-hover:translate-x-full bg-gradient-to-r from-transparent via-white/40 to-transparent transition-transform duration-1000 ease-in-out pointer-events-none" />
+
                   {isLoading ? (
                     <>
-                      <RefreshCw className="w-5 h-5 animate-spin text-black" />
-                      <span>Sending Verification Code...</span>
+                      <RefreshCw className="w-5 h-5 animate-spin text-black shrink-0" />
+                      <span className="font-black text-black">Sending Verification Code...</span>
                     </>
                   ) : (
                     <>
-                      <Sparkles className="w-5 h-5 text-black shrink-0" />
-                      <span className="font-black text-black">CREATE ACCOUNT</span>
-                      <ArrowRight className="w-5 h-5 text-black shrink-0" />
+                      <Sparkles className="w-5 h-5 text-black shrink-0 animate-spin-slow" />
+                      <span className="font-black text-black tracking-widest text-sm sm:text-base">
+                        {cloudflareVerified ? 'CREATE ACCOUNT NOW' : 'CREATE ACCOUNT'}
+                      </span>
+                      <ArrowRight className="w-5 h-5 text-black shrink-0 group-hover:translate-x-1.5 transition-transform" />
                     </>
                   )}
                 </button>
