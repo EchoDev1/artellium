@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { useStore } from '@/context/store-context';
 import CloudflareTurnstile from '@/components/CloudflareTurnstile';
+import { triggerEmailNotification } from '@/lib/email-client';
 import { X, CheckCircle2, ShieldCheck, Lock, CreditCard, Sparkles, Building, Phone, Mail, Award, ArrowRight } from 'lucide-react';
 import Link from 'next/link';
 
@@ -74,6 +75,34 @@ export default function CheckoutModal() {
 
     if (res?.order) {
       setCreatedOrderRef(res.order.id);
+
+      // 1. Dispatch Official Payment Confirmation Receipt to Buyer via Resend
+      if (formData.email) {
+        triggerEmailNotification('payment_receipt', formData.email.trim(), {
+          name: formData.fullName || 'Collector',
+          orderId: res.order.id,
+          paymentReference: res.payment?.payment_reference || `WEMA-${Date.now().toString().slice(-6)}`,
+          items: cart,
+          totalAmount: cartTotal,
+          currency,
+          settlementBank: wemaDetails.bankName
+        });
+      }
+
+      // 2. Dispatch Artwork Sold & Payout Notification to each respective Artist
+      cart.forEach((art) => {
+        const artistEmail = art.artistEmail || `${(art.artistName || 'artist').toLowerCase().replace(/[^a-z0-9]/g, '')}@artellium.com`;
+        triggerEmailNotification('artist_sale', artistEmail, {
+          artistName: art.artistName || 'Master Artist',
+          buyerName: formData.fullName || 'Art Patron',
+          artworkTitle: art.title || 'Masterpiece Artwork',
+          grossAmount: art.price || 0,
+          netPayout: Math.round((art.price || 0) * 0.85),
+          platformFee: Math.round((art.price || 0) * 0.15),
+          currency,
+          orderId: res.order.id
+        });
+      });
     }
 
     setTimeout(() => {

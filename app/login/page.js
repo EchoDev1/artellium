@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useStore } from '@/context/store-context';
 import CloudflareTurnstile from '@/components/CloudflareTurnstile';
+import { triggerEmailNotification } from '@/lib/email-client';
 import {
   Sparkles,
   Lock,
@@ -88,6 +89,11 @@ export default function LoginPage() {
 
       if (res.success) {
         setAuthSuccess(`Welcome back, ${res.user.name || 'Collector'}!`);
+        // Dispatch security notification to the user's email
+        triggerEmailNotification('login_alert', email.trim(), {
+          name: res.user.name || 'Collector',
+          role: res.user.role || 'buyer'
+        });
         setTimeout(() => {
           if (res.user.role === 'admin') router.push('/admin/dashboard');
           else if (res.user.role === 'artist') router.push('/artist/dashboard');
@@ -587,12 +593,25 @@ export default function LoginPage() {
                 </button>
                 <button
                   type="button"
-                  onClick={() => {
+                  onClick={async () => {
+                    if (!email || !email.includes('@')) {
+                      setAuthError('Please enter a valid registered email address.');
+                      return;
+                    }
                     setIsLoading(true);
-                    setTimeout(() => {
-                      setIsLoading(false);
-                      setAuthSuccess(`Password reset instructions sent to ${email || 'your email'}.`);
-                    }, 500);
+                    setAuthError('');
+                    const resetCode = Math.floor(100000 + Math.random() * 900000).toString();
+                    const appOrigin = typeof window !== 'undefined' ? window.location.origin : 'https://artellium.africa';
+                    const resetLink = `${appOrigin}/reset-password?code=${resetCode}&email=${encodeURIComponent(email.trim())}`;
+                    
+                    await triggerEmailNotification('password_reset', email.trim(), {
+                      name: 'Art Patron',
+                      code: resetCode,
+                      resetLink
+                    });
+
+                    setIsLoading(false);
+                    setAuthSuccess(`Password reset instructions & 6-digit token dispatched to ${email.trim()}!`);
                   }}
                   disabled={isLoading}
                   className="flex-1 py-3 bg-gradient-to-r from-art-gold to-amber-500 text-art-black font-bold uppercase tracking-wider rounded-xl transition shadow-gold-glow hover:brightness-110 flex items-center justify-center gap-2 cursor-pointer"

@@ -31,6 +31,7 @@ import {
   createDbCommission, 
   disburseDbCommission 
 } from '@/lib/db';
+import { triggerEmailNotification } from '@/lib/email-client';
 
 const StoreContext = createContext();
 
@@ -1038,6 +1039,40 @@ export function StoreProvider({ children }) {
         return [autoBidder, ...prev];
       }
     });
+
+    // 1. Dispatch Bid Confirmation Email to active bidder via Resend
+    const bidderEmail = currentUser?.email || `${bidderName.toLowerCase().replace(/[^a-z0-9]/g, '')}@artellium-patron.com`;
+    const appOrigin = typeof window !== 'undefined' ? window.location.origin : 'https://artellium.africa';
+
+    triggerEmailNotification('bid_confirmation', bidderEmail, {
+      name: bidderName,
+      lotNumber: lotNum,
+      artworkTitle: artTitle,
+      artistName: targetArt?.artistName || 'Pan-African Master',
+      bidAmount: bidAmount,
+      currency: currency || 'NGN',
+      auctionUrl: `${appOrigin}/auctions`
+    });
+
+    // 2. Dispatch Outbid Alert Email to the displaced highest bidder
+    const previousBidderName = targetArt?.auction?.lastBidder;
+    const previousBidAmount = targetArt?.auction?.currentBid;
+
+    if (previousBidderName && previousBidderName.toLowerCase() !== bidderName.toLowerCase()) {
+      const prevBidderObj = auctionBidders.find(b => b.fullName.toLowerCase() === previousBidderName.toLowerCase());
+      const prevEmail = prevBidderObj?.email || `${previousBidderName.toLowerCase().replace(/[^a-z0-9]/g, '')}@artellium-patron.com`;
+
+      triggerEmailNotification('outbid_alert', prevEmail, {
+        name: previousBidderName,
+        lotNumber: lotNum,
+        artworkTitle: artTitle,
+        artistName: targetArt?.artistName || 'Pan-African Master',
+        currentBid: bidAmount,
+        previousBid: previousBidAmount,
+        currency: currency || 'NGN',
+        auctionUrl: `${appOrigin}/auctions`
+      });
+    }
 
     broadcastNotification(`⚡ New bid of ₦${bidAmount.toLocaleString()} placed on ${lotNum} (${artTitle}) by ${bidderName}`);
   };

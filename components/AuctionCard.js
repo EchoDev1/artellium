@@ -115,6 +115,9 @@ export default function AuctionCard({ artwork }) {
         <img
           src={artwork.image}
           alt={artwork.title}
+          onError={(e) => {
+            e.currentTarget.src = 'https://images.unsplash.com/photo-1582561424760-0321d75e81fa?q=80&w=1000&auto=format&fit=crop';
+          }}
           className="w-full h-full object-cover group-hover:scale-105 transition duration-700"
         />
         

@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useStore } from '@/context/store-context';
+import { triggerEmailNotification } from '@/lib/email-client';
 import { Crown, CheckCircle2, Award, Sparkles, ArrowRight, ShieldCheck } from 'lucide-react';
 
 export default function ArtistRegisterPage() {
@@ -25,6 +26,17 @@ export default function ArtistRegisterPage() {
     e.preventDefault();
     setIsSubmitted(true);
     switchUserRole('artist');
+
+    // Trigger Artist Welcome & Atelier Setup Email via Resend
+    if (formData.email) {
+      triggerEmailNotification('artist_welcome', formData.email.trim(), {
+        name: formData.fullName || 'Master Artist',
+        plan: selectedPlan === 'premium' ? 'Premium Tier' : 'Standard Category',
+        billingCycle: billingCycle === 'yearly' ? 'Yearly Billing' : 'Monthly Billing',
+        price: selectedPlan === 'premium' ? '₦50,000 / mo' : '₦30,000 / mo'
+      });
+    }
+
     setTimeout(() => {
       router.push('/artist/dashboard');
     }, 2000);
