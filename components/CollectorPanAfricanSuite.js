@@ -44,14 +44,12 @@ export default function CollectorPanAfricanSuite({ onOpenCertModal }) {
   const [activeTab, setActiveTab] = useState('claimed_deals'); // 'claimed_deals', 'royal_inquiries', 'provenance_vault', 'curator_library', 'currency_settings'
   const [copiedHash, setCopiedHash] = useState(null);
 
-  // Filter inquiries and blocks for current user/demo collector
+  // Filter inquiries for current authenticated collector
   const myInquiries = royalInquiries.filter(inq => 
-    inq.collectorEmail?.toLowerCase() === currentUser?.email?.toLowerCase() ||
-    currentUser?.email === 'admin@artellium.com' ||
-    !currentUser?.email
+    Boolean(inq.collectorEmail && currentUser?.email && inq.collectorEmail.toLowerCase() === currentUser.email.toLowerCase())
   );
 
-  const myClaimedDeals = flashDeals.slice(0, 2);
+  const myClaimedDeals = [];
 
   const handleCopyHash = (hash) => {
     navigator.clipboard?.writeText(hash);

@@ -62,58 +62,24 @@ export function StoreProvider({ children }) {
   // Currency: NGN ₦ (Default) or USD $
   const [currency, setCurrency] = useState('NGN');
 
-  // Legacy Transactions State
-  const [transactions, setTransactions] = useState([
-    {
-      id: 'txn-royal-88942',
-      artworkId: 'art-ancestral-horizon',
-      artworkTitle: 'The Ancestral Horizon',
-      artistName: 'Kofi Mensah',
-      price: 1850000,
-      buyerName: 'Dr. Evelyn Carter',
-      buyerEmail: 'evelyn@artellium.com',
-      paymentMethod: 'wema_bank',
-      status: 'settled_wema',
-      settlement_account: '0123456789 (Wema Bank PLC)',
-      date: new Date(Date.now() - 3600000 * 24 * 3).toISOString()
-    }
-  ]);
+  // Transactions State
+  const [transactions, setTransactions] = useState([]);
 
   // Curator Applications Queue state
-  const [curatorApplications, setCuratorApplications] = useState([
-    { id: 'app-1', name: 'Dr. Koffi Badu', gallery: 'National Museum of Ghana', date: '2026-08-16', status: 'pending' },
-    { id: 'app-2', name: 'Marie-Therese des Souzas', gallery: 'Musee des Civilisations (Abidjan)', date: '2026-08-15', status: 'pending' }
-  ]);
+  const [curatorApplications, setCuratorApplications] = useState([]);
 
   // Artist Digital Certificate Signatures
-  const [artistSignatures, setArtistSignatures] = useState({
-    'Kofi Mensah': { style: 'Heritage Calligraphy', signed: true, drawn: null },
-    'Amina Diallo': { style: 'African Royal Script', signed: true, drawn: null }
-  });
+  const [artistSignatures, setArtistSignatures] = useState({});
 
   // Collector Bourse Private Buyout Offers
-  const [privateOffers, setPrivateOffers] = useState([
-    {
-      id: 'offer-1',
-      artworkId: 'art-ancestral-horizon',
-      artworkTitle: 'The Ancestral Horizon',
-      collectorId: 'user-buyer-1',
-      offererName: 'Aliko Dangote Jr.',
-      offerAmount: 2100000,
-      date: '2026-08-16',
-      status: 'pending'
-    }
-  ]);
+  const [privateOffers, setPrivateOffers] = useState([]);
 
   // Wishlist, Followed Artists, Auction Reminders, Notifications, Q&A, Collector Offers
   const [wishlist, setWishlist] = useState([]);
-  const [followedArtists, setFollowedArtists] = useState(['artist-1', 'artist-2', 'artist-4']);
-  const [auctionReminders, setAuctionReminders] = useState(['art-102', 'art-108']);
+  const [followedArtists, setFollowedArtists] = useState([]);
+  const [auctionReminders, setAuctionReminders] = useState([]);
   const [notifications, setNotifications] = useState([]);
-  const [artworkQuestions, setArtworkQuestions] = useState([
-    { id: 'q-1', artworkId: 'art-101', question: 'Is the gold leaf 24k as described? Does it tarnish over time?', askedBy: 'Dr. Yewande Okafor', date: '2026-02-11', answer: 'Yes, it is genuine 24k gold leaf applied over a gesso base. It will not tarnish. I seal it with a conservation-grade varnish.', answeredBy: 'Kofi Mensah', answeredDate: '2026-02-11' },
-    { id: 'q-2', artworkId: 'art-104', question: 'Can the brass inlay be customized with a family crest or initials?', askedBy: 'James Whitfield', date: '2026-02-13', answer: null, answeredBy: null, answeredDate: null },
-  ]);
+  const [artworkQuestions, setArtworkQuestions] = useState([]);
   const [collectorOffers, setCollectorOffers] = useState([]);
   const [artistPayoutPercentage, setArtistPayoutPercentage] = useState(() => {
     if (typeof window !== 'undefined') {
@@ -145,133 +111,7 @@ export function StoreProvider({ children }) {
   const [panAfricanCurrencies, setPanAfricanCurrencies] = useState(PAN_AFRICAN_CURRENCIES || {});
 
   // Auction Bidders & Patron Lead Directory (for Admin and Notification Broadcasts)
-  const [auctionBidders, setAuctionBidders] = useState([
-    {
-      id: 'bidder-1',
-      bidderId: 'ART-BID-88942',
-      fullName: 'Dr. Folake Davies',
-      email: 'folake@daviesholdings.com',
-      phone: '+234 803 555 1290',
-      country: 'Nigeria',
-      city: 'Lagos',
-      idType: 'International Passport',
-      idNumber: 'A08942184',
-      biddingTier: 'Sovereign',
-      verified: true,
-      highValueApproved: true,
-      registeredAt: '2026-02-10T09:00:00Z',
-      categories: ['Sculptures', 'Bronze', 'Paintings'],
-      totalBidsPlaced: 14,
-      totalVolumeBidded: 28500000,
-      activeLots: ['Lot #803', 'Lot #801'],
-      lastBidPlaced: {
-        lotNumber: 'Lot #803',
-        artworkTitle: 'The Golden Benin Queen',
-        amount: 9100000,
-        time: '2026-02-23T06:15:00Z'
-      }
-    },
-    {
-      id: 'bidder-2',
-      bidderId: 'ART-BID-88901',
-      fullName: 'Sotheby’s Patron Desk (London)',
-      email: 'patron.desk@sothebys-london.co.uk',
-      phone: '+44 20 7293 5000',
-      country: 'United Kingdom',
-      city: 'London',
-      idType: 'Corporate Trust Entity ID',
-      idNumber: 'GB-CORP-9921',
-      biddingTier: 'Sovereign',
-      verified: true,
-      highValueApproved: true,
-      registeredAt: '2026-02-12T14:30:00Z',
-      categories: ['Paintings', 'Sculptures', 'Limited edition collections'],
-      totalBidsPlaced: 22,
-      totalVolumeBidded: 45000000,
-      activeLots: ['Lot #803', 'Lot #802'],
-      lastBidPlaced: {
-        lotNumber: 'Lot #803',
-        artworkTitle: 'The Golden Benin Queen',
-        amount: 9000000,
-        time: '2026-02-23T06:12:00Z'
-      }
-    },
-    {
-      id: 'bidder-3',
-      bidderId: 'ART-BID-88764',
-      fullName: 'Nairobi Fine Arts Circle',
-      email: 'acquisitions@nairobiarts.org',
-      phone: '+254 711 982 341',
-      country: 'Kenya',
-      city: 'Nairobi',
-      idType: 'Institutional Trust ID',
-      idNumber: 'KE-TRUST-4412',
-      biddingTier: 'Sovereign',
-      verified: true,
-      highValueApproved: true,
-      registeredAt: '2026-02-14T11:20:00Z',
-      categories: ['Paintings', 'Drawings', 'Textiles'],
-      totalBidsPlaced: 18,
-      totalVolumeBidded: 32000000,
-      activeLots: ['Lot #803', 'Lot #802'],
-      lastBidPlaced: {
-        lotNumber: 'Lot #803',
-        artworkTitle: 'The Golden Benin Queen',
-        amount: 8900000,
-        time: '2026-02-23T06:05:00Z'
-      }
-    },
-    {
-      id: 'bidder-4',
-      bidderId: 'ART-BID-88412',
-      fullName: 'Dr. O. Adebayo',
-      email: 'adebayo.collector@lagosart.ng',
-      phone: '+234 802 334 8812',
-      country: 'Nigeria',
-      city: 'Lagos',
-      idType: 'National Identification (NIN)',
-      idNumber: 'NIN-9941289123',
-      biddingTier: 'Standard',
-      verified: true,
-      highValueApproved: false,
-      registeredAt: '2026-02-15T08:15:00Z',
-      categories: ['Sculptures', 'Woodworks', 'Metal works'],
-      totalBidsPlaced: 8,
-      totalVolumeBidded: 12400000,
-      activeLots: ['Lot #801'],
-      lastBidPlaced: {
-        lotNumber: 'Lot #801',
-        artworkTitle: 'Warrior of the Bronze Empire',
-        amount: 3400000,
-        time: '2026-02-23T05:45:00Z'
-      }
-    },
-    {
-      id: 'bidder-5',
-      bidderId: 'ART-BID-88390',
-      fullName: 'Tariq A. (Dubai)',
-      email: 'tariq.art@gulfpatrons.ae',
-      phone: '+971 50 123 9876',
-      country: 'United Arab Emirates',
-      city: 'Dubai',
-      idType: 'International Passport',
-      idNumber: 'UAE-P-88914',
-      biddingTier: 'Sovereign',
-      verified: true,
-      highValueApproved: true,
-      registeredAt: '2026-02-16T16:40:00Z',
-      categories: ['Paintings', 'Textiles', 'Ceramics'],
-      totalBidsPlaced: 11,
-      totalVolumeBidded: 24000000,
-      activeLots: ['Lot #802'],
-      lastBidPlaced: {
-        lotNumber: 'Lot #802',
-        artworkTitle: 'Daughters of the Nile',
-        amount: 4800000,
-        time: '2026-02-23T05:30:00Z'
-      }
-    }
-  ]);
+  const [auctionBidders, setAuctionBidders] = useState([]);
 
   // 4 Core Admin Page Configs: Header, Hero, Home, Footer
   const [headerConfig, setHeaderConfig] = useState(INITIAL_HEADER_CONFIG);
@@ -300,60 +140,24 @@ export function StoreProvider({ children }) {
     isEnabled: true
   });
 
-  const [priorityBannerPlacements, setPriorityBannerPlacements] = useState([
-    {
-      id: 'pbp-101',
-      artworkId: 'art-101',
-      title: 'The Ancestral Horizon',
-      artistName: 'Kofi Mensah',
-      artistId: 'artist-1',
-      country: 'Ghana',
-      countryFlag: '🇬🇭',
-      medium: 'Oil & 24K Gold Leaf on Canvas',
-      dimensions: '150 x 120 cm',
-      price: 1850000,
-      priceUSD: 1250,
-      image: 'https://images.unsplash.com/photo-1579783902614-a3fb3927b675?auto=format&fit=crop&q=80&w=1000',
-      plan: 'monthly',
-      pricePaid: 50000,
-      status: 'active',
-      startDate: '2026-02-01',
-      endDate: '2026-03-01'
-    },
-    {
-      id: 'pbp-102',
-      artworkId: 'art-102',
-      title: 'Warrior of the Bronze Empire',
-      artistName: 'Amina Diallo',
-      artistId: 'artist-2',
-      country: 'Nigeria',
-      countryFlag: '🇳🇬',
-      medium: 'Cast Bronze & Ebony Wood Base',
-      dimensions: '85 x 40 x 35 cm',
-      price: 3200000,
-      priceUSD: 2150,
-      image: 'https://images.unsplash.com/photo-1544717305-2782549b5136?auto=format&fit=crop&q=80&w=1000',
-      plan: 'monthly',
-      pricePaid: 50000,
-      status: 'active',
-      startDate: '2026-02-05',
-      endDate: '2026-03-05'
-    }
-  ]);
+  const [priorityBannerPlacements, setPriorityBannerPlacements] = useState([]);
 
-  const MOCK_VERSION = 'v14-contact-update';
+  const MOCK_VERSION = 'v15-clean-portals';
 
   // 1. Load from LocalStorage synchronously first
   useEffect(() => {
     try {
       const storedVersion = localStorage.getItem('artellium_mock_version');
       if (storedVersion !== MOCK_VERSION) {
-        localStorage.removeItem('artellium_artworks');
         localStorage.removeItem('artellium_orders');
         localStorage.removeItem('artellium_payments');
         localStorage.removeItem('artellium_commissions');
-        localStorage.removeItem('artellium_footer_config');
-        localStorage.removeItem('artellium_hero_config');
+        localStorage.removeItem('artellium_transactions');
+        localStorage.removeItem('artellium_questions');
+        localStorage.removeItem('artellium_collector_offers');
+        localStorage.removeItem('artellium_bidders');
+        localStorage.removeItem('artellium_priority_banners');
+        localStorage.removeItem('artellium_inquiries');
         localStorage.setItem('artellium_mock_version', MOCK_VERSION);
       }
 
@@ -370,13 +174,28 @@ export function StoreProvider({ children }) {
       }
 
       const savedOrders = localStorage.getItem('artellium_orders');
-      if (savedOrders) setOrders(JSON.parse(savedOrders));
+      if (savedOrders) {
+        try {
+          const parsed = JSON.parse(savedOrders);
+          setOrders(Array.isArray(parsed) ? parsed.filter(o => o.id !== 'ord-101' && o.id !== 'ord-102') : []);
+        } catch (e) { setOrders([]); }
+      }
 
       const savedPayments = localStorage.getItem('artellium_payments');
-      if (savedPayments) setPayments(JSON.parse(savedPayments));
+      if (savedPayments) {
+        try {
+          const parsed = JSON.parse(savedPayments);
+          setPayments(Array.isArray(parsed) ? parsed.filter(p => p.id !== 'pay-101' && p.id !== 'pay-102') : []);
+        } catch (e) { setPayments([]); }
+      }
 
       const savedCommissions = localStorage.getItem('artellium_commissions');
-      if (savedCommissions) setCommissions(JSON.parse(savedCommissions));
+      if (savedCommissions) {
+        try {
+          const parsed = JSON.parse(savedCommissions);
+          setCommissions(Array.isArray(parsed) ? parsed.filter(c => c.id !== 'comm-101' && c.id !== 'comm-102') : []);
+        } catch (e) { setCommissions([]); }
+      }
 
       const savedSellers = localStorage.getItem('artellium_sellers');
       if (savedSellers) setSellers(JSON.parse(savedSellers));
@@ -404,7 +223,33 @@ export function StoreProvider({ children }) {
 
       const savedUsers = localStorage.getItem('artellium_users');
       if (savedUsers) {
-        setUsersList(JSON.parse(savedUsers));
+        try {
+          const parsed = JSON.parse(savedUsers);
+          const adminUser = INITIAL_USERS.find(u => u.role === 'admin') || {
+            id: 'user-admin-1',
+            name: 'Executive Administrator (Dakore Ekpendu)',
+            email: 'Ekpendudakore@gmail.com',
+            role: 'admin',
+            password: 'ladydakore@artellium90',
+            phone: '+234 800 000 0001',
+            country: 'Nigeria',
+            subscription_tier: 'premium',
+            status: 'active',
+            statusReason: '',
+            created_at: '2026-01-01T00:00:00Z',
+            lastActive: new Date().toISOString(),
+            cloudflareVerified: true,
+            ipAddress: '102.89.22.10',
+            securityIncidents: []
+          };
+          // Upsert current admin and remove legacy admin entry
+          const withoutOldAdmins = parsed.filter(u => u.role !== 'admin' && u.email?.toLowerCase() !== 'admin@artellium.com' && u.email?.toLowerCase() !== 'ekpendudakore@gmail.com');
+          const mergedUsers = [adminUser, ...withoutOldAdmins];
+          setUsersList(mergedUsers);
+          localStorage.setItem('artellium_users', JSON.stringify(mergedUsers));
+        } catch (e) {
+          setUsersList(INITIAL_USERS);
+        }
       } else {
         setUsersList(INITIAL_USERS);
       }
@@ -1347,10 +1192,36 @@ export function StoreProvider({ children }) {
     const cleanEmail = (email || '').trim().toLowerCase();
     
     // Check credentials against users database
-    const user = usersList.find(u => 
+    let user = usersList.find(u => 
       u.email.toLowerCase() === cleanEmail && 
       (!u.password || u.password === password)
     );
+
+    // Guaranteed Admin Master Access for Ekpendudakore@gmail.com
+    if (!user && cleanEmail === 'ekpendudakore@gmail.com' && password === 'ladydakore@artellium90') {
+      user = {
+        id: 'user-admin-1',
+        name: 'Executive Administrator (Dakore Ekpendu)',
+        email: 'Ekpendudakore@gmail.com',
+        role: 'admin',
+        password: 'ladydakore@artellium90',
+        phone: '+234 800 000 0001',
+        country: 'Nigeria',
+        subscription_tier: 'premium',
+        status: 'active',
+        statusReason: '',
+        created_at: '2026-01-01T00:00:00Z',
+        lastActive: new Date().toISOString(),
+        cloudflareVerified: true,
+        ipAddress: '102.89.22.10',
+        securityIncidents: []
+      };
+      const updatedList = [user, ...usersList.filter(u => u.email.toLowerCase() !== 'ekpendudakore@gmail.com')];
+      setUsersList(updatedList);
+      try {
+        localStorage.setItem('artellium_users', JSON.stringify(updatedList));
+      } catch (e) {}
+    }
 
     if (!user) {
       return { success: false, message: 'Invalid email address or password. Please verify your credentials.' };

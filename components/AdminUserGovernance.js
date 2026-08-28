@@ -519,25 +519,25 @@ export default function AdminUserGovernance({
                         {user.role === 'artist' ? (
                           <div className="space-y-0.5 text-[11px]">
                             <p className="font-bold text-slate-900">
-                              Volume: <span className="font-mono text-emerald-700">{formatPrice(user.totalSalesVolume || 5000000)}</span>
+                              Volume: <span className="font-mono text-emerald-700">{formatPrice(user.totalSalesVolume || 0)}</span>
                             </p>
                             <p className="text-slate-500 text-[10px]">
-                              Catalog: <strong>{user.artworksCount || userSeller?.artworksCount || 4} Artworks</strong>
+                              Catalog: <strong>{user.artworksCount || userSeller?.artworksCount || 0} Artworks</strong>
                             </p>
                             <p className="text-slate-400 text-[9.5px] truncate max-w-[140px]" title={user.payoutBank || userSeller?.payout_bank}>
-                              Payout: {user.payoutBank || userSeller?.payout_bank || 'WEMA Bank PLC'}
+                              Payout: {user.payoutBank || userSeller?.payout_bank || 'Pending Setup'}
                             </p>
                           </div>
                         ) : (
                           <div className="space-y-0.5 text-[11px]">
                             <p className="font-bold text-slate-900">
-                              Transacted: <span className="font-mono text-emerald-700">{formatPrice(user.totalSpent || 1850000)}</span>
+                              Transacted: <span className="font-mono text-emerald-700">{formatPrice(user.totalSpent || 0)}</span>
                             </p>
                             <p className="text-slate-500 text-[10px]">
-                              Bids: <strong>{user.totalBidsPlaced || 8} Live Bids</strong>
+                              Bids: <strong>{user.totalBidsPlaced || 0} Live Bids</strong>
                             </p>
                             <p className="text-slate-400 text-[9.5px]">
-                              Acquisitions: <strong>{user.totalAcquisitions || 2} Works</strong>
+                              Acquisitions: <strong>{user.totalAcquisitions || 0} Works</strong>
                             </p>
                           </div>
                         )}
