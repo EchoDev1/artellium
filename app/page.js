@@ -85,29 +85,29 @@ export default function HomePage() {
         if (auctionsList.length === 0) return null;
         return (
           <section key={sec.id} className="space-y-6">
-            {/* Dark Green Luxury Heading Banner */}
-            <div className="bg-gradient-to-r from-[#04180F]/95 via-[#08291A]/95 to-[#04180F]/95 border border-emerald-600/40 rounded-2xl sm:rounded-3xl p-5 sm:p-6 shadow-xl relative overflow-hidden flex flex-col sm:flex-row sm:items-center justify-between gap-4 backdrop-blur-md">
-              <div className="absolute top-0 inset-x-8 h-[1px] bg-gradient-to-r from-transparent via-emerald-400/60 to-transparent" />
+            {/* Gold Luxury Heading Banner */}
+            <div className="bg-gradient-to-r from-[#1F1705]/95 via-[#3E2D07]/95 to-[#1F1705]/95 border-2 border-art-gold/60 rounded-2xl sm:rounded-3xl p-5 sm:p-6 shadow-[0_6px_30px_rgba(212,175,55,0.25)] relative overflow-hidden flex flex-col sm:flex-row sm:items-center justify-between gap-4 backdrop-blur-md">
+              <div className="absolute top-0 inset-x-8 h-[2px] bg-gradient-to-r from-transparent via-amber-300 to-transparent" />
               <div className="space-y-1 relative z-10">
                 <div className="flex items-center gap-2 mb-1 font-sans">
                   <span className="p-1.5 rounded-lg bg-red-950/80 text-red-400 border border-red-500/40 shadow-sm">
                     <Flame className="w-4 h-4 text-red-500 animate-pulse" />
                   </span>
-                  <span className="text-xs font-bold text-red-400 uppercase tracking-widest font-mono">
+                  <span className="text-xs font-bold text-art-gold uppercase tracking-widest font-mono">
                     {sec.badge || 'LIVE BIDDING ARENA'}
                   </span>
                 </div>
-                <h2 className="font-serif text-2xl sm:text-3xl font-bold text-red-500 tracking-wide">
+                <h2 className="font-serif text-2xl sm:text-3xl font-bold text-white tracking-wide">
                   {sec.title || 'Live Fine Art Auctions'}
                 </h2>
-                <p className="text-xs sm:text-sm text-emerald-100/70 font-sans max-w-2xl leading-relaxed">
+                <p className="text-xs sm:text-sm text-amber-100/80 font-sans max-w-2xl leading-relaxed">
                   {sec.subtitle || 'Participate in real-time competitive bidding for high-value African masterworks.'}
                 </p>
               </div>
 
               <Link
                 href="/auctions"
-                className="text-xs font-bold text-art-gold hover:text-white flex items-center gap-1.5 bg-emerald-950/80 hover:bg-emerald-900/90 border border-emerald-500/50 px-4 py-2.5 rounded-xl transition font-sans shadow-md shrink-0 relative z-10"
+                className="text-xs font-bold text-black bg-gradient-to-r from-art-gold via-amber-300 to-art-gold hover:brightness-110 px-4 py-2.5 rounded-xl transition font-sans shadow-gold-glow shrink-0 relative z-10 flex items-center gap-1.5"
               >
                 <span>View All Live Lots</span>
                 <ArrowRight className="w-4 h-4" />
@@ -127,29 +127,29 @@ export default function HomePage() {
         const newlyListed = getNewlyListed(sec.maxItems || 9);
         return (
           <section key={sec.id} id="curated-marketplace" className="space-y-6 scroll-mt-24">
-            {/* Dark Green Luxury Heading Banner */}
-            <div className="bg-gradient-to-r from-[#04180F]/95 via-[#08291A]/95 to-[#04180F]/95 border border-emerald-600/40 rounded-2xl sm:rounded-3xl p-5 sm:p-6 shadow-xl relative overflow-hidden flex flex-col sm:flex-row sm:items-center justify-between gap-4 backdrop-blur-md">
-              <div className="absolute top-0 inset-x-8 h-[1px] bg-gradient-to-r from-transparent via-emerald-400/60 to-transparent" />
+            {/* Gold Luxury Heading Banner */}
+            <div className="bg-gradient-to-r from-[#1F1705]/95 via-[#3E2D07]/95 to-[#1F1705]/95 border-2 border-art-gold/60 rounded-2xl sm:rounded-3xl p-5 sm:p-6 shadow-[0_6px_30px_rgba(212,175,55,0.25)] relative overflow-hidden flex flex-col sm:flex-row sm:items-center justify-between gap-4 backdrop-blur-md">
+              <div className="absolute top-0 inset-x-8 h-[2px] bg-gradient-to-r from-transparent via-amber-300 to-transparent" />
               <div className="space-y-1 relative z-10">
                 <div className="flex items-center gap-2 mb-1 font-sans">
-                  <span className="p-1.5 rounded-lg bg-emerald-950/80 text-emerald-300 border border-emerald-500/40 shadow-sm">
-                    <Sparkles className="w-4 h-4 text-emerald-400 animate-pulse" />
+                  <span className="p-1.5 rounded-lg bg-art-gold/20 text-art-gold border border-art-gold/40 shadow-sm">
+                    <Sparkles className="w-4 h-4 text-art-gold animate-pulse" />
                   </span>
-                  <span className="text-xs font-bold text-emerald-300 uppercase tracking-widest font-mono">
+                  <span className="text-xs font-bold text-art-gold uppercase tracking-widest font-mono">
                     {sec.badge || 'CURATED MARKETPLACE'}
                   </span>
                 </div>
                 <h2 className="font-serif text-2xl sm:text-3xl font-bold text-white tracking-wide">
                   {sec.title || 'Newly Listed Artworks'}
                 </h2>
-                <p className="text-xs sm:text-sm text-emerald-100/70 font-sans max-w-2xl leading-relaxed">
+                <p className="text-xs sm:text-sm text-amber-100/80 font-sans max-w-2xl leading-relaxed">
                   {sec.subtitle || 'Fresh creations uploaded directly by verified master painters, sculptors, and digital artists.'}
                 </p>
               </div>
 
               <Link
                 href="/explore"
-                className="text-xs font-bold text-art-gold hover:text-white flex items-center gap-1.5 bg-emerald-950/80 hover:bg-emerald-900/90 border border-emerald-500/50 px-4 py-2.5 rounded-xl transition font-sans shadow-md shrink-0 relative z-10"
+                className="text-xs font-bold text-black bg-gradient-to-r from-art-gold via-amber-300 to-art-gold hover:brightness-110 px-4 py-2.5 rounded-xl transition font-sans shadow-gold-glow shrink-0 relative z-10 flex items-center gap-1.5"
               >
                 <span>Explore All Artworks</span>
                 <ArrowRight className="w-4 h-4" />
@@ -167,30 +167,31 @@ export default function HomePage() {
 
       case 'subscriptions':
         return (
-          <section key={sec.id} className="relative rounded-3xl overflow-hidden glass-card-gold p-8 lg:p-12 border border-art-gold/40 shadow-2xl">
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+          <section key={sec.id} className="relative rounded-3xl overflow-hidden bg-gradient-to-r from-[#1F1705]/95 via-[#3E2D07]/95 to-[#1F1705]/95 p-8 lg:p-12 border-2 border-art-gold/60 shadow-[0_8px_32px_rgba(212,175,55,0.25)] backdrop-blur-md">
+            <div className="absolute top-0 inset-x-8 h-[2px] bg-gradient-to-r from-transparent via-amber-300 to-transparent" />
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center relative z-10">
               <div className="lg:col-span-7 space-y-4">
-                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-art-gold/10 border border-art-gold/40 text-art-gold text-xs font-bold">
-                  <Crown className="w-4 h-4" />
-                  <span>{sec.badge || 'ARTIST & SELLER SUBSCRIPTION PACKAGES'}</span>
+                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-art-gold/20 border border-art-gold/40 text-art-gold text-xs font-bold">
+                  <Crown className="w-4 h-4 text-art-gold" />
+                  <span className="tracking-wide uppercase font-mono">{sec.badge || 'ARTIST & SELLER SUBSCRIPTION PACKAGES'}</span>
                 </div>
 
-                <h2 className="font-serif text-2xl sm:text-4xl font-bold text-white">
+                <h2 className="font-serif text-2xl sm:text-4xl font-bold text-white tracking-wide">
                   {sec.title || 'Showcase Your Fine Art with Zero Hindrance'}
                 </h2>
 
-                <p className="text-xs sm:text-sm text-slate-300 leading-relaxed max-w-xl">
+                <p className="text-xs sm:text-sm text-amber-100/80 leading-relaxed max-w-xl font-sans">
                   {sec.subtitle || 'Join ARTELLIUM as a verified seller. Upload original oil paintings, bronze sculptures, or digital prints with automated backend tracking and international buyer outreach.'}
                 </p>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs pt-2">
-                  <div className="bg-art-black p-4 rounded-xl border border-white/10 space-y-2">
+                  <div className="bg-[#120D02]/90 p-4 rounded-xl border border-art-gold/30 space-y-2 shadow-md">
                     <div className="flex items-center justify-between">
                       <span className="font-bold text-white text-sm">Standard Tier</span>
                       <span className="badge-emerald px-2 py-0.5 rounded text-[10px] font-bold">Popular</span>
                     </div>
                     <p className="font-serif text-lg font-bold text-art-gold">
-                      ₦30,000 <span className="text-xs text-slate-400 font-sans font-normal">/ month</span>
+                      ₦30,000 <span className="text-xs text-amber-200/60 font-sans font-normal">/ month</span>
                     </p>
                     <p className="text-[11px] text-emerald-400">or ₦200,000 / year (Discounted)</p>
                     <ul className="space-y-1 text-slate-300 text-[11px] pt-1">
@@ -205,15 +206,15 @@ export default function HomePage() {
                     </ul>
                   </div>
 
-                  <div className="bg-art-black p-4 rounded-xl border border-art-gold/40 space-y-2 shadow-gold-glow">
+                  <div className="bg-[#120D02]/90 p-4 rounded-xl border-2 border-art-gold/60 space-y-2 shadow-gold-glow">
                     <div className="flex items-center justify-between">
                       <span className="font-bold text-art-gold text-sm">Premium Tier</span>
                       <span className="badge-gold px-2 py-0.5 rounded text-[10px] font-bold">Gold Crest</span>
                     </div>
                     <p className="font-serif text-lg font-bold text-art-gold">
-                      ₦50,000 <span className="text-xs text-slate-400 font-sans font-normal">/ month</span>
+                      ₦50,000 <span className="text-xs text-amber-200/60 font-sans font-normal">/ month</span>
                     </p>
-                    <p className="text-[11px] text-art-gold">or ₦350,000 / year (Save ₦250k)</p>
+                    <p className="text-[11px] text-amber-300">or ₦350,000 / year (Save ₦250k)</p>
                     <ul className="space-y-1 text-slate-300 text-[11px] pt-1">
                       <li className="flex items-center gap-1.5">
                         <CheckCircle2 className="w-3.5 h-3.5 text-art-gold" />
@@ -229,15 +230,15 @@ export default function HomePage() {
               </div>
 
               <div className="lg:col-span-5 flex flex-col items-center lg:items-end justify-center space-y-4">
-                <div className="p-6 rounded-2xl bg-art-black/80 border border-art-gold/30 text-center space-y-3 max-w-sm">
+                <div className="p-6 rounded-2xl bg-[#120D02]/95 border-2 border-art-gold/50 text-center space-y-3 max-w-sm shadow-xl">
                   <Zap className="w-8 h-8 text-art-gold mx-auto animate-pulse" />
                   <h4 className="font-serif text-lg font-bold text-white">Ready to Sell Your Art?</h4>
-                  <p className="text-xs text-slate-400">
+                  <p className="text-xs text-amber-100/70">
                     Self-service registration with automated backend dashboard setup.
                   </p>
                   <Link
                     href="/artist/register"
-                    className="block w-full py-3 bg-art-gold hover:brightness-110 text-art-black font-bold text-xs uppercase tracking-wider rounded-xl transition shadow-gold-glow"
+                    className="block w-full py-3 bg-gradient-to-r from-art-gold via-amber-300 to-art-gold hover:brightness-110 text-black font-bold text-xs uppercase tracking-wider rounded-xl transition shadow-gold-glow"
                   >
                     Register as Artist Now
                   </Link>
@@ -252,29 +253,29 @@ export default function HomePage() {
         if (recentlySold.length === 0) return null;
         return (
           <section key={sec.id} className="space-y-6">
-            {/* Dark Green Luxury Heading Banner */}
-            <div className="bg-gradient-to-r from-[#04180F]/95 via-[#08291A]/95 to-[#04180F]/95 border border-emerald-600/40 rounded-2xl sm:rounded-3xl p-5 sm:p-6 shadow-xl relative overflow-hidden flex flex-col sm:flex-row sm:items-center justify-between gap-4 backdrop-blur-md">
-              <div className="absolute top-0 inset-x-8 h-[1px] bg-gradient-to-r from-transparent via-emerald-400/60 to-transparent" />
+            {/* Gold Luxury Heading Banner */}
+            <div className="bg-gradient-to-r from-[#1F1705]/95 via-[#3E2D07]/95 to-[#1F1705]/95 border-2 border-art-gold/60 rounded-2xl sm:rounded-3xl p-5 sm:p-6 shadow-[0_6px_30px_rgba(212,175,55,0.25)] relative overflow-hidden flex flex-col sm:flex-row sm:items-center justify-between gap-4 backdrop-blur-md">
+              <div className="absolute top-0 inset-x-8 h-[2px] bg-gradient-to-r from-transparent via-amber-300 to-transparent" />
               <div className="space-y-1 relative z-10">
                 <div className="flex items-center gap-2 mb-1 font-sans">
-                  <span className="p-1.5 rounded-lg bg-emerald-950/80 text-emerald-300 border border-emerald-500/40 shadow-sm">
-                    <ShieldCheck className="w-4 h-4 text-emerald-400 animate-pulse" />
+                  <span className="p-1.5 rounded-lg bg-art-gold/20 text-art-gold border border-art-gold/40 shadow-sm">
+                    <ShieldCheck className="w-4 h-4 text-art-gold animate-pulse" />
                   </span>
-                  <span className="text-xs font-bold text-emerald-300 uppercase tracking-widest font-mono">
+                  <span className="text-xs font-bold text-art-gold uppercase tracking-widest font-mono">
                     {sec.badge || 'HISTORICAL LEDGER & PROVENANCE'}
                   </span>
                 </div>
                 <h2 className="font-serif text-2xl sm:text-3xl font-bold text-white tracking-wide">
                   {sec.title || 'Recently Sold Masterpieces'}
                 </h2>
-                <p className="text-xs sm:text-sm text-emerald-100/70 font-sans max-w-2xl leading-relaxed">
+                <p className="text-xs sm:text-sm text-amber-100/80 font-sans max-w-2xl leading-relaxed">
                   {sec.subtitle || 'Transactions logged in our immutable ledger of African creative heritage and authenticity registry.'}
                 </p>
               </div>
 
               <Link
                 href="/recently-sold"
-                className="text-xs font-bold text-art-gold hover:text-white flex items-center gap-1.5 bg-emerald-950/80 hover:bg-emerald-900/90 border border-emerald-500/50 px-4 py-2.5 rounded-xl transition shrink-0 font-sans shadow-md relative z-10"
+                className="text-xs font-bold text-black bg-gradient-to-r from-art-gold via-amber-300 to-art-gold hover:brightness-110 px-4 py-2.5 rounded-xl transition shrink-0 font-sans shadow-gold-glow relative z-10 flex items-center gap-1.5"
               >
                 <span>View More Recently Sold</span>
                 <ArrowRight className="w-4 h-4" />
@@ -294,29 +295,29 @@ export default function HomePage() {
         const exList = exhibitions.slice(0, sec.maxItems || 4);
         return (
           <section key={sec.id} className="space-y-6">
-            {/* Dark Green Luxury Heading Banner */}
-            <div className="bg-gradient-to-r from-[#04180F]/95 via-[#08291A]/95 to-[#04180F]/95 border border-emerald-600/40 rounded-2xl sm:rounded-3xl p-5 sm:p-6 shadow-xl relative overflow-hidden flex flex-col sm:flex-row sm:items-center justify-between gap-4 backdrop-blur-md">
-              <div className="absolute top-0 inset-x-8 h-[1px] bg-gradient-to-r from-transparent via-emerald-400/60 to-transparent" />
+            {/* Gold Luxury Heading Banner */}
+            <div className="bg-gradient-to-r from-[#1F1705]/95 via-[#3E2D07]/95 to-[#1F1705]/95 border-2 border-art-gold/60 rounded-2xl sm:rounded-3xl p-5 sm:p-6 shadow-[0_6px_30px_rgba(212,175,55,0.25)] relative overflow-hidden flex flex-col sm:flex-row sm:items-center justify-between gap-4 backdrop-blur-md">
+              <div className="absolute top-0 inset-x-8 h-[2px] bg-gradient-to-r from-transparent via-amber-300 to-transparent" />
               <div className="space-y-1 relative z-10">
                 <div className="flex items-center gap-2 mb-1 font-sans">
-                  <span className="p-1.5 rounded-lg bg-emerald-950/80 text-emerald-300 border border-emerald-500/40 shadow-sm">
-                    <Eye className="w-4 h-4 text-emerald-400" />
+                  <span className="p-1.5 rounded-lg bg-art-gold/20 text-art-gold border border-art-gold/40 shadow-sm">
+                    <Eye className="w-4 h-4 text-art-gold" />
                   </span>
-                  <span className="text-xs font-bold text-emerald-300 uppercase tracking-widest font-mono">
+                  <span className="text-xs font-bold text-art-gold uppercase tracking-widest font-mono">
                     {sec.badge || 'VIRTUAL GALLERY ROOMS'}
                   </span>
                 </div>
                 <h2 className="font-serif text-2xl sm:text-3xl font-bold text-white tracking-wide">
                   {sec.title || 'Current Exhibitions'}
                 </h2>
-                <p className="text-xs sm:text-sm text-emerald-100/70 font-sans max-w-2xl leading-relaxed">
+                <p className="text-xs sm:text-sm text-amber-100/80 font-sans max-w-2xl leading-relaxed">
                   {sec.subtitle || 'Explore curated virtual gallery halls from top African museum directors and curators.'}
                 </p>
               </div>
 
               <Link
                 href="/exhibitions"
-                className="text-xs font-bold text-art-gold hover:text-white flex items-center gap-1.5 bg-emerald-950/80 hover:bg-emerald-900/90 border border-emerald-500/50 px-4 py-2.5 rounded-xl transition font-sans shadow-md relative z-10"
+                className="text-xs font-bold text-black bg-gradient-to-r from-art-gold via-amber-300 to-art-gold hover:brightness-110 px-4 py-2.5 rounded-xl transition font-sans shadow-gold-glow relative z-10 flex items-center gap-1.5"
               >
                 <span>View All Exhibitions</span>
                 <ArrowRight className="w-4 h-4" />
@@ -377,7 +378,7 @@ export default function HomePage() {
   const sectionsToRender = (pConfig.sections || []).filter(s => s.type !== 'hero');
 
   return (
-    <div className="space-y-0 bg-[#07080A] min-h-screen text-slate-100">
+    <div className="space-y-0 bg-[#062319] min-h-screen text-slate-100">
       {/* 1. Traditionally-Coded Jumia-Style Pan-African Fine Art Hero */}
       {renderHero()}
 
@@ -385,7 +386,7 @@ export default function HomePage() {
       <JumiaQuickShortcuts />
 
       {/* Main Content Area */}
-      <div className="relative bg-[#07080A] text-slate-100 pb-20 pt-8 space-y-16 overflow-hidden">
+      <div className="relative bg-[#062319] text-slate-100 pb-20 pt-8 space-y-16 overflow-hidden">
         {/* Spotlight Voices & Provenance (Voices of Master Artists) */}
         <div className="relative z-10">
           <ArtistVideoModal />

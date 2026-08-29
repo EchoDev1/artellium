@@ -60,10 +60,10 @@ export default function MobileBottomNav() {
     <div className="md:hidden fixed bottom-3 inset-x-3 z-40">
       <nav 
         aria-label="Mobile Bottom Navigation"
-        className="bg-gradient-to-r from-[#04180F]/95 via-[#08291A]/95 to-[#04180F]/95 backdrop-blur-xl border border-emerald-600/50 rounded-2xl p-1.5 shadow-[0_12px_36px_rgba(4,24,15,0.85)] flex items-center justify-around relative"
+        className="bg-gradient-to-r from-[#1F1705]/95 via-[#3E2D07]/95 to-[#1F1705]/95 backdrop-blur-xl border-2 border-art-gold/60 rounded-2xl p-1.5 shadow-[0_12px_36px_rgba(212,175,55,0.35)] flex items-center justify-around relative"
       >
-        {/* Subtle top emerald/gold accent glow */}
-        <div className="absolute top-0 inset-x-8 h-[1px] bg-gradient-to-r from-transparent via-emerald-400/70 to-transparent" />
+        {/* Subtle top gold accent glow */}
+        <div className="absolute top-0 inset-x-8 h-[2px] bg-gradient-to-r from-transparent via-amber-300 to-transparent" />
 
         {navItems.map((item) => {
           const Icon = item.icon;
@@ -73,12 +73,12 @@ export default function MobileBottomNav() {
               href={item.href}
               className={`relative flex flex-col items-center justify-center py-1.5 px-3 rounded-xl transition-all duration-200 active:scale-90 ${
                 item.isActive 
-                  ? 'text-art-gold bg-emerald-950/80 border border-emerald-500/40 font-bold shadow-inner' 
-                  : 'text-emerald-100/70 hover:text-white'
+                  ? 'text-black bg-gradient-to-r from-art-gold via-amber-300 to-art-gold font-bold shadow-md' 
+                  : 'text-amber-100/80 hover:text-white'
               }`}
             >
               <div className="relative">
-                <Icon className={`w-4 h-4 ${item.isActive ? 'text-art-gold' : 'text-slate-400'}`} />
+                <Icon className={`w-4 h-4 ${item.isActive ? 'text-black' : 'text-amber-200/70'}`} />
                 {item.badge && (
                   <span className={`absolute -top-1.5 -right-3 ${item.badgeColor} text-[8px] font-black text-white px-1 py-0.2 rounded-full uppercase leading-none shadow-sm`}>
                     {item.badge}
@@ -96,18 +96,18 @@ export default function MobileBottomNav() {
         <button
           type="button"
           onClick={() => setIsCartOpen(true)}
-          className="relative flex flex-col items-center justify-center py-1.5 px-3 rounded-xl text-emerald-100/70 hover:text-art-gold transition-all duration-200 active:scale-90 cursor-pointer"
+          className="relative flex flex-col items-center justify-center py-1.5 px-3 rounded-xl text-amber-100/80 hover:text-white transition-all duration-200 active:scale-90 cursor-pointer"
           aria-label="Open Shopping Bag"
         >
           <div className="relative">
             <ShoppingBag className="w-4 h-4 text-art-gold" />
             {cartCount > 0 && (
-              <span className="absolute -top-1.5 -right-2 bg-red-600 text-white font-black text-[9px] w-4 h-4 rounded-full flex items-center justify-center shadow-md border border-[#04180F]">
+              <span className="absolute -top-1.5 -right-2 bg-red-600 text-white font-black text-[9px] w-4 h-4 rounded-full flex items-center justify-center shadow-md border border-[#1F1705]">
                 {cartCount}
               </span>
             )}
           </div>
-          <span className="text-[10px] mt-0.5 tracking-tight font-medium text-emerald-100/80">
+          <span className="text-[10px] mt-0.5 tracking-tight font-medium text-amber-100/90">
             Cart
           </span>
         </button>
