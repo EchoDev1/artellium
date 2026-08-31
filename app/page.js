@@ -43,23 +43,36 @@ export default function HomePage() {
   });
 
   const getNewlyListed = (limit = 9) => {
-    const list = filteredArtworks.filter((art) => art.isNewlyListed || art.status === 'available');
-    if (list.length === 0) {
-      return artworks.filter((art) => art.status !== 'sold').slice(0, limit);
-    }
-    return list
-      .sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0))
-      .slice(0, limit);
+    const matching = filteredArtworks.filter((art) => art.status !== 'sold');
+    
+    // Sort real artist creations strictly first, then newest
+    const realList = matching.filter(a => !a.isDemo);
+    const demoList = matching.filter(a => a.isDemo);
+
+    const sortedReal = [...realList].sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
+    const sortedDemo = [...demoList].sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
+
+    const combined = [...sortedReal, ...sortedDemo];
+    return combined.slice(0, limit);
   };
 
-  const getLiveAuctions = (limit = 3) => artworks
-    .filter((art) => art.status === 'auction')
-    .slice(0, limit);
+  const getLiveAuctions = (limit = 3) => {
+    const matching = artworks.filter((art) => art.status === 'auction');
+    const realList = matching.filter(a => !a.isDemo);
+    const demoList = matching.filter(a => a.isDemo);
+    return [...realList, ...demoList].slice(0, limit);
+  };
 
-  const getRecentlySold = (limit = 6) => artworks
-    .filter((art) => art.status === 'sold')
-    .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
-    .slice(0, limit);
+  const getRecentlySold = (limit = 6) => {
+    const matching = artworks.filter((art) => art.status === 'sold');
+    const realList = matching.filter(a => !a.isDemo);
+    const demoList = matching.filter(a => a.isDemo);
+
+    const sortedReal = [...realList].sort((a, b) => new Date(b.soldAt || b.created_at || 0) - new Date(a.soldAt || a.created_at || 0));
+    const sortedDemo = [...demoList].sort((a, b) => new Date(b.soldAt || b.created_at || 0) - new Date(a.soldAt || a.created_at || 0));
+
+    return [...sortedReal, ...sortedDemo].slice(0, limit);
+  };
 
   // Determine which hero to render based on heroConfig (JumiaArtHero is default)
   const renderHero = () => {
@@ -147,13 +160,22 @@ export default function HomePage() {
                 </p>
               </div>
 
-              <Link
-                href="/explore"
-                className="text-xs font-bold text-black bg-gradient-to-r from-art-gold via-amber-300 to-art-gold hover:brightness-110 px-4 py-2.5 rounded-xl transition font-sans shadow-gold-glow shrink-0 relative z-10 flex items-center gap-1.5"
-              >
-                <span>Explore All Artworks</span>
-                <ArrowRight className="w-4 h-4" />
-              </Link>
+              <div className="flex items-center gap-2 relative z-10 shrink-0">
+                <Link
+                  href="/newly-listed"
+                  className="text-xs font-bold text-black bg-gradient-to-r from-art-gold via-amber-300 to-art-gold hover:brightness-110 px-4 py-2.5 rounded-xl transition font-sans shadow-gold-glow flex items-center gap-1.5"
+                >
+                  <Sparkles className="w-3.5 h-3.5" />
+                  <span>View All Fresh Arrivals</span>
+                </Link>
+                <Link
+                  href="/explore"
+                  className="text-xs font-semibold text-slate-300 hover:text-white bg-black/40 border border-art-gold/30 hover:border-art-gold px-3 py-2.5 rounded-xl transition font-sans flex items-center gap-1"
+                >
+                  <span>Explore All</span>
+                  <ArrowRight className="w-3.5 h-3.5" />
+                </Link>
+              </div>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">

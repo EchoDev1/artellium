@@ -188,6 +188,13 @@ export default function SidebarDrawer() {
 
   const secondaryLinks = [
     {
+      id: 'sec-newly-listed',
+      label: '✨ Newly Listed Artworks',
+      subtitle: 'Fresh creations uploaded directly by verified master artists',
+      href: '/newly-listed',
+      icon: Sparkles,
+    },
+    {
       id: 'sec-all',
       label: 'All Artworks & Services',
       subtitle: 'Complete verified catalogue across 54 African nations',

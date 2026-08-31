@@ -100,11 +100,15 @@ function ExploreContent() {
     return matchesQuery && matchesCategory && matchesMedium && matchesShips && matchesBadge && matchesMaxPrice && matchesFilter && matchesFeatured;
   });
 
-  // Sort artworks
+  // Sort artworks (real artist creations strictly first when sorting by newest or default)
   const sorted = [...filtered].sort((a, b) => {
-    if (sortBy === 'price_low') return a.price - b.price;
-    if (sortBy === 'price_high') return b.price - a.price;
-    return new Date(b.created_at) - new Date(a.created_at);
+    if (sortBy === 'price_low') return (a.price || 0) - (b.price || 0);
+    if (sortBy === 'price_high') return (b.price || 0) - (a.price || 0);
+    
+    // Real artist creations strictly first
+    if (!a.isDemo && b.isDemo) return -1;
+    if (a.isDemo && !b.isDemo) return 1;
+    return new Date(b.created_at || 0) - new Date(a.created_at || 0);
   });
 
   return (

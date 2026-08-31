@@ -11,8 +11,14 @@ export default function RecentlySoldPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
 
-  // Filter only sold items
-  const soldArtworks = artworks.filter((art) => art.status === 'sold');
+  // Filter only sold items with real sales strictly first
+  const soldArtworks = artworks
+    .filter((art) => art.status === 'sold')
+    .sort((a, b) => {
+      if (!a.isDemo && b.isDemo) return -1;
+      if (a.isDemo && !b.isDemo) return 1;
+      return new Date(b.soldAt || b.created_at || 0) - new Date(a.soldAt || a.created_at || 0);
+    });
 
   // Filter sold items by search / category
   const filteredSold = soldArtworks.filter((art) => {

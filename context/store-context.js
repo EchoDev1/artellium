@@ -41,6 +41,8 @@ export function StoreProvider({ children }) {
   const [usersList, setUsersList] = useState(INITIAL_USERS || []);
   const [sellers, setSellers] = useState(INITIAL_SELLERS || []);
   const [artworks, setArtworks] = useState(INITIAL_ARTWORKS);
+  const [realArtworks, setRealArtworks] = useState([]);
+  const [demoTransitionMode, setDemoTransitionMode] = useState('progressive'); // 'progressive' | 'live_only' | 'hybrid'
   const [orders, setOrders] = useState(INITIAL_ORDERS || []);
   const [payments, setPayments] = useState(INITIAL_PAYMENTS || []);
   const [commissions, setCommissions] = useState(INITIAL_COMMISSIONS || []);
@@ -144,7 +146,58 @@ export function StoreProvider({ children }) {
 
   const [priorityBannerPlacements, setPriorityBannerPlacements] = useState([]);
 
-  const MOCK_VERSION = 'v15-clean-portals';
+  // Progressive Demo Replacement Engine: Assembles active catalogue prioritizing real artist artworks
+  const assembleCatalog = (realList = [], demoList = INITIAL_ARTWORKS, mode = 'progressive') => {
+    const validReal = Array.isArray(realList) 
+      ? realList.filter(a => a && a.id).map(a => ({ ...a, isDemo: false }))
+      : [];
+    const validDemo = Array.isArray(demoList) 
+      ? demoList.filter(a => a && a.id).map(a => ({ ...a, isDemo: true }))
+      : [];
+
+    // Sort real artworks newest first
+    const sortedReal = [...validReal].sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
+
+    if (mode === 'live_only') {
+      return sortedReal;
+    }
+
+    if (mode === 'hybrid') {
+      return [...sortedReal, ...validDemo];
+    }
+
+    // Default 'progressive' mode:
+    // Real artist artworks are strictly prioritized at the top of the catalogue.
+    // In each category, real artist artworks replace demo items so the demo fades out.
+    if (sortedReal.length === 0) {
+      return validDemo;
+    }
+
+    const realByCat = {};
+    sortedReal.forEach(r => {
+      const cat = (r.category || 'Other').toLowerCase();
+      realByCat[cat] = (realByCat[cat] || 0) + 1;
+    });
+
+    const demoUsedByCat = {};
+    const remainingDemo = [];
+
+    validDemo.forEach(d => {
+      const cat = (d.category || 'Other').toLowerCase();
+      const realCount = realByCat[cat] || 0;
+      const demoCount = demoUsedByCat[cat] || 0;
+
+      // Retain demo fallback items only if real items in this category are fewer than 4
+      if (realCount + demoCount < 4) {
+        remainingDemo.push(d);
+        demoUsedByCat[cat] = demoCount + 1;
+      }
+    });
+
+    return [...sortedReal, ...remainingDemo];
+  };
+
+  const MOCK_VERSION = 'v16-progressive-catalog';
 
   // 1. Load from LocalStorage synchronously first
   useEffect(() => {
@@ -163,29 +216,55 @@ export function StoreProvider({ children }) {
         localStorage.setItem('artellium_mock_version', MOCK_VERSION);
       }
 
-      const savedArtworks = localStorage.getItem('artellium_artworks');
-      if (savedArtworks) {
-        const parsed = JSON.parse(savedArtworks);
-        const savedMap = {};
-        parsed.forEach(a => { 
-          savedMap[a.id] = {
-            ...a,
-            image: (a.image && isValidImageSource(a.image)) ? a.image : getCategoryFallback(a.category),
-            additionalImages: Array.isArray(a.additionalImages) ? a.additionalImages : []
-          }; 
-        });
-        const merged = INITIAL_ARTWORKS.map(a => savedMap[a.id] || a);
-        parsed.forEach(a => {
-          if (!merged.some(m => m.id === a.id)) {
-            merged.push({
+      // Load Demo Transition Mode
+      const savedMode = localStorage.getItem('artellium_demo_transition_mode');
+      const activeMode = (savedMode === 'live_only' || savedMode === 'hybrid' || savedMode === 'progressive') ? savedMode : 'progressive';
+      setDemoTransitionMode(activeMode);
+
+      // Load Real Artist Artworks
+      let loadedReal = [];
+      const savedReal = localStorage.getItem('artellium_real_artworks');
+      if (savedReal) {
+        try {
+          const parsedReal = JSON.parse(savedReal);
+          if (Array.isArray(parsedReal)) {
+            loadedReal = parsedReal.map(a => ({
               ...a,
+              isDemo: false,
               image: (a.image && isValidImageSource(a.image)) ? a.image : getCategoryFallback(a.category),
               additionalImages: Array.isArray(a.additionalImages) ? a.additionalImages : []
+            }));
+          }
+        } catch (e) {}
+      }
+
+      // Also harvest any real artworks from artellium_artworks that were previously saved
+      const savedArtworks = localStorage.getItem('artellium_artworks');
+      if (savedArtworks) {
+        try {
+          const parsed = JSON.parse(savedArtworks);
+          if (Array.isArray(parsed)) {
+            parsed.forEach(a => {
+              const isDemo = a.isDemo || INITIAL_ARTWORKS.some(ia => ia.id === a.id) || String(a.id).startsWith('mock-');
+              if (!isDemo && !loadedReal.some(r => r.id === a.id)) {
+                loadedReal.push({
+                  ...a,
+                  isDemo: false,
+                  image: (a.image && isValidImageSource(a.image)) ? a.image : getCategoryFallback(a.category),
+                  additionalImages: Array.isArray(a.additionalImages) ? a.additionalImages : []
+                });
+              }
             });
           }
-        });
-        setArtworks(merged);
+        } catch (e) {}
       }
+
+      setRealArtworks(loadedReal);
+      safeSetItem('artellium_real_artworks', loadedReal);
+
+      const assembled = assembleCatalog(loadedReal, INITIAL_ARTWORKS, activeMode);
+      setArtworks(assembled);
+      safeSetItem('artellium_artworks', assembled);
 
       const savedOrders = localStorage.getItem('artellium_orders');
       if (savedOrders) {
@@ -382,13 +461,34 @@ export function StoreProvider({ children }) {
       try {
         const { data: dbArtworks, error: artError } = await supabase.from('artworks').select('*');
         if (!artError && dbArtworks && dbArtworks.length > 0) {
-          const dbMap = {};
-          dbArtworks.forEach(a => { dbMap[a.id] = a; });
-          const merged = INITIAL_ARTWORKS.map(a => dbMap[a.id] || a);
-          dbArtworks.forEach(a => {
-            if (!merged.some(m => m.id === a.id)) merged.push(a);
-          });
-          setArtworks(merged);
+          const dbReal = dbArtworks
+            .filter(a => !a.isDemo && !INITIAL_ARTWORKS.some(ia => ia.id === a.id) && !String(a.id).startsWith('mock-'))
+            .map(a => ({
+              ...a,
+              isDemo: false,
+              image: (a.image && isValidImageSource(a.image)) ? a.image : getCategoryFallback(a.category),
+              additionalImages: Array.isArray(a.additionalImages) ? a.additionalImages : []
+            }));
+
+          if (dbReal.length > 0) {
+            setRealArtworks((prevReal) => {
+              const mergedReal = [...prevReal];
+              dbReal.forEach(dbA => {
+                if (!mergedReal.some(r => r.id === dbA.id)) {
+                  mergedReal.push(dbA);
+                }
+              });
+              safeSetItem('artellium_real_artworks', mergedReal);
+
+              setArtworks(() => {
+                const assembled = assembleCatalog(mergedReal, INITIAL_ARTWORKS, demoTransitionMode);
+                safeSetItem('artellium_artworks', assembled);
+                return assembled;
+              });
+
+              return mergedReal;
+            });
+          }
         }
 
         const { data: dbOrders, error: ordError } = await supabase.from('orders').select('*');
@@ -415,6 +515,8 @@ export function StoreProvider({ children }) {
   // 3. Keep LocalStorage in sync automatically
   useEffect(() => {
     try {
+      safeSetItem('artellium_real_artworks', realArtworks);
+      safeSetItem('artellium_demo_transition_mode', demoTransitionMode);
       safeSetItem('artellium_artworks', artworks);
       safeSetItem('artellium_orders', orders);
       safeSetItem('artellium_payments', payments);
@@ -438,7 +540,7 @@ export function StoreProvider({ children }) {
     } catch (e) {
       console.error('Storage write error:', e);
     }
-  }, [artworks, orders, payments, commissions, sellers, usersList, cart, transactions, wishlist, artworkQuestions, notifications, collectorOffers, artistSignatures, headerConfig, heroConfig, homePageConfig, footerConfig, priorityBannerPricing, priorityBannerPlacements, isLoggedIn, currentUser]);
+  }, [artworks, realArtworks, demoTransitionMode, orders, payments, commissions, sellers, usersList, cart, transactions, wishlist, artworkQuestions, notifications, collectorOffers, artistSignatures, headerConfig, heroConfig, homePageConfig, footerConfig, priorityBannerPricing, priorityBannerPlacements, isLoggedIn, currentUser]);
 
   // Cart Functions
   const addToCart = (artwork) => {
@@ -720,7 +822,7 @@ export function StoreProvider({ children }) {
     supabase.from('sellers').delete().eq('id', sellerId).then(() => {});
   };
 
-  // Artworks CRUD
+  // Artworks CRUD with Progressive Real-First Replacement Engine
   const addArtwork = (newArt) => {
     const validatedImage = (newArt.image && isValidImageSource(newArt.image)) 
       ? newArt.image 
@@ -728,62 +830,215 @@ export function StoreProvider({ children }) {
 
     const created = {
       ...newArt,
-      id: `art-${Date.now()}`,
+      id: newArt.id || `art-live-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
       image: validatedImage,
       additionalImages: Array.isArray(newArt.additionalImages) ? newArt.additionalImages : [],
-      created_at: new Date().toISOString(),
+      created_at: newArt.created_at || new Date().toISOString(),
       isNewlyListed: true,
-      rating: 5.0,
-      reviewsCount: 0,
+      isDemo: false,
+      rating: newArt.rating || 5.0,
+      reviewsCount: newArt.reviewsCount || 0,
       status: newArt.status || 'available',
+      artistName: newArt.artistName || currentUser?.name || 'Master Artist',
+      artistId: newArt.artistId || currentUser?.id || `artist-${Date.now()}`
     };
-    setArtworks((prev) => [created, ...prev]);
+
+    setRealArtworks((prevReal) => {
+      const updatedReal = [created, ...prevReal.filter(r => r.id !== created.id)];
+      try {
+        safeSetItem('artellium_real_artworks', updatedReal);
+      } catch (e) {}
+
+      const assembled = assembleCatalog(updatedReal, INITIAL_ARTWORKS, demoTransitionMode);
+      setArtworks(assembled);
+      try {
+        safeSetItem('artellium_artworks', assembled);
+      } catch (e) {}
+
+      return updatedReal;
+    });
+
     supabase.from('artworks').insert([created]).then(({ error }) => {
       if (error) console.warn('Supabase upload artwork notice:', error.message);
     });
+
+    broadcastNotification(`🎨 Masterpiece "${created.title}" published by ${created.artistName}! Real catalog updated.`);
     return created;
   };
 
   const updateArtwork = (artworkId, updatedFields) => {
-    setArtworks((prev) =>
-      prev.map((art) => (art.id === artworkId ? { ...art, ...updatedFields } : art))
-    );
+    setRealArtworks((prevReal) => {
+      const updatedReal = prevReal.map((art) => (art.id === artworkId ? { ...art, ...updatedFields } : art));
+      try {
+        safeSetItem('artellium_real_artworks', updatedReal);
+      } catch (e) {}
+
+      const assembled = assembleCatalog(updatedReal, INITIAL_ARTWORKS, demoTransitionMode);
+      setArtworks(assembled);
+      try {
+        safeSetItem('artellium_artworks', assembled);
+      } catch (e) {}
+
+      return updatedReal;
+    });
+
+    setArtworks((prev) => {
+      const updated = prev.map((art) => (art.id === artworkId ? { ...art, ...updatedFields } : art));
+      try {
+        safeSetItem('artellium_artworks', updated);
+      } catch (e) {}
+      return updated;
+    });
+
     supabase.from('artworks').update(updatedFields).eq('id', artworkId).then(({ error }) => {
       if (error) console.warn('Supabase update artwork notice:', error.message);
     });
   };
 
   const deleteArtwork = (artworkId) => {
-    setArtworks((prev) => prev.filter((art) => art.id !== artworkId));
+    setRealArtworks((prevReal) => {
+      const updatedReal = prevReal.filter((art) => art.id !== artworkId);
+      try {
+        safeSetItem('artellium_real_artworks', updatedReal);
+      } catch (e) {}
+
+      const assembled = assembleCatalog(updatedReal, INITIAL_ARTWORKS, demoTransitionMode);
+      setArtworks(assembled);
+      try {
+        safeSetItem('artellium_artworks', assembled);
+      } catch (e) {}
+
+      return updatedReal;
+    });
+
+    setArtworks((prev) => {
+      const updated = prev.filter((art) => art.id !== artworkId);
+      try {
+        safeSetItem('artellium_artworks', updated);
+      } catch (e) {}
+      return updated;
+    });
+
     supabase.from('artworks').delete().eq('id', artworkId).then(({ error }) => {
       if (error) console.warn('Supabase delete artwork notice:', error.message);
     });
   };
 
   const setArtworkStatusSold = (artworkId, buyerName, soldPrice) => {
-    setArtworks((prev) =>
-      prev.map((art) =>
-        art.id === artworkId
-          ? {
-              ...art,
-              status: 'sold',
-              soldTo: buyerName,
-              soldPrice: soldPrice || art.price,
-              history: [
-                ...(art.history || [
-                  { event: 'Masterpiece Created', actor: art.artistName, price: 0, date: art.created_at || '2026-01-01' }
-                ]),
-                {
-                  event: 'Ownership Transferred',
-                  actor: buyerName,
-                  price: soldPrice || art.price,
-                  date: new Date().toISOString()
-                }
-              ]
+    const soldDate = new Date().toISOString();
+    const updater = (art) => {
+      if (art.id === artworkId) {
+        return {
+          ...art,
+          status: 'sold',
+          soldTo: buyerName || 'Private Patron',
+          soldPrice: soldPrice || art.price,
+          soldAt: soldDate,
+          history: [
+            ...(art.history || [
+              { event: 'Masterpiece Created', actor: art.artistName, price: 0, date: art.created_at || '2026-01-01' }
+            ]),
+            {
+              event: 'Ownership Transferred & Settled',
+              actor: buyerName || 'Private Patron',
+              price: soldPrice || art.price,
+              date: soldDate
             }
-          : art
-      )
-    );
+          ]
+        };
+      }
+      return art;
+    };
+
+    setRealArtworks((prevReal) => {
+      const updatedReal = prevReal.map(updater);
+      try {
+        safeSetItem('artellium_real_artworks', updatedReal);
+      } catch (e) {}
+
+      const assembled = assembleCatalog(updatedReal, INITIAL_ARTWORKS, demoTransitionMode);
+      setArtworks(assembled);
+      try {
+        safeSetItem('artellium_artworks', assembled);
+      } catch (e) {}
+
+      return updatedReal;
+    });
+
+    setArtworks((prev) => {
+      const updated = prev.map(updater);
+      try {
+        safeSetItem('artellium_artworks', updated);
+      } catch (e) {}
+      return updated;
+    });
+
+    broadcastNotification(`🏆 Masterpiece marked as SOLD! Recorded in Provenance Ledger.`);
+  };
+
+  // Demo Transition Suite Controls
+  const purgeAllDemoArtworks = () => {
+    setDemoTransitionMode('live_only');
+    safeSetItem('artellium_demo_transition_mode', 'live_only');
+    setArtworks(realArtworks);
+    safeSetItem('artellium_artworks', realArtworks);
+    broadcastNotification('🧹 All demo artworks purged. Catalogue is now 100% genuine live artist inventory.');
+  };
+
+  const restoreDemoArtworks = () => {
+    setDemoTransitionMode('progressive');
+    safeSetItem('artellium_demo_transition_mode', 'progressive');
+    const assembled = assembleCatalog(realArtworks, INITIAL_ARTWORKS, 'progressive');
+    setArtworks(assembled);
+    safeSetItem('artellium_artworks', assembled);
+    broadcastNotification('🔄 Progressive transition mode activated. Real artist creations lead and phase out demo slots.');
+  };
+
+  const updateDemoTransitionMode = (mode) => {
+    const validMode = (mode === 'live_only' || mode === 'hybrid' || mode === 'progressive') ? mode : 'progressive';
+    setDemoTransitionMode(validMode);
+    safeSetItem('artellium_demo_transition_mode', validMode);
+    const assembled = assembleCatalog(realArtworks, INITIAL_ARTWORKS, validMode);
+    setArtworks(assembled);
+    safeSetItem('artellium_artworks', assembled);
+  };
+
+  // Helper Selectors for Dynamic Feeds
+  const getNewlyListedArtworks = (limit = 9, category = 'All') => {
+    const matching = artworks.filter(art => {
+      if (category !== 'All' && art.category !== category) return false;
+      return art.status !== 'sold';
+    });
+
+    const realList = matching.filter(a => !a.isDemo);
+    const demoList = matching.filter(a => a.isDemo);
+
+    const sortedReal = [...realList].sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
+    const sortedDemo = [...demoList].sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
+
+    return [...sortedReal, ...sortedDemo].slice(0, limit);
+  };
+
+  const getRecentlySoldArtworks = (limit = 6, category = 'All') => {
+    const matching = artworks.filter(art => {
+      if (category !== 'All' && art.category !== category) return false;
+      return art.status === 'sold';
+    });
+
+    const realList = matching.filter(a => !a.isDemo);
+    const demoList = matching.filter(a => a.isDemo);
+
+    const sortedReal = [...realList].sort((a, b) => new Date(b.soldAt || b.created_at || 0) - new Date(a.soldAt || a.created_at || 0));
+    const sortedDemo = [...demoList].sort((a, b) => new Date(b.soldAt || b.created_at || 0) - new Date(a.soldAt || a.created_at || 0));
+
+    return [...sortedReal, ...sortedDemo].slice(0, limit);
+  };
+
+  const getLiveAuctionsArtworks = (limit = 3) => {
+    const matching = artworks.filter(art => art.status === 'auction');
+    const realList = matching.filter(a => !a.isDemo);
+    const demoList = matching.filter(a => a.isDemo);
+    return [...realList, ...demoList].slice(0, limit);
   };
 
   const setArtistVerificationBadge = (artistNameOrId, badge) => {
@@ -2005,8 +2260,19 @@ export function StoreProvider({ children }) {
         addSeller,
         updateSeller,
         deleteSeller,
-        switchUserRole,
         artworks,
+        realArtworks,
+        demoTransitionMode,
+        setDemoTransitionMode: updateDemoTransitionMode,
+        updateDemoTransitionMode,
+        purgeAllDemoArtworks,
+        restoreDemoArtworks,
+        getNewlyListedArtworks,
+        getRecentlySoldArtworks,
+        getLiveAuctionsArtworks,
+        realArtworksCount: (realArtworks || []).length,
+        demoArtworksCount: (artworks || []).filter(a => a.isDemo).length,
+        realSoldArtworksCount: (realArtworks || []).filter(a => a.status === 'sold').length,
         addArtwork,
         updateArtwork,
         deleteArtwork,

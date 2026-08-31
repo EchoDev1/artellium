@@ -81,6 +81,7 @@ import AdminVerifiedMasters from '@/components/AdminVerifiedMasters';
 import AdminPanAfricanHub from '@/components/AdminPanAfricanHub';
 import AdminPayoutGovernance from '@/components/AdminPayoutGovernance';
 import AdminImageDiagnostics from '@/components/AdminImageDiagnostics';
+import AdminDemoTransitionSuite from '@/components/AdminDemoTransitionSuite';
 import ArtworkPhotoUploader from '@/components/ArtworkPhotoUploader';
 
 export default function AdminDashboardPage() {
@@ -705,6 +706,15 @@ export default function AdminDashboardPage() {
                   <Camera className="w-3 h-3 text-amber-700" />
                   <span>📸 Photo Uploads & Auto-Repair</span>
                 </button>
+                <button
+                  onClick={() => setActiveTab('demo_transition')}
+                  className={`px-2 py-1 rounded-lg text-[11px] font-bold transition flex items-center gap-1 ${
+                    activeTab === 'demo_transition' ? 'bg-gradient-to-r from-art-gold to-amber-600 text-art-black font-bold shadow-sm ring-2 ring-art-gold' : 'bg-amber-50 text-amber-900 hover:bg-amber-100 border border-amber-300'
+                  }`}
+                >
+                  <Sparkles className="w-3 h-3 text-amber-700 animate-pulse" />
+                  <span>⚡ Catalog & Demo Transition Engine</span>
+                </button>
               </div>
             </div>
 
@@ -911,6 +921,7 @@ export default function AdminDashboardPage() {
         {activeTab === 'pan_african_hub' && <AdminPanAfricanHub />}
         {activeTab === 'payout_governance' && <AdminPayoutGovernance />}
         {activeTab === 'media_diagnostics' && <AdminImageDiagnostics />}
+        {activeTab === 'demo_transition' && <AdminDemoTransitionSuite />}
 
         {/* 1. OVERVIEW TAB PANEL */}
         {activeTab === 'overview' && (

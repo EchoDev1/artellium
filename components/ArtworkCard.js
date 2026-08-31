@@ -35,6 +35,13 @@ export default function ArtworkCard({ artwork }) {
 
         {/* Badges Overlay */}
         <div className="absolute top-3 left-3 flex flex-wrap gap-1.5 z-10">
+          {!artwork.isDemo && (
+            <span className="bg-gradient-to-r from-art-gold to-amber-500 text-art-black text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1 shadow-gold-glow">
+              <Sparkles className="w-3 h-3 text-art-black" />
+              <span>DIRECT ARTIST UPLOAD</span>
+            </span>
+          )}
+
           {artwork.artistType === 'Premium' && (
             <span className="badge-gold text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1 shadow-gold-glow">
               <Sparkles className="w-3 h-3 text-art-gold" />

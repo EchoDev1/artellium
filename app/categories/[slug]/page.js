@@ -223,7 +223,7 @@ export default function CategoryPage() {
     });
   }, [artworks, categoryConfig, rawSlug, searchTerm, selectedMedium, shipsFilter]);
 
-  // Sort matching artworks
+  // Sort matching artworks (real artist creations strictly first)
   const sortedArtworks = useMemo(() => {
     return [...matchingArtworks].sort((a, b) => {
       if (sortBy === 'price-low') {
@@ -235,6 +235,8 @@ export default function CategoryPage() {
       if (sortBy === 'rating') {
         return (b.rating || 5) - (a.rating || 5);
       }
+      if (!a.isDemo && b.isDemo) return -1;
+      if (a.isDemo && !b.isDemo) return 1;
       return new Date(b.created_at || '2026-01-01') - new Date(a.created_at || '2026-01-01');
     });
   }, [matchingArtworks, sortBy, currency]);
