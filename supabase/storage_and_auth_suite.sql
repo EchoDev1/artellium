@@ -1,4 +1,4 @@
-﻿-- =========================================================================
+-- =========================================================================
 -- ARTELLIUM AFRICA — STORAGE, AUTH TRIGGERS & RPC FUNCTIONS SUITE
 -- Adds Supabase Storage Buckets, Auth Triggers, and Stored Procedures
 -- =========================================================================
@@ -28,8 +28,11 @@ FOR INSERT WITH CHECK (bucket_id IN ('artworks', 'avatars', 'certificates', 'dos
 -- 2. SUPABASE AUTH TO PUBLIC USERS AUTO-SYNC TRIGGER
 -- Automatically creates a public.users row whenever someone signs up via Supabase Auth
 -- =========================================================================
+-- 2. SUPABASE AUTH TO PUBLIC USERS AUTO-SYNC TRIGGER
+-- Automatically creates a public.users row whenever someone signs up via Supabase Auth
+-- =========================================================================
 CREATE OR REPLACE FUNCTION public.handle_new_user()
-RETURNS TRIGGER AS $
+RETURNS TRIGGER AS $$
 BEGIN
     INSERT INTO public.users (id, name, email, role, avatar_url, phone, country)
     VALUES (
@@ -65,7 +68,7 @@ BEGIN
 
     RETURN NEW;
 END;
-$ LANGUAGE plpgsql SECURITY DEFINER;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
 
 -- Bind trigger to auth.users table
 DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
@@ -74,7 +77,19 @@ AFTER INSERT ON auth.users
 FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
 
 -- =========================================================================
--- 3. ATOMIC LIVE AUCTION BIDDING STORED PROCEDURE (RPC)
+-- 3. BIDS AUDIT LOG TABLE
+-- =========================================================================
+CREATE TABLE IF NOT EXISTS public.bids (
+    id TEXT PRIMARY KEY,
+    artwork_id TEXT REFERENCES public.artworks(id) ON DELETE CASCADE,
+    bidder_id TEXT,
+    bidder_name TEXT NOT NULL,
+    amount NUMERIC NOT NULL,
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- =========================================================================
+-- 4. ATOMIC LIVE AUCTION BIDDING STORED PROCEDURE (RPC)
 -- Prevents race conditions and guarantees bid integrity during live auctions
 -- =========================================================================
 CREATE OR REPLACE FUNCTION public.place_live_bid(
@@ -83,7 +98,7 @@ CREATE OR REPLACE FUNCTION public.place_live_bid(
     p_bidder_name TEXT,
     p_amount NUMERIC
 )
-RETURNS JSONB AS $
+RETURNS JSONB AS $$
 DECLARE
     v_current_bid NUMERIC;
     v_starting_bid NUMERIC;
@@ -101,12 +116,12 @@ BEGIN
         RETURN jsonb_build_object('success', false, 'message', 'Artwork not found');
     END IF;
 
-    IF v_status != 'auction' THEN
+    IF v_status <> 'auction' THEN
         RETURN jsonb_build_object('success', false, 'message', 'Artwork is not currently in live auction');
     END IF;
 
-    IF p_amount <= v_current_bid THEN
-        RETURN jsonb_build_object('success', false, 'message', 'Bid must be higher than current valuation of ' || v_current_bid);
+    IF p_amount <= COALESCE(v_current_bid, 0) THEN
+        RETURN jsonb_build_object('success', false, 'message', 'Bid must be higher than current valuation of ' || v_current_bid::text);
     END IF;
 
     -- Update artwork current bid and increment total bids
@@ -135,4 +150,4 @@ BEGIN
         'total_bids', COALESCE(v_new_total, 0) + 1
     );
 END;
-$ LANGUAGE plpgsql SECURITY DEFINER;
+$$ LANGUAGE plpgsql SECURITY DEFINER;

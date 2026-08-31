@@ -1,4 +1,4 @@
-﻿-- =========================================================================
+-- =========================================================================
 -- ARTELLIUM AFRICA — MASTER ENTERPRISE DATABASE ARCHITECTURE
 -- Engine: PostgreSQL 14+ / Supabase
 -- Modules:
@@ -322,12 +322,12 @@ CREATE INDEX IF NOT EXISTS idx_artworks_artist_trgm ON public.artworks USING gin
 
 -- Function: Auto-update updated_at timestamp
 CREATE OR REPLACE FUNCTION public.handle_updated_at()
-RETURNS TRIGGER AS $
+RETURNS TRIGGER AS $$
 BEGIN
     NEW.updated_at = NOW();
     RETURN NEW;
 END;
-$ LANGUAGE plpgsql;
+$$ LANGUAGE plpgsql;
 
 -- Apply updated_at trigger across all stateful tables
 DROP TRIGGER IF EXISTS trg_users_updated_at ON public.users;
@@ -449,7 +449,7 @@ CREATE POLICY "Admin full access bidders" ON public.auction_bidders FOR ALL USIN
 -- =========================================================================
 -- MODULE 7: SUPABASE REALTIME REPLICATION
 -- =========================================================================
-DO $
+DO $$
 BEGIN
     IF EXISTS (SELECT 1 FROM pg_publication WHERE pubname = 'supabase_realtime') THEN
         ALTER PUBLICATION supabase_realtime ADD TABLE public.artworks;
@@ -461,4 +461,4 @@ BEGIN
 EXCEPTION
     WHEN duplicate_object THEN NULL;
 END
-$;
+$$;
