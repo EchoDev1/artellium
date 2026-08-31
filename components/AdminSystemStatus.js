@@ -42,11 +42,10 @@ export default function AdminSystemStatus({ currentUser }) {
   // Authentication Diagnostic & Fixer State
   const [authRepairStatus, setAuthRepairStatus] = useState('idle'); // 'idle' | 'repairing' | 'success'
   const [authRepairNotice, setAuthRepairNotice] = useState('');
-  const [showMasterPass, setShowMasterPass] = useState(false);
 
   // Live heartbeats log state
   const [logs, setLogs] = useState([
-    { id: 1, time: '17:25:10', source: 'AUTH-VAULT', type: 'security', text: 'Executive Admin (Ekpendudakore@gmail.com) credential handshake verified & active.' },
+    { id: 1, time: '17:25:10', source: 'AUTH-VAULT', type: 'security', text: 'Executive Admin cryptographic credential handshake verified & active.' },
     { id: 2, time: '17:22:40', source: 'WEMA-SETTLE', type: 'info', text: 'Direct corporate settlement handshake verified (Latency: 28ms).' },
     { id: 3, time: '17:21:15', source: 'CLOUDFLARE', type: 'security', text: 'Turnstile human challenge verified 14 new visitor sessions. 0 threats detected.' },
     { id: 4, time: '17:19:02', source: 'AUCTION-WS', type: 'info', text: 'Live Arena Broadcast heartbeat OK. 248 active collectors synchronized.' },
@@ -57,7 +56,7 @@ export default function AdminSystemStatus({ currentUser }) {
   // Fix and Synchronize Master Admin Credentials
   const handleFixMasterCredentials = () => {
     setAuthRepairStatus('repairing');
-    setAuthRepairNotice('Executing cryptographic credential synchronization and cache repair...');
+    setAuthRepairNotice('Executing cryptographic credential synchronization and vault verification...');
 
     setTimeout(() => {
       if (repairMasterAdminCredentials) {
@@ -65,7 +64,7 @@ export default function AdminSystemStatus({ currentUser }) {
       }
 
       setAuthRepairStatus('success');
-      setAuthRepairNotice('✅ Master Admin (Ekpendudakore@gmail.com) credentials successfully repaired and synchronized! Password set to "ladydakore@artellium90". Zero-lockout protection active.');
+      setAuthRepairNotice('✅ Master Admin credentials successfully verified and synchronized. Zero-lockout protection active.');
       
       setLogs((currentLogs) => [
         {
@@ -73,7 +72,7 @@ export default function AdminSystemStatus({ currentUser }) {
           time: new Date().toLocaleTimeString(),
           source: 'AUTH-REPAIR',
           type: 'success',
-          text: 'Admin credentials auto-repaired. Ekpendudakore@gmail.com synchronized with master key ladydakore@artellium90.'
+          text: 'Master Admin authentication vault successfully synchronized.'
         },
         ...currentLogs
       ]);
@@ -198,7 +197,7 @@ export default function AdminSystemStatus({ currentUser }) {
       metrics: 'Zero-Lockout Active',
       latency: '11ms',
       uptime: '100%',
-      details: 'Master Admin (Ekpendudakore@gmail.com) verified with auto-healing credentials. Zero-lockout protection active.'
+      details: 'Master Admin authentication session verified with cryptographic auto-healing. Zero-lockout protection active.'
     },
     {
       id: 'image_engine',
@@ -407,14 +406,14 @@ export default function AdminSystemStatus({ currentUser }) {
           </div>
         )}
 
-        {/* Live Credential Inspector Grid */}
+        {/* Live Identity & Vault Security Status Grid */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           
-          {/* Master Admin Card */}
+          {/* Master Admin Security Card */}
           <div className="p-4 rounded-2xl bg-slate-50 border border-art-gold/40 space-y-3 relative overflow-hidden">
             <div className="flex items-center justify-between">
               <span className="text-[10px] font-mono text-art-gold uppercase font-bold tracking-wider block">
-                1. Master Admin Account
+                1. Master Admin Governance
               </span>
               <span className="px-2 py-0.5 rounded-full text-[9px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-300">
                 ACTIVE & SYNCED
@@ -423,76 +422,65 @@ export default function AdminSystemStatus({ currentUser }) {
 
             <div className="space-y-1.5 text-xs font-mono">
               <div>
-                <span className="text-slate-400 text-[10px] block">Registered Email:</span>
-                <strong className="text-slate-900 font-bold text-xs">Ekpendudakore@gmail.com</strong>
+                <span className="text-slate-400 text-[10px] block">Cryptographic Session:</span>
+                <strong className="text-slate-900 font-bold text-xs">TLS 1.3 / Argon2 Enforced</strong>
               </div>
 
               <div>
-                <span className="text-slate-400 text-[10px] block">Master Password:</span>
-                <div className="flex items-center justify-between">
-                  <strong className="text-slate-800 font-bold text-xs">
-                    {showMasterPass ? 'ladydakore@artellium90' : '••••••••••••••••••••'}
-                  </strong>
-                  <button
-                    type="button"
-                    onClick={() => setShowMasterPass(!showMasterPass)}
-                    className="text-[10px] text-art-gold underline font-sans cursor-pointer"
-                  >
-                    {showMasterPass ? 'Hide' : 'Reveal'}
-                  </button>
-                </div>
-              </div>
-
-              <div>
-                <span className="text-slate-400 text-[10px] block">Role & Scope:</span>
+                <span className="text-slate-400 text-[10px] block">Master Access Scope:</span>
                 <span className="text-slate-700 text-[11px]">System Administrator (Executive Sovereign)</span>
+              </div>
+
+              <div>
+                <span className="text-slate-400 text-[10px] block">Zero-Lockout Protection:</span>
+                <span className="text-emerald-700 font-bold text-[11px]">Active (Self-Healing Enabled)</span>
               </div>
             </div>
 
             <div className="pt-2 border-t border-slate-200 flex items-center justify-between text-[10.5px]">
               <span className="text-emerald-700 font-bold flex items-center gap-1">
                 <Check className="w-3.5 h-3.5 text-emerald-600" />
-                <span>Zero-Lockout Safe</span>
+                <span>Zero-Lockout Armed</span>
               </span>
               <button
                 onClick={handleFixMasterCredentials}
                 className="text-art-gold font-bold hover:underline"
               >
-                Re-verify
+                Sync Vault
               </button>
             </div>
           </div>
 
-          {/* Master Artist Account */}
+          {/* Artist & Curator Identity Vault Card */}
           <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-3">
             <div className="flex items-center justify-between">
               <span className="text-[10px] font-mono text-slate-500 uppercase font-bold tracking-wider block">
-                2. Master Artist Account
+                2. Artist & Curator Vault
               </span>
               <span className="px-2 py-0.5 rounded-full text-[9px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-300">
-                ACTIVE
+                SECURED
               </span>
             </div>
 
             <div className="space-y-1.5 text-xs font-mono">
               <div>
-                <span className="text-slate-400 text-[10px] block">Primary Artist Email:</span>
-                <strong className="text-slate-900 font-bold text-xs">kofi@artellium.com</strong>
+                <span className="text-slate-400 text-[10px] block">KYC & Registration:</span>
+                <strong className="text-slate-900 font-bold text-xs">Automated Tier 1 & 2</strong>
               </div>
 
               <div>
-                <span className="text-slate-400 text-[10px] block">Standard Password:</span>
-                <strong className="text-slate-800 font-bold text-xs">artist123</strong>
+                <span className="text-slate-400 text-[10px] block">Studio Payout Escrow:</span>
+                <span className="text-slate-700 text-[11px]">{artistPayoutPercentage}% Sovereign Settlement</span>
               </div>
 
               <div>
-                <span className="text-slate-400 text-[10px] block">Role & Scope:</span>
-                <span className="text-slate-700 text-[11px]">Verified Master Artist / Studio Seller</span>
+                <span className="text-slate-400 text-[10px] block">Role Permissions:</span>
+                <span className="text-slate-700 text-[11px]">Verified Artist & Studio Gallery</span>
               </div>
             </div>
 
             <div className="pt-2 border-t border-slate-200 flex items-center justify-between text-[10.5px]">
-              <span className="text-slate-500">Auto-heal enabled</span>
+              <span className="text-slate-500">Auto-heal integrity</span>
               <span className="text-slate-700 font-mono">Verified</span>
             </div>
           </div>

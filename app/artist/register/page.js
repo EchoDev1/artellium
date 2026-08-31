@@ -229,7 +229,7 @@ export default function ArtistRegisterPage() {
             <input
               type="email"
               required
-              placeholder="e.g. kofi@artellium.com"
+              placeholder="e.g. artist@artellium.africa"
               value={formData.email}
               onChange={(e) => setFormData({ ...formData, email: e.target.value })}
               className="w-full bg-art-black border border-white/10 rounded-xl p-3 text-white focus:border-art-gold focus:outline-none"
