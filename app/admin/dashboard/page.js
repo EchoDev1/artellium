@@ -79,6 +79,8 @@ import AdminProvenanceLedger from '@/components/AdminProvenanceLedger';
 import AdminVerifiedMasters from '@/components/AdminVerifiedMasters';
 import AdminPanAfricanHub from '@/components/AdminPanAfricanHub';
 import AdminPayoutGovernance from '@/components/AdminPayoutGovernance';
+import AdminImageDiagnostics from '@/components/AdminImageDiagnostics';
+import ArtworkPhotoUploader from '@/components/ArtworkPhotoUploader';
 
 export default function AdminDashboardPage() {
   const { 
@@ -693,6 +695,15 @@ export default function AdminDashboardPage() {
                   <Sparkles className="w-3 h-3 text-art-gold" />
                   <span>Banners</span>
                 </button>
+                <button
+                  onClick={() => setActiveTab('media_diagnostics')}
+                  className={`px-2 py-1 rounded-lg text-[11px] font-bold transition flex items-center gap-1 ${
+                    activeTab === 'media_diagnostics' ? 'bg-gradient-to-r from-amber-600 to-art-gold text-art-black font-bold shadow-sm ring-2 ring-art-gold' : 'bg-amber-50 text-amber-900 hover:bg-amber-100 border border-amber-200'
+                  }`}
+                >
+                  <Camera className="w-3 h-3 text-amber-700" />
+                  <span>📸 Photo Uploads & Auto-Repair</span>
+                </button>
               </div>
             </div>
 
@@ -898,6 +909,7 @@ export default function AdminDashboardPage() {
         {activeTab === 'verified_masters' && <AdminVerifiedMasters />}
         {activeTab === 'pan_african_hub' && <AdminPanAfricanHub />}
         {activeTab === 'payout_governance' && <AdminPayoutGovernance />}
+        {activeTab === 'media_diagnostics' && <AdminImageDiagnostics />}
 
         {/* 1. OVERVIEW TAB PANEL */}
         {activeTab === 'overview' && (
@@ -3163,6 +3175,9 @@ export default function AdminDashboardPage() {
                               medium: art.medium,
                               dimensions: art.dimensions,
                               studioNotes: art.studioNotes || '',
+                              category: art.category || 'Paintings',
+                              image: art.image || '',
+                              additionalImages: art.additionalImages || [],
                               status: art.status
                             });
                           }}
@@ -3278,14 +3293,16 @@ export default function AdminDashboardPage() {
                       </div>
                     </div>
 
+                    {/* Artwork Photography & Studio Proof Suite */}
                     <div>
-                      <label className="block text-slate-600 mb-1">Image URL</label>
-                      <input
-                        type="url"
-                        required
-                        value={newArtForm.image}
-                        onChange={e => setNewArtForm({ ...newArtForm, image: e.target.value })}
-                        className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-slate-800"
+                      <label className="block text-slate-600 mb-1.5 font-medium">Artwork Photography</label>
+                      <ArtworkPhotoUploader
+                        mainImage={newArtForm.image}
+                        additionalImages={newArtForm.additionalImages || []}
+                        onMainImageChange={(img) => setNewArtForm({ ...newArtForm, image: img })}
+                        onAdditionalImagesChange={(imgs) => setNewArtForm({ ...newArtForm, additionalImages: imgs })}
+                        artworkCategory={newArtForm.category}
+                        artworkTitle={newArtForm.title || 'New Masterpiece'}
                       />
                     </div>
 
@@ -3373,6 +3390,19 @@ export default function AdminDashboardPage() {
                         value={editArtForm.studioNotes}
                         onChange={(e) => setEditArtForm({ ...editArtForm, studioNotes: e.target.value })}
                         className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-slate-800"
+                      />
+                    </div>
+
+                    {/* Artwork Photography & Studio Proof Suite */}
+                    <div>
+                      <label className="block text-slate-600 mb-1.5 font-medium">Update Artwork Photography</label>
+                      <ArtworkPhotoUploader
+                        mainImage={editArtForm.image}
+                        additionalImages={editArtForm.additionalImages || []}
+                        onMainImageChange={(img) => setEditArtForm({ ...editArtForm, image: img })}
+                        onAdditionalImagesChange={(imgs) => setEditArtForm({ ...editArtForm, additionalImages: imgs })}
+                        artworkCategory={editArtForm.category || 'Paintings'}
+                        artworkTitle={editArtForm.title || editingArtwork.title}
                       />
                     </div>
 

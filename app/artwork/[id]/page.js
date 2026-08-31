@@ -19,11 +19,13 @@ import {
   MessageCircle,
   Globe,
   DollarSign,
-  Info
+  Info,
+  Camera
 } from 'lucide-react';
 import Link from 'next/link';
 import OriginMapPin from '@/components/OriginMapPin';
 import VerificationBadge from '@/components/VerificationBadge';
+import { DEFAULT_FALLBACK_IMAGE } from '@/lib/image-utils';
 
 export default function ArtworkDetailPage() {
   const { id } = useParams();
@@ -53,6 +55,14 @@ export default function ArtworkDetailPage() {
     comment: '',
     location: 'Lagos, Nigeria',
   });
+
+  const galleryImages = [
+    artwork.image || DEFAULT_FALLBACK_IMAGE,
+    ...(Array.isArray(artwork.additionalImages) ? artwork.additionalImages : [])
+  ].filter(Boolean);
+
+  const [selectedImageIndex, setSelectedImageIndex] = useState(0);
+  const activeDisplayImage = galleryImages[selectedImageIndex] || artwork.image || DEFAULT_FALLBACK_IMAGE;
 
   const [offerPrice, setOfferPrice] = useState('');
   const [offerNote, setOfferNote] = useState('');
@@ -138,11 +148,14 @@ export default function ArtworkDetailPage() {
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
         {/* Left Column: Image Display */}
         <div className="lg:col-span-7 space-y-4">
-          <div className="relative aspect-[4/3] rounded-3xl overflow-hidden glass-card-gold border border-art-gold/40 shadow-2xl">
+          <div className="relative aspect-[4/3] rounded-3xl overflow-hidden glass-card-gold border border-art-gold/40 shadow-2xl bg-black">
             <img
-              src={artwork.image}
+              src={activeDisplayImage}
               alt={artwork.title}
-              className="w-full h-full object-cover"
+              onError={(e) => {
+                e.currentTarget.src = DEFAULT_FALLBACK_IMAGE;
+              }}
+              className="w-full h-full object-cover transition duration-300"
             />
 
             {artwork.artistType === 'Premium' && (
@@ -152,6 +165,42 @@ export default function ArtworkDetailPage() {
               </span>
             )}
           </div>
+
+          {/* Multi-Angle Detail Photos Thumbnail Gallery */}
+          {galleryImages.length > 1 && (
+            <div className="space-y-1.5">
+              <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block flex items-center gap-1">
+                <Camera className="w-3 h-3 text-art-gold" />
+                <span>Studio Proofs & Multi-Angle Views ({galleryImages.length})</span>
+              </span>
+              <div className="flex items-center gap-2.5 overflow-x-auto no-scrollbar py-1">
+                {galleryImages.map((imgUrl, idx) => (
+                  <button
+                    key={idx}
+                    type="button"
+                    onClick={() => setSelectedImageIndex(idx)}
+                    className={`relative w-20 h-16 rounded-xl overflow-hidden border-2 transition cursor-pointer shrink-0 ${
+                      selectedImageIndex === idx
+                        ? 'border-art-gold ring-2 ring-art-gold/50 scale-105 shadow-md'
+                        : 'border-white/15 hover:border-white/40 opacity-70 hover:opacity-100'
+                    }`}
+                  >
+                    <img
+                      src={imgUrl}
+                      alt={`View ${idx + 1}`}
+                      onError={(e) => { e.currentTarget.src = DEFAULT_FALLBACK_IMAGE; }}
+                      className="w-full h-full object-cover"
+                    />
+                    {idx === 0 && (
+                      <span className="absolute bottom-0 inset-x-0 bg-black/70 text-[8px] font-mono text-center text-art-gold py-0.5 font-bold">
+                        Main
+                      </span>
+                    )}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* Physical Verification & Direct Settlement bar */}
           <div className="flex flex-wrap items-center justify-between gap-3 p-4 bg-art-black-card rounded-2xl border border-white/10 text-xs">

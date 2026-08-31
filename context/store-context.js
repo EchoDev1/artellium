@@ -31,6 +31,8 @@ import {
   createDbCommission, 
   disburseDbCommission 
 } from '@/lib/db';
+import { safeSetItem } from '@/lib/safe-storage';
+import { getCategoryFallback, isValidImageSource, DEFAULT_FALLBACK_IMAGE } from '@/lib/image-utils';
 const StoreContext = createContext();
 
 export function StoreProvider({ children }) {
@@ -165,10 +167,22 @@ export function StoreProvider({ children }) {
       if (savedArtworks) {
         const parsed = JSON.parse(savedArtworks);
         const savedMap = {};
-        parsed.forEach(a => { savedMap[a.id] = a; });
+        parsed.forEach(a => { 
+          savedMap[a.id] = {
+            ...a,
+            image: (a.image && isValidImageSource(a.image)) ? a.image : getCategoryFallback(a.category),
+            additionalImages: Array.isArray(a.additionalImages) ? a.additionalImages : []
+          }; 
+        });
         const merged = INITIAL_ARTWORKS.map(a => savedMap[a.id] || a);
         parsed.forEach(a => {
-          if (!merged.some(m => m.id === a.id)) merged.push(a);
+          if (!merged.some(m => m.id === a.id)) {
+            merged.push({
+              ...a,
+              image: (a.image && isValidImageSource(a.image)) ? a.image : getCategoryFallback(a.category),
+              additionalImages: Array.isArray(a.additionalImages) ? a.additionalImages : []
+            });
+          }
         });
         setArtworks(merged);
       }
@@ -401,26 +415,26 @@ export function StoreProvider({ children }) {
   // 3. Keep LocalStorage in sync automatically
   useEffect(() => {
     try {
-      localStorage.setItem('artellium_artworks', JSON.stringify(artworks));
-      localStorage.setItem('artellium_orders', JSON.stringify(orders));
-      localStorage.setItem('artellium_payments', JSON.stringify(payments));
-      localStorage.setItem('artellium_commissions', JSON.stringify(commissions));
-      localStorage.setItem('artellium_sellers', JSON.stringify(sellers));
-      localStorage.setItem('artellium_users', JSON.stringify(usersList));
-      localStorage.setItem('artellium_cart', JSON.stringify(cart));
-      localStorage.setItem('artellium_transactions', JSON.stringify(transactions));
-      localStorage.setItem('artellium_wishlist', JSON.stringify(wishlist));
-      localStorage.setItem('artellium_questions', JSON.stringify(artworkQuestions));
-      localStorage.setItem('artellium_notifications', JSON.stringify(notifications));
-      localStorage.setItem('artellium_collector_offers', JSON.stringify(collectorOffers));
-      localStorage.setItem('artellium_signatures', JSON.stringify(artistSignatures));
-      localStorage.setItem('artellium_header_config', JSON.stringify(headerConfig));
-      localStorage.setItem('artellium_hero_config', JSON.stringify(heroConfig));
-      localStorage.setItem('artellium_home_config', JSON.stringify(homePageConfig));
-      localStorage.setItem('artellium_footer_config', JSON.stringify(footerConfig));
-      localStorage.setItem('artellium_priority_pricing', JSON.stringify(priorityBannerPricing));
-      localStorage.setItem('artellium_priority_placements', JSON.stringify(priorityBannerPlacements));
-      localStorage.setItem('artellium_login_state', JSON.stringify({ isLoggedIn, user: currentUser }));
+      safeSetItem('artellium_artworks', artworks);
+      safeSetItem('artellium_orders', orders);
+      safeSetItem('artellium_payments', payments);
+      safeSetItem('artellium_commissions', commissions);
+      safeSetItem('artellium_sellers', sellers);
+      safeSetItem('artellium_users', usersList);
+      safeSetItem('artellium_cart', cart);
+      safeSetItem('artellium_transactions', transactions);
+      safeSetItem('artellium_wishlist', wishlist);
+      safeSetItem('artellium_questions', artworkQuestions);
+      safeSetItem('artellium_notifications', notifications);
+      safeSetItem('artellium_collector_offers', collectorOffers);
+      safeSetItem('artellium_signatures', artistSignatures);
+      safeSetItem('artellium_header_config', headerConfig);
+      safeSetItem('artellium_hero_config', heroConfig);
+      safeSetItem('artellium_home_config', homePageConfig);
+      safeSetItem('artellium_footer_config', footerConfig);
+      safeSetItem('artellium_priority_pricing', priorityBannerPricing);
+      safeSetItem('artellium_priority_placements', priorityBannerPlacements);
+      safeSetItem('artellium_login_state', { isLoggedIn, user: currentUser });
     } catch (e) {
       console.error('Storage write error:', e);
     }
@@ -708,9 +722,15 @@ export function StoreProvider({ children }) {
 
   // Artworks CRUD
   const addArtwork = (newArt) => {
+    const validatedImage = (newArt.image && isValidImageSource(newArt.image)) 
+      ? newArt.image 
+      : getCategoryFallback(newArt.category);
+
     const created = {
       ...newArt,
       id: `art-${Date.now()}`,
+      image: validatedImage,
+      additionalImages: Array.isArray(newArt.additionalImages) ? newArt.additionalImages : [],
       created_at: new Date().toISOString(),
       isNewlyListed: true,
       rating: 5.0,

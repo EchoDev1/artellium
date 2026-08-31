@@ -46,6 +46,7 @@ import Link from 'next/link';
 import ProfilePhotoStudioModal from '@/components/ProfilePhotoStudioModal';
 import ArtistLiveAuctionConsole from '@/components/ArtistLiveAuctionConsole';
 import ArtistPanAfricanSuite from '@/components/ArtistPanAfricanSuite';
+import ArtworkPhotoUploader from '@/components/ArtworkPhotoUploader';
 
 export default function ArtistDashboardPage() {
   const { 
@@ -101,13 +102,14 @@ export default function ArtistDashboardPage() {
   // Self-Service Artwork Upload Form state
   const [artForm, setArtForm] = useState({
     title: '',
-    category: 'Painters',
+    category: 'Paintings',
     medium: '',
     dimensions: '',
     price: '',
     provenance: '',
     description: '',
     image: '',
+    additionalImages: [],
     status: 'available',
     country: 'Nigeria',
     city: 'Lagos',
@@ -388,7 +390,11 @@ export default function ArtistDashboardPage() {
 
   const handleArtworkSubmit = (e) => {
     e.preventDefault();
-    if (!artForm.title || !artForm.price || !artForm.image) return;
+    if (!artForm.title || !artForm.price) return;
+    if (!artForm.image) {
+      alert('Please upload an artwork photo or select a curated African masterpiece preset.');
+      return;
+    }
 
     const created = addArtwork({
       ...artForm,
@@ -404,13 +410,14 @@ export default function ArtistDashboardPage() {
 
     setArtForm({
       title: '',
-      category: 'Painters',
+      category: 'Paintings',
       medium: '',
       dimensions: '',
       price: '',
       provenance: '',
       description: '',
       image: '',
+      additionalImages: [],
       status: 'available',
       country: 'Nigeria',
       city: 'Lagos',
@@ -1275,15 +1282,16 @@ export default function ArtistDashboardPage() {
                   </div>
                 </div>
 
+                {/* Artwork Photography & Studio Proof Suite */}
                 <div>
-                  <label className="block text-slate-600 mb-1 font-medium">High-Resolution Image URL</label>
-                  <input
-                    type="url"
-                    required
-                    placeholder="e.g. https://images.unsplash.com/photo-..."
-                    value={artForm.image}
-                    onChange={(e) => setArtForm({ ...artForm, image: e.target.value })}
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-slate-850 focus:border-art-gold focus:outline-none"
+                  <label className="block text-slate-600 mb-1.5 font-medium">Artwork Photography & Studio Proofs</label>
+                  <ArtworkPhotoUploader
+                    mainImage={artForm.image}
+                    additionalImages={artForm.additionalImages}
+                    onMainImageChange={(img) => setArtForm({ ...artForm, image: img })}
+                    onAdditionalImagesChange={(imgs) => setArtForm({ ...artForm, additionalImages: imgs })}
+                    artworkCategory={artForm.category}
+                    artworkTitle={artForm.title || 'New Masterpiece'}
                   />
                 </div>
 
@@ -1811,6 +1819,9 @@ export default function ArtistDashboardPage() {
                             dimensions: art.dimensions,
                             studioNotes: art.studioNotes || '',
                             description: art.description || '',
+                            category: art.category || 'Paintings',
+                            image: art.image || '',
+                            additionalImages: art.additionalImages || [],
                             status: art.status
                           });
                         }}
@@ -1940,6 +1951,19 @@ export default function ArtistDashboardPage() {
                       <option value="sold">Sold</option>
                     </select>
                   </div>
+                </div>
+
+                {/* Photo Studio & Multi-Angle Editor in Edit Modal */}
+                <div>
+                  <label className="block text-slate-600 mb-1.5 font-medium">Update Artwork Photography</label>
+                  <ArtworkPhotoUploader
+                    mainImage={editArtForm.image}
+                    additionalImages={editArtForm.additionalImages}
+                    onMainImageChange={(img) => setEditArtForm({ ...editArtForm, image: img })}
+                    onAdditionalImagesChange={(imgs) => setEditArtForm({ ...editArtForm, additionalImages: imgs })}
+                    artworkCategory={editArtForm.category || 'Paintings'}
+                    artworkTitle={editArtForm.title || editingArt.title}
+                  />
                 </div>
 
                 <div className="flex justify-end gap-2 pt-2 border-t border-slate-100">

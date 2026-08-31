@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useStore } from '@/context/store-context';
 import { ShoppingBag, Star, ShieldCheck, Eye, Sparkles, CheckCircle, Tag, Heart } from 'lucide-react';
 import VerificationBadge from '@/components/VerificationBadge';
+import { DEFAULT_FALLBACK_IMAGE } from '@/lib/image-utils';
 
 export default function ArtworkCard({ artwork }) {
   const { addToCart, currency, wishlist, addToWishlist, removeFromWishlist } = useStore();
@@ -23,10 +24,10 @@ export default function ArtworkCard({ artwork }) {
       {/* Image Container */}
       <div className="relative aspect-[4/3] w-full overflow-hidden bg-art-black">
         <img
-          src={artwork.image}
+          src={artwork.image || DEFAULT_FALLBACK_IMAGE}
           alt={artwork.title}
           onError={(e) => {
-            e.currentTarget.src = 'https://images.unsplash.com/photo-1582561424760-0321d75e81fa?q=80&w=1000&auto=format&fit=crop';
+            e.currentTarget.src = DEFAULT_FALLBACK_IMAGE;
           }}
           className="w-full h-full object-cover group-hover:scale-105 transition duration-500"
         />
