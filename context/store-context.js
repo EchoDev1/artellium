@@ -33,6 +33,7 @@ import {
 } from '@/lib/db';
 import { safeSetItem } from '@/lib/safe-storage';
 import { getCategoryFallback, isValidImageSource, DEFAULT_FALLBACK_IMAGE } from '@/lib/image-utils';
+import { normalizeCategory, isCategoryMatch } from '@/lib/category-utils';
 const StoreContext = createContext();
 
 export function StoreProvider({ children }) {
@@ -152,7 +153,7 @@ export function StoreProvider({ children }) {
       ? realList.filter(a => a && a.id).map(a => ({ ...a, isDemo: false }))
       : [];
     const validDemo = Array.isArray(demoList) 
-      ? demoList.filter(a => a && a.id).map(a => ({ ...a, isDemo: true }))
+      ? demoList.filter(a => a && a.id && a.isDemo !== false).map(a => ({ ...a, isDemo: true }))
       : [];
 
     // Sort real artworks newest first
@@ -175,7 +176,7 @@ export function StoreProvider({ children }) {
 
     const realByCat = {};
     sortedReal.forEach(r => {
-      const cat = (r.category || 'Other').toLowerCase();
+      const cat = normalizeCategory(r.category);
       realByCat[cat] = (realByCat[cat] || 0) + 1;
     });
 
@@ -183,7 +184,7 @@ export function StoreProvider({ children }) {
     const remainingDemo = [];
 
     validDemo.forEach(d => {
-      const cat = (d.category || 'Other').toLowerCase();
+      const cat = normalizeCategory(d.category);
       const realCount = realByCat[cat] || 0;
       const demoCount = demoUsedByCat[cat] || 0;
 
@@ -238,6 +239,14 @@ export function StoreProvider({ children }) {
         } catch (e) {}
       }
 
+      // Harvest real artworks from INITIAL_ARTWORKS (such as Ebuka Eke Echo)
+      const defaultRealArtworks = INITIAL_ARTWORKS.filter(a => a.isDemo === false);
+      defaultRealArtworks.forEach(defArt => {
+        if (!loadedReal.some(r => r.id === defArt.id || r.artistName?.toLowerCase() === defArt.artistName?.toLowerCase())) {
+          loadedReal.unshift(defArt);
+        }
+      });
+
       // Also harvest any real artworks from artellium_artworks that were previously saved
       const savedArtworks = localStorage.getItem('artellium_artworks');
       if (savedArtworks) {
@@ -245,7 +254,7 @@ export function StoreProvider({ children }) {
           const parsed = JSON.parse(savedArtworks);
           if (Array.isArray(parsed)) {
             parsed.forEach(a => {
-              const isDemo = a.isDemo || INITIAL_ARTWORKS.some(ia => ia.id === a.id) || String(a.id).startsWith('mock-');
+              const isDemo = a.isDemo || (INITIAL_ARTWORKS.some(ia => ia.id === a.id && ia.isDemo !== false)) || String(a.id).startsWith('mock-');
               if (!isDemo && !loadedReal.some(r => r.id === a.id)) {
                 loadedReal.push({
                   ...a,
@@ -1006,7 +1015,7 @@ export function StoreProvider({ children }) {
   // Helper Selectors for Dynamic Feeds
   const getNewlyListedArtworks = (limit = 9, category = 'All') => {
     const matching = artworks.filter(art => {
-      if (category !== 'All' && art.category !== category) return false;
+      if (!isCategoryMatch(art.category, category, art.medium, art.title)) return false;
       return art.status !== 'sold';
     });
 
@@ -1021,7 +1030,7 @@ export function StoreProvider({ children }) {
 
   const getRecentlySoldArtworks = (limit = 6, category = 'All') => {
     const matching = artworks.filter(art => {
-      if (category !== 'All' && art.category !== category) return false;
+      if (!isCategoryMatch(art.category, category, art.medium, art.title)) return false;
       return art.status === 'sold';
     });
 

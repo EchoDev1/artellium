@@ -4,6 +4,7 @@ import React, { useState, useMemo } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useStore } from '@/context/store-context';
+import { isCategoryMatch } from '@/lib/category-utils';
 import ArtworkCard from '@/components/ArtworkCard';
 import { 
   Palette, 
@@ -177,22 +178,8 @@ export default function CategoryPage() {
       const targetCat = (categoryConfig.storeCategory || '').toLowerCase();
 
       // Category match
-      let matchesCategory = artCat.includes(targetCat) || targetCat.includes(artCat);
-
-      if (!matchesCategory) {
-        if (rawSlug.includes('paint') && (artCat.includes('paint') || artMed.includes('oil') || artMed.includes('canvas') || artMed.includes('acrylic'))) matchesCategory = true;
-        else if (rawSlug.includes('sculpt') && (artCat.includes('sculpt') || artMed.includes('bronze') || artMed.includes('wood') || artMed.includes('sculpt'))) matchesCategory = true;
-        else if (rawSlug.includes('draw') && (artCat.includes('draw') || artMed.includes('charcoal') || artMed.includes('ink') || artMed.includes('sketch'))) matchesCategory = true;
-        else if (rawSlug.includes('photo') && (artCat.includes('photo') || artMed.includes('photo') || artMed.includes('print'))) matchesCategory = true;
-        else if (rawSlug.includes('textil') && (artCat.includes('textil') || artMed.includes('textil') || artMed.includes('fiber') || artMed.includes('adire') || artMed.includes('kente'))) matchesCategory = true;
-        else if (rawSlug.includes('potter') && (artCat.includes('potter') || artMed.includes('clay') || artMed.includes('terracotta') || artMed.includes('pot'))) matchesCategory = true;
-        else if (rawSlug.includes('ceramic') && (artCat.includes('ceramic') || artMed.includes('ceramic') || artMed.includes('stoneware') || artMed.includes('glaze'))) matchesCategory = true;
-        else if (rawSlug.includes('wood') && (artCat.includes('wood') || artMed.includes('mahogany') || artMed.includes('mask') || artMed.includes('carv'))) matchesCategory = true;
-        else if (rawSlug.includes('metal') && (artCat.includes('metal') || artMed.includes('iron') || artMed.includes('brass') || artMed.includes('copper'))) matchesCategory = true;
-        else if (rawSlug.includes('craft') && (artCat.includes('craft') || artMed.includes('bead') || artMed.includes('leather') || artMed.includes('handmade'))) matchesCategory = true;
-        else if (rawSlug.includes('indigenous') && (artCat.includes('indigenous') || artMed.includes('heritage') || artMed.includes('sacred') || artMed.includes('ancestral'))) matchesCategory = true;
-        else if (rawSlug.includes('limited') && (artCat.includes('limited') || artCat.includes('digital') || artMed.includes('edition') || artMed.includes('giclée') || artMed.includes('print'))) matchesCategory = true;
-      }
+      let matchesCategory = isCategoryMatch(art.category, rawSlug, art.medium, art.title) || 
+                            isCategoryMatch(art.category, categoryConfig.storeCategory, art.medium, art.title);
 
       if (!matchesCategory) return false;
 

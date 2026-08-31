@@ -5,6 +5,7 @@ import { useSearchParams } from 'next/navigation';
 import ArtworkCard from '@/components/ArtworkCard';
 import CategoryBar from '@/components/CategoryBar';
 import { useStore } from '@/context/store-context';
+import { isCategoryMatch } from '@/lib/category-utils';
 import { Search, Filter, Sparkles, SlidersHorizontal } from 'lucide-react';
 
 function ExploreContent() {
@@ -32,45 +33,10 @@ function ExploreContent() {
       art.category?.toLowerCase().includes(term) ||
       art.country?.toLowerCase().includes(term) ||
       art.city?.toLowerCase().includes(term) ||
-      art.description?.toLowerCase().includes(term) ||
-      (term.includes('paint') && (art.category?.toLowerCase().includes('paint') || art.medium?.toLowerCase().includes('paint') || art.medium?.toLowerCase().includes('oil'))) ||
-      (term.includes('sculpt') && (art.category?.toLowerCase().includes('sculpt') || art.medium?.toLowerCase().includes('bronze') || art.medium?.toLowerCase().includes('sculpt'))) ||
-      (term.includes('draw') && (art.category?.toLowerCase().includes('draw') || art.medium?.toLowerCase().includes('charcoal') || art.medium?.toLowerCase().includes('ink'))) ||
-      (term.includes('photo') && (art.category?.toLowerCase().includes('photo') || art.medium?.toLowerCase().includes('photo'))) ||
-      (term.includes('textil') && (art.category?.toLowerCase().includes('textil') || art.medium?.toLowerCase().includes('textil') || art.medium?.toLowerCase().includes('adire'))) ||
-      (term.includes('potter') && (art.category?.toLowerCase().includes('potter') || art.medium?.toLowerCase().includes('clay') || art.medium?.toLowerCase().includes('terracotta'))) ||
-      (term.includes('ceramic') && (art.category?.toLowerCase().includes('ceramic') || art.medium?.toLowerCase().includes('stoneware'))) ||
-      (term.includes('wood') && (art.category?.toLowerCase().includes('wood') || art.medium?.toLowerCase().includes('mahogany') || art.medium?.toLowerCase().includes('mask'))) ||
-      (term.includes('metal') && (art.category?.toLowerCase().includes('metal') || art.medium?.toLowerCase().includes('iron') || art.medium?.toLowerCase().includes('brass'))) ||
-      (term.includes('craft') && (art.category?.toLowerCase().includes('craft') || art.medium?.toLowerCase().includes('bead') || art.medium?.toLowerCase().includes('leather'))) ||
-      (term.includes('indigenous') && (art.category?.toLowerCase().includes('indigenous') || art.medium?.toLowerCase().includes('heritage'))) ||
-      (term.includes('limited') && (art.category?.toLowerCase().includes('limited') || art.medium?.toLowerCase().includes('edition') || art.medium?.toLowerCase().includes('print')))
+      art.description?.toLowerCase().includes(term)
     );
 
-    const targetCat = (categoryParam || selectedCategory || '').toLowerCase();
-    const artCat = (art.category || '').toLowerCase();
-    const artMed = (art.medium || '').toLowerCase();
-
-    const matchesCategory =
-      !targetCat || targetCat === 'all'
-        ? true
-        : (
-          artCat === targetCat ||
-          artCat.includes(targetCat) ||
-          targetCat.includes(artCat) ||
-          (targetCat.includes('paint') && (artCat.includes('paint') || artMed.includes('oil') || artMed.includes('paint'))) ||
-          (targetCat.includes('sculpt') && (artCat.includes('sculpt') || artMed.includes('bronze') || artMed.includes('wood'))) ||
-          (targetCat.includes('draw') && (artCat.includes('draw') || artMed.includes('charcoal') || artMed.includes('ink'))) ||
-          (targetCat.includes('photo') && (artCat.includes('photo') || artMed.includes('photo'))) ||
-          (targetCat.includes('textil') && (artCat.includes('textil') || artMed.includes('textil') || artMed.includes('fiber'))) ||
-          (targetCat.includes('potter') && (artCat.includes('potter') || artMed.includes('clay') || artMed.includes('terracotta'))) ||
-          (targetCat.includes('ceramic') && (artCat.includes('ceramic') || artMed.includes('ceramic') || artMed.includes('stoneware'))) ||
-          (targetCat.includes('wood') && (artCat.includes('wood') || artMed.includes('mahogany') || artMed.includes('carv'))) ||
-          (targetCat.includes('metal') && (artCat.includes('metal') || artMed.includes('iron') || artMed.includes('brass'))) ||
-          (targetCat.includes('craft') && (artCat.includes('craft') || artMed.includes('bead') || artMed.includes('leather'))) ||
-          (targetCat.includes('indigenous') && (artCat.includes('indigenous') || artMed.includes('heritage') || artMed.includes('sacred'))) ||
-          (targetCat.includes('limited') && (artCat.includes('limited') || artMed.includes('edition') || artMed.includes('print')))
-        );
+    const matchesCategory = isCategoryMatch(art.category, categoryParam || selectedCategory, art.medium, art.title);
 
     const matchesMedium =
       selectedMedium === 'All' ? true : art.medium?.toLowerCase().includes(selectedMedium.toLowerCase());

@@ -12,6 +12,7 @@ import AuctionCard from '@/components/AuctionCard';
 import ArtistVideoModal from '@/components/ArtistVideoModal';
 import CuratorialSpotlightBanner from '@/components/CuratorialSpotlightBanner';
 import { useStore } from '@/context/store-context';
+import { isCategoryMatch } from '@/lib/category-utils';
 import { Sparkles, Flame, Eye, ArrowRight, Award, CheckCircle2, Crown, Zap, ShieldCheck, Tag, Gavel } from 'lucide-react';
 
 export default function HomePage() {
@@ -36,10 +37,9 @@ export default function HomePage() {
     customPromoBanners: []
   };
 
-  // Filter artworks by selected category
+  // Filter artworks by selected category using intelligent matching
   const filteredArtworks = artworks.filter((art) => {
-    if (selectedCategory === 'All') return true;
-    return art.category === selectedCategory;
+    return isCategoryMatch(art.category, selectedCategory, art.medium, art.title);
   });
 
   const getNewlyListed = (limit = 9) => {

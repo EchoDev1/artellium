@@ -6,6 +6,7 @@ import { useSearchParams } from 'next/navigation';
 import ArtworkCard from '@/components/ArtworkCard';
 import CategoryBar from '@/components/CategoryBar';
 import { useStore } from '@/context/store-context';
+import { isCategoryMatch } from '@/lib/category-utils';
 import { 
   Sparkles, 
   Search, 
@@ -53,14 +54,14 @@ function NewlyListedContent() {
         art.medium?.toLowerCase().includes(term) ||
         art.category?.toLowerCase().includes(term) ||
         art.country?.toLowerCase().includes(term) ||
-        art.city?.toLowerCase().includes(term)
+        art.city?.toLowerCase().includes(term) ||
+        art.description?.toLowerCase().includes(term)
       );
 
-      const targetCat = (categoryParam || selectedCategory || 'All').toLowerCase();
-      const artCat = (art.category || '').toLowerCase();
-      const matchesCategory = targetCat === 'all' || artCat.includes(targetCat) || targetCat.includes(artCat);
+      const targetCat = categoryParam || selectedCategory || 'All';
+      const matchesCategory = isCategoryMatch(art.category, targetCat, art.medium, art.title);
 
-      const matchesMedium = selectedMedium === 'All' || (art.medium || '').toLowerCase().includes(selectedMedium.toLowerCase());
+      const matchesMedium = selectedMedium === 'All' || isCategoryMatch(art.medium, selectedMedium, art.category, art.title);
 
       let matchesPrice = true;
       if (priceFilter === 'under500k') matchesPrice = (art.price || 0) <= 500000;
