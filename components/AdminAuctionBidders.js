@@ -432,14 +432,14 @@ export default function AdminAuctionBidders() {
       {/* BROADCAST AUCTION DROP NOTIFICATION MODAL                                */}
       {/* ========================================================================= */}
       {isBroadcastModalOpen && (
-        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
-          <div className="relative w-full max-w-lg bg-white rounded-3xl p-6 sm:p-8 shadow-2xl space-y-4 text-xs">
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
+          <div className="relative w-full max-w-lg bg-white rounded-3xl p-5 sm:p-8 shadow-2xl space-y-4 text-xs my-auto max-h-[92vh] overflow-y-auto pb-10 sm:pb-8">
             <div className="flex items-center justify-between border-b border-slate-200 pb-3">
               <div className="flex items-center gap-2 text-slate-900 font-serif font-bold text-lg">
                 <Send className="w-5 h-5 text-red-600" />
                 <span>Broadcast Curatorial Auction Drop</span>
               </div>
-              <button onClick={() => setIsBroadcastModalOpen(false)} className="text-slate-400 hover:text-slate-700 text-base font-bold">✕</button>
+              <button onClick={() => setIsBroadcastModalOpen(false)} className="text-slate-400 hover:text-slate-700 text-base font-bold p-1">✕</button>
             </div>
 
             {broadcastSuccess ? (
@@ -505,14 +505,14 @@ export default function AdminAuctionBidders() {
       {/* DIRECT MESSAGE TO SINGLE BIDDER MODAL                                     */}
       {/* ========================================================================= */}
       {directMessageBidder && (
-        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
-          <div className="relative w-full max-w-md bg-white rounded-3xl p-6 shadow-2xl space-y-4 text-xs">
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
+          <div className="relative w-full max-w-md bg-white rounded-3xl p-5 sm:p-6 shadow-2xl space-y-4 text-xs my-auto max-h-[92vh] overflow-y-auto pb-10 sm:pb-6">
             <div className="flex items-center justify-between border-b border-slate-200 pb-3">
               <div className="flex items-center gap-2 text-slate-900 font-serif font-bold text-base">
                 <Mail className="w-4 h-4 text-red-600" />
                 <span>Direct Alert · {directMessageBidder.fullName}</span>
               </div>
-              <button onClick={() => setDirectMessageBidder(null)} className="text-slate-400 hover:text-slate-700 font-bold">✕</button>
+              <button onClick={() => setDirectMessageBidder(null)} className="text-slate-400 hover:text-slate-700 font-bold p-1">✕</button>
             </div>
 
             {directMsgSuccess ? (
@@ -564,8 +564,8 @@ export default function AdminAuctionBidders() {
       {/* BIDDER DOSSIER VIEW MODAL                                                 */}
       {/* ========================================================================= */}
       {selectedBidder && (
-        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
-          <div className="relative w-full max-w-lg bg-white rounded-3xl p-6 sm:p-8 shadow-2xl space-y-5 text-xs">
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
+          <div className="relative w-full max-w-lg bg-white rounded-3xl p-5 sm:p-8 shadow-2xl space-y-5 text-xs my-auto max-h-[92vh] overflow-y-auto pb-10 sm:pb-8">
             <div className="flex items-center justify-between border-b border-slate-200 pb-3">
               <div>
                 <span className="text-[10px] font-mono font-bold text-red-600 uppercase tracking-widest block">
@@ -575,7 +575,7 @@ export default function AdminAuctionBidders() {
                   {selectedBidder.fullName} ({selectedBidder.bidderId})
                 </h3>
               </div>
-              <button onClick={() => setSelectedBidder(null)} className="text-slate-400 hover:text-slate-700 text-base font-bold">✕</button>
+              <button onClick={() => setSelectedBidder(null)} className="text-slate-400 hover:text-slate-700 text-base font-bold p-1">✕</button>
             </div>
 
             <div className="space-y-2.5 bg-slate-50 p-4 rounded-2xl border border-slate-200">

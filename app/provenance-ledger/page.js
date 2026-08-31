@@ -604,8 +604,8 @@ export default function ProvenanceLedgerPage() {
       {/* 1. PHYSICAL QR CERTIFICATE & HOLOGRAM DOSSIER MODAL                       */}
       {/* ========================================================================= */}
       {qrModalBlock && (
-        <div className="fixed inset-0 bg-black/85 backdrop-blur-md z-50 flex items-center justify-center p-4">
-          <div className="bg-[#0A0D14] border-2 border-art-gold/60 rounded-3xl p-6 sm:p-10 max-w-2xl w-full text-white shadow-2xl space-y-6 relative animate-scale-in max-h-[92vh] overflow-y-auto">
+        <div className="fixed inset-0 bg-black/85 backdrop-blur-md z-50 flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
+          <div className="bg-[#0A0D14] border-2 border-art-gold/60 rounded-3xl p-5 sm:p-10 max-w-2xl w-full text-white shadow-2xl space-y-6 relative animate-scale-in my-auto max-h-[92vh] overflow-y-auto pb-12 sm:pb-10">
             
             {/* Modal Header */}
             <div className="flex justify-between items-center border-b border-white/10 pb-4">
@@ -824,8 +824,8 @@ export default function ProvenanceLedgerPage() {
       {/* 2. ADMIN EDIT PROVENANCE BLOCK MODAL                                      */}
       {/* ========================================================================= */}
       {editingBlock && (
-        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl p-6 sm:p-8 max-w-2xl w-full shadow-2xl border border-slate-200 text-xs animate-scale-in space-y-5 max-h-[92vh] overflow-y-auto text-slate-900">
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
+          <div className="bg-white rounded-3xl p-5 sm:p-8 max-w-2xl w-full shadow-2xl border border-slate-200 text-xs animate-scale-in space-y-5 my-auto max-h-[92vh] overflow-y-auto pb-10 sm:pb-8 text-slate-900">
             
             <div className="flex justify-between items-center border-b border-slate-100 pb-3">
               <div className="space-y-0.5">
@@ -1026,8 +1026,8 @@ export default function ProvenanceLedgerPage() {
       {/* 3. ADMIN DELETE CONFIRMATION MODAL                                        */}
       {/* ========================================================================= */}
       {deletingBlock && (
-        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl p-6 sm:p-8 max-w-md w-full shadow-2xl border border-red-200 text-xs animate-scale-in space-y-5 text-center text-slate-900">
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
+          <div className="bg-white rounded-3xl p-5 sm:p-8 max-w-md w-full shadow-2xl border border-red-200 text-xs animate-scale-in space-y-5 text-center text-slate-900 my-auto max-h-[92vh] overflow-y-auto pb-10 sm:pb-8">
             <div className="w-14 h-14 rounded-full bg-red-100 text-red-600 flex items-center justify-center mx-auto">
               <Trash2 className="w-7 h-7" />
             </div>
@@ -1065,8 +1065,8 @@ export default function ProvenanceLedgerPage() {
       {/* 4. ADMIN MINT NEW PROVENANCE BLOCK MODAL                                  */}
       {/* ========================================================================= */}
       {isMintModalOpen && (
-        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl p-6 sm:p-8 max-w-2xl w-full shadow-2xl border border-slate-200 text-xs animate-scale-in space-y-4 max-h-[92vh] overflow-y-auto text-slate-900">
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
+          <div className="bg-white rounded-3xl p-5 sm:p-8 max-w-2xl w-full shadow-2xl border border-slate-200 text-xs animate-scale-in space-y-4 my-auto max-h-[92vh] overflow-y-auto pb-10 sm:pb-8 text-slate-900">
             
             <div className="flex justify-between items-center border-b border-slate-100 pb-3">
               <div className="space-y-0.5">

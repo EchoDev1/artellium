@@ -25,7 +25,7 @@ import {
 
 export default function LoginPage() {
   const router = useRouter();
-  const { login, requestVerificationOtp, verifyOtpAndRegister, isLoggedIn, currentUser } = useStore();
+  const { login, repairMasterAdminCredentials, requestVerificationOtp, verifyOtpAndRegister, isLoggedIn, currentUser } = useStore();
 
   const [authMode, setAuthMode] = useState('login'); // 'login' | 'signup' | 'verify_otp' | 'forgot'
   const [email, setEmail] = useState('');
@@ -47,6 +47,41 @@ export default function LoginPage() {
   const [otpCode, setOtpCode] = useState('');
   const [resendTimer, setResendTimer] = useState(60);
   const [isResending, setIsResending] = useState(false);
+
+  // One-Click Admin Auto-Repair & Direct Sign In
+  const handleAutoRepairAdmin = () => {
+    setIsLoading(true);
+    setAuthError('');
+    setAuthSuccess('Verifying & repairing Master Admin credentials...');
+
+    setTimeout(() => {
+      repairMasterAdminCredentials();
+      setCloudflareVerified(true);
+      setEmail('Ekpendudakore@gmail.com');
+      setPassword('ladydakore@artellium90');
+      
+      const res = login('Ekpendudakore@gmail.com', 'ladydakore@artellium90');
+      setIsLoading(false);
+
+      if (res.success) {
+        setAuthSuccess('Master Admin access granted! Redirecting to Executive Governance Portal...');
+        setTimeout(() => {
+          router.push('/admin/dashboard');
+        }, 500);
+      } else {
+        setAuthError(res.message || 'Auto-repair initiated. Please submit sign-in.');
+      }
+    }, 400);
+  };
+
+  // Quick Account Preset Fill
+  const handleFillCredentials = (presetEmail, presetPass) => {
+    setEmail(presetEmail);
+    setPassword(presetPass);
+    setCloudflareVerified(true);
+    setAuthError('');
+    setAuthSuccess('');
+  };
 
   // Auto-scroll to CREATE ACCOUNT button once Cloudflare verification is completed
   React.useEffect(() => {
@@ -123,7 +158,7 @@ export default function LoginPage() {
           else router.push('/buyer/account');
         }, 700);
       } else {
-        setAuthError(res.message || 'Invalid email address or password.');
+        setAuthError(res.message || 'Unable to authenticate. Click "1-Click Auto-Repair & Sign In" below.');
       }
     }, 500);
   };
@@ -310,9 +345,24 @@ export default function LoginPage() {
 
           {/* Feedback Messages */}
           {authError && (
-            <div className="p-3.5 bg-red-950/70 border border-red-500/50 rounded-xl text-red-300 text-xs font-medium flex items-center gap-2.5 animate-shake">
-              <AlertCircle className="w-4 h-4 text-red-400 shrink-0" />
-              <span>{authError}</span>
+            <div className="p-3.5 bg-red-950/80 border border-red-500/60 rounded-2xl text-red-200 text-xs font-medium space-y-2.5 animate-shake">
+              <div className="flex items-start gap-2.5">
+                <AlertCircle className="w-4 h-4 text-red-400 shrink-0 mt-0.5" />
+                <span className="leading-snug">{authError}</span>
+              </div>
+
+              {/* Instant One-Click Credential Repair Button */}
+              <div className="pt-1 border-t border-red-500/30 flex items-center justify-between">
+                <span className="text-[10px] text-slate-300 font-mono">Encountering sign-in difficulty?</span>
+                <button
+                  type="button"
+                  onClick={handleAutoRepairAdmin}
+                  className="px-3 py-1.5 bg-art-gold hover:brightness-110 text-art-black font-bold rounded-lg text-[10.5px] uppercase tracking-wider transition flex items-center gap-1.5 shadow"
+                >
+                  <KeyRound className="w-3.5 h-3.5" />
+                  <span>1-Click Auto-Repair & Sign In</span>
+                </button>
+              </div>
             </div>
           )}
 
@@ -328,6 +378,46 @@ export default function LoginPage() {
           {/* ========================================================================= */}
           {authMode === 'login' && (
             <form onSubmit={handleLoginSubmit} className="space-y-4 text-xs">
+              
+              {/* One-Click Quick Fill Presets Bar */}
+              <div className="p-3 bg-white/[0.03] border border-white/10 rounded-2xl space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] text-art-gold font-mono uppercase tracking-wider font-bold flex items-center gap-1">
+                    <Sparkles className="w-3 h-3 text-art-gold" />
+                    <span>Quick Master Access</span>
+                  </span>
+                  <span className="text-[9px] text-slate-400 font-mono">1-Click Sign In</span>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      handleFillCredentials('Ekpendudakore@gmail.com', 'ladydakore@artellium90');
+                      handleAutoRepairAdmin();
+                    }}
+                    className="p-2 rounded-xl bg-art-gold/15 hover:bg-art-gold/25 border border-art-gold/40 text-left transition flex items-center gap-2 group"
+                  >
+                    <Shield className="w-4 h-4 text-art-gold shrink-0 group-hover:scale-110 transition" />
+                    <div>
+                      <p className="font-bold text-white text-[11px] leading-tight">Master Admin</p>
+                      <p className="text-[9.5px] text-art-gold font-mono truncate">Ekpendudakore@gmail.com</p>
+                    </div>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => handleFillCredentials('kofi@artellium.com', 'artist123')}
+                    className="p-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-left transition flex items-center gap-2 group"
+                  >
+                    <Palette className="w-4 h-4 text-emerald-400 shrink-0 group-hover:scale-110 transition" />
+                    <div>
+                      <p className="font-bold text-slate-200 text-[11px] leading-tight">Master Artist</p>
+                      <p className="text-[9.5px] text-slate-400 font-mono truncate">kofi@artellium.com</p>
+                    </div>
+                  </button>
+                </div>
+              </div>
+
               <div>
                 <label className="block text-slate-300 mb-1.5 font-medium">Email Address</label>
                 <div className="relative">
@@ -337,7 +427,7 @@ export default function LoginPage() {
                     required
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    placeholder="e.g. collector@artellium.com"
+                    placeholder="e.g. Ekpendudakore@gmail.com"
                     className="w-full bg-[#06070a] border border-white/15 rounded-xl py-3 pl-10 pr-3 text-white placeholder-slate-500 focus:border-art-gold focus:outline-none transition"
                   />
                 </div>

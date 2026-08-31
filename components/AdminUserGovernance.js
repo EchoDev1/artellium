@@ -747,11 +747,12 @@ export default function AdminUserGovernance({
       </div>
 
       {/* ========================================================================= */}
+      {/* ========================================================================= */}
       {/* 1. SUSPEND ACCOUNT MODAL                                                  */}
       {/* ========================================================================= */}
       {actionModalType === 'suspend' && selectedUser && (
-        <div className="fixed inset-0 z-50 bg-black/65 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl border border-slate-200 max-w-md w-full p-6 space-y-4 shadow-2xl animate-scale-in">
+        <div className="fixed inset-0 z-50 bg-black/65 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
+          <div className="bg-white rounded-3xl border border-slate-200 max-w-md w-full p-5 sm:p-6 space-y-4 shadow-2xl animate-scale-in my-auto max-h-[92vh] overflow-y-auto pb-10 sm:pb-6">
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
               <div className="flex items-center gap-2 text-amber-700">
                 <AlertTriangle className="w-5 h-5" />
@@ -759,7 +760,7 @@ export default function AdminUserGovernance({
                   Suspend User Account · {selectedUser.name}
                 </h3>
               </div>
-              <button onClick={() => setActionModalType(null)} className="text-slate-400 hover:text-slate-600">
+              <button onClick={() => setActionModalType(null)} className="text-slate-400 hover:text-slate-600 p-1">
                 <X className="w-4 h-4" />
               </button>
             </div>
@@ -813,8 +814,8 @@ export default function AdminUserGovernance({
       {/* 2. FREEZE ASSETS & SETTLEMENTS MODAL                                     */}
       {/* ========================================================================= */}
       {actionModalType === 'freeze' && selectedUser && (
-        <div className="fixed inset-0 z-50 bg-black/65 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl border border-slate-200 max-w-md w-full p-6 space-y-4 shadow-2xl animate-scale-in">
+        <div className="fixed inset-0 z-50 bg-black/65 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
+          <div className="bg-white rounded-3xl border border-slate-200 max-w-md w-full p-5 sm:p-6 space-y-4 shadow-2xl animate-scale-in my-auto max-h-[92vh] overflow-y-auto pb-10 sm:pb-6">
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
               <div className="flex items-center gap-2 text-blue-700">
                 <Snowflake className="w-5 h-5" />
@@ -822,7 +823,7 @@ export default function AdminUserGovernance({
                   Freeze Assets & Settlements · {selectedUser.name}
                 </h3>
               </div>
-              <button onClick={() => setActionModalType(null)} className="text-slate-400 hover:text-slate-600">
+              <button onClick={() => setActionModalType(null)} className="text-slate-400 hover:text-slate-600 p-1">
                 <X className="w-4 h-4" />
               </button>
             </div>
@@ -876,8 +877,8 @@ export default function AdminUserGovernance({
       {/* 3. PERMANENT BLOCK / BLACKLIST MODAL                                      */}
       {/* ========================================================================= */}
       {actionModalType === 'block' && selectedUser && (
-        <div className="fixed inset-0 z-50 bg-black/65 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl border border-red-200 max-w-md w-full p-6 space-y-4 shadow-2xl animate-scale-in">
+        <div className="fixed inset-0 z-50 bg-black/65 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
+          <div className="bg-white rounded-3xl border border-red-200 max-w-md w-full p-5 sm:p-6 space-y-4 shadow-2xl animate-scale-in my-auto max-h-[92vh] overflow-y-auto pb-10 sm:pb-6">
             <div className="flex items-center justify-between border-b border-red-100 pb-3">
               <div className="flex items-center gap-2 text-red-700">
                 <Ban className="w-5 h-5" />
@@ -885,7 +886,7 @@ export default function AdminUserGovernance({
                   Permanently Block Account · {selectedUser.name}
                 </h3>
               </div>
-              <button onClick={() => setActionModalType(null)} className="text-slate-400 hover:text-slate-600">
+              <button onClick={() => setActionModalType(null)} className="text-slate-400 hover:text-slate-600 p-1">
                 <X className="w-4 h-4" />
               </button>
             </div>
@@ -939,8 +940,8 @@ export default function AdminUserGovernance({
       {/* 4. REPORT FOUL PLAY / SECURITY INCIDENT MODAL                             */}
       {/* ========================================================================= */}
       {actionModalType === 'report' && selectedUser && (
-        <div className="fixed inset-0 z-50 bg-black/65 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl border border-slate-200 max-w-lg w-full p-6 space-y-4 shadow-2xl animate-scale-in">
+        <div className="fixed inset-0 z-50 bg-black/65 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
+          <div className="bg-white rounded-3xl border border-slate-200 max-w-lg w-full p-5 sm:p-6 space-y-4 shadow-2xl animate-scale-in my-auto max-h-[92vh] overflow-y-auto pb-10 sm:pb-6">
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
               <div className="flex items-center gap-2 text-red-700">
                 <ShieldAlert className="w-5 h-5" />
@@ -948,7 +949,7 @@ export default function AdminUserGovernance({
                   Log Foul Play / Incident Report · {selectedUser.name}
                 </h3>
               </div>
-              <button onClick={() => setActionModalType(null)} className="text-slate-400 hover:text-slate-600">
+              <button onClick={() => setActionModalType(null)} className="text-slate-400 hover:text-slate-600 p-1">
                 <X className="w-4 h-4" />
               </button>
             </div>
@@ -1028,8 +1029,8 @@ export default function AdminUserGovernance({
       {/* 5. USER SECURITY AUDIT TRAIL MODAL                                        */}
       {/* ========================================================================= */}
       {actionModalType === 'audit' && selectedUser && (
-        <div className="fixed inset-0 z-50 bg-black/65 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl border border-slate-200 max-w-lg w-full p-6 space-y-4 shadow-2xl animate-scale-in">
+        <div className="fixed inset-0 z-50 bg-black/65 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
+          <div className="bg-white rounded-3xl border border-slate-200 max-w-lg w-full p-5 sm:p-6 space-y-4 shadow-2xl animate-scale-in my-auto max-h-[92vh] overflow-y-auto pb-10 sm:pb-6">
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
               <div className="flex items-center gap-2">
                 <FileText className="w-5 h-5 text-blue-600" />
@@ -1037,7 +1038,7 @@ export default function AdminUserGovernance({
                   Security Audit Trail · {selectedUser.name}
                 </h3>
               </div>
-              <button onClick={() => setActionModalType(null)} className="text-slate-400 hover:text-slate-600">
+              <button onClick={() => setActionModalType(null)} className="text-slate-400 hover:text-slate-600 p-1">
                 <X className="w-4 h-4" />
               </button>
             </div>
@@ -1094,13 +1095,13 @@ export default function AdminUserGovernance({
       {/* 6. EDIT USER PROFILE MODAL                                                */}
       {/* ========================================================================= */}
       {actionModalType === 'edit' && selectedUser && (
-        <div className="fixed inset-0 z-50 bg-black/65 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl border border-slate-200 max-w-md w-full p-6 space-y-4 shadow-2xl animate-scale-in">
+        <div className="fixed inset-0 z-50 bg-black/65 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
+          <div className="bg-white rounded-3xl border border-slate-200 max-w-md w-full p-5 sm:p-6 space-y-4 shadow-2xl animate-scale-in my-auto max-h-[92vh] overflow-y-auto pb-10 sm:pb-6">
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
               <h3 className="font-serif text-base font-bold text-slate-900">
                 Edit User Account · {selectedUser.name}
               </h3>
-              <button onClick={() => setActionModalType(null)} className="text-slate-400 hover:text-slate-600">
+              <button onClick={() => setActionModalType(null)} className="text-slate-400 hover:text-slate-600 p-1">
                 <X className="w-4 h-4" />
               </button>
             </div>
@@ -1176,13 +1177,13 @@ export default function AdminUserGovernance({
       {/* 7. ACCREDIT / ADD NEW USER MODAL                                          */}
       {/* ========================================================================= */}
       {actionModalType === 'add' && (
-        <div className="fixed inset-0 z-50 bg-black/65 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl border border-slate-200 max-w-md w-full p-6 space-y-4 shadow-2xl animate-scale-in">
+        <div className="fixed inset-0 z-50 bg-black/65 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
+          <div className="bg-white rounded-3xl border border-slate-200 max-w-md w-full p-5 sm:p-6 space-y-4 shadow-2xl animate-scale-in my-auto max-h-[92vh] overflow-y-auto pb-10 sm:pb-6">
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
               <h3 className="font-serif text-base font-bold text-slate-900">
                 Accredit & Register New User
               </h3>
-              <button onClick={() => setActionModalType(null)} className="text-slate-400 hover:text-slate-600">
+              <button onClick={() => setActionModalType(null)} className="text-slate-400 hover:text-slate-600 p-1">
                 <X className="w-4 h-4" />
               </button>
             </div>

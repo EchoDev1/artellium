@@ -1054,8 +1054,8 @@ export default function AuctionsPage() {
       {/* PLACE CUSTOM BID MODAL                                                    */}
       {/* ========================================================================= */}
       {biddingLot && (
-        <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-xl flex items-center justify-center p-4">
-          <div className="relative w-full max-w-lg bg-[#0A0D14] border border-art-gold/50 rounded-3xl p-6 sm:p-8 shadow-2xl space-y-5">
+        <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-xl flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
+          <div className="relative w-full max-w-lg bg-[#0A0D14] border border-art-gold/50 rounded-3xl p-5 sm:p-8 shadow-2xl space-y-5 my-auto max-h-[92vh] overflow-y-auto pb-12 sm:pb-8">
             
             <div className="flex items-center justify-between border-b border-white/10 pb-4">
               <div>
@@ -1168,8 +1168,8 @@ export default function AuctionsPage() {
       {/* HIGH VALUE AUCTION ADMIN APPROVAL MODAL                                  */}
       {/* ========================================================================= */}
       {isHighValueApprovalModalOpen && selectedHighValueLot && (
-        <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-xl flex items-center justify-center p-4">
-          <div className="relative w-full max-w-md bg-[#0A0D14] border border-amber-500/50 rounded-3xl p-6 sm:p-8 shadow-2xl space-y-5 text-xs">
+        <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-xl flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
+          <div className="relative w-full max-w-md bg-[#0A0D14] border border-amber-500/50 rounded-3xl p-5 sm:p-8 shadow-2xl space-y-5 text-xs my-auto max-h-[92vh] overflow-y-auto pb-12 sm:pb-8">
             <div className="flex items-center justify-between border-b border-white/10 pb-3">
               <div className="flex items-center gap-2">
                 <Crown className="w-5 h-5 text-art-gold" />
@@ -1177,7 +1177,7 @@ export default function AuctionsPage() {
                   High-Value Auction Clearance Protocol
                 </h3>
               </div>
-              <button onClick={() => setIsHighValueApprovalModalOpen(false)} className="text-slate-400 hover:text-white">✕</button>
+              <button onClick={() => setIsHighValueApprovalModalOpen(false)} className="text-slate-400 hover:text-white p-1">✕</button>
             </div>
 
             <p className="text-slate-300 leading-relaxed">
@@ -1213,8 +1213,8 @@ export default function AuctionsPage() {
       {/* PRO-FORMA INVOICE & SETTLEMENT BREAKDOWN MODAL                            */}
       {/* ========================================================================= */}
       {invoiceLot && (
-        <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-xl flex items-center justify-center p-4">
-          <div className="relative w-full max-w-xl bg-[#0D0F15] border border-art-gold/50 rounded-3xl p-6 sm:p-8 shadow-2xl space-y-6 text-xs">
+        <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-xl flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
+          <div className="relative w-full max-w-xl bg-[#0D0F15] border border-art-gold/50 rounded-3xl p-5 sm:p-8 shadow-2xl space-y-6 text-xs my-auto max-h-[92vh] overflow-y-auto pb-12 sm:pb-8">
             
             <div className="flex items-center justify-between border-b border-white/10 pb-4">
               <div>
@@ -1225,7 +1225,7 @@ export default function AuctionsPage() {
                   Acquisition Statement · {invoiceLot.lotNumber}
                 </h3>
               </div>
-              <button onClick={() => setInvoiceLot(null)} className="text-slate-400 hover:text-white text-lg font-bold">✕</button>
+              <button onClick={() => setInvoiceLot(null)} className="text-slate-400 hover:text-white text-lg font-bold p-1">✕</button>
             </div>
 
             <div className="space-y-3 bg-black/50 p-4 rounded-2xl border border-white/10">
@@ -1287,8 +1287,8 @@ export default function AuctionsPage() {
       {/* 1. GUEST AUTH REQUIRED MODAL                                              */}
       {/* ========================================================================= */}
       {isAuthModalOpen && (
-        <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-xl flex items-center justify-center p-4">
-          <div className="relative w-full max-w-md bg-[#0A0D14] border border-art-gold/50 rounded-3xl p-6 sm:p-8 shadow-2xl space-y-6 text-xs animate-fade-in">
+        <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-xl flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
+          <div className="relative w-full max-w-md bg-[#0A0D14] border border-art-gold/50 rounded-3xl p-5 sm:p-8 shadow-2xl space-y-6 text-xs animate-fade-in my-auto max-h-[92vh] overflow-y-auto pb-12 sm:pb-8">
             <div className="flex items-center justify-between border-b border-white/10 pb-3">
               <div className="flex items-center gap-2">
                 <Lock className="w-5 h-5 text-art-gold" />
@@ -1296,7 +1296,7 @@ export default function AuctionsPage() {
                   Accredited Bidder Authentication
                 </h3>
               </div>
-              <button onClick={() => setIsAuthModalOpen(false)} className="text-slate-400 hover:text-white text-base">✕</button>
+              <button onClick={() => setIsAuthModalOpen(false)} className="text-slate-400 hover:text-white text-base p-1">✕</button>
             </div>
 
             <div className="text-center space-y-3 py-2">
@@ -1335,8 +1335,8 @@ export default function AuctionsPage() {
       {/* 2. ACCREDITED BIDDER PROFILE & ENROLLMENT MODAL                           */}
       {/* ========================================================================= */}
       {isBidderRegModalOpen && (
-        <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-xl flex items-center justify-center p-4">
-          <div className="relative w-full max-w-lg bg-[#0A0D14] border border-art-gold/50 rounded-3xl p-6 sm:p-8 shadow-2xl space-y-5 text-xs animate-fade-in max-h-[90vh] overflow-y-auto">
+        <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-xl flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
+          <div className="relative w-full max-w-lg bg-[#0A0D14] border border-art-gold/50 rounded-3xl p-5 sm:p-8 shadow-2xl space-y-5 text-xs animate-fade-in my-auto max-h-[92vh] overflow-y-auto pb-14 sm:pb-8">
             <div className="flex items-center justify-between border-b border-white/10 pb-3">
               <div className="flex items-center gap-2">
                 <ShieldCheck className="w-5 h-5 text-art-gold" />

@@ -25,9 +25,9 @@ export default function CheckoutModal() {
   const [cloudflareVerified, setCloudflareVerified] = useState(false);
 
   const [formData, setFormData] = useState({
-    fullName: currentUser?.name || 'Dr. Evelyn Carter',
-    email: currentUser?.email || 'evelyn@artellium.com',
-    phone: '+234 803 123 4567',
+    fullName: currentUser?.name || '',
+    email: currentUser?.email || '',
+    phone: currentUser?.phone || '',
     paymentMethod: 'wema_bank', // wema_bank, alatpay, card
   });
 
@@ -44,6 +44,7 @@ export default function CheckoutModal() {
         ...prev,
         fullName: currentUser.name || prev.fullName,
         email: currentUser.email || prev.email,
+        phone: currentUser.phone || prev.phone,
       }));
     }
   }, [currentUser]);
@@ -112,13 +113,13 @@ export default function CheckoutModal() {
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-xl flex items-center justify-center p-4">
-      <div className="relative w-full max-w-2xl bg-art-black-card border border-art-gold/40 rounded-2xl overflow-hidden shadow-2xl">
+    <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-xl flex items-center justify-center p-2 sm:p-4 overflow-y-auto">
+      <div className="relative w-full max-w-2xl bg-art-black-card border border-art-gold/40 rounded-2xl shadow-2xl my-auto max-h-[94vh] flex flex-col overflow-hidden">
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 bg-art-black border-b border-white/10">
+        <div className="flex items-center justify-between px-5 sm:px-6 py-4 bg-art-black border-b border-white/10 shrink-0">
           <div className="flex items-center gap-2">
             <Sparkles className="w-5 h-5 text-art-gold" />
-            <h3 className="font-serif text-lg font-bold text-white">
+            <h3 className="font-serif text-base sm:text-lg font-bold text-white line-clamp-1">
               {step === 'success' ? 'Masterpiece Acquisition Confirmed' : 'Collector Checkout · WEMA Bank Direct Settlement'}
             </h3>
           </div>
@@ -127,7 +128,7 @@ export default function CheckoutModal() {
               setIsCheckoutOpen(false);
               setStep('details');
             }}
-            className="p-1.5 text-slate-400 hover:text-white rounded-lg hover:bg-white/10 transition"
+            className="p-1.5 text-slate-400 hover:text-white rounded-lg hover:bg-white/10 transition shrink-0"
           >
             <X className="w-5 h-5" />
           </button>
@@ -135,7 +136,7 @@ export default function CheckoutModal() {
 
         {/* Content Body */}
         {step === 'details' && (
-          <form onSubmit={handleOrderSubmit} className="p-6 space-y-5">
+          <form onSubmit={handleOrderSubmit} className="p-4 sm:p-6 space-y-5 overflow-y-auto max-h-[calc(94vh-65px)] pb-16 sm:pb-8">
             
             {/* Collector Contact Info */}
             <div className="space-y-3">

@@ -880,13 +880,13 @@ export default function BuyerAccountPage() {
 
             {/* Custom Bid Modal */}
             {biddingLot && (
-              <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
-                <div className="bg-white rounded-3xl border border-slate-200 max-w-md w-full p-6 space-y-4 shadow-2xl animate-scale-in text-xs">
+              <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
+                <div className="bg-white rounded-3xl border border-slate-200 max-w-md w-full p-5 sm:p-6 space-y-4 shadow-2xl animate-scale-in text-xs my-auto max-h-[92vh] overflow-y-auto pb-10 sm:pb-6">
                   <div className="flex justify-between items-center border-b border-slate-100 pb-3">
                     <h3 className="font-serif text-base font-bold text-slate-900">
                       Place Accredited Bid · {biddingLot.title}
                     </h3>
-                    <button onClick={() => setBiddingLot(null)} className="text-slate-400 font-bold">✕</button>
+                    <button onClick={() => setBiddingLot(null)} className="text-slate-400 font-bold p-1">✕</button>
                   </div>
 
                   <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 flex items-center gap-3">

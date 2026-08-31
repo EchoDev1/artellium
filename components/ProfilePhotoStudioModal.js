@@ -266,8 +266,8 @@ export default function ProfilePhotoStudioModal({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-md flex items-center justify-center p-4">
-      <div className="bg-white rounded-3xl border border-slate-200 max-w-2xl w-full p-6 sm:p-7 shadow-2xl animate-scale-in text-xs font-sans space-y-5">
+    <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-md flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
+      <div className="bg-white rounded-3xl border border-slate-200 max-w-2xl w-full p-5 sm:p-7 shadow-2xl animate-scale-in text-xs font-sans space-y-5 my-auto max-h-[92vh] overflow-y-auto pb-12 sm:pb-7">
         
         {/* Header */}
         <div className="flex items-center justify-between border-b border-slate-100 pb-3">

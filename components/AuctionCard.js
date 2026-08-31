@@ -406,8 +406,8 @@ export default function AuctionCard({ artwork }) {
 
       {/* Place Bid Modal */}
       {biddingOpen && (
-        <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-xl flex items-center justify-center p-4">
-          <div className="relative w-full max-w-md bg-[#0A0D14] border border-art-gold/50 rounded-3xl p-6 sm:p-8 shadow-2xl space-y-4 text-xs">
+        <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-xl flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
+          <div className="relative w-full max-w-md bg-[#0A0D14] border border-art-gold/50 rounded-3xl p-5 sm:p-8 shadow-2xl space-y-4 text-xs my-auto max-h-[92vh] overflow-y-auto pb-12 sm:pb-8">
             <div className="flex items-center justify-between border-b border-white/10 pb-3">
               <div className="flex items-center gap-2 text-art-gold font-serif font-bold text-lg">
                 <Gavel className="w-5 h-5 text-red-500" />
@@ -415,7 +415,7 @@ export default function AuctionCard({ artwork }) {
               </div>
               <button
                 onClick={() => setBiddingOpen(false)}
-                className="text-slate-400 hover:text-white font-bold text-base"
+                className="text-slate-400 hover:text-white font-bold text-base p-1"
               >
                 ✕
               </button>
@@ -499,8 +499,8 @@ export default function AuctionCard({ artwork }) {
 
       {/* Pro-Forma Invoice Modal (Without Seller Settlement Payout Disclosure) */}
       {isInvoiceOpen && (
-        <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-xl flex items-center justify-center p-4">
-          <div className="relative w-full max-w-lg bg-[#0D0F15] border border-art-gold/50 rounded-3xl p-6 sm:p-8 shadow-2xl space-y-5 text-xs">
+        <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-xl flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
+          <div className="relative w-full max-w-lg bg-[#0D0F15] border border-art-gold/50 rounded-3xl p-5 sm:p-8 shadow-2xl space-y-5 text-xs my-auto max-h-[92vh] overflow-y-auto pb-12 sm:pb-8">
             <div className="flex items-center justify-between border-b border-white/10 pb-3">
               <div>
                 <span className="text-[10px] font-mono font-bold text-art-gold uppercase tracking-widest block">
@@ -510,7 +510,7 @@ export default function AuctionCard({ artwork }) {
                   {artwork.title} · {lotNumber}
                 </h3>
               </div>
-              <button onClick={() => setIsInvoiceOpen(false)} className="text-slate-400 hover:text-white text-base font-bold">✕</button>
+              <button onClick={() => setIsInvoiceOpen(false)} className="text-slate-400 hover:text-white text-base font-bold p-1">✕</button>
             </div>
 
             <div className="space-y-2.5 bg-black/50 p-4 rounded-2xl border border-white/10">
@@ -561,8 +561,8 @@ export default function AuctionCard({ artwork }) {
 
       {/* Guest Auth Required Modal */}
       {isAuthModalOpen && (
-        <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-xl flex items-center justify-center p-4">
-          <div className="relative w-full max-w-md bg-[#0A0D14] border border-art-gold/50 rounded-3xl p-6 sm:p-8 shadow-2xl space-y-6 text-xs animate-fade-in text-left">
+        <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-xl flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
+          <div className="relative w-full max-w-md bg-[#0A0D14] border border-art-gold/50 rounded-3xl p-5 sm:p-8 shadow-2xl space-y-6 text-xs animate-fade-in text-left my-auto max-h-[92vh] overflow-y-auto pb-12 sm:pb-8">
             <div className="flex items-center justify-between border-b border-white/10 pb-3">
               <div className="flex items-center gap-2">
                 <Lock className="w-5 h-5 text-art-gold" />
@@ -570,7 +570,7 @@ export default function AuctionCard({ artwork }) {
                   Accredited Bidder Required
                 </h3>
               </div>
-              <button onClick={() => setIsAuthModalOpen(false)} className="text-slate-400 hover:text-white text-base">✕</button>
+              <button onClick={() => setIsAuthModalOpen(false)} className="text-slate-400 hover:text-white text-base p-1">✕</button>
             </div>
 
             <div className="text-center space-y-3 py-2">
@@ -607,8 +607,8 @@ export default function AuctionCard({ artwork }) {
 
       {/* Quick Bidder Accreditation Modal */}
       {isBidderRegModalOpen && (
-        <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-xl flex items-center justify-center p-4">
-          <div className="relative w-full max-w-lg bg-[#0A0D14] border border-art-gold/50 rounded-3xl p-6 sm:p-8 shadow-2xl space-y-5 text-xs animate-fade-in text-left max-h-[90vh] overflow-y-auto">
+        <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-xl flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
+          <div className="relative w-full max-w-lg bg-[#0A0D14] border border-art-gold/50 rounded-3xl p-5 sm:p-8 shadow-2xl space-y-5 text-xs animate-fade-in text-left my-auto max-h-[92vh] overflow-y-auto pb-14 sm:pb-8">
             <div className="flex items-center justify-between border-b border-white/10 pb-3">
               <div className="flex items-center gap-2">
                 <ShieldCheck className="w-5 h-5 text-art-gold" />
@@ -616,7 +616,7 @@ export default function AuctionCard({ artwork }) {
                   Instant Bidder Accreditation
                 </h3>
               </div>
-              <button onClick={() => setIsBidderRegModalOpen(false)} className="text-slate-400 hover:text-white text-base">✕</button>
+              <button onClick={() => setIsBidderRegModalOpen(false)} className="text-slate-400 hover:text-white text-base p-1">✕</button>
             </div>
 
             {bidderRegSuccessMsg && (

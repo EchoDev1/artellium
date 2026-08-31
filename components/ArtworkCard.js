@@ -159,9 +159,9 @@ export default function ArtworkCard({ artwork }) {
 
       {/* Quick View Modal */}
       {quickViewOpen && (
-        <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-xl flex items-center justify-center p-4">
-          <div className="relative w-full max-w-3xl bg-art-black-card border border-art-gold/40 rounded-2xl overflow-hidden shadow-2xl flex flex-col md:flex-row">
-            <div className="md:w-1/2 aspect-square bg-black overflow-hidden relative">
+        <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-xl flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
+          <div className="relative w-full max-w-3xl bg-art-black-card border border-art-gold/40 rounded-2xl shadow-2xl flex flex-col md:flex-row my-auto max-h-[92vh] overflow-y-auto pb-6 md:pb-0">
+            <div className="md:w-1/2 aspect-square md:aspect-auto bg-black overflow-hidden relative shrink-0 min-h-[220px]">
               <img
                 src={artwork.image}
                 alt={artwork.title}
@@ -169,7 +169,7 @@ export default function ArtworkCard({ artwork }) {
               />
             </div>
 
-            <div className="md:w-1/2 p-6 flex flex-col justify-between">
+            <div className="md:w-1/2 p-5 sm:p-6 flex flex-col justify-between overflow-y-auto">
               <div>
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-xs text-art-gold font-bold uppercase tracking-wide">
@@ -177,26 +177,25 @@ export default function ArtworkCard({ artwork }) {
                   </span>
                   <button
                     onClick={() => setQuickViewOpen(false)}
-                    className="text-slate-400 hover:text-white"
+                    className="text-slate-400 hover:text-white p-1"
                   >
                     ✕
                   </button>
                 </div>
 
-                <h3 className="font-serif text-2xl font-bold text-white mb-1">{artwork.title}</h3>
+                <h3 className="font-serif text-xl sm:text-2xl font-bold text-white mb-1">{artwork.title}</h3>
                 <p className="text-sm text-art-gold font-medium mb-3">By {artwork.artistName}</p>
 
                 <div className="space-y-2 text-xs text-slate-300 mb-4 bg-art-black p-3 rounded-xl border border-white/10">
                   <p><strong>Medium:</strong> {artwork.medium}</p>
                   <p><strong>Dimensions:</strong> {artwork.dimensions}</p>
-
                   <p><strong>Provenance:</strong> {artwork.provenance}</p>
                 </div>
 
                 <p className="text-xs text-slate-400 leading-relaxed mb-4">{artwork.description}</p>
               </div>
 
-              <div className="pt-4 border-t border-white/10 flex items-center justify-between">
+              <div className="pt-4 border-t border-white/10 flex items-center justify-between gap-3">
                 <div>
                   <span className="text-xs text-slate-400 block">List Price:</span>
                   <span className="font-serif text-xl font-bold text-art-gold">
@@ -210,7 +209,7 @@ export default function ArtworkCard({ artwork }) {
                       addToCart(artwork);
                       setQuickViewOpen(false);
                     }}
-                    className="bg-art-gold hover:brightness-110 text-art-black font-bold text-xs px-5 py-2.5 rounded-xl shadow-gold-glow flex items-center gap-2"
+                    className="bg-art-gold hover:brightness-110 text-art-black font-bold text-xs px-5 py-2.5 rounded-xl shadow-gold-glow flex items-center gap-2 shrink-0"
                   >
                     <ShoppingBag className="w-4 h-4" />
                     <span>Add to Collection</span>

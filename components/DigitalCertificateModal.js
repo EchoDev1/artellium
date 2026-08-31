@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React from 'react';
 import { X, Award, ShieldCheck, CheckCircle2, Download, Printer, QrCode, Sparkles } from 'lucide-react';
@@ -40,7 +40,7 @@ export default function DigitalCertificateModal({ certData, onClose, artistSigna
 
       <div 
         id="artellium-printable-certificate"
-        className="relative w-full max-w-2xl bg-[#0f1117] text-white border-2 border-art-gold/60 rounded-3xl p-8 sm:p-10 shadow-2xl space-y-6 my-8 print:bg-white print:text-black print:border-art-gold"
+        className="relative w-full max-w-2xl bg-[#0f1117] text-white border-2 border-art-gold/60 rounded-3xl p-6 sm:p-10 shadow-2xl space-y-6 my-auto max-h-[92vh] overflow-y-auto pb-14 sm:pb-10 print:bg-white print:text-black print:border-art-gold"
       >
         {/* Close Button */}
         <button

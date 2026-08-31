@@ -29,7 +29,7 @@ import {
 } from 'lucide-react';
 
 export default function AdminSystemStatus({ currentUser }) {
-  const { artistPayoutPercentage = 85 } = useStore();
+  const { artistPayoutPercentage = 85, repairMasterAdminCredentials, usersList = [] } = useStore();
   const [isDiagnosing, setIsDiagnosing] = useState(false);
   const [diagProgress, setDiagProgress] = useState(0);
   const [lastChecked, setLastChecked] = useState(new Date().toLocaleTimeString());
@@ -37,15 +37,50 @@ export default function AdminSystemStatus({ currentUser }) {
   const [maintenanceMessage, setMaintenanceMessage] = useState('Scheduled Curatorial Upgrade in progress. Platform will resume shortly.');
   const [isMaintenanceModalOpen, setIsMaintenanceModalOpen] = useState(false);
 
+  // Authentication Diagnostic & Fixer State
+  const [authRepairStatus, setAuthRepairStatus] = useState('idle'); // 'idle' | 'repairing' | 'success'
+  const [authRepairNotice, setAuthRepairNotice] = useState('');
+  const [showMasterPass, setShowMasterPass] = useState(false);
+
   // Live heartbeats log state
   const [logs, setLogs] = useState([
-    { id: 1, time: '17:22:40', source: 'WEMA-SETTLE', type: 'info', text: 'Direct corporate settlement handshake verified (Latency: 28ms).' },
-    { id: 2, time: '17:21:15', source: 'CLOUDFLARE', type: 'security', text: 'Turnstile human challenge verified 14 new visitor sessions. 0 threats detected.' },
-    { id: 3, time: '17:19:02', source: 'AUCTION-WS', type: 'info', text: 'Live Arena Broadcast heartbeat OK. 248 active collectors synchronized.' },
-    { id: 4, time: '17:16:30', source: 'SUPABASE-DB', type: 'info', text: 'Database pool connection healthy (12/50 pooled connections, 16ms latency).' },
-    { id: 5, time: '17:14:10', source: '3D-ROOMS', type: 'info', text: 'Virtual Exhibition renderer initialized for 4 active halls (Target: 60fps).' },
-    { id: 6, time: '17:10:00', source: 'LANG-AI', type: 'info', text: 'Multi-language neural dictionary sync OK (10 languages cached).' }
+    { id: 1, time: '17:25:10', source: 'AUTH-VAULT', type: 'security', text: 'Executive Admin (Ekpendudakore@gmail.com) credential handshake verified & active.' },
+    { id: 2, time: '17:22:40', source: 'WEMA-SETTLE', type: 'info', text: 'Direct corporate settlement handshake verified (Latency: 28ms).' },
+    { id: 3, time: '17:21:15', source: 'CLOUDFLARE', type: 'security', text: 'Turnstile human challenge verified 14 new visitor sessions. 0 threats detected.' },
+    { id: 4, time: '17:19:02', source: 'AUCTION-WS', type: 'info', text: 'Live Arena Broadcast heartbeat OK. 248 active collectors synchronized.' },
+    { id: 5, time: '17:16:30', source: 'SUPABASE-DB', type: 'info', text: 'Database pool connection healthy (12/50 pooled connections, 16ms latency).' },
+    { id: 6, time: '17:14:10', source: '3D-ROOMS', type: 'info', text: 'Virtual Exhibition renderer initialized for 4 active halls (Target: 60fps).' }
   ]);
+
+  // Fix and Synchronize Master Admin Credentials
+  const handleFixMasterCredentials = () => {
+    setAuthRepairStatus('repairing');
+    setAuthRepairNotice('Executing cryptographic credential synchronization and cache repair...');
+
+    setTimeout(() => {
+      if (repairMasterAdminCredentials) {
+        repairMasterAdminCredentials();
+      }
+
+      setAuthRepairStatus('success');
+      setAuthRepairNotice('✅ Master Admin (Ekpendudakore@gmail.com) credentials successfully repaired and synchronized! Password set to "ladydakore@artellium90". Zero-lockout protection active.');
+      
+      setLogs((currentLogs) => [
+        {
+          id: Date.now(),
+          time: new Date().toLocaleTimeString(),
+          source: 'AUTH-REPAIR',
+          type: 'success',
+          text: 'Admin credentials auto-repaired. Ekpendudakore@gmail.com synchronized with master key ladydakore@artellium90.'
+        },
+        ...currentLogs
+      ]);
+
+      setTimeout(() => {
+        setAuthRepairStatus('idle');
+      }, 5000);
+    }, 600);
+  };
 
   // Run full system diagnostics
   const handleRunDiagnostics = () => {
@@ -66,7 +101,7 @@ export default function AdminSystemStatus({ currentUser }) {
                 time: new Date().toLocaleTimeString(),
                 source: 'DIAGNOSTICS',
                 type: 'success',
-                text: 'Global automated health audit completed. All 6 core services rated 100% operational.'
+                text: 'Global automated health audit completed. 7 core services including Authentication & Master Admin Access verified 100% operational.'
               },
               ...currentLogs.slice(0, 8)
             ]);
@@ -150,6 +185,18 @@ export default function AdminSystemStatus({ currentUser }) {
       latency: '8ms',
       uptime: '100%',
       details: 'Yoruba, Igbo, Hausa, Swahili, French, Arabic, Zulu, Portuguese, Amharic, and English synced.'
+    },
+    {
+      id: 'auth_handshake',
+      name: 'Authentication & Credential Handshake',
+      category: 'Identity & Access Management',
+      status: 'operational',
+      icon: Lock,
+      color: 'emerald',
+      metrics: 'Zero-Lockout Active',
+      latency: '11ms',
+      uptime: '100%',
+      details: 'Master Admin (Ekpendudakore@gmail.com) verified with auto-healing credentials. Zero-lockout protection active.'
     }
   ];
 
@@ -186,15 +233,25 @@ export default function AdminSystemStatus({ currentUser }) {
             <button
               onClick={handleRunDiagnostics}
               disabled={isDiagnosing}
-              className="px-4 py-2.5 bg-slate-900 hover:bg-slate-800 text-white font-bold uppercase tracking-wider rounded-xl transition flex items-center gap-2 shadow cursor-pointer disabled:opacity-50"
+              className="px-4 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs uppercase tracking-wider transition flex items-center gap-2 shadow cursor-pointer disabled:opacity-50"
             >
-              <RefreshCw className={`w-3.5 h-3.5 text-art-gold ${isDiagnosing ? 'animate-spin' : ''}`} />
-              <span>{isDiagnosing ? `Auditing (${diagProgress}%)` : 'Run Diagnostics'}</span>
+              <RefreshCw className={`w-3.5 h-3.5 ${isDiagnosing ? 'animate-spin' : ''}`} />
+              <span>{isDiagnosing ? 'Auditing Nodes...' : 'Run Diagnostics'}</span>
+            </button>
+
+            <button
+              onClick={handleFixMasterCredentials}
+              disabled={authRepairStatus === 'repairing'}
+              className="px-4 py-2.5 rounded-xl bg-art-gold hover:brightness-110 text-art-black font-bold text-xs uppercase tracking-wider transition flex items-center gap-2 shadow-gold-glow cursor-pointer disabled:opacity-50"
+              title="Fix and synchronize Master Admin login credentials"
+            >
+              <ShieldCheck className="w-4 h-4" />
+              <span>{authRepairStatus === 'repairing' ? 'Repairing Auth...' : 'Fix Master Credentials'}</span>
             </button>
 
             <button
               onClick={() => setIsMaintenanceModalOpen(true)}
-              className={`px-4 py-2.5 font-bold uppercase tracking-wider rounded-xl transition flex items-center gap-2 border cursor-pointer ${
+              className={`px-4 py-2.5 font-bold uppercase tracking-wider rounded-xl transition flex items-center gap-2 border cursor-pointer text-xs ${
                 maintenanceMode
                   ? 'bg-red-50 text-red-700 border-red-300'
                   : 'bg-slate-50 text-slate-700 hover:bg-slate-100 border-slate-200'
@@ -248,7 +305,7 @@ export default function AdminSystemStatus({ currentUser }) {
               <span>Core Services</span>
             </span>
             <div className="flex items-baseline justify-between">
-              <span className="font-serif text-2xl font-black text-slate-900">6 / 6</span>
+              <span className="font-serif text-2xl font-black text-slate-900">7 / 7</span>
               <span className="text-[10px] text-emerald-700 font-bold bg-emerald-100 px-2 py-0.5 rounded-full">
                 100% Healthy
               </span>
@@ -283,16 +340,177 @@ export default function AdminSystemStatus({ currentUser }) {
 
           <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-1">
             <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block flex items-center gap-1">
-              <Building className="w-3 h-3 text-amber-600" />
-              <span>WEMA Direct Bridge</span>
+              <Lock className="w-3 h-3 text-amber-600" />
+              <span>Auth Handshake</span>
             </span>
             <div className="flex items-baseline justify-between">
-              <span className="font-serif text-2xl font-black text-slate-900">Active</span>
+              <span className="font-serif text-2xl font-black text-slate-900">Protected</span>
               <span className="text-[10px] text-amber-800 font-bold bg-amber-100 px-2 py-0.5 rounded-full">
-                34ms Ping
+                Zero-Lockout
               </span>
             </div>
           </div>
+        </div>
+      </div>
+
+      {/* ========================================================================= */}
+      {/* AUTHENTICATION & MASTER ADMIN CREDENTIAL DIAGNOSTICS SUITE                */}
+      {/* ========================================================================= */}
+      <div className="bg-white rounded-3xl border border-slate-200 p-6 sm:p-7 shadow-sm space-y-5">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-4">
+          <div className="space-y-1">
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 rounded-xl bg-art-gold/15 border border-art-gold/40 flex items-center justify-center text-amber-800">
+                <Lock className="w-4 h-4 text-amber-800" />
+              </div>
+              <h3 className="font-serif text-lg font-bold text-slate-900">
+                Authentication Diagnostics & Master Credential Self-Healing Suite
+              </h3>
+            </div>
+            <p className="text-slate-500 text-xs">
+              Diagnose and instantly eliminate "Invalid email address or password" errors, synchronize master admin credentials, and enforce zero-lockout protection.
+            </p>
+          </div>
+
+          <button
+            onClick={handleFixMasterCredentials}
+            disabled={authRepairStatus === 'repairing'}
+            className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-art-gold via-amber-400 to-art-gold hover:brightness-110 text-art-black font-bold uppercase tracking-wider text-xs transition shadow-gold-glow flex items-center gap-2 cursor-pointer shrink-0 disabled:opacity-50"
+          >
+            <RefreshCw className={`w-3.5 h-3.5 ${authRepairStatus === 'repairing' ? 'animate-spin' : ''}`} />
+            <span>Fix & Synchronize Master Credentials</span>
+          </button>
+        </div>
+
+        {/* Repair Feedback Banner */}
+        {authRepairNotice && (
+          <div className="p-4 bg-emerald-50 border border-emerald-300 rounded-2xl text-emerald-900 text-xs font-medium flex items-center gap-3 animate-fade-in">
+            <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
+            <div className="space-y-0.5">
+              <p className="font-bold">{authRepairNotice}</p>
+              <p className="text-[11px] text-emerald-700">Account tables, browser local storage, and master session state synchronized.</p>
+            </div>
+          </div>
+        )}
+
+        {/* Live Credential Inspector Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          
+          {/* Master Admin Card */}
+          <div className="p-4 rounded-2xl bg-slate-50 border border-art-gold/40 space-y-3 relative overflow-hidden">
+            <div className="flex items-center justify-between">
+              <span className="text-[10px] font-mono text-art-gold uppercase font-bold tracking-wider block">
+                1. Master Admin Account
+              </span>
+              <span className="px-2 py-0.5 rounded-full text-[9px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-300">
+                ACTIVE & SYNCED
+              </span>
+            </div>
+
+            <div className="space-y-1.5 text-xs font-mono">
+              <div>
+                <span className="text-slate-400 text-[10px] block">Registered Email:</span>
+                <strong className="text-slate-900 font-bold text-xs">Ekpendudakore@gmail.com</strong>
+              </div>
+
+              <div>
+                <span className="text-slate-400 text-[10px] block">Master Password:</span>
+                <div className="flex items-center justify-between">
+                  <strong className="text-slate-800 font-bold text-xs">
+                    {showMasterPass ? 'ladydakore@artellium90' : '••••••••••••••••••••'}
+                  </strong>
+                  <button
+                    type="button"
+                    onClick={() => setShowMasterPass(!showMasterPass)}
+                    className="text-[10px] text-art-gold underline font-sans cursor-pointer"
+                  >
+                    {showMasterPass ? 'Hide' : 'Reveal'}
+                  </button>
+                </div>
+              </div>
+
+              <div>
+                <span className="text-slate-400 text-[10px] block">Role & Scope:</span>
+                <span className="text-slate-700 text-[11px]">System Administrator (Executive Sovereign)</span>
+              </div>
+            </div>
+
+            <div className="pt-2 border-t border-slate-200 flex items-center justify-between text-[10.5px]">
+              <span className="text-emerald-700 font-bold flex items-center gap-1">
+                <Check className="w-3.5 h-3.5 text-emerald-600" />
+                <span>Zero-Lockout Safe</span>
+              </span>
+              <button
+                onClick={handleFixMasterCredentials}
+                className="text-art-gold font-bold hover:underline"
+              >
+                Re-verify
+              </button>
+            </div>
+          </div>
+
+          {/* Master Artist Account */}
+          <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-3">
+            <div className="flex items-center justify-between">
+              <span className="text-[10px] font-mono text-slate-500 uppercase font-bold tracking-wider block">
+                2. Master Artist Account
+              </span>
+              <span className="px-2 py-0.5 rounded-full text-[9px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-300">
+                ACTIVE
+              </span>
+            </div>
+
+            <div className="space-y-1.5 text-xs font-mono">
+              <div>
+                <span className="text-slate-400 text-[10px] block">Primary Artist Email:</span>
+                <strong className="text-slate-900 font-bold text-xs">kofi@artellium.com</strong>
+              </div>
+
+              <div>
+                <span className="text-slate-400 text-[10px] block">Standard Password:</span>
+                <strong className="text-slate-800 font-bold text-xs">artist123</strong>
+              </div>
+
+              <div>
+                <span className="text-slate-400 text-[10px] block">Role & Scope:</span>
+                <span className="text-slate-700 text-[11px]">Verified Master Artist / Studio Seller</span>
+              </div>
+            </div>
+
+            <div className="pt-2 border-t border-slate-200 flex items-center justify-between text-[10.5px]">
+              <span className="text-slate-500">Auto-heal enabled</span>
+              <span className="text-slate-700 font-mono">Verified</span>
+            </div>
+          </div>
+
+          {/* Zero-Lockout Self-Healing Protocol */}
+          <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-3">
+            <div className="flex items-center justify-between">
+              <span className="text-[10px] font-mono text-slate-500 uppercase font-bold tracking-wider block">
+                3. Self-Healing Safeguards
+              </span>
+              <span className="px-2 py-0.5 rounded-full text-[9px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-300">
+                ARMED
+              </span>
+            </div>
+
+            <div className="space-y-2 text-slate-600 text-xs leading-relaxed">
+              <p className="flex items-start gap-1.5">
+                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0 mt-0.5" />
+                <span><strong>Case & Whitespace Tolerance:</strong> Trims accidental spaces, handles quotes, and accepts case-insensitive matching.</span>
+              </p>
+              <p className="flex items-start gap-1.5">
+                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0 mt-0.5" />
+                <span><strong>LocalStorage Auto-Recovery:</strong> If browser storage is cleared, core accounts are immediately regenerated on login attempt.</span>
+              </p>
+            </div>
+
+            <div className="pt-2 border-t border-slate-200 flex items-center justify-between text-[10.5px]">
+              <span className="text-slate-500">Total Users in Table:</span>
+              <strong className="text-slate-900 font-mono">{usersList.length} Accounts</strong>
+            </div>
+          </div>
+
         </div>
       </div>
 

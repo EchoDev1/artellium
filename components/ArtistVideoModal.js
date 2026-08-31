@@ -169,14 +169,14 @@ export default function ArtistVideoModal() {
 
       {/* Pop-up Video Modal Player */}
       {selectedVideo && (
-        <div className="fixed inset-0 z-50 bg-black/90 backdrop-blur-xl flex items-center justify-center p-4">
-          <div className="relative w-full max-w-4xl bg-art-black-card border border-art-gold/40 rounded-2xl overflow-hidden shadow-2xl">
+        <div className="fixed inset-0 z-50 bg-black/90 backdrop-blur-xl flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
+          <div className="relative w-full max-w-4xl bg-art-black-card border border-art-gold/40 rounded-2xl overflow-hidden shadow-2xl my-auto max-h-[92vh] flex flex-col">
             {/* Modal Header */}
-            <div className="flex items-center justify-between px-6 py-4 bg-art-black border-b border-white/10">
+            <div className="flex items-center justify-between px-5 sm:px-6 py-4 bg-art-black border-b border-white/10 shrink-0">
               <div className="flex items-center gap-3">
                 <Sparkles className="w-5 h-5 text-art-gold" />
                 <div>
-                  <h3 className="font-serif text-lg font-bold text-white">
+                  <h3 className="font-serif text-base sm:text-lg font-bold text-white line-clamp-1">
                     {selectedVideo.artistName} — {selectedVideo.artworkTitle}
                   </h3>
                   <p className="text-xs text-art-gold font-medium">
@@ -187,14 +187,14 @@ export default function ArtistVideoModal() {
 
               <button
                 onClick={() => setSelectedVideo(null)}
-                className="p-2 text-slate-400 hover:text-white rounded-lg hover:bg-white/10 transition"
+                className="p-2 text-slate-400 hover:text-white rounded-lg hover:bg-white/10 transition shrink-0"
               >
                 <X className="w-6 h-6" />
               </button>
             </div>
 
             {/* Video Player Container */}
-            <div className="relative aspect-video w-full bg-black">
+            <div className="relative aspect-video w-full bg-black overflow-y-auto">
               {selectedVideo.videoUrl.includes('youtube.com') || selectedVideo.videoUrl.includes('youtu.be') ? (
                 <iframe
                   src={`${selectedVideo.videoUrl}?autoplay=1`}
@@ -224,8 +224,8 @@ export default function ArtistVideoModal() {
 
       {/* Admin Add Video Modal */}
       {isAdminAddOpen && (
-        <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-4">
-          <div className="relative w-full max-w-lg bg-art-black-card border border-art-gold/40 rounded-2xl p-6 shadow-2xl">
+        <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
+          <div className="relative w-full max-w-lg bg-art-black-card border border-art-gold/40 rounded-2xl p-5 sm:p-6 shadow-2xl my-auto max-h-[92vh] overflow-y-auto pb-12 sm:pb-6">
             <div className="flex items-center justify-between mb-4 border-b border-white/10 pb-3">
               <div className="flex items-center gap-2 text-art-gold font-serif font-bold text-lg">
                 <ShieldCheck className="w-5 h-5" />
@@ -233,7 +233,7 @@ export default function ArtistVideoModal() {
               </div>
               <button
                 onClick={() => setIsAdminAddOpen(false)}
-                className="text-slate-400 hover:text-white"
+                className="text-slate-400 hover:text-white p-1"
               >
                 <X className="w-5 h-5" />
               </button>

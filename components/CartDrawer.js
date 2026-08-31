@@ -127,7 +127,7 @@ export default function CartDrawer() {
 
           {/* Footer Summary & Checkout */}
           {cart.length > 0 && (
-            <div className="p-6 bg-art-black border-t border-white/10 space-y-3">
+            <div className="p-5 sm:p-6 pb-20 sm:pb-6 bg-art-black border-t border-white/10 space-y-3">
               <div className="flex items-center justify-between text-xs text-slate-400">
                 <span>Shipping & Museum Freight</span>
                 <span className="text-emerald-400 font-semibold">Calculated at Checkout</span>
