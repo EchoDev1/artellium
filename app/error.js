@@ -1,21 +1,39 @@
-﻿'use client';
+'use client';
 
 import React, { useEffect } from 'react';
 import Link from 'next/link';
 import { Sparkles, RefreshCw, ShieldAlert, Home, ArrowRight } from 'lucide-react';
 
 export default function GlobalErrorPage({ error, reset }) {
+  const [isHealing, setIsHealing] = React.useState(false);
+
   useEffect(() => {
     // Log error cleanly
     console.error('[Artellium System Sentinel caught error]:', error);
   }, [error]);
 
   const handleSelfHeal = () => {
+    setIsHealing(true);
     try {
       // Clear any corrupted transient temporary session keys if needed without destroying login
       sessionStorage.clear();
     } catch (e) {}
-    reset();
+
+    // First try React error boundary reset
+    if (typeof reset === 'function') {
+      try {
+        reset();
+      } catch (e) {
+        console.warn('React boundary reset encountered issue, falling back to reload');
+      }
+    }
+
+    // Fallback: if React doesn't recover view immediately, perform a hard reload after short tick
+    setTimeout(() => {
+      if (typeof window !== 'undefined') {
+        window.location.reload();
+      }
+    }, 250);
   };
 
   return (
@@ -69,10 +87,11 @@ export default function GlobalErrorPage({ error, reset }) {
           <div className="flex flex-col sm:flex-row gap-3 pt-2">
             <button
               onClick={handleSelfHeal}
-              className="flex-1 py-3.5 px-6 rounded-xl bg-gradient-to-r from-art-gold via-amber-400 to-art-gold text-art-black font-bold uppercase tracking-wider transition shadow-gold-glow hover:brightness-110 flex items-center justify-center gap-2 cursor-pointer"
+              disabled={isHealing}
+              className="flex-1 py-3.5 px-6 rounded-xl bg-gradient-to-r from-art-gold via-amber-400 to-art-gold text-art-black font-bold uppercase tracking-wider transition shadow-gold-glow hover:brightness-110 flex items-center justify-center gap-2 cursor-pointer disabled:opacity-75"
             >
-              <RefreshCw className="w-4 h-4" />
-              <span>Self-Heal & Recover View</span>
+              <RefreshCw className={`w-4 h-4 ${isHealing ? 'animate-spin' : ''}`} />
+              <span>{isHealing ? 'Healing View...' : 'Self-Heal & Recover View'}</span>
             </button>
 
             <Link

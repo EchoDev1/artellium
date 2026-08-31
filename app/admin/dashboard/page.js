@@ -64,7 +64,8 @@ import {
   Palette,
   Upload,
   Leaf,
-  Flame
+  Flame,
+  Camera
 } from 'lucide-react';
 import Link from 'next/link';
 import VerificationBadge from '@/components/VerificationBadge';
