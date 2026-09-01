@@ -174,7 +174,7 @@ export default function JumiaArtHero() {
   };
 
   return (
-    <section className="w-full bg-[#062319] text-white pt-3 pb-6 border-b border-art-gold/20 select-none">
+    <section className="w-full bg-[#FAF9F6] text-white pt-3 pb-6 border-b border-art-gold/20 select-none">
       <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-6">
         
         {/* ========================================================================= */}

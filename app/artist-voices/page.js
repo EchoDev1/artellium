@@ -224,13 +224,6 @@ export default function ArtistVoicesPage() {
 
       {/* Header Banner */}
       <div className="relative bg-gradient-to-b from-[#1C1404] via-[#0E0B02] to-[#07080A] border-b border-art-gold/30 pt-12 pb-14 px-4 sm:px-6 lg:px-8 overflow-hidden">
-        {/* Full Section Background Graphic Image */}
-        <div 
-          className="absolute inset-0 bg-cover bg-center bg-no-repeat pointer-events-none opacity-40"
-          style={{ backgroundImage: "url('/voices-of-master-artists-bg.jpg')" }}
-        />
-        <div className="absolute inset-0 bg-gradient-to-b from-[#07080A]/90 via-[#07080A]/75 to-[#07080A] pointer-events-none" />
-
         <div className="max-w-7xl mx-auto space-y-6 relative z-10">
           <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
             <div className="space-y-2 max-w-3xl">

@@ -400,15 +400,15 @@ export default function HomePage() {
   const sectionsToRender = (pConfig.sections || []).filter(s => s.type !== 'hero');
 
   return (
-    <div className="space-y-0 bg-[#062319] min-h-screen text-slate-100">
+    <div className="space-y-0 bg-[#FAF9F6] min-h-screen text-slate-900">
       {/* 1. Traditionally-Coded Jumia-Style Pan-African Fine Art Hero */}
       {renderHero()}
 
       {/* 2. Jumia-Style Quick Department & Action Shortcuts Pill Grid */}
       <JumiaQuickShortcuts />
 
-      {/* Main Content Area */}
-      <div className="relative bg-[#062319] text-slate-100 pb-20 pt-8 space-y-16 overflow-hidden">
+      {/* Main Content Area (Archival Warm Alabaster Canvas) */}
+      <div className="relative bg-[#FAF9F6] text-slate-900 pb-20 pt-8 space-y-16 overflow-hidden">
         {/* Spotlight Voices & Provenance (Voices of Master Artists) */}
         <div className="relative z-10">
           <ArtistVideoModal />

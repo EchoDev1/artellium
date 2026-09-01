@@ -41,31 +41,24 @@ export default function ArtistVideoModal() {
   };
 
   return (
-    <section className="relative w-full py-16 border-t border-b border-art-gold/30 overflow-hidden bg-[#07080A]">
-      {/* Full Section Background Graphic Image */}
-      <div 
-        className="absolute inset-0 bg-cover bg-center bg-no-repeat pointer-events-none"
-        style={{ backgroundImage: "url('/voices-of-master-artists-bg.jpg')" }}
-      />
-      {/* Cinematic Vignette Overlay to ensure perfect contrast and text readability */}
-      <div className="absolute inset-0 bg-gradient-to-b from-[#07080A]/80 via-[#07080A]/60 to-[#07080A]/85 pointer-events-none" />
-
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-        {/* Section Header */}
-        <div className="flex flex-col md:flex-row md:items-end justify-between mb-10 gap-4">
-          <div>
-            <div className="flex items-center gap-2 mb-2">
-              <span className="p-1.5 rounded-lg bg-art-gold/10 text-art-gold border border-art-gold/30">
-                <Video className="w-4 h-4" />
+    <section className="relative w-full py-10 bg-[#FAF9F6] overflow-hidden">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 space-y-6">
+        {/* Gold Luxury Heading Banner */}
+        <div className="bg-gradient-to-r from-[#1F1705]/95 via-[#3E2D07]/95 to-[#1F1705]/95 border-2 border-art-gold/60 rounded-2xl sm:rounded-3xl p-5 sm:p-6 shadow-[0_6px_30px_rgba(212,175,55,0.25)] relative overflow-hidden flex flex-col sm:flex-row sm:items-center justify-between gap-4 backdrop-blur-md">
+          <div className="absolute top-0 inset-x-8 h-[2px] bg-gradient-to-r from-transparent via-amber-300 to-transparent" />
+          <div className="space-y-1 relative z-10">
+            <div className="flex items-center gap-2 mb-1 font-sans">
+              <span className="p-1.5 rounded-lg bg-art-gold/20 text-art-gold border border-art-gold/40 shadow-sm">
+                <Video className="w-4 h-4 text-art-gold animate-pulse" />
               </span>
-              <span className="text-xs font-semibold text-art-gold tracking-widest uppercase">
+              <span className="text-xs font-bold text-art-gold uppercase tracking-widest font-mono">
                 SPOTLIGHT VOICES & PROVENANCE
               </span>
             </div>
-            <h2 className="font-serif text-2xl sm:text-4xl font-bold text-white tracking-wide">
+            <h2 className="font-serif text-2xl sm:text-3xl font-bold text-white tracking-wide">
               Voices of Master Artists
             </h2>
-            <p className="text-slate-400 text-xs sm:text-sm mt-1 max-w-2xl">
+            <p className="text-xs sm:text-sm text-amber-100/80 font-sans max-w-2xl leading-relaxed">
               Watch master African painters, sculptors, and digital creators speak directly about the spiritual origins, techniques, and stories behind their works.
             </p>
           </div>
@@ -73,7 +66,7 @@ export default function ArtistVideoModal() {
           {/* View More Full Page Link */}
           <Link
             href="/artist-voices"
-            className="flex items-center gap-2 bg-gradient-to-r from-art-gold via-amber-500 to-art-gold-dark hover:brightness-110 text-art-black font-bold text-xs uppercase tracking-wider px-5 py-2.5 rounded-xl transition shadow-gold-glow cursor-pointer shrink-0"
+            className="text-xs font-bold text-black bg-gradient-to-r from-art-gold via-amber-300 to-art-gold hover:brightness-110 px-4 py-2.5 rounded-xl transition font-sans shadow-gold-glow relative z-10 flex items-center gap-1.5 shrink-0"
           >
             <span>View More</span>
             <ArrowRight className="w-4 h-4" />
