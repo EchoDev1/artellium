@@ -41,40 +41,43 @@ export default function ArtistVideoModal() {
   };
 
   return (
-    <section className="relative w-full py-10 bg-[#FAF9F6] overflow-hidden">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 space-y-6">
-        {/* Gold Luxury Heading Banner */}
-        <div className="bg-gradient-to-r from-[#1F1705]/95 via-[#3E2D07]/95 to-[#1F1705]/95 border-2 border-art-gold/60 rounded-2xl sm:rounded-3xl p-5 sm:p-6 shadow-[0_6px_30px_rgba(212,175,55,0.25)] relative overflow-hidden flex flex-col sm:flex-row sm:items-center justify-between gap-4 backdrop-blur-md">
-          <div className="absolute top-0 inset-x-8 h-[2px] bg-gradient-to-r from-transparent via-amber-300 to-transparent" />
-          <div className="space-y-1 relative z-10">
-            <div className="flex items-center gap-2 mb-1 font-sans">
-              <span className="p-1.5 rounded-lg bg-art-gold/20 text-art-gold border border-art-gold/40 shadow-sm">
-                <Video className="w-4 h-4 text-art-gold animate-pulse" />
-              </span>
-              <span className="text-xs font-bold text-art-gold uppercase tracking-widest font-mono">
-                SPOTLIGHT VOICES & PROVENANCE
-              </span>
+    <section className="relative w-full overflow-hidden">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+        <div className="relative rounded-2xl sm:rounded-3xl bg-white border-2 border-art-gold/30 shadow-[0_8px_30px_rgba(0,0,0,0.06)] p-5 sm:p-8 space-y-6 overflow-hidden">
+          <div className="absolute top-0 inset-x-8 h-[2px] bg-gradient-to-r from-transparent via-amber-400 to-transparent" />
+
+          {/* Gold Luxury Heading Banner */}
+          <div className="bg-gradient-to-r from-[#1F1705]/95 via-[#3E2D07]/95 to-[#1F1705]/95 border-2 border-art-gold/60 rounded-xl sm:rounded-2xl p-5 sm:p-6 shadow-[0_6px_25px_rgba(212,175,55,0.25)] relative overflow-hidden flex flex-col sm:flex-row sm:items-center justify-between gap-4 backdrop-blur-md">
+            <div className="absolute top-0 inset-x-8 h-[2px] bg-gradient-to-r from-transparent via-amber-300 to-transparent" />
+            <div className="space-y-1 relative z-10">
+              <div className="flex items-center gap-2 mb-1 font-sans">
+                <span className="p-1.5 rounded-lg bg-art-gold/20 text-art-gold border border-art-gold/40 shadow-sm">
+                  <Video className="w-4 h-4 text-art-gold animate-pulse" />
+                </span>
+                <span className="text-xs font-bold text-art-gold uppercase tracking-widest font-mono">
+                  SPOTLIGHT VOICES & PROVENANCE
+                </span>
+              </div>
+              <h2 className="font-serif text-2xl sm:text-3xl font-bold text-white tracking-wide">
+                Voices of Master Artists
+              </h2>
+              <p className="text-xs sm:text-sm text-amber-100/80 font-sans max-w-2xl leading-relaxed">
+                Watch master African painters, sculptors, and digital creators speak directly about the spiritual origins, techniques, and stories behind their works.
+              </p>
             </div>
-            <h2 className="font-serif text-2xl sm:text-3xl font-bold text-white tracking-wide">
-              Voices of Master Artists
-            </h2>
-            <p className="text-xs sm:text-sm text-amber-100/80 font-sans max-w-2xl leading-relaxed">
-              Watch master African painters, sculptors, and digital creators speak directly about the spiritual origins, techniques, and stories behind their works.
-            </p>
+
+            {/* View More Full Page Link */}
+            <Link
+              href="/artist-voices"
+              className="text-xs font-bold text-black bg-gradient-to-r from-art-gold via-amber-300 to-art-gold hover:brightness-110 px-4 py-2.5 rounded-xl transition font-sans shadow-gold-glow relative z-10 flex items-center gap-1.5 shrink-0"
+            >
+              <span>View More</span>
+              <ArrowRight className="w-4 h-4" />
+            </Link>
           </div>
 
-          {/* View More Full Page Link */}
-          <Link
-            href="/artist-voices"
-            className="text-xs font-bold text-black bg-gradient-to-r from-art-gold via-amber-300 to-art-gold hover:brightness-110 px-4 py-2.5 rounded-xl transition font-sans shadow-gold-glow relative z-10 flex items-center gap-1.5 shrink-0"
-          >
-            <span>View More</span>
-            <ArrowRight className="w-4 h-4" />
-          </Link>
-        </div>
-
-        {/* Video Cards Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {/* Video Cards Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {videos.map((vid) => (
             <div
               key={vid.id}
@@ -157,6 +160,7 @@ export default function ArtistVideoModal() {
               </div>
             </div>
           ))}
+        </div>
         </div>
       </div>
 
