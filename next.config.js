@@ -7,10 +7,6 @@ const nextConfig = {
   images: {
     domains: [],
   },
-  experimental: {
-    // Minify and tree-shake CSS in production
-    optimizeCss: true,
-  },
   // Ensure static assets are cached while pages revalidate immediately
   async headers() {
     return [
