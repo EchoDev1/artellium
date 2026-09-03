@@ -11,15 +11,24 @@ const nextConfig = {
     // Minify and tree-shake CSS in production
     optimizeCss: true,
   },
-  // Cache static assets for a year (long-term caching)
+  // Ensure static assets are cached while pages revalidate immediately
   async headers() {
     return [
+      {
+        source: '/_next/static/:path*',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=31536000, immutable',
+          },
+        ],
+      },
       {
         source: '/:path*',
         headers: [
           {
             key: 'Cache-Control',
-            value: 'public, max-age=31536000, immutable',
+            value: 'public, max-age=0, must-revalidate',
           },
         ],
       },

@@ -209,6 +209,13 @@ export default function SidebarDrawer() {
       icon: ShoppingBag,
     },
     {
+      id: 'sec-catalog-history',
+      label: '👑 West African Art History Archive',
+      subtitle: 'Nok, Ifẹ, Benin & Asante royal craftsmanship chronicles',
+      href: '/catalog',
+      icon: Crown,
+    },
+    {
       id: 'sec-ledger',
       label: 'Historical Provenance Ledger',
       subtitle: 'Immutable record of transacted artworks & values',

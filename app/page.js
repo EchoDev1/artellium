@@ -431,7 +431,7 @@ export default function HomePage() {
       <LuxuryOverlay />
 
       {/* Main Content Area (Archival Warm Alabaster Canvas) */}
-      <div className="relative bg-[#FAF9F6] text-slate-900 pb-20 pt-8 space-y-16 overflow-hidden">
+      <div className="relative bg-[#FAF9F6] text-slate-900 pb-32 sm:pb-20 pt-6 sm:pt-8 space-y-12 sm:space-y-16 overflow-hidden">
         {/* Spotlight Voices & Provenance (Voices of Master Artists) */}
         <div className="relative z-10">
           <ArtistVideoModal />

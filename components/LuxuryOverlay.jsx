@@ -11,8 +11,8 @@ export default function LuxuryOverlay() {
   return (
     <div className="w-full overflow-hidden my-0 select-none" aria-hidden="true" suppressHydrationWarning>
 
-      {/* ── TOP KENTE RIBBON (Compact) ────────────────────────────────── */}
-      <div className="relative w-full h-[36px] bg-[#07080A] flex flex-col justify-center overflow-hidden">
+      {/* ── TOP KENTE RIBBON (Compact & Mobile-Responsive) ───────────── */}
+      <div className="relative w-full h-[28px] sm:h-[36px] bg-[#07080A] flex flex-col justify-center overflow-hidden">
         {/* Kente SVG stripe band */}
         <svg
           viewBox="0 0 1200 36"
@@ -65,8 +65,8 @@ export default function LuxuryOverlay() {
         <div className="absolute inset-0 bg-gradient-to-r from-transparent via-[#D4AF37]/10 to-transparent pointer-events-none" />
       </div>
 
-      {/* ── EMERALD GREEN HERITAGE STATEMENT BAR (Compact) ─────────────── */}
-      <div className="relative w-full bg-gradient-to-r from-[#062319] via-[#0F3D2E] to-[#062319] py-2.5 sm:py-3 px-4 flex items-center justify-center gap-4 sm:gap-6 border-y border-[#D4AF37]/40 overflow-hidden">
+      {/* ── EMERALD GREEN HERITAGE STATEMENT BAR (Compact & Mobile-Optimized) ─ */}
+      <div className="relative w-full bg-gradient-to-r from-[#062319] via-[#0F3D2E] to-[#062319] py-2 sm:py-3 px-3 sm:px-4 flex items-center justify-center gap-2 sm:gap-6 border-y border-[#D4AF37]/40 overflow-hidden">
         {/* Subtle background adinkra-like circle pattern */}
         <svg className="absolute inset-0 w-full h-full opacity-10" xmlns="http://www.w3.org/2000/svg">
           <defs>
@@ -81,33 +81,33 @@ export default function LuxuryOverlay() {
           <rect width="100%" height="100%" fill="url(#adinkra-circle)" />
         </svg>
 
-        {/* Left ornament */}
-        <div className="flex items-center gap-1.5 shrink-0">
-          <div className="w-6 sm:w-10 h-[1px] bg-[#D4AF37]/60" />
+        {/* Left ornament (hidden on ultra-small mobile, subtle on sm) */}
+        <div className="hidden xs:flex items-center gap-1 sm:gap-1.5 shrink-0">
+          <div className="w-4 sm:w-10 h-[1px] bg-[#D4AF37]/60" />
           <div className="w-1.5 h-1.5 rotate-45 bg-[#D4AF37]" />
-          <div className="w-3 sm:w-6 h-[1px] bg-[#D4AF37]/60" />
+          <div className="w-2 sm:w-6 h-[1px] bg-[#D4AF37]/60" />
         </div>
 
         {/* Central text */}
-        <div className="text-center relative z-10">
-          <p className="font-serif text-[11px] sm:text-xs tracking-[0.25em] sm:tracking-[0.3em] uppercase text-[#D4AF37] font-semibold">
+        <div className="text-center relative z-10 px-1">
+          <p className="font-serif text-[10px] sm:text-xs tracking-[0.18em] sm:tracking-[0.3em] uppercase text-[#D4AF37] font-semibold leading-tight">
             Rooted in Heritage · Forged in Excellence
           </p>
-          <p className="text-[9px] sm:text-[10px] text-emerald-300/75 tracking-widest uppercase mt-0.5 font-sans">
+          <p className="text-[8.5px] sm:text-[10px] text-emerald-300/75 tracking-wider sm:tracking-widest uppercase mt-0.5 font-sans">
             African Fine Art · Authenticated · Immutable
           </p>
         </div>
 
-        {/* Right ornament */}
-        <div className="flex items-center gap-1.5 shrink-0">
-          <div className="w-3 sm:w-6 h-[1px] bg-[#D4AF37]/60" />
+        {/* Right ornament (hidden on ultra-small mobile, subtle on sm) */}
+        <div className="hidden xs:flex items-center gap-1 sm:gap-1.5 shrink-0">
+          <div className="w-2 sm:w-6 h-[1px] bg-[#D4AF37]/60" />
           <div className="w-1.5 h-1.5 rotate-45 bg-[#D4AF37]" />
-          <div className="w-6 sm:w-10 h-[1px] bg-[#D4AF37]/60" />
+          <div className="w-4 sm:w-10 h-[1px] bg-[#D4AF37]/60" />
         </div>
       </div>
 
       {/* ── BOTTOM KENTE RIBBON (Compact) ────────────────────────────── */}
-      <div className="relative w-full h-[12px] bg-[#07080A] overflow-hidden">
+      <div className="relative w-full h-[10px] sm:h-[12px] bg-[#07080A] overflow-hidden">
         <svg
           viewBox="0 0 1200 12"
           preserveAspectRatio="none"
