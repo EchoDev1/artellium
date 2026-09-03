@@ -7,15 +7,32 @@ import { Sparkles, RefreshCw, ShieldAlert, Home, ArrowRight } from 'lucide-react
 export default function GlobalErrorPage({ error, reset }) {
   const [isHealing, setIsHealing] = React.useState(false);
 
+  const [showAdminDiagnostics, setShowAdminDiagnostics] = React.useState(false);
+
   useEffect(() => {
-    // Log error cleanly
+    // Log error cleanly in console
     console.error('[Artellium System Sentinel caught error]:', error);
+
+    // Auto-heal chunk load errors (happens when browser cache has stale chunks from an update)
+    const isChunkError = 
+      error?.name === 'ChunkLoadError' ||
+      error?.message?.includes('Loading chunk') || 
+      error?.message?.includes('Loading CSS chunk');
+
+    if (isChunkError && typeof window !== 'undefined') {
+      const reloadKey = 'artellium_chunk_heal_lock';
+      const lastHeal = sessionStorage.getItem(reloadKey);
+      if (!lastHeal) {
+        sessionStorage.setItem(reloadKey, 'true');
+        window.location.reload();
+      }
+    }
   }, [error]);
 
   const handleSelfHeal = () => {
     setIsHealing(true);
     try {
-      // Clear any corrupted transient temporary session keys if needed without destroying login
+      // Clear any corrupted transient temporary session keys
       sessionStorage.clear();
     } catch (e) {}
 
@@ -28,12 +45,12 @@ export default function GlobalErrorPage({ error, reset }) {
       }
     }
 
-    // Fallback: if React doesn't recover view immediately, perform a hard reload after short tick
+    // Hard reload to guarantee clean bundle fetch
     setTimeout(() => {
       if (typeof window !== 'undefined') {
         window.location.reload();
       }
-    }, 250);
+    }, 200);
   };
 
   return (
@@ -72,14 +89,27 @@ export default function GlobalErrorPage({ error, reset }) {
               Sovereign Session Protection Active
             </h2>
             <p className="text-xs text-slate-400 leading-relaxed max-w-sm mx-auto">
-              Our automated reliability sentinel intercepted a transient view rendering issue and secured your session state.
+              Our automated reliability sentinel intercepted a transient connection delay and secured your session state.
             </p>
           </div>
 
+          {/* Technical Details: Only shown if clicked or in development */}
           {error?.message && (
-            <div className="p-3.5 bg-black/60 border border-white/10 rounded-xl text-left font-mono text-[11px] text-slate-400 break-words max-h-24 overflow-y-auto">
-              <span className="text-art-gold font-bold">Sentinel Notice: </span>
-              {error.message}
+            <div className="space-y-2">
+              <button
+                type="button"
+                onClick={() => setShowAdminDiagnostics(!showAdminDiagnostics)}
+                className="text-[10px] font-mono text-slate-500 hover:text-art-gold transition underline cursor-pointer"
+              >
+                {showAdminDiagnostics ? 'Hide Diagnostic Details' : 'Admin Diagnostic Details'}
+              </button>
+
+              {showAdminDiagnostics && (
+                <div className="p-3.5 bg-black/80 border border-white/10 rounded-xl text-left font-mono text-[11px] text-slate-400 break-words max-h-32 overflow-y-auto">
+                  <span className="text-art-gold font-bold">Sentinel Trace: </span>
+                  {error.message}
+                </div>
+              )}
             </div>
           )}
 

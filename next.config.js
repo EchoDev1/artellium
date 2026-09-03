@@ -7,14 +7,11 @@ const nextConfig = {
   images: {
     domains: [],
   },
-  assetPrefix: '',
-  future: { webpack5: true },
   experimental: {
-    gzipCompression: true,
-    brotliCompression: true,
+    // Minify and tree-shake CSS in production
     optimizeCss: true,
   },
-  // Cache static assets for a year
+  // Cache static assets for a year (long-term caching)
   async headers() {
     return [
       {

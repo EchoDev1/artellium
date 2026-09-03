@@ -14,6 +14,8 @@ import CuratorialSpotlightBanner from '@/components/CuratorialSpotlightBanner';
 import { useStore } from '@/context/store-context';
 import { isCategoryMatch } from '@/lib/category-utils';
 import { Sparkles, Flame, Eye, ArrowRight, Award, CheckCircle2, Crown, Zap, ShieldCheck, Tag, Gavel } from 'lucide-react';
+import LuxuryOverlay from '@/components/LuxuryOverlay.jsx';
+import TraditionalHeritageShowcase from '@/components/TraditionalHeritageShowcase.jsx';
 
 export default function HomePage() {
   const { 
@@ -418,12 +420,15 @@ export default function HomePage() {
   const sectionsToRender = (pConfig.sections || []).filter(s => s.type !== 'hero');
 
   return (
-    <div className="space-y-0 bg-[#FAF9F6] min-h-screen text-slate-900">
+    <div className="space-y-0 bg-[#FAF9F6] min-h-screen text-slate-900 relative" suppressHydrationWarning>
       {/* 1. Traditionally-Coded Jumia-Style Pan-African Fine Art Hero */}
       {renderHero()}
 
       {/* 2. Jumia-Style Quick Department & Action Shortcuts Pill Grid */}
       <JumiaQuickShortcuts />
+
+      {/* ── TRADITIONAL AFRICAN LUXURY DIVIDER ──────────────────────── */}
+      <LuxuryOverlay />
 
       {/* Main Content Area (Archival Warm Alabaster Canvas) */}
       <div className="relative bg-[#FAF9F6] text-slate-900 pb-20 pt-8 space-y-16 overflow-hidden">
@@ -438,6 +443,9 @@ export default function HomePage() {
         {/* Dynamic Homepage Sections */}
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-20 relative z-10">
           {sectionsToRender.map(renderSection)}
+
+          {/* Sovereign African Craftsmanship & Provenance Guilds Showcase */}
+          <TraditionalHeritageShowcase />
         </div>
       </div>
     </div>
