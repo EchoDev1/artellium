@@ -1,4 +1,4 @@
-﻿import { NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { supabaseServer } from '@/lib/supabaseServer';
 
 export const dynamic = 'force-dynamic';
@@ -53,7 +53,7 @@ export async function POST(request) {
 
     const { error: insertError } = await supabaseServer
       .from('users')
-      .insert([newUser]);
+      .upsert([newUser], { onConflict: 'email' });
 
     if (insertError) {
       console.error('[Register Supabase Insert Error]:', insertError);

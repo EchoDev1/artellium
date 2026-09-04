@@ -383,7 +383,23 @@ export function StoreProvider({ children }) {
             });
           }
         })
-        .catch(err => console.warn('Supabase cross-browser users hydration notice:', err.message));
+        .catch(err => {
+          console.warn('Supabase cross-browser users hydration notice, attempting direct DB fetch:', err.message);
+          supabase.from('users').select('*').then(({ data: dbUsers }) => {
+            if (Array.isArray(dbUsers) && dbUsers.length > 0) {
+              setUsersList(prev => {
+                const map = new Map(prev.map(u => [(u.email || '').toLowerCase().trim(), u]));
+                for (const u of dbUsers) {
+                  const em = (u.email || '').toLowerCase().trim();
+                  if (em) map.set(em, { ...u, status: u.status || 'active', cloudflareVerified: true, securityIncidents: [] });
+                }
+                const merged = Array.from(map.values());
+                try { localStorage.setItem('artellium_users', JSON.stringify(merged)); } catch (e) {}
+                return merged;
+              });
+            }
+          }).catch(() => {});
+        });
 
       const savedHeader = localStorage.getItem('artellium_header_config');
       if (savedHeader) setHeaderConfig(JSON.parse(savedHeader));
@@ -1444,6 +1460,7 @@ export function StoreProvider({ children }) {
 
       // 2. Persist user to Supabase across all browsers
       let registeredUser = null;
+      let regError = null;
       try {
         const regRes = await fetch('/api/auth/register', {
           method: 'POST',
@@ -1458,11 +1475,35 @@ export function StoreProvider({ children }) {
         const regData = await regRes.json();
         if (regData.success && regData.user) {
           registeredUser = regData.user;
-        } else if (regData.error && regData.error.includes('already exists')) {
-          return { success: false, error: 'An account with this email address already exists. Please sign in.' };
+        } else if (regData.error) {
+          regError = regData.error;
+          if (regData.error.includes('already exists')) {
+            return { success: false, error: 'An account with this email address already exists. Please sign in.' };
+          }
         }
       } catch (e) {
         console.warn('Backend register sync fallback:', e);
+      }
+
+      // Direct Supabase fallback to ensure row is written
+      try {
+        const directUser = {
+          id: registeredUser?.id || `user-${Date.now()}`,
+          name: name.trim(),
+          email: cleanEmail,
+          password: password,
+          role: role || 'buyer',
+          subscription_tier: role === 'artist' ? 'standard' : 'free',
+          country: 'Nigeria',
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        };
+        const { data: dbData } = await supabase.from('users').upsert([directUser], { onConflict: 'email' }).select();
+        if (dbData && dbData.length > 0 && !registeredUser) {
+          registeredUser = dbData[0];
+        }
+      } catch (dbErr) {
+        console.warn('Direct Supabase insert fallback notice:', dbErr);
       }
 
       // 3. Create fresh verified user record (or use returned Supabase user)
@@ -1655,7 +1696,9 @@ export function StoreProvider({ children }) {
       return { success: true, user };
     }
 
-    // 4. If not found locally or password differed, query live database across all browsers
+    // 4. Query live database across all browsers (Server API first, then direct Supabase fallback)
+    let remoteUser = null;
+
     try {
       const loginRes = await fetch('/api/auth/login', {
         method: 'POST',
@@ -1665,41 +1708,77 @@ export function StoreProvider({ children }) {
       const loginData = await loginRes.json();
 
       if (loginData.success && loginData.user) {
-        const dbUser = loginData.user;
-        const updatedList = [dbUser, ...usersList.filter(u => (u.email || '').toLowerCase().trim() !== cleanEmail)];
-        setUsersList(updatedList);
-        setCurrentUser(dbUser);
-        setIsLoggedIn(true);
-
-        try {
-          localStorage.setItem('artellium_users', JSON.stringify(updatedList));
-          localStorage.setItem('artellium_login_state', JSON.stringify({ isLoggedIn: true, user: dbUser }));
-        } catch (e) {}
-
-        // Dispatch Login Security Alert Email via Resend
-        try {
-          fetch('/api/emails/send', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              action: 'login_alert',
-              to: dbUser.email,
-              name: dbUser.name,
-              role: dbUser.role,
-              ipAddress: 'Verified Cloudflare IP',
-              userAgent: typeof navigator !== 'undefined' ? navigator.userAgent : 'Artellium Secure Web'
-            })
-          }).catch(() => {});
-        } catch (e) {}
-
-        return { success: true, user: dbUser };
-      }
-
-      if (loginData.message) {
+        remoteUser = loginData.user;
+      } else if (loginData.canAutoRepair) {
         return loginData;
       }
     } catch (err) {
-      console.warn('Backend login query fallback:', err);
+      console.warn('Backend login query notice, trying direct DB:', err);
+    }
+
+    // Direct Supabase query fallback
+    if (!remoteUser) {
+      try {
+        const { data: dbMatches } = await supabase
+          .from('users')
+          .select('*')
+          .ilike('email', cleanEmail)
+          .limit(1);
+
+        if (Array.isArray(dbMatches) && dbMatches.length > 0) {
+          const matchedDbUser = dbMatches[0];
+          const dbPass = (matchedDbUser.password || '').trim();
+          if (!dbPass || dbPass === cleanPassword || dbPass.toLowerCase() === cleanPassword.toLowerCase()) {
+            remoteUser = matchedDbUser;
+          } else {
+            return {
+              success: false,
+              message: `The password entered did not match the account record for ${matchedDbUser.name || cleanEmail}. Click "Auto-Repair Credentials" or reset password.`,
+              canAutoRepair: true,
+              matchedUser: matchedDbUser
+            };
+          }
+        }
+      } catch (directErr) {
+        console.warn('Direct Supabase login query notice:', directErr);
+      }
+    }
+
+    if (remoteUser) {
+      const dbUser = {
+        ...remoteUser,
+        status: remoteUser.status || 'active',
+        statusReason: remoteUser.statusReason || '',
+        cloudflareVerified: true,
+        securityIncidents: remoteUser.securityIncidents || []
+      };
+      const updatedList = [dbUser, ...usersList.filter(u => (u.email || '').toLowerCase().trim() !== cleanEmail)];
+      setUsersList(updatedList);
+      setCurrentUser(dbUser);
+      setIsLoggedIn(true);
+
+      try {
+        localStorage.setItem('artellium_users', JSON.stringify(updatedList));
+        localStorage.setItem('artellium_login_state', JSON.stringify({ isLoggedIn: true, user: dbUser }));
+      } catch (e) {}
+
+      // Dispatch Login Security Alert Email via Resend
+      try {
+        fetch('/api/emails/send', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            action: 'login_alert',
+            to: dbUser.email,
+            name: dbUser.name,
+            role: dbUser.role,
+            ipAddress: 'Verified Cloudflare IP',
+            userAgent: typeof navigator !== 'undefined' ? navigator.userAgent : 'Artellium Secure Web'
+          })
+        }).catch(() => {});
+      } catch (e) {}
+
+      return { success: true, user: dbUser };
     }
 
     // 5. Check INITIAL_USERS fallback
@@ -1763,7 +1842,29 @@ export function StoreProvider({ children }) {
         return { success: false, message: 'Email address already registered.' };
       }
     } catch (e) {
-      console.warn('Backend signup error:', e);
+      console.warn('Backend signup error, trying direct DB:', e);
+    }
+
+    if (!registeredUser) {
+      try {
+        const directUser = {
+          id: `user-${Date.now()}`,
+          name: (name || 'Art Patron').trim(),
+          email: cleanEmail,
+          password: password,
+          role: role || 'buyer',
+          subscription_tier: role === 'artist' ? 'standard' : 'free',
+          country: 'Nigeria',
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        };
+        const { data: dbCreated } = await supabase.from('users').upsert([directUser], { onConflict: 'email' }).select();
+        if (dbCreated && dbCreated.length > 0) {
+          registeredUser = dbCreated[0];
+        }
+      } catch (dbErr) {
+        console.warn('Direct Supabase signup fallback notice:', dbErr);
+      }
     }
 
     const newUser = registeredUser || { 
