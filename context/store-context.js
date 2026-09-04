@@ -356,6 +356,35 @@ export function StoreProvider({ children }) {
         setUsersList(INITIAL_USERS);
       }
 
+      // Fetch persistent registered users from Supabase across all browsers
+      fetch('/api/auth/users')
+        .then(res => res.json())
+        .then(data => {
+          if (data && data.success && Array.isArray(data.users) && data.users.length > 0) {
+            setUsersList(prev => {
+              const serverMap = new Map(data.users.map(u => [(u.email || '').toLowerCase().trim(), u]));
+              const localOnly = (prev || []).filter(u => {
+                const em = (u.email || '').toLowerCase().trim();
+                return em && !serverMap.has(em);
+              });
+              if (localOnly.length > 0) {
+                // Sync any local-only users up to Supabase
+                fetch('/api/auth/users', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ users: localOnly })
+                }).catch(() => {});
+              }
+              const merged = [...data.users, ...localOnly];
+              try {
+                localStorage.setItem('artellium_users', JSON.stringify(merged));
+              } catch (e) {}
+              return merged;
+            });
+          }
+        })
+        .catch(err => console.warn('Supabase cross-browser users hydration notice:', err.message));
+
       const savedHeader = localStorage.getItem('artellium_header_config');
       if (savedHeader) setHeaderConfig(JSON.parse(savedHeader));
 
@@ -798,6 +827,11 @@ export function StoreProvider({ children }) {
     }
     try {
       supabase.from('users').update(updatedFields).eq('id', userId).then(() => {});
+      fetch('/api/auth/update-user', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId, updatedFields })
+      }).catch(() => {});
     } catch (e) {}
   };
 
@@ -1408,13 +1442,31 @@ export function StoreProvider({ children }) {
         return { success: false, error: verifyData.error || 'Invalid 6-digit verification code.' };
       }
 
-      // 2. Check if already exists in users list
-      if (usersList.some(u => u.email.toLowerCase() === cleanEmail)) {
-        return { success: false, error: 'An account with this email address already exists. Please sign in.' };
+      // 2. Persist user to Supabase across all browsers
+      let registeredUser = null;
+      try {
+        const regRes = await fetch('/api/auth/register', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            name: name.trim(),
+            email: cleanEmail,
+            password,
+            role: role || 'buyer'
+          })
+        });
+        const regData = await regRes.json();
+        if (regData.success && regData.user) {
+          registeredUser = regData.user;
+        } else if (regData.error && regData.error.includes('already exists')) {
+          return { success: false, error: 'An account with this email address already exists. Please sign in.' };
+        }
+      } catch (e) {
+        console.warn('Backend register sync fallback:', e);
       }
 
-      // 3. Create fresh verified user record
-      const newUser = {
+      // 3. Create fresh verified user record (or use returned Supabase user)
+      const newUser = registeredUser || {
         id: `user-${Date.now()}`,
         name: name.trim(),
         email: cleanEmail,
@@ -1429,7 +1481,7 @@ export function StoreProvider({ children }) {
         securityIncidents: []
       };
 
-      const updatedUsers = [...usersList, newUser];
+      const updatedUsers = [newUser, ...usersList.filter(u => (u.email || '').toLowerCase().trim() !== cleanEmail)];
       setUsersList(updatedUsers);
       setCurrentUser(newUser);
       setIsLoggedIn(true);
@@ -1510,7 +1562,7 @@ export function StoreProvider({ children }) {
     };
   };
 
-  const login = (email, password) => {
+  const login = async (email, password) => {
     const cleanEmail = (email || '').trim().toLowerCase().replace(/^["']|["']$/g, '');
     const cleanPassword = (password || '').trim().replace(/^["']|["']$/g, '');
 
@@ -1560,7 +1612,7 @@ export function StoreProvider({ children }) {
       return { success: true, user: masterAdmin };
     }
 
-    // 2. Check credentials in active usersList (Exact match first, then case-insensitive password match)
+    // 2. Check credentials in active usersList (fast local path)
     let user = usersList.find(u => {
       const uEmail = (u.email || '').trim().toLowerCase();
       const uPass = (u.password || '').trim();
@@ -1569,84 +1621,152 @@ export function StoreProvider({ children }) {
       return uPass === cleanPassword || uPass.toLowerCase() === cleanPassword.toLowerCase();
     });
 
-    // 3. Check INITIAL_USERS fallback (Self-Healing in case localStorage was cleared)
-    if (!user) {
-      const initialMatch = (INITIAL_USERS || []).find(u => {
-        const uEmail = (u.email || '').trim().toLowerCase();
-        const uPass = (u.password || '').trim();
-        if (uEmail !== cleanEmail) return false;
-        if (!uPass) return true;
-        return uPass === cleanPassword || uPass.toLowerCase() === cleanPassword.toLowerCase();
-      });
-
-      if (initialMatch) {
-        user = { ...initialMatch, status: 'active', lastActive: new Date().toISOString() };
-        const updated = [user, ...usersList.filter(u => (u.email || '').toLowerCase().trim() !== cleanEmail)];
-        setUsersList(updated);
-        try {
-          localStorage.setItem('artellium_users', JSON.stringify(updated));
-        } catch (e) {}
-      }
-    }
-
-    // 4. If user not found, provide helpful diagnostics & auto-healing notice
-    if (!user) {
-      const userExists = usersList.find(u => (u.email || '').trim().toLowerCase() === cleanEmail) || 
-                         (INITIAL_USERS || []).find(u => (u.email || '').trim().toLowerCase() === cleanEmail);
-
-      if (userExists) {
+    // 3. If found locally, authenticate immediately
+    if (user) {
+      if (user.status === 'blocked') {
         return { 
           success: false, 
-          message: `The password entered did not match the account record for ${userExists.name || cleanEmail}. Click "Auto-Repair Credentials" or reset password.`,
-          canAutoRepair: true,
-          matchedUser: userExists
+          message: '⛔ This account has been suspended by the Artellium Security Council. Contact compliance@artellium.africa.' 
         };
       }
 
+      setCurrentUser(user);
+      setIsLoggedIn(true);
+      try {
+        localStorage.setItem('artellium_login_state', JSON.stringify({ isLoggedIn: true, user }));
+      } catch (e) {}
+
+      // Dispatch Login Security Alert Email via Resend
+      try {
+        fetch('/api/emails/send', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            action: 'login_alert',
+            to: user.email,
+            name: user.name,
+            role: user.role,
+            ipAddress: 'Verified Cloudflare IP',
+            userAgent: typeof navigator !== 'undefined' ? navigator.userAgent : 'Artellium Secure Web'
+          })
+        }).catch(() => {});
+      } catch (e) {}
+
+      return { success: true, user };
+    }
+
+    // 4. If not found locally or password differed, query live database across all browsers
+    try {
+      const loginRes = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: cleanEmail, password: cleanPassword })
+      });
+      const loginData = await loginRes.json();
+
+      if (loginData.success && loginData.user) {
+        const dbUser = loginData.user;
+        const updatedList = [dbUser, ...usersList.filter(u => (u.email || '').toLowerCase().trim() !== cleanEmail)];
+        setUsersList(updatedList);
+        setCurrentUser(dbUser);
+        setIsLoggedIn(true);
+
+        try {
+          localStorage.setItem('artellium_users', JSON.stringify(updatedList));
+          localStorage.setItem('artellium_login_state', JSON.stringify({ isLoggedIn: true, user: dbUser }));
+        } catch (e) {}
+
+        // Dispatch Login Security Alert Email via Resend
+        try {
+          fetch('/api/emails/send', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              action: 'login_alert',
+              to: dbUser.email,
+              name: dbUser.name,
+              role: dbUser.role,
+              ipAddress: 'Verified Cloudflare IP',
+              userAgent: typeof navigator !== 'undefined' ? navigator.userAgent : 'Artellium Secure Web'
+            })
+          }).catch(() => {});
+        } catch (e) {}
+
+        return { success: true, user: dbUser };
+      }
+
+      if (loginData.message) {
+        return loginData;
+      }
+    } catch (err) {
+      console.warn('Backend login query fallback:', err);
+    }
+
+    // 5. Check INITIAL_USERS fallback
+    const initialMatch = (INITIAL_USERS || []).find(u => {
+      const uEmail = (u.email || '').trim().toLowerCase();
+      const uPass = (u.password || '').trim();
+      if (uEmail !== cleanEmail) return false;
+      if (!uPass) return true;
+      return uPass === cleanPassword || uPass.toLowerCase() === cleanPassword.toLowerCase();
+    });
+
+    if (initialMatch) {
+      user = { ...initialMatch, status: 'active', lastActive: new Date().toISOString() };
+      const updated = [user, ...usersList.filter(u => (u.email || '').toLowerCase().trim() !== cleanEmail)];
+      setUsersList(updated);
+      try {
+        localStorage.setItem('artellium_users', JSON.stringify(updated));
+      } catch (e) {}
+      setCurrentUser(user);
+      setIsLoggedIn(true);
+      return { success: true, user };
+    }
+
+    // 6. User not found, check if email exists with wrong password
+    const userExists = usersList.find(u => (u.email || '').trim().toLowerCase() === cleanEmail) || 
+                       (INITIAL_USERS || []).find(u => (u.email || '').trim().toLowerCase() === cleanEmail);
+
+    if (userExists) {
       return { 
         success: false, 
-        message: 'No registered account found for this email address. Please check your email or click "Create Account".' 
+        message: `The password entered did not match the account record for ${userExists.name || cleanEmail}. Click "Auto-Repair Credentials" or reset password.`,
+        canAutoRepair: true,
+        matchedUser: userExists
       };
     }
 
-    if (user.status === 'blocked') {
-      return { 
-        success: false, 
-        message: '⛔ This account has been suspended by the Artellium Security Council. Contact compliance@artellium.africa.' 
-      };
-    }
+    return { 
+      success: false, 
+      message: 'No registered account found for this email address. Please check your email or click "Create Account".' 
+    };
+  };
 
-    setCurrentUser(user);
-    setIsLoggedIn(true);
+  const signup = async (name, email, password, role) => {
+    const cleanEmail = (email || '').trim().toLowerCase();
+    let registeredUser = null;
     try {
-      localStorage.setItem('artellium_login_state', JSON.stringify({ isLoggedIn: true, user }));
-    } catch (e) {}
-
-    // Dispatch Login Security Alert Email via Resend
-    try {
-      fetch('/api/emails/send', {
+      const regRes = await fetch('/api/auth/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          action: 'login_alert',
-          to: user.email,
-          name: user.name,
-          role: user.role,
-          ipAddress: 'Verified Cloudflare IP',
-          userAgent: typeof navigator !== 'undefined' ? navigator.userAgent : 'Artellium Secure Web'
+          name: (name || '').trim(),
+          email: cleanEmail,
+          password,
+          role: role || 'buyer'
         })
-      }).catch(() => {});
-    } catch (e) {}
-
-    return { success: true, user };
-  };
-
-  const signup = (name, email, password, role) => {
-    const cleanEmail = (email || '').trim().toLowerCase();
-    if (usersList.some(u => u.email.toLowerCase() === cleanEmail)) {
-      return { success: false, message: 'Email address already registered.' };
+      });
+      const regData = await regRes.json();
+      if (regData.success && regData.user) {
+        registeredUser = regData.user;
+      } else if (regData.error && regData.error.includes('already exists')) {
+        return { success: false, message: 'Email address already registered.' };
+      }
+    } catch (e) {
+      console.warn('Backend signup error:', e);
     }
-    const newUser = { 
+
+    const newUser = registeredUser || { 
       id: `user-${Date.now()}`, 
       name, 
       email: cleanEmail, 
@@ -1660,7 +1780,7 @@ export function StoreProvider({ children }) {
       cloudflareVerified: true,
       securityIncidents: []
     };
-    const updatedUsers = [...usersList, newUser];
+    const updatedUsers = [newUser, ...usersList.filter(u => (u.email || '').toLowerCase().trim() !== cleanEmail)];
     setUsersList(updatedUsers);
     setCurrentUser(newUser);
     setIsLoggedIn(true);

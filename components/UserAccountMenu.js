@@ -126,7 +126,7 @@ export default function UserAccountMenu() {
 
   const passStrength = getPasswordStrength(password);
 
-  const handleLogin = (e) => {
+  const handleLogin = async (e) => {
     if (e) e.preventDefault();
     setAuthError('');
     setAuthSuccess('');
@@ -143,8 +143,8 @@ export default function UserAccountMenu() {
 
     setIsLoading(true);
 
-    setTimeout(() => {
-      const res = login(email.trim(), password);
+    try {
+      const res = await login(email.trim(), password);
       setIsLoading(false);
 
       if (res.success) {
@@ -159,7 +159,10 @@ export default function UserAccountMenu() {
       } else {
         setAuthError(res.message || 'Invalid email or password.');
       }
-    }, 450);
+    } catch (err) {
+      setIsLoading(false);
+      setAuthError('Network error during sign in. Please retry.');
+    }
   };
 
   // Step 1: Submit Details & Request 6-digit OTP Code via Resend
