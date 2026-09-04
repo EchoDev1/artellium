@@ -302,28 +302,44 @@ export function StoreProvider({ children }) {
       }
 
       const savedSellers = localStorage.getItem('artellium_sellers');
-      if (savedSellers) setSellers(JSON.parse(savedSellers));
+      if (savedSellers) {
+        try { setSellers(JSON.parse(savedSellers)); } catch (e) {}
+      }
 
       const savedCart = localStorage.getItem('artellium_cart');
-      if (savedCart) setCart(JSON.parse(savedCart));
+      if (savedCart) {
+        try { setCart(JSON.parse(savedCart)); } catch (e) {}
+      }
 
       const savedTxns = localStorage.getItem('artellium_transactions');
-      if (savedTxns) setTransactions(JSON.parse(savedTxns));
+      if (savedTxns) {
+        try { setTransactions(JSON.parse(savedTxns)); } catch (e) {}
+      }
 
       const savedWishlist = localStorage.getItem('artellium_wishlist');
-      if (savedWishlist) setWishlist(JSON.parse(savedWishlist));
+      if (savedWishlist) {
+        try { setWishlist(JSON.parse(savedWishlist)); } catch (e) {}
+      }
 
       const savedQuestions = localStorage.getItem('artellium_questions');
-      if (savedQuestions) setArtworkQuestions(JSON.parse(savedQuestions));
+      if (savedQuestions) {
+        try { setArtworkQuestions(JSON.parse(savedQuestions)); } catch (e) {}
+      }
 
       const savedNotifications = localStorage.getItem('artellium_notifications');
-      if (savedNotifications) setNotifications(JSON.parse(savedNotifications));
+      if (savedNotifications) {
+        try { setNotifications(JSON.parse(savedNotifications)); } catch (e) {}
+      }
 
       const savedCollectorOffers = localStorage.getItem('artellium_collector_offers');
-      if (savedCollectorOffers) setCollectorOffers(JSON.parse(savedCollectorOffers));
+      if (savedCollectorOffers) {
+        try { setCollectorOffers(JSON.parse(savedCollectorOffers)); } catch (e) {}
+      }
 
       const savedSignatures = localStorage.getItem('artellium_signatures');
-      if (savedSignatures) setArtistSignatures(JSON.parse(savedSignatures));
+      if (savedSignatures) {
+        try { setArtistSignatures(JSON.parse(savedSignatures)); } catch (e) {}
+      }
 
       const savedVideos = localStorage.getItem('artellium_artist_videos');
       if (savedVideos) {
@@ -426,7 +442,9 @@ export function StoreProvider({ children }) {
         });
 
       const savedHeader = localStorage.getItem('artellium_header_config');
-      if (savedHeader) setHeaderConfig(JSON.parse(savedHeader));
+      if (savedHeader) {
+        try { setHeaderConfig(JSON.parse(savedHeader)); } catch (e) {}
+      }
 
       const savedHero = localStorage.getItem('artellium_hero_config');
       if (savedHero) {
@@ -493,10 +511,14 @@ export function StoreProvider({ children }) {
       }
 
       const savedPriorityPricing = localStorage.getItem('artellium_priority_pricing');
-      if (savedPriorityPricing) setPriorityBannerPricing(JSON.parse(savedPriorityPricing));
+      if (savedPriorityPricing) {
+        try { setPriorityBannerPricing(JSON.parse(savedPriorityPricing)); } catch (e) {}
+      }
 
       const savedPriorityPlacements = localStorage.getItem('artellium_priority_placements');
-      if (savedPriorityPlacements) setPriorityBannerPlacements(JSON.parse(savedPriorityPlacements));
+      if (savedPriorityPlacements) {
+        try { setPriorityBannerPlacements(JSON.parse(savedPriorityPlacements)); } catch (e) {}
+      }
 
       const savedLoginState = localStorage.getItem('artellium_login_state');
       if (savedLoginState) {

@@ -12,7 +12,6 @@ import {
   Sparkles, 
   Search, 
   SlidersHorizontal, 
-  ArrowLeft, 
   CheckCircle2, 
   Award, 
   Palette, 
@@ -92,17 +91,8 @@ function NewlyListedContent() {
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-8 animate-fade-in font-sans">
       
-      {/* Back Navigation & Breadcrumb */}
-      <div className="flex items-center justify-between gap-4">
-        <Link 
-          href="/" 
-          className="inline-flex items-center gap-2 text-xs font-bold text-art-gold hover:underline"
-        >
-          <ArrowLeft className="w-4 h-4" />
-          <span>Back to Marketplace</span>
-        </Link>
-
-        {currentUser?.role === 'artist' && (
+      {currentUser?.role === 'artist' && (
+        <div className="flex justify-end">
           <Link
             href="/artist/dashboard"
             className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-art-gold hover:brightness-110 text-art-black rounded-xl text-xs font-bold uppercase tracking-wider transition shadow"
@@ -110,8 +100,8 @@ function NewlyListedContent() {
             <PlusCircle className="w-4 h-4" />
             <span>List New Artwork</span>
           </Link>
-        )}
-      </div>
+        </div>
+      )}
 
       {/* Gold Luxury Header Banner */}
       <div className="bg-gradient-to-r from-[#1F1705]/95 via-[#3E2D07]/95 to-[#1F1705]/95 border-2 border-art-gold/60 rounded-3xl p-6 sm:p-10 shadow-[0_8px_32px_rgba(212,175,55,0.25)] relative overflow-hidden backdrop-blur-md space-y-3">

@@ -10,6 +10,7 @@ import SidebarDrawer from '@/components/SidebarDrawer';
 import CustodianModal from '@/components/CustodianModal';
 import MobileBottomNav from '@/components/MobileBottomNav';
 import SystemHealthGuardian from '@/components/SystemHealthGuardian';
+import UniversalBackButton from '@/components/UniversalBackButton';
 
 export const metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || 'https://artellium.africa'),
@@ -86,7 +87,10 @@ export default function RootLayout({ children }) {
             <GoogleTranslateScript />
             <SystemHealthGuardian />
             <Navbar />
-            <main className="flex-1 w-full pb-16 md:pb-0">{children}</main>
+            <main className="flex-1 w-full pb-16 md:pb-0">
+              <UniversalBackButton />
+              {children}
+            </main>
             <Footer />
             <CartDrawer />
             <CheckoutModal />

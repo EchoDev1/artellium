@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import ArtworkCard from '@/components/ArtworkCard';
 import { useStore } from '@/context/store-context';
 import { sortArtworksByPriority } from '@/lib/priority-utils';
-import { Award, ShieldCheck, Search, SlidersHorizontal, BookOpen, ArrowLeft } from 'lucide-react';
+import { Award, ShieldCheck, Search, SlidersHorizontal, BookOpen } from 'lucide-react';
 import Link from 'next/link';
 
 export default function RecentlySoldPage() {
@@ -44,15 +44,6 @@ export default function RecentlySoldPage() {
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-10">
-      {/* Back to Home Link */}
-      <Link 
-        href="/" 
-        className="inline-flex items-center gap-2 text-xs font-bold text-art-gold hover:underline"
-      >
-        <ArrowLeft className="w-4 h-4" />
-        <span>Back to Home</span>
-      </Link>
-
       {/* Header Banner */}
       <div className="bg-gradient-to-r from-amber-950/20 via-[#0E1117] to-art-black p-8 rounded-3xl border border-art-gold/30 shadow-2xl space-y-3 relative overflow-hidden">
         <div className="flex items-center gap-2">

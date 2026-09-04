@@ -6,7 +6,6 @@ import {
   Sparkles, 
   Award, 
   ShieldCheck, 
-  ArrowLeft, 
   Globe, 
   Users, 
   Building2, 
@@ -68,18 +67,6 @@ export default function AboutPage() {
         <div className="absolute bottom-0 left-1/3 w-80 h-80 bg-art-green/10 blur-3xl pointer-events-none" />
 
         <div className="max-w-7xl mx-auto space-y-6 relative z-10">
-          <div className="flex items-center gap-3">
-            <Link
-              href="/"
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/5 hover:bg-art-gold hover:text-art-black text-slate-400 text-xs font-semibold border border-white/10 transition"
-            >
-              <ArrowLeft className="w-3.5 h-3.5" />
-              <span>Back to Marketplace</span>
-            </Link>
-            <span className="text-slate-600">/</span>
-            <span className="text-xs text-art-gold font-mono uppercase tracking-wider">About Artellium</span>
-          </div>
-
           <div className="max-w-4xl space-y-4">
             <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-art-gold/15 text-art-gold text-[10px] font-bold tracking-widest uppercase border border-art-gold/30">
               <Sparkles className="w-3.5 h-3.5" />

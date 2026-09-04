@@ -7,7 +7,6 @@ import {
   Phone, 
   MapPin, 
   Send, 
-  ArrowLeft, 
   Clock, 
   CheckCircle2, 
   MessageSquare,
@@ -99,19 +98,6 @@ export default function ContactPage() {
       {/* Top Breadcrumb & Page Header */}
       <section className="relative overflow-hidden border-b border-white/10 bg-[#0B0D13] pt-12 pb-14 px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto space-y-4">
-          
-          <div className="flex items-center gap-3">
-            <Link
-              href="/"
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/5 hover:bg-art-gold hover:text-art-black text-slate-400 text-xs font-semibold border border-white/10 transition"
-            >
-              <ArrowLeft className="w-3.5 h-3.5" />
-              <span>Back to Home</span>
-            </Link>
-            <span className="text-slate-600">/</span>
-            <span className="text-xs text-art-gold font-mono uppercase tracking-wider">Contact Us</span>
-          </div>
-
           <div className="space-y-2 max-w-3xl">
             <h1 className="font-serif text-3xl sm:text-4xl lg:text-5xl font-bold text-white tracking-wide">
               Contact Artellium
