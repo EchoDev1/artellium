@@ -40,13 +40,18 @@ import {
   User,
   Eye,
   Leaf,
-  ShieldCheck
+  ShieldCheck,
+  Film,
+  Video,
+  Play,
+  Crown
 } from 'lucide-react';
 import Link from 'next/link';
 import ProfilePhotoStudioModal from '@/components/ProfilePhotoStudioModal';
 import ArtistLiveAuctionConsole from '@/components/ArtistLiveAuctionConsole';
 import ArtistPanAfricanSuite from '@/components/ArtistPanAfricanSuite';
 import ArtworkPhotoUploader from '@/components/ArtworkPhotoUploader';
+import { isPriorityArtist } from '@/lib/priority-utils';
 
 export default function ArtistDashboardPage() {
   const { 
@@ -74,13 +79,91 @@ export default function ArtistDashboardPage() {
     priorityBannerPricing,
     priorityBannerPlacements = [],
     requestPriorityBannerPlacement,
-    artistPayoutPercentage = 85
+    artistPayoutPercentage = 85,
+    videos = [],
+    submitArtistVideo,
+    subscribeArtist,
+    usersList = []
   } = useStore();
 
   const [successMsg, setSuccessMsg] = useState('');
   const [isPhotoStudioOpen, setIsPhotoStudioOpen] = useState(false);
   const [photoSavedNotice, setPhotoSavedNotice] = useState(false);
   const router = useRouter();
+
+  // Artist Story Video (1-2 Min Hero Showcase) Submission State
+  const [videoSubmitNotice, setVideoSubmitNotice] = useState('');
+  const [videoFileMeta, setVideoFileMeta] = useState(null);
+  const [artistVideoForm, setArtistVideoForm] = useState({
+    artistName: currentUser?.name ? currentUser.name.split(' (')[0] : '',
+    artistTitle: 'Royal Heritage Master',
+    country: currentUser?.country || 'Nigeria',
+    countryFlag: '🇳🇬',
+    city: 'Lagos',
+    thumbnail: '',
+    videoUrl: '',
+    quote: '',
+    duration: '1:30',
+  });
+
+  const handleVideoFileChange = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('video/')) {
+      alert('Please select a valid video file (MP4, WebM, MOV) from your device gallery.');
+      return;
+    }
+
+    const sizeMB = (file.size / (1024 * 1024)).toFixed(1);
+    if (file.size > 150 * 1024 * 1024) {
+      alert(`The selected video is ${sizeMB}MB. Please select a video under 150MB.`);
+      return;
+    }
+
+    const objectUrl = URL.createObjectURL(file);
+    setVideoFileMeta({
+      name: file.name,
+      sizeMB,
+      type: file.type
+    });
+    setArtistVideoForm(prev => ({
+      ...prev,
+      videoUrl: objectUrl,
+      thumbnail: prev.thumbnail || 'https://images.unsplash.com/photo-1579783902614-a3fb3927b675?auto=format&fit=crop&q=80&w=600'
+    }));
+  };
+
+  const handleArtistVideoSubmit = (e) => {
+    e.preventDefault();
+    if (!artistVideoForm.artistName || !artistVideoForm.videoUrl) {
+      alert('Please select a video file from your device gallery before submitting.');
+      return;
+    }
+
+    submitArtistVideo({
+      ...artistVideoForm,
+      artistEmail: currentUser?.email || 'artist@artellium.africa',
+      artistId: currentUser?.id || 'artist-current',
+      videoFileName: videoFileMeta?.name || 'gallery_video.mp4',
+      videoSizeMB: videoFileMeta?.sizeMB || '0',
+    });
+
+    setVideoSubmitNotice('🎉 Your 1–2 minute video story has been submitted from your gallery! It is now queued for Admin Review before going live on the Homepage Hero slider.');
+    setVideoFileMeta(null);
+    setArtistVideoForm({
+      artistName: currentUser?.name ? currentUser.name.split(' (')[0] : '',
+      artistTitle: 'Royal Heritage Master',
+      country: currentUser?.country || 'Nigeria',
+      countryFlag: '🇳🇬',
+      city: 'Lagos',
+      thumbnail: '',
+      videoUrl: '',
+      quote: '',
+      duration: '1:30',
+    });
+    setTimeout(() => setVideoSubmitNotice(''), 8000);
+  };
 
   // Priority Banner State
   const [selectedArtForBanner, setSelectedArtForBanner] = useState('');
@@ -132,8 +215,21 @@ export default function ArtistDashboardPage() {
   const [sigSaveMsg, setSigSaveMsg] = useState(false);
   const canvasRef = useRef(null);
 
-  // Navigation Tab State: 'studio_operations', 'artist_profile', 'live_auctions', 'pan_african', 'exhibitions_sdgs'
+  // Navigation Tab State: 'studio_operations', 'priority_subscription', 'artist_profile', 'hero_videos', 'live_auctions', 'pan_african', 'exhibitions_sdgs'
   const [activeArtistTab, setActiveArtistTab] = useState('studio_operations');
+
+  // Priority Subscription Management
+  const isSubscribed = isPriorityArtist(currentUser, sellers, usersList);
+  const [selectedBillingCycle, setSelectedBillingCycle] = useState('monthly');
+  const [subscriptionSuccessMsg, setSubscriptionSuccessMsg] = useState('');
+
+  const handleToggleSubscription = (targetTier) => {
+    subscribeArtist(targetTier, selectedBillingCycle);
+    setSubscriptionSuccessMsg(targetTier === 'premium' 
+      ? '👑 Priority Artist Plan activated! Your artworks now have Top Priority Placement across Artellium.' 
+      : 'Subscription updated to Standard (Free tier).');
+    setTimeout(() => setSubscriptionSuccessMsg(''), 5000);
+  };
 
   // Payout Bank Settings state (Account Name, Bank Name, Account Number)
   const mySellerProfile = sellers.find(s => (myArtistName && s.name?.toLowerCase().includes(myArtistName.toLowerCase())) || (currentUser?.id && s.user_id === currentUser.id)) || {
@@ -515,12 +611,35 @@ export default function ArtistDashboardPage() {
               </p>
             </div>
 
-            <div className="bg-slate-50 border border-slate-200 px-4 py-2.5 rounded-2xl text-right shrink-0">
-              <span className="text-[10px] text-slate-400 block uppercase font-bold tracking-wider">Accreditation Tier:</span>
-              <span className="text-xs font-bold text-amber-800 uppercase flex items-center gap-1 justify-end mt-0.5">
-                <Award className="w-3.5 h-3.5" />
-                <span>{currentUser.subscriptionTier || 'Premium'} Gold Tier ({artistPayoutPercentage}% Net Split)</span>
-              </span>
+            <div className="flex flex-col sm:flex-row items-end sm:items-center gap-2 sm:gap-3 shrink-0">
+              <div className="bg-slate-50 border border-slate-200 px-4 py-2 rounded-2xl text-right">
+                <span className="text-[10px] text-slate-400 block uppercase font-bold tracking-wider">Placement Tier:</span>
+                <span className={`text-xs font-bold uppercase flex items-center gap-1 justify-end mt-0.5 ${
+                  isSubscribed ? 'text-amber-800' : 'text-slate-600'
+                }`}>
+                  {isSubscribed ? <Crown className="w-3.5 h-3.5 text-art-gold fill-current" /> : <Award className="w-3.5 h-3.5 text-slate-400" />}
+                  <span>{isSubscribed ? '👑 Priority Subscribed (Gold)' : 'Standard Artist (Free)'}</span>
+                </span>
+              </div>
+              {!isSubscribed ? (
+                <button
+                  type="button"
+                  onClick={() => setActiveArtistTab('priority_subscription')}
+                  className="px-3.5 py-2 bg-gradient-to-r from-art-gold to-amber-500 hover:brightness-110 text-art-black font-black text-xs rounded-xl shadow transition flex items-center gap-1.5 cursor-pointer"
+                >
+                  <Crown className="w-3.5 h-3.5 fill-current" />
+                  <span>Upgrade to Priority</span>
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => setActiveArtistTab('priority_subscription')}
+                  className="px-3 py-2 bg-slate-900 hover:bg-slate-800 text-art-gold font-bold text-xs rounded-xl transition flex items-center gap-1.5 cursor-pointer border border-art-gold/40"
+                >
+                  <Crown className="w-3.5 h-3.5 fill-current" />
+                  <span>Manage Priority</span>
+                </button>
+              )}
             </div>
           </div>
         </div>
@@ -529,7 +648,9 @@ export default function ArtistDashboardPage() {
         <div className="flex items-center gap-1.5 border-b border-slate-200 pb-2 overflow-x-auto no-scrollbar text-xs">
           {[
             { id: 'studio_operations', label: `Studio & Catalogue (${myArtworks.length})`, icon: Palette },
+            { id: 'priority_subscription', label: 'Priority Plan & Placement', icon: Crown, badge: isSubscribed ? '👑 ACTIVE' : 'UPGRADE' },
             { id: 'artist_profile', label: 'Master Artist Profile & Atelier', icon: User, badge: '👑 VERIFIED' },
+            { id: 'hero_videos', label: 'Hero Story Videos (1–2 Min)', icon: Film, badge: '🎬 NEW' },
             { id: 'live_auctions', label: 'Live Auction Floor', icon: Flame },
             { id: 'pan_african', label: 'Pan-African Atelier Suite', icon: Globe },
             { id: 'exhibitions_sdgs', label: 'Exhibitions & SDGs Forums', icon: Eye },
@@ -557,6 +678,553 @@ export default function ArtistDashboardPage() {
             );
           })}
         </div>
+
+        {/* ========================================================================= */}
+        {/* TAB: ARTIST STORY VIDEOS (1–2 MIN HOMEPAGE HERO SHOWCASE)                */}
+        {/* ========================================================================= */}
+        {activeArtistTab === 'hero_videos' && (
+          <div className="space-y-8 animate-fade-in">
+            {/* Top Explanatory Banner */}
+            <div className="p-6 sm:p-8 rounded-3xl bg-gradient-to-br from-slate-950 via-[#1C1405] to-slate-900 text-white border border-art-gold/40 shadow-xl space-y-4">
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-art-gold/20 text-art-gold text-xs font-mono font-bold uppercase border border-art-gold/40">
+                <Film className="w-3.5 h-3.5 text-art-gold animate-pulse" />
+                <span>HOMEPAGE HERO STAGE · 1–2 MIN CREATOR SPOTLIGHT</span>
+              </div>
+              <h2 className="font-serif text-2xl sm:text-3xl font-bold text-white tracking-wide">
+                Submit Your 1–2 Minute Artist Story Video
+              </h2>
+              <p className="text-xs sm:text-sm text-slate-300 max-w-3xl leading-relaxed">
+                Introduce your craft, foundry, lost-wax casting, or painting technique directly to global collectors on the Artellium Hero stage. 
+                All videos are reviewed by our Curation & Security team before publishing to ensure authentic provenance and prevent impersonators.
+              </p>
+            </div>
+
+            {/* Video Submission Success Notice */}
+            {videoSubmitNotice && (
+              <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-300 text-emerald-900 flex items-center justify-between shadow-sm animate-fade-in">
+                <div className="flex items-center gap-2.5 text-xs font-semibold">
+                  <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
+                  <span>{videoSubmitNotice}</span>
+                </div>
+                <button onClick={() => setVideoSubmitNotice('')} className="text-emerald-700 hover:text-emerald-900">
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+            )}
+
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+              {/* Left Form: Video Upload / Submission Form (7 Cols) */}
+              <div className="lg:col-span-7 bg-white rounded-3xl p-6 sm:p-8 border border-slate-200 shadow-sm space-y-5">
+                <div className="border-b border-slate-100 pb-3">
+                  <h3 className="font-serif text-lg font-bold text-slate-900 flex items-center gap-2">
+                    <Video className="w-4 h-4 text-amber-600" />
+                    <span>Video Submission Dossier</span>
+                  </h3>
+                  <p className="text-xs text-slate-500">
+                    Provide a high-quality video link (MP4 or YouTube) of 1–2 minutes speaking about your craft and the Artellium platform.
+                  </p>
+                </div>
+
+                <form onSubmit={handleArtistVideoSubmit} className="space-y-4 text-xs">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block font-semibold text-slate-700 mb-1">Your Full Artist Name *</label>
+                      <input
+                        type="text"
+                        required
+                        value={artistVideoForm.artistName}
+                        onChange={(e) => setArtistVideoForm({ ...artistVideoForm, artistName: e.target.value })}
+                        placeholder="e.g. Chief Bakare Ogundele"
+                        className="w-full p-3 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-amber-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="block font-semibold text-slate-700 mb-1">Discipline / Atelier Title *</label>
+                      <input
+                        type="text"
+                        required
+                        value={artistVideoForm.artistTitle}
+                        onChange={(e) => setArtistVideoForm({ ...artistVideoForm, artistTitle: e.target.value })}
+                        placeholder="e.g. Master Bronze Sculptor"
+                        className="w-full p-3 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-amber-500"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <div>
+                      <label className="block font-semibold text-slate-700 mb-1">Country</label>
+                      <input
+                        type="text"
+                        value={artistVideoForm.country}
+                        onChange={(e) => setArtistVideoForm({ ...artistVideoForm, country: e.target.value })}
+                        placeholder="e.g. Nigeria"
+                        className="w-full p-3 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-amber-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="block font-semibold text-slate-700 mb-1">City / Region</label>
+                      <input
+                        type="text"
+                        value={artistVideoForm.city}
+                        onChange={(e) => setArtistVideoForm({ ...artistVideoForm, city: e.target.value })}
+                        placeholder="e.g. Benin City"
+                        className="w-full p-3 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-amber-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="block font-semibold text-slate-700 mb-1">Duration (1–2 min)</label>
+                      <input
+                        type="text"
+                        value={artistVideoForm.duration}
+                        onChange={(e) => setArtistVideoForm({ ...artistVideoForm, duration: e.target.value })}
+                        placeholder="e.g. 1:45"
+                        className="w-full p-3 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-amber-500"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Video Upload from Gallery Only (No External Links Allowed) */}
+                  <div>
+                    <label className="block font-semibold text-slate-700 mb-1">
+                      Upload Video from Gallery (No Links Allowed) *
+                    </label>
+
+                    {artistVideoForm.videoUrl ? (
+                      <div className="p-4 rounded-2xl bg-slate-900 text-white border border-art-gold/40 space-y-3">
+                        <div className="relative aspect-video w-full rounded-xl overflow-hidden bg-black border border-white/10">
+                          <video
+                            src={artistVideoForm.videoUrl}
+                            controls
+                            className="w-full h-full object-contain"
+                          />
+                        </div>
+
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs">
+                          <div className="space-y-0.5">
+                            <span className="font-mono text-art-gold font-bold block truncate max-w-xs">
+                              🎬 {videoFileMeta?.name || 'Selected Video from Gallery'}
+                            </span>
+                            <span className="text-[11px] text-slate-400">
+                              {videoFileMeta?.sizeMB ? `${videoFileMeta.sizeMB} MB` : 'Gallery Video Ready'} · Ready for submission
+                            </span>
+                          </div>
+
+                          <label className="px-3.5 py-2 rounded-lg bg-art-gold/20 hover:bg-art-gold/30 text-art-gold border border-art-gold/50 cursor-pointer font-bold transition text-xs flex items-center justify-center gap-1.5 shrink-0">
+                            <span>Change Gallery Video</span>
+                            <input
+                              type="file"
+                              accept="video/*"
+                              onChange={handleVideoFileChange}
+                              className="hidden"
+                            />
+                          </label>
+                        </div>
+                      </div>
+                    ) : (
+                      <label className="flex flex-col items-center justify-center p-8 rounded-2xl border-2 border-dashed border-amber-300/80 hover:border-art-gold bg-amber-50/40 hover:bg-amber-50/80 transition cursor-pointer group">
+                        <div className="w-14 h-14 rounded-2xl bg-art-gold/15 text-art-gold flex items-center justify-center mb-3 group-hover:scale-110 transition shadow-sm border border-art-gold/30">
+                          <Video className="w-7 h-7" />
+                        </div>
+                        <span className="font-bold text-slate-800 text-sm mb-1 text-center">
+                          Tap to Select Video from Device Gallery
+                        </span>
+                        <span className="text-xs text-slate-500 text-center max-w-xs">
+                          Choose 1–2 minute video directly from your phone or computer storage (MP4, WebM, MOV)
+                        </span>
+                        <span className="mt-3 px-3 py-1 rounded-full bg-slate-900 text-art-gold text-[11px] font-mono font-bold">
+                          Gallery Upload Only · No External Links
+                        </span>
+                        <input
+                          type="file"
+                          accept="video/*"
+                          required
+                          onChange={handleVideoFileChange}
+                          className="hidden"
+                        />
+                      </label>
+                    )}
+                  </div>
+
+                  <div>
+                    <label className="block font-semibold text-slate-700 mb-1">Video Cover Thumbnail / Poster Photo (Optional)</label>
+                    <input
+                      type="url"
+                      value={artistVideoForm.thumbnail}
+                      onChange={(e) => setArtistVideoForm({ ...artistVideoForm, thumbnail: e.target.value })}
+                      placeholder="Optional image link or leave blank for automatic poster"
+                      className="w-full p-3 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-amber-500 font-mono"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block font-semibold text-slate-700 mb-1">Artist Statement / Platform Intro Quote *</label>
+                    <textarea
+                      rows={3}
+                      required
+                      value={artistVideoForm.quote}
+                      onChange={(e) => setArtistVideoForm({ ...artistVideoForm, quote: e.target.value })}
+                      placeholder="Share a 1-2 sentence quote explaining the spiritual origin of your craft and how Artellium safeguards Pan-African art..."
+                      className="w-full p-3 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-amber-500"
+                    />
+                  </div>
+
+                  <button
+                    type="submit"
+                    className="w-full py-3.5 rounded-xl bg-gradient-to-r from-art-gold via-[#9E7720] to-art-gold-dark hover:brightness-110 text-white font-bold text-xs uppercase tracking-wider transition shadow-gold-glow flex items-center justify-center gap-2 cursor-pointer"
+                  >
+                    <ShieldCheck className="w-4 h-4" />
+                    <span>Submit Video for Admin Review</span>
+                  </button>
+                </form>
+              </div>
+
+              {/* Right Column: Guidelines & My Video Review Status (5 Cols) */}
+              <div className="lg:col-span-5 space-y-6">
+                {/* Guidelines Card */}
+                <div className="bg-amber-50/70 border border-amber-200/80 rounded-3xl p-6 space-y-3">
+                  <h4 className="font-serif text-base font-bold text-amber-950 flex items-center gap-2">
+                    <ShieldCheck className="w-4 h-4 text-amber-700" />
+                    <span>Curation & Anti-Impersonation Standards</span>
+                  </h4>
+                  <ul className="text-xs text-amber-900/90 space-y-2 list-disc list-inside leading-relaxed">
+                    <li><strong>Length:</strong> Keep videos between 1 to 2 minutes for optimal mobile loading.</li>
+                    <li><strong>Content:</strong> Speak directly about your artistic lineage, atelier methods, and the story behind your featured work.</li>
+                    <li><strong>Identity Vetting:</strong> Submissions are verified against your registered atelier credentials to protect authentic African heritage from impersonators.</li>
+                    <li><strong>Quality:</strong> Clear natural lighting in your atelier and clear spoken audio are prioritized for the Hero carousel.</li>
+                  </ul>
+                </div>
+
+                {/* Submitted Videos Status Table */}
+                <div className="bg-white rounded-3xl p-6 border border-slate-200 shadow-sm space-y-4">
+                  <h4 className="font-serif text-base font-bold text-slate-900 flex items-center justify-between">
+                    <span>Recent Platform Video Stories</span>
+                    <span className="text-xs font-mono font-normal text-slate-500">
+                      {videos.length} Registered
+                    </span>
+                  </h4>
+
+                  <div className="space-y-3">
+                    {videos.slice(0, 4).map((vid) => (
+                      <div key={vid.id} className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200/70 space-y-2">
+                        <div className="flex items-center justify-between">
+                          <span className="font-serif text-xs font-bold text-slate-900 truncate">
+                            {vid.artistName}
+                          </span>
+                          <span className={`px-2 py-0.5 rounded-full text-[9px] font-mono font-bold uppercase ${
+                            vid.status === 'approved' 
+                              ? 'bg-emerald-100 text-emerald-800' 
+                              : vid.status === 'pending'
+                              ? 'bg-amber-100 text-amber-800 animate-pulse'
+                              : 'bg-red-100 text-red-800'
+                          }`}>
+                            {vid.status === 'approved' ? '✓ Live on Hero' : vid.status === 'pending' ? '⏳ Pending Review' : '✕ Rejected'}
+                          </span>
+                        </div>
+                        <p className="text-[11px] text-slate-500 italic line-clamp-1 font-serif">
+                          &ldquo;{vid.quote}&rdquo;
+                        </p>
+                        <div className="flex items-center justify-between text-[10px] text-slate-400 font-mono">
+                          <span>{vid.duration || '1:30'} · {vid.country}</span>
+                          {vid.status === 'approved' && (
+                            <Link href="/" target="_blank" className="text-art-gold font-bold hover:underline flex items-center gap-0.5">
+                              <span>Watch on Hero</span>
+                              <ExternalLink className="w-2.5 h-2.5" />
+                            </Link>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ========================================================================= */}
+        {/* TAB: PRIORITY ARTIST SUBSCRIPTION & PLACEMENT MANAGEMENT                 */}
+        {/* ========================================================================= */}
+        {activeArtistTab === 'priority_subscription' && (
+          <div className="space-y-8 animate-fade-in">
+            {/* Top Explanatory Banner */}
+            <div className="p-6 sm:p-8 rounded-3xl bg-gradient-to-br from-slate-950 via-[#1C1405] to-slate-900 text-white border border-art-gold/50 shadow-2xl space-y-5">
+              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div className="space-y-2">
+                  <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-art-gold/20 text-art-gold text-xs font-mono font-bold uppercase border border-art-gold/40">
+                    <Crown className="w-3.5 h-3.5 text-art-gold fill-current animate-bounce" />
+                    <span>PLATFORM-WIDE ARTWORK PRIORITY RANKING SYSTEM</span>
+                  </div>
+                  <h2 className="font-serif text-2xl sm:text-3xl font-black text-white">
+                    Artellium Priority Artist Plan
+                  </h2>
+                  <p className="text-xs sm:text-sm text-slate-300 max-w-3xl leading-relaxed">
+                    While every artist has the fundamental right to register and list artworks freely, subscribed artists who invest in Artellium Africa are granted <strong>exclusive Top Priority Placement</strong> across all public discovery surfaces.
+                  </p>
+                </div>
+
+                <div className="p-4 rounded-2xl bg-black/50 border border-art-gold/30 text-center shrink-0 space-y-1">
+                  <span className="text-[10px] text-slate-400 uppercase font-bold tracking-wider block">Your Current Status</span>
+                  <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider bg-art-gold text-art-black">
+                    <Crown className="w-3 h-3 fill-current" />
+                    <span>{isSubscribed ? '👑 Priority Subscribed' : 'Standard Artist (Free)'}</span>
+                  </div>
+                  <span className="text-[10px] text-slate-400 block pt-1 font-mono">
+                    {isSubscribed ? 'Top Placement Active Across All Pages' : 'Eligible for 1-Click Instant Upgrade'}
+                  </span>
+                </div>
+              </div>
+
+              {subscriptionSuccessMsg && (
+                <div className="p-4 bg-emerald-950/80 border border-emerald-500/50 rounded-2xl text-emerald-200 text-xs font-bold flex items-center gap-2">
+                  <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0" />
+                  <span>{subscriptionSuccessMsg}</span>
+                </div>
+              )}
+            </div>
+
+            {/* Guaranteed Priority Placement Locations */}
+            <div className="bg-white rounded-3xl border border-slate-200 p-6 sm:p-8 space-y-6 shadow-sm">
+              <div className="flex items-center gap-2 border-b border-slate-100 pb-3">
+                <Award className="w-5 h-5 text-art-gold" />
+                <h3 className="font-serif text-lg font-bold text-slate-900">Where Subscribed Artists Rank First</h3>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {[
+                  {
+                    title: 'Live Bidding Arena',
+                    location: 'Homepage & /auctions',
+                    desc: 'Your auction lots appear in the premier top positions with the gold 👑 PRIORITY ARTIST LOT badge.',
+                    icon: Flame
+                  },
+                  {
+                    title: 'Curated Marketplace',
+                    location: 'Homepage & /explore',
+                    desc: 'Instant 1st-tier visibility when collectors search and filter authentic original African masterpieces.',
+                    icon: Palette
+                  },
+                  {
+                    title: 'Virtual Gallery Rooms',
+                    location: 'Homepage & /exhibitions',
+                    desc: 'Exhibitions featuring your works are headlined first in virtual rooms and physical gallery tours.',
+                    icon: Eye
+                  },
+                  {
+                    title: 'Historical Ledger & Sold',
+                    location: 'Homepage & /recently-sold',
+                    desc: 'Your sold works and provenance records lead the permanent ledger archive.',
+                    icon: FileCheck
+                  },
+                  {
+                    title: 'Fine Art Flash Deals',
+                    location: 'Homepage & Flash Deals Drop',
+                    desc: 'Priority ranking on atelier flash sales and limited collectors drops.',
+                    icon: Sparkles
+                  },
+                  {
+                    title: 'Authenticated Gold Badge',
+                    location: 'All Cards & Atelier Profile',
+                    desc: 'Visual crown badge confirms verified priority subscription status to collectors.',
+                    icon: Crown
+                  }
+                ].map((perk, i) => {
+                  const PIcon = perk.icon;
+                  return (
+                    <div key={i} className="p-4 rounded-2xl bg-slate-50 border border-slate-100 space-y-2 hover:border-art-gold/50 transition">
+                      <div className="flex items-center gap-2">
+                        <div className="p-2 rounded-xl bg-amber-100 text-art-gold">
+                          <PIcon className="w-4 h-4" />
+                        </div>
+                        <div>
+                          <h4 className="font-serif font-bold text-slate-900 text-sm">{perk.title}</h4>
+                          <span className="text-[10px] text-art-gold font-mono font-bold">{perk.location}</span>
+                        </div>
+                      </div>
+                      <p className="text-xs text-slate-600 leading-relaxed font-sans">{perk.desc}</p>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Plan Comparison & Subscription Action */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              
+              {/* Plan 1: Standard Artist (Free) */}
+              <div className={`p-6 sm:p-8 rounded-3xl border transition space-y-6 flex flex-col justify-between ${
+                !isSubscribed 
+                  ? 'bg-slate-50 border-slate-300 shadow-sm' 
+                  : 'bg-white border-slate-200'
+              }`}>
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-slate-400">Open Atelier Tier</span>
+                      <h3 className="font-serif text-xl font-bold text-slate-900">Standard Artist</h3>
+                    </div>
+                    {!isSubscribed && (
+                      <span className="bg-slate-200 text-slate-700 text-[10px] font-bold px-2.5 py-1 rounded-full uppercase">
+                        Current Plan
+                      </span>
+                    )}
+                  </div>
+
+                  <div className="flex items-baseline gap-1">
+                    <span className="font-serif text-3xl font-black text-slate-900">₦0</span>
+                    <span className="text-xs text-slate-500 font-sans">/ forever free</span>
+                  </div>
+
+                  <p className="text-xs text-slate-600 leading-relaxed">
+                    Open access for every African artist to participate, upload artworks, and sell directly to collectors.
+                  </p>
+
+                  <ul className="space-y-2.5 text-xs text-slate-600 pt-2 border-t border-slate-200">
+                    <li className="flex items-center gap-2">
+                      <Check className="w-4 h-4 text-emerald-600 shrink-0" />
+                      <span>Unlimited artwork catalog uploads</span>
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <Check className="w-4 h-4 text-emerald-600 shrink-0" />
+                      <span>Direct WEMA Bank corporate settlements</span>
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <Check className="w-4 h-4 text-emerald-600 shrink-0" />
+                      <span>Digital Certificate of Authenticity signing</span>
+                    </li>
+                    <li className="flex items-center gap-2 text-slate-400">
+                      <X className="w-4 h-4 text-slate-400 shrink-0" />
+                      <span className="line-through">Top priority placement on discovery feeds</span>
+                    </li>
+                    <li className="flex items-center gap-2 text-slate-400">
+                      <X className="w-4 h-4 text-slate-400 shrink-0" />
+                      <span className="line-through">👑 Priority Artist Gold badge</span>
+                    </li>
+                  </ul>
+                </div>
+
+                <div className="pt-4">
+                  {isSubscribed ? (
+                    <button
+                      type="button"
+                      onClick={() => handleToggleSubscription('standard')}
+                      className="w-full py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs uppercase rounded-xl transition cursor-pointer border border-slate-200"
+                    >
+                      Downgrade to Standard Free Tier
+                    </button>
+                  ) : (
+                    <div className="w-full py-3 bg-slate-200 text-slate-500 font-bold text-xs uppercase rounded-xl text-center">
+                      Active Plan
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Plan 2: Priority Master Artist Plan (Subscribed) */}
+              <div className={`p-6 sm:p-8 rounded-3xl border-2 transition space-y-6 flex flex-col justify-between relative overflow-hidden ${
+                isSubscribed 
+                  ? 'bg-gradient-to-b from-[#1E1606] to-[#120D04] border-art-gold shadow-2xl text-white' 
+                  : 'bg-gradient-to-b from-[#161208] to-[#0D0B05] border-art-gold/80 shadow-xl text-white'
+              }`}>
+                <div className="absolute top-4 right-4 bg-art-gold text-art-black font-black text-[9px] px-3 py-1 rounded-full font-mono uppercase tracking-wider shadow">
+                  RECOMMENDED
+                </div>
+
+                <div className="space-y-4">
+                  <div className="space-y-1">
+                    <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-art-gold">Premier Placement Tier</span>
+                    <h3 className="font-serif text-xl font-bold text-white flex items-center gap-2">
+                      <span>Priority Master Artist</span>
+                      <Crown className="w-5 h-5 text-art-gold fill-current" />
+                    </h3>
+                  </div>
+
+                  {/* Billing Cycle Switcher */}
+                  <div className="inline-flex p-1 rounded-xl bg-black/60 border border-white/10 text-xs font-bold">
+                    <button
+                      type="button"
+                      onClick={() => setSelectedBillingCycle('monthly')}
+                      className={`px-3 py-1 rounded-lg transition ${
+                        selectedBillingCycle === 'monthly' ? 'bg-art-gold text-art-black' : 'text-slate-400 hover:text-white'
+                      }`}
+                    >
+                      Monthly
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setSelectedBillingCycle('annual')}
+                      className={`px-3 py-1 rounded-lg transition ${
+                        selectedBillingCycle === 'annual' ? 'bg-art-gold text-art-black' : 'text-slate-400 hover:text-white'
+                      }`}
+                    >
+                      Annual (Save 20%)
+                    </button>
+                  </div>
+
+                  <div className="flex items-baseline gap-1">
+                    <span className="font-serif text-3xl font-black text-art-gold">
+                      {selectedBillingCycle === 'monthly' ? '₦25,000' : '₦240,000'}
+                    </span>
+                    <span className="text-xs text-slate-300 font-sans">
+                      {selectedBillingCycle === 'monthly' ? '/ month' : '/ year ($160 USD)'}
+                    </span>
+                  </div>
+
+                  <p className="text-xs text-slate-300 leading-relaxed font-sans">
+                    Guaranteed top priority placement for all your artworks across the Homepage, Live Auctions, Exhibitions, Marketplace, and Category discovery feeds.
+                  </p>
+
+                  <ul className="space-y-2.5 text-xs text-slate-200 pt-2 border-t border-white/10">
+                    <li className="flex items-center gap-2">
+                      <Check className="w-4 h-4 text-art-gold shrink-0" />
+                      <strong className="text-white">Strict Top Placement</strong> on Homepage & all 8+ main pages
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <Check className="w-4 h-4 text-art-gold shrink-0" />
+                      <strong className="text-white">👑 Authenticated Gold Crown Badge</strong> on all lots
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <Check className="w-4 h-4 text-art-gold shrink-0" />
+                      <span>Premier positioning in Live Fine Art Auctions</span>
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <Check className="w-4 h-4 text-art-gold shrink-0" />
+                      <span>Priority curation in Virtual 3D Gallery Exhibitions</span>
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <Check className="w-4 h-4 text-art-gold shrink-0" />
+                      <span>Direct VIP collector inquiries and concierge buyout routing</span>
+                    </li>
+                  </ul>
+                </div>
+
+                <div className="pt-4">
+                  {isSubscribed ? (
+                    <div className="space-y-2">
+                      <div className="w-full py-3 bg-gradient-to-r from-art-gold via-amber-300 to-art-gold text-art-black font-black text-xs uppercase tracking-wider rounded-xl text-center shadow flex items-center justify-center gap-2">
+                        <Crown className="w-4 h-4 fill-current" />
+                        <span>Active Priority Subscription Plan</span>
+                      </div>
+                      <p className="text-[10px] text-center text-slate-400">
+                        Renewal: Active ({selectedBillingCycle}). All your artworks are positioned at the top.
+                      </p>
+                    </div>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => handleToggleSubscription('premium')}
+                      className="w-full py-3 bg-gradient-to-r from-art-gold via-amber-400 to-art-gold hover:brightness-110 text-art-black font-black text-xs uppercase tracking-wider rounded-xl transition shadow flex items-center justify-center gap-2 cursor-pointer"
+                    >
+                      <Crown className="w-4 h-4 fill-current" />
+                      <span>Subscribe & Elevate Artworks to Top</span>
+                    </button>
+                  )}
+                </div>
+              </div>
+
+            </div>
+          </div>
+        )}
 
         {/* ========================================================================= */}
         {/* TAB 2: MASTER ARTIST PROFILE & ATELIER IDENTITY (PROFESSIONAL SUITE)     */}
@@ -1137,6 +1805,49 @@ export default function ArtistDashboardPage() {
                 <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-xl text-emerald-700 text-xs font-bold flex items-center gap-2">
                   <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
                   <span>{successMsg}</span>
+                </div>
+              )}
+
+              {/* Priority Placement Status Notice */}
+              {isSubscribed ? (
+                <div className="p-4 bg-gradient-to-r from-amber-50 to-yellow-50 border border-art-gold/60 rounded-2xl flex items-start gap-3 shadow-sm">
+                  <div className="p-2 rounded-xl bg-art-gold text-art-black shrink-0 font-bold">
+                    <Crown className="w-5 h-5 fill-current" />
+                  </div>
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2">
+                      <span className="font-serif font-black text-amber-950 text-xs tracking-wider uppercase">👑 Top Priority Placement Active</span>
+                      <span className="bg-art-gold text-art-black font-black text-[9px] px-2 py-0.5 rounded-full font-mono uppercase">Premium Subscribed</span>
+                    </div>
+                    <p className="text-[11px] text-amber-900 leading-relaxed font-sans">
+                      Because you are an active <strong>Artellium Priority Subscribed Artist</strong>, new artworks you upload here are automatically ranked <strong>strictly at the top</strong> of the Homepage, Live Auctions Arena, Virtual Exhibitions, and All Main Marketplace Feeds with the authenticated Gold Crown badge.
+                    </p>
+                  </div>
+                </div>
+              ) : (
+                <div className="p-4 bg-slate-50 border border-slate-200 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-sm">
+                  <div className="flex items-start gap-3">
+                    <div className="p-2 rounded-xl bg-slate-200 text-slate-700 shrink-0">
+                      <Sparkles className="w-5 h-5" />
+                    </div>
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-2">
+                        <span className="font-serif font-bold text-slate-900 text-xs uppercase">Standard Artist Listing</span>
+                        <span className="bg-slate-200 text-slate-700 font-bold text-[9px] px-2 py-0.5 rounded-full font-mono uppercase">Free Tier</span>
+                      </div>
+                      <p className="text-[11px] text-slate-600 leading-relaxed font-sans">
+                        Every artist is welcome to upload and sell artworks freely on Artellium Africa. Subscribed artists who support the platform are given <strong>top priority placement</strong>.
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setActiveArtistTab('priority_subscription')}
+                    className="shrink-0 px-3.5 py-2 bg-gradient-to-r from-art-gold to-amber-500 hover:brightness-110 text-art-black font-black text-xs rounded-xl transition shadow flex items-center gap-1.5 cursor-pointer"
+                  >
+                    <Crown className="w-3.5 h-3.5 fill-current" />
+                    <span>Upgrade to Priority</span>
+                  </button>
                 </div>
               )}
 

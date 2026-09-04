@@ -13,11 +13,13 @@ import {
   MapPin, 
   Palette, 
   UserCheck, 
-  Building 
+  Building,
+  Crown
 } from 'lucide-react';
+import { isPriorityArtist } from '@/lib/priority-utils';
 
 export default function VerifiedMastersPage() {
-  const { artworks, currency, artistVerifications: storeVerifications = [], sellers = [] } = useStore();
+  const { artworks, currency, artistVerifications: storeVerifications = [], sellers = [], usersList = [] } = useStore();
   const [selectedCountry, setSelectedCountry] = useState('All');
 
   const formatPrice = (amount) => {
@@ -119,6 +121,14 @@ export default function VerifiedMastersPage() {
     return master.country === selectedCountry;
   });
 
+  const sortedMasters = [...filteredMasters].sort((a, b) => {
+    const aPri = isPriorityArtist(a, sellers, usersList);
+    const bPri = isPriorityArtist(b, sellers, usersList);
+    if (aPri && !bPri) return -1;
+    if (!aPri && bPri) return 1;
+    return 0;
+  });
+
   return (
     <div className="min-h-screen bg-[#07080A] text-slate-100 pb-20">
       {/* Header */}
@@ -169,7 +179,7 @@ export default function VerifiedMastersPage() {
 
       {/* Verified Masters List */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-10 space-y-8">
-        {filteredMasters.map((master) => (
+        {sortedMasters.map((master) => (
           <div
             key={master.id}
             className="group relative rounded-3xl overflow-hidden bg-[#0D1017] border border-white/10 hover:border-emerald-500/60 transition-all duration-300 shadow-2xl p-6 sm:p-8"
@@ -192,6 +202,12 @@ export default function VerifiedMastersPage() {
                       <span title="Gold Verified Master" className="text-emerald-400">
                         <CheckCircle2 className="w-5 h-5 fill-emerald-500/20 text-emerald-400" />
                       </span>
+                      {isPriorityArtist(master, sellers, usersList) && (
+                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-gradient-to-r from-art-gold via-amber-300 to-art-gold text-art-black font-black text-[10px] uppercase tracking-wider shadow">
+                          <Crown className="w-3 h-3 fill-current" />
+                          <span>PRIORITY MASTER</span>
+                        </span>
+                      )}
                     </div>
                     <p className="text-xs text-art-gold font-medium font-sans">
                       {master.title} · {master.flag} {master.city}, {master.country}

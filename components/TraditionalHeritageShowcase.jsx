@@ -65,7 +65,7 @@ const HERITAGE_PILLARS = [
     technique: 'Cut-Pile Needle Embroidery on Palm Leaf Canvas',
     culturalSignificance: 'Sacred heirloom currency presented during royal coronations, investitures, and ancestral burial rites.',
     symbolSvg: (
-      <svg viewBox="0 0 60 60" className="w-6 h-6 sm:w-8 sm:h-8 text-amber-400" fill="none" stroke="currentColor">
+      <svg viewBox="0 0 60 60" className="w-6 h-6 sm:w-8 sm:h-8 text-art-gold" fill="none" stroke="currentColor">
         <path d="M12 30 L30 12 L48 30 L30 48 Z" strokeWidth="1.5" />
         <path d="M20 30 L30 20 L40 30 L30 40 Z" strokeWidth="1.2" strokeDasharray="2 2" fill="currentColor" fillOpacity="0.15" />
         <line x1="12" y1="12" x2="48" y2="48" strokeWidth="1" strokeOpacity="0.5" />
@@ -81,13 +81,13 @@ const HERITAGE_PILLARS = [
     era: '12th Century – Present',
     medium: 'Micro-Glass Seed Beads & Consecrated Cloth',
     accentColor: 'from-[#062319] via-[#07080A] to-[#261502]',
-    badgeColor: 'border-amber-400 text-amber-300 bg-amber-950/60',
+    badgeColor: 'border-art-gold/60 text-art-gold bg-amber-950/40',
     sealText: 'SACRED ODUDUWA SEAL',
     summary: 'Conical crowns with veiled bead tassels worn by Obas to embody the divine authority of Oduduwa while shielding subjects from the spiritual gaze of the king.',
     technique: 'Sacred Needle Threading with Consecrated Talismans',
     culturalSignificance: 'The apex of Yoruba sacred sovereignty, linking the earthly monarch with the primordial Orisha pantheon.',
     symbolSvg: (
-      <svg viewBox="0 0 60 60" className="w-6 h-6 sm:w-8 sm:h-8 text-[#D4AF37]" fill="none" stroke="currentColor">
+      <svg viewBox="0 0 60 60" className="w-6 h-6 sm:w-8 sm:h-8 text-art-gold" fill="none" stroke="currentColor">
         <path d="M18 44 L22 18 L30 12 L38 18 L42 44 Z" strokeWidth="1.5" fill="currentColor" fillOpacity="0.1" />
         <line x1="22" y1="28" x2="38" y2="28" strokeWidth="1.2" />
         <line x1="20" y1="36" x2="40" y2="36" strokeWidth="1.2" />
@@ -106,14 +106,14 @@ export default function TraditionalHeritageShowcase() {
   const currentPillar = HERITAGE_PILLARS.find(p => p.id === activeTab) || HERITAGE_PILLARS[0];
 
   return (
-    <section className="relative my-10 overflow-hidden rounded-2xl sm:rounded-3xl border-2 border-[#D4AF37]/50 shadow-[0_20px_50px_rgba(6,35,25,0.4)] bg-[#07080A]" suppressHydrationWarning>
+    <section className="relative my-10 overflow-hidden rounded-2xl sm:rounded-3xl border-2 border-art-gold/50 shadow-[0_20px_50px_rgba(6,35,25,0.4)] bg-[#07080A]" suppressHydrationWarning>
       {/* ── BACKGROUND TRADITIONAL GEOMETRIC WATERMARK ── */}
       <div className="absolute inset-0 pointer-events-none opacity-5">
         <svg className="w-full h-full" xmlns="http://www.w3.org/2000/svg">
           <defs>
             <pattern id="heritage-pattern" width="80" height="80" patternUnits="userSpaceOnUse">
-              <path d="M0 40 L40 0 L80 40 L40 80 Z" stroke="#D4AF37" strokeWidth="1" fill="none" />
-              <circle cx="40" cy="40" r="14" stroke="#D4AF37" strokeWidth="1" fill="none" />
+              <path d="M0 40 L40 0 L80 40 L40 80 Z" stroke="#B58A2A" strokeWidth="1" fill="none" />
+              <circle cx="40" cy="40" r="14" stroke="#B58A2A" strokeWidth="1" fill="none" />
             </pattern>
           </defs>
           <rect width="100%" height="100%" fill="url(#heritage-pattern)" />
@@ -121,15 +121,15 @@ export default function TraditionalHeritageShowcase() {
       </div>
 
       {/* ── TOP LUXURY BORDER TRIM (Traditional Kente Colors) ── */}
-      <div className="h-1.5 w-full bg-gradient-to-r from-[#062319] via-[#D4AF37] to-[#8B0000]" />
+      <div className="h-1.5 w-full bg-gradient-to-r from-[#062319] via-art-gold to-[#8B0000]" />
 
       {/* ── HEADER CONTAINER ── */}
       <div className="p-4 sm:p-8 pb-3 sm:pb-4 relative z-10">
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 border-b border-[#D4AF37]/25 pb-5 sm:pb-6">
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 border-b border-art-gold/25 pb-5 sm:pb-6">
           <div className="space-y-1.5">
             <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
-              <span className="inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1 rounded-full text-[9px] sm:text-[10px] font-bold tracking-widest uppercase bg-[#062319] text-[#D4AF37] border border-[#D4AF37]/40 shadow-inner">
-                <Crown className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-[#D4AF37]" />
+              <span className="inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1 rounded-full text-[9px] sm:text-[10px] font-bold tracking-widest uppercase bg-[#062319] text-art-gold border border-art-gold/40 shadow-inner">
+                <Crown className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-art-gold" />
                 IMPERIAL PROVENANCE & ANCIENT GUILDS
               </span>
               <span className="inline-flex items-center gap-1 text-[9px] sm:text-[10px] font-mono text-emerald-400/80">
@@ -149,7 +149,7 @@ export default function TraditionalHeritageShowcase() {
             <Link
               href="/catalog"
               prefetch={false}
-              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-[#062319] to-[#0A3323] hover:from-[#0F3D2E] hover:to-[#062319] border border-[#D4AF37]/60 text-xs font-semibold text-[#D4AF37] transition shadow-lg group cursor-pointer"
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-[#062319] to-[#0A3323] hover:from-[#0F3D2E] hover:to-[#062319] border border-art-gold/60 text-xs font-semibold text-art-gold transition shadow-lg group cursor-pointer"
             >
               <span>Explore Provenance Catalog</span>
               <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
@@ -167,12 +167,12 @@ export default function TraditionalHeritageShowcase() {
                 onClick={() => setActiveTab(pillar.id)}
                 className={`text-left p-2.5 sm:p-4 rounded-xl transition-all duration-300 relative border flex flex-col justify-between ${
                   isActive
-                    ? 'bg-gradient-to-br from-[#062319] to-[#07080A] border-[#D4AF37] shadow-[0_0_20px_rgba(212,175,55,0.25)] scale-[1.01]'
-                    : 'bg-black/50 border-white/10 hover:border-[#D4AF37]/40 hover:bg-[#062319]/20'
+                    ? 'bg-gradient-to-br from-[#062319] to-[#07080A] border-art-gold shadow-[0_0_20px_rgba(181,138,42,0.25)] scale-[1.01]'
+                    : 'bg-black/50 border-white/10 hover:border-art-gold/40 hover:bg-[#062319]/20'
                 }`}
               >
                 {isActive && (
-                  <div className="absolute -top-1 right-2 sm:right-3 px-1.5 sm:px-2 py-0.2 sm:py-0.5 rounded-full bg-[#D4AF37] text-black font-mono text-[8px] sm:text-[9px] font-bold uppercase tracking-wider">
+                  <div className="absolute -top-1 right-2 sm:right-3 px-1.5 sm:px-2 py-0.2 sm:py-0.5 rounded-full bg-art-gold text-white font-mono text-[8px] sm:text-[9px] font-bold uppercase tracking-wider">
                     ACTIVE
                   </div>
                 )}
@@ -191,7 +191,7 @@ export default function TraditionalHeritageShowcase() {
                 </div>
                 <div className="pt-1.5 sm:pt-2 border-t border-white/5 flex items-center justify-between text-[9px] sm:text-[10px] text-amber-200/60 font-sans">
                   <span>{pillar.era.split('·')[0]}</span>
-                  <span className="text-[#D4AF37] font-semibold">{pillar.medium.split('&')[0]}</span>
+                  <span className="text-art-gold font-semibold">{pillar.medium.split('&')[0]}</span>
                 </div>
               </button>
             );

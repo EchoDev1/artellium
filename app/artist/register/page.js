@@ -8,7 +8,7 @@ import { Crown, CheckCircle2, Award, Sparkles, ArrowRight, ShieldCheck } from 'l
 
 export default function ArtistRegisterPage() {
   const router = useRouter();
-  const { switchUserRole } = useStore();
+  const { switchUserRole, subscribeArtist } = useStore();
   const [billingCycle, setBillingCycle] = useState('monthly'); // monthly vs yearly
   const [selectedPlan, setSelectedPlan] = useState('premium'); // standard vs premium
   const [isSubmitted, setIsSubmitted] = useState(false);
@@ -27,19 +27,23 @@ export default function ArtistRegisterPage() {
     setIsSubmitted(true);
     switchUserRole('artist');
 
+    if (subscribeArtist) {
+      subscribeArtist(selectedPlan, billingCycle);
+    }
+
     // Trigger Artist Welcome & Atelier Setup Email via Resend
     if (formData.email) {
       triggerEmailNotification('artist_welcome', formData.email.trim(), {
         name: formData.fullName || 'Master Artist',
-        plan: selectedPlan === 'premium' ? 'Premium Tier' : 'Standard Category',
+        plan: selectedPlan === 'premium' ? 'Priority Subscribed Artist' : 'Standard Artist (Free)',
         billingCycle: billingCycle === 'yearly' ? 'Yearly Billing' : 'Monthly Billing',
-        price: selectedPlan === 'premium' ? '₦50,000 / mo' : '₦30,000 / mo'
+        price: selectedPlan === 'premium' ? '₦25,000 / mo' : '₦0 / Free'
       });
     }
 
     setTimeout(() => {
       router.push('/artist/dashboard');
-    }, 2000);
+    }, 1500);
   };
 
   return (
@@ -83,7 +87,7 @@ export default function ArtistRegisterPage() {
 
       {/* Subscription Cards Pricing */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
-        {/* Standard Category */}
+        {/* Standard Category: Free Registration & Upload */}
         <div
           onClick={() => setSelectedPlan('standard')}
           className={`p-8 rounded-3xl cursor-pointer transition duration-300 relative border flex flex-col justify-between ${
@@ -94,36 +98,34 @@ export default function ArtistRegisterPage() {
         >
           <div className="space-y-4">
             <div className="flex items-center justify-between">
-              <h3 className="font-serif text-xl font-bold text-white">Standard Category</h3>
-              <span className="badge-emerald text-xs px-3 py-0.5 rounded-full font-bold">Standard Tier</span>
+              <h3 className="font-serif text-xl font-bold text-white">Standard Artist</h3>
+              <span className="bg-slate-800 text-slate-300 border border-slate-700 text-xs px-3 py-0.5 rounded-full font-bold uppercase">Free Open Tier</span>
             </div>
 
             <div className="space-y-1">
-              {billingCycle === 'monthly' ? (
-                <div>
-                  <span className="font-serif text-3xl font-bold text-art-gold">₦30,000</span>
-                  <span className="text-xs text-slate-400"> / month</span>
-                </div>
-              ) : (
-                <div>
-                  <span className="font-serif text-3xl font-bold text-art-gold">₦200,000</span>
-                  <span className="text-xs text-slate-400"> / year (Discounted)</span>
-                </div>
-              )}
+              <div>
+                <span className="font-serif text-3xl font-bold text-white">₦0</span>
+                <span className="text-xs text-slate-400"> / forever free</span>
+              </div>
+              <p className="text-[11px] text-slate-400">Open to every African painter, sculptor, and digital creator.</p>
             </div>
 
             <ul className="space-y-2.5 text-xs text-slate-300 pt-2 border-t border-white/10">
               <li className="flex items-center gap-2">
-                <CheckCircle2 className="w-4 h-4 text-art-gold shrink-0" />
-                <span>Upload up to 15 Artworks per month</span>
+                <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+                <span>Upload and sell artworks freely in catalogue</span>
               </li>
               <li className="flex items-center gap-2">
-                <CheckCircle2 className="w-4 h-4 text-art-gold shrink-0" />
-                <span>Personalized Artist Profile & Brief Bio</span>
+                <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+                <span>Direct WEMA Bank corporate settlements</span>
               </li>
               <li className="flex items-center gap-2">
-                <CheckCircle2 className="w-4 h-4 text-art-gold shrink-0" />
-                <span>Standard Marketplace Listing</span>
+                <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+                <span>Physical Provenance & Digital Certificate signing</span>
+              </li>
+              <li className="flex items-center gap-2">
+                <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+                <span>Standard catalogue search and discovery</span>
               </li>
             </ul>
           </div>
@@ -132,16 +134,16 @@ export default function ArtistRegisterPage() {
             <div
               className={`w-full py-3 rounded-xl text-center text-xs font-bold uppercase transition ${
                 selectedPlan === 'standard'
-                  ? 'bg-art-gold text-art-black'
+                  ? 'bg-slate-200 text-slate-900 font-black'
                   : 'bg-white/10 text-slate-300'
               }`}
             >
-              {selectedPlan === 'standard' ? 'Selected Plan' : 'Select Standard'}
+              {selectedPlan === 'standard' ? 'Selected Free Plan' : 'Select Standard (Free)'}
             </div>
           </div>
         </div>
 
-        {/* Premium Category */}
+        {/* Premium Category: Priority Subscribed Artist */}
         <div
           onClick={() => setSelectedPlan('premium')}
           className={`p-8 rounded-3xl cursor-pointer transition duration-300 relative border flex flex-col justify-between ${
@@ -152,43 +154,50 @@ export default function ArtistRegisterPage() {
         >
           <div className="space-y-4">
             <div className="flex items-center justify-between">
-              <h3 className="font-serif text-xl font-bold text-white">Premium Category</h3>
-              <span className="badge-gold text-xs px-3 py-0.5 rounded-full font-bold flex items-center gap-1">
-                <Sparkles className="w-3.5 h-3.5 text-art-gold" />
-                <span>Gold Crest</span>
+              <h3 className="font-serif text-xl font-bold text-white flex items-center gap-1.5">
+                <span>Priority Subscribed</span>
+                <Crown className="w-4 h-4 text-art-gold fill-current" />
+              </h3>
+              <span className="bg-art-gold text-art-black text-[10px] px-2.5 py-0.5 rounded-full font-black uppercase tracking-wider">
+                TOP PLACEMENT
               </span>
             </div>
 
             <div className="space-y-1">
               {billingCycle === 'monthly' ? (
                 <div>
-                  <span className="font-serif text-3xl font-bold text-art-gold">₦50,000</span>
+                  <span className="font-serif text-3xl font-bold text-art-gold">₦25,000</span>
                   <span className="text-xs text-slate-400"> / month</span>
                 </div>
               ) : (
                 <div>
-                  <span className="font-serif text-3xl font-bold text-art-gold">₦350,000</span>
-                  <span className="text-xs text-slate-400"> / year (Discounted)</span>
+                  <span className="font-serif text-3xl font-bold text-art-gold">₦240,000</span>
+                  <span className="text-xs text-slate-400"> / year (Save 20%)</span>
                 </div>
               )}
+              <p className="text-[11px] text-art-gold font-medium">Commitment that keeps Artellium thriving — rewarded with 1st ranking.</p>
             </div>
 
             <ul className="space-y-2.5 text-xs text-slate-300 pt-2 border-t border-white/10">
               <li className="flex items-center gap-2">
                 <CheckCircle2 className="w-4 h-4 text-art-gold shrink-0" />
-                <span>Unlimited High-Resolution Art Uploads</span>
+                <strong className="text-white">Strict Top Placement</strong> on Homepage & all 8+ main pages
               </li>
               <li className="flex items-center gap-2">
                 <CheckCircle2 className="w-4 h-4 text-art-gold shrink-0" />
-                <span>Priority Homepage Hero Spotlight Placement</span>
+                <strong className="text-white">👑 Authenticated Gold Crown Badge</strong> on all artworks
               </li>
               <li className="flex items-center gap-2">
                 <CheckCircle2 className="w-4 h-4 text-art-gold shrink-0" />
-                <span>Access to ARTELLIUM Live Auction Arena</span>
+                <span>Premier positioning in Live Fine Art Auctions Arena</span>
               </li>
               <li className="flex items-center gap-2">
                 <CheckCircle2 className="w-4 h-4 text-art-gold shrink-0" />
-                <span>Pop-up Video Interview Inclusion</span>
+                <span>Top placement in Virtual 3D Gallery Exhibitions</span>
+              </li>
+              <li className="flex items-center gap-2">
+                <CheckCircle2 className="w-4 h-4 text-art-gold shrink-0" />
+                <span>Direct VIP collector inquiries and concierge routing</span>
               </li>
             </ul>
           </div>
@@ -197,11 +206,11 @@ export default function ArtistRegisterPage() {
             <div
               className={`w-full py-3 rounded-xl text-center text-xs font-bold uppercase transition ${
                 selectedPlan === 'premium'
-                  ? 'bg-art-gold text-art-black shadow-gold-glow'
+                  ? 'bg-gradient-to-r from-art-gold via-amber-300 to-art-gold text-art-black font-black shadow-gold-glow'
                   : 'bg-white/10 text-slate-300'
               }`}
             >
-              {selectedPlan === 'premium' ? 'Selected Premium Plan' : 'Select Premium'}
+              {selectedPlan === 'premium' ? 'Selected Priority Plan' : 'Select Priority Plan'}
             </div>
           </div>
         </div>

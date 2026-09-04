@@ -5,6 +5,7 @@ import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useStore } from '@/context/store-context';
 import { isCategoryMatch } from '@/lib/category-utils';
+import { sortArtworksByPriority } from '@/lib/priority-utils';
 import ArtworkCard from '@/components/ArtworkCard';
 import { 
   Palette, 
@@ -164,7 +165,7 @@ export default function CategoryPage() {
   const categoryConfig = CATEGORY_MAP[rawSlug] || CATEGORY_MAP['paintings'];
   const Icon = categoryConfig.icon;
 
-  const { artworks = [], currency } = useStore();
+  const { artworks = [], currency, sellers = [], usersList = [] } = useStore();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedMedium, setSelectedMedium] = useState('All');
   const [shipsFilter, setShipsFilter] = useState('All');
@@ -210,23 +211,19 @@ export default function CategoryPage() {
     });
   }, [artworks, categoryConfig, rawSlug, searchTerm, selectedMedium, shipsFilter]);
 
-  // Sort matching artworks (real artist creations strictly first)
+  // Sort matching artworks (Subscribed Priority Artists strictly first)
   const sortedArtworks = useMemo(() => {
-    return [...matchingArtworks].sort((a, b) => {
-      if (sortBy === 'price-low') {
-        return (currency === 'USD' ? (a.priceUSD || a.price / 1500) : a.price) - (currency === 'USD' ? (b.priceUSD || b.price / 1500) : b.price);
-      }
-      if (sortBy === 'price-high') {
-        return (currency === 'USD' ? (b.priceUSD || b.price / 1500) : b.price) - (currency === 'USD' ? (a.priceUSD || a.price / 1500) : a.price);
-      }
-      if (sortBy === 'rating') {
-        return (b.rating || 5) - (a.rating || 5);
-      }
-      if (!a.isDemo && b.isDemo) return -1;
-      if (a.isDemo && !b.isDemo) return 1;
-      return new Date(b.created_at || '2026-01-01') - new Date(a.created_at || '2026-01-01');
+    let secSort = 'newest';
+    if (sortBy === 'price-low') secSort = 'price_low';
+    else if (sortBy === 'price-high') secSort = 'price_high';
+    else if (sortBy === 'rating') secSort = 'rating';
+
+    return sortArtworksByPriority(matchingArtworks, {
+      sellers,
+      users: usersList,
+      secondarySort: secSort
     });
-  }, [matchingArtworks, sortBy, currency]);
+  }, [matchingArtworks, sortBy, sellers, usersList]);
 
   // Featured artists in this category
   const categoryArtists = useMemo(() => {

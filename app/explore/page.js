@@ -6,6 +6,7 @@ import ArtworkCard from '@/components/ArtworkCard';
 import CategoryBar from '@/components/CategoryBar';
 import { useStore } from '@/context/store-context';
 import { isCategoryMatch } from '@/lib/category-utils';
+import { sortArtworksByPriority } from '@/lib/priority-utils';
 import { Search, Filter, Sparkles, SlidersHorizontal } from 'lucide-react';
 
 function ExploreContent() {
@@ -17,7 +18,7 @@ function ExploreContent() {
   const filterParam = searchParams.get('filter') || '';
   const featuredParam = searchParams.get('featured') || '';
 
-  const { artworks, selectedCategory, setSelectedCategory } = useStore();
+  const { artworks, selectedCategory, setSelectedCategory, sellers = [], usersList = [] } = useStore();
   const [searchTerm, setSearchTerm] = useState(queryParam);
   const [selectedMedium, setSelectedMedium] = useState('All');
   const [shipsFilter, setShipsFilter] = useState('All');
@@ -66,15 +67,11 @@ function ExploreContent() {
     return matchesQuery && matchesCategory && matchesMedium && matchesShips && matchesBadge && matchesMaxPrice && matchesFilter && matchesFeatured;
   });
 
-  // Sort artworks (real artist creations strictly first when sorting by newest or default)
-  const sorted = [...filtered].sort((a, b) => {
-    if (sortBy === 'price_low') return (a.price || 0) - (b.price || 0);
-    if (sortBy === 'price_high') return (b.price || 0) - (a.price || 0);
-    
-    // Real artist creations strictly first
-    if (!a.isDemo && b.isDemo) return -1;
-    if (a.isDemo && !b.isDemo) return 1;
-    return new Date(b.created_at || 0) - new Date(a.created_at || 0);
+  // Sort artworks with Subscribed Priority Artists strictly first
+  const sorted = sortArtworksByPriority(filtered, {
+    sellers,
+    users: usersList,
+    secondarySort: sortBy
   });
 
   return (

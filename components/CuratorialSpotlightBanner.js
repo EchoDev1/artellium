@@ -202,7 +202,7 @@ export default function CuratorialSpotlightBanner() {
 
                   <Link
                     href={`/artwork/${artworkTargetId}`}
-                    className="px-4 py-2 rounded-lg bg-art-gold hover:bg-[#E5BE38] text-art-black font-semibold text-[11px] font-sans uppercase tracking-wider transition shadow-md flex items-center gap-1.5 shrink-0"
+                    className="px-4 py-2 rounded-lg bg-art-gold hover:brightness-110 text-white font-bold text-[11px] font-sans uppercase tracking-wider transition shadow-md flex items-center gap-1.5 shrink-0"
                   >
                     <Eye className="w-3.5 h-3.5" />
                     <span>View Masterpiece</span>

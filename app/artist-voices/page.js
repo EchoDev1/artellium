@@ -21,7 +21,7 @@ import {
 } from 'lucide-react';
 
 export default function ArtistVoicesPage() {
-  const { videos, addVideo, deleteVideo, currentUser } = useStore();
+  const { videos, addVideo, deleteVideo, submitArtistVideo, currentUser } = useStore();
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [selectedVideo, setSelectedVideo] = useState(null);
   const [isAdminAddOpen, setIsAdminAddOpen] = useState(false);
@@ -33,14 +33,21 @@ export default function ArtistVoicesPage() {
     thumbnail: '',
     videoUrl: '',
     quote: '',
-    duration: '3:30',
+    duration: '1:30',
   });
 
   const handleCreateVideo = (e) => {
     e.preventDefault();
     if (!newVideoForm.artistName || !newVideoForm.videoUrl) return;
 
-    addVideo(newVideoForm);
+    if (currentUser?.role === 'admin') {
+      addVideo({ ...newVideoForm, status: 'approved' });
+      alert(`Master video for "${newVideoForm.artistName}" published directly!`);
+    } else {
+      submitArtistVideo({ ...newVideoForm, status: 'pending' });
+      alert('Your 1–2 minute video story has been submitted for Admin Review! Once approved, it will be published to the Homepage Hero.');
+    }
+
     setNewVideoForm({
       artistName: '',
       artistTitle: '',
@@ -49,16 +56,18 @@ export default function ArtistVoicesPage() {
       thumbnail: '',
       videoUrl: '',
       quote: '',
-      duration: '3:30',
+      duration: '1:30',
     });
     setIsAdminAddOpen(false);
   };
 
-  const filteredVideos = (videos || []).filter(vid => {
-    if (selectedCategory === 'All') return true;
-    return vid.country?.toLowerCase().includes(selectedCategory.toLowerCase()) || 
-           vid.artistTitle?.toLowerCase().includes(selectedCategory.toLowerCase());
-  });
+  const filteredVideos = (videos || [])
+    .filter(vid => currentUser?.role === 'admin' || vid.status === 'approved')
+    .filter(vid => {
+      if (selectedCategory === 'All') return true;
+      return vid.country?.toLowerCase().includes(selectedCategory.toLowerCase()) || 
+             vid.artistTitle?.toLowerCase().includes(selectedCategory.toLowerCase());
+    });
 
   return (
     <div className="min-h-screen bg-[#07080A] text-slate-100 pb-24">
@@ -95,6 +104,15 @@ export default function ArtistVoicesPage() {
                   className="w-full h-full"
                   allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                   allowFullScreen
+                />
+              ) : selectedVideo.videoUrl ? (
+                <video
+                  src={selectedVideo.videoUrl}
+                  poster={selectedVideo.thumbnail}
+                  controls
+                  autoPlay
+                  playsInline
+                  className="w-full h-full object-contain"
                 />
               ) : (
                 <div className="w-full h-full flex flex-col items-center justify-center p-8 text-center space-y-4 bg-gradient-to-b from-[#151B26] to-[#0A0D14]">
@@ -239,16 +257,26 @@ export default function ArtistVoicesPage() {
               </p>
             </div>
 
-            {/* Admin Add Video Trigger */}
-            {currentUser?.role === 'admin' && (
-              <button
-                onClick={() => setIsAdminAddOpen(true)}
-                className="flex items-center gap-2 bg-gradient-to-r from-art-gold via-amber-500 to-art-gold-dark hover:brightness-110 text-art-black font-bold text-xs uppercase tracking-wider px-5 py-3 rounded-xl transition shadow-gold-glow shrink-0 cursor-pointer"
+            <div className="flex items-center gap-3">
+              <Link
+                href="/artist/dashboard"
+                className="flex items-center gap-2 bg-[#1C1405] hover:bg-[#2A1D08] border border-art-gold/50 text-art-gold font-bold text-xs uppercase tracking-wider px-4 py-3 rounded-xl transition shadow-sm shrink-0"
               >
-                <Plus className="w-4 h-4" />
-                <span>Add Master Video</span>
-              </button>
-            )}
+                <Film className="w-4 h-4 text-art-gold" />
+                <span>Submit 1–2 Min Story</span>
+              </Link>
+
+              {/* Admin Add Video Trigger */}
+              {currentUser?.role === 'admin' && (
+                <button
+                  onClick={() => setIsAdminAddOpen(true)}
+                  className="flex items-center gap-2 bg-gradient-to-r from-art-gold via-amber-500 to-art-gold-dark hover:brightness-110 text-art-black font-bold text-xs uppercase tracking-wider px-5 py-3 rounded-xl transition shadow-gold-glow shrink-0 cursor-pointer"
+                >
+                  <Plus className="w-4 h-4" />
+                  <span>Add Master Video</span>
+                </button>
+              )}
+            </div>
           </div>
 
           {/* Filter Pills */}

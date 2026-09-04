@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { useStore } from '@/context/store-context';
+import { isPriorityArtist, sortArtworksByPriority } from '@/lib/priority-utils';
 import { 
   Tag, 
   ShieldCheck, 
@@ -12,11 +13,12 @@ import {
   ShoppingBag, 
   Check, 
   Filter, 
-  DollarSign 
+  DollarSign,
+  Crown
 } from 'lucide-react';
 
 export default function Under1MPage() {
-  const { artworks, addToCart, currency } = useStore();
+  const { artworks, addToCart, currency, sellers = [], usersList = [] } = useStore();
   const [selectedMaxPrice, setSelectedMaxPrice] = useState(1000000);
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [cartSuccess, setCartSuccess] = useState(null);
@@ -114,6 +116,8 @@ export default function Under1MPage() {
     return matchesPrice && matchesCat;
   });
 
+  const sortedItems = sortArtworksByPriority(filteredItems, { sellers, users: usersList });
+
   const handleAddToCart = (art) => {
     if (addToCart) {
       addToCart(art);
@@ -196,7 +200,7 @@ export default function Under1MPage() {
       {/* Grid of Artworks */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-10">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
-          {filteredItems.map((art) => (
+          {sortedItems.map((art) => (
             <div
               key={art.id}
               className="group relative rounded-3xl overflow-hidden bg-[#0D1017] border border-white/10 hover:border-art-gold/60 transition-all duration-300 shadow-2xl flex flex-col justify-between hover:-translate-y-1.5"
@@ -210,9 +214,17 @@ export default function Under1MPage() {
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-[#0D1017] via-transparent to-black/30 pointer-events-none" />
 
-                {/* Country Tag */}
-                <div className="absolute top-3 left-3 z-10 px-2.5 py-0.5 rounded-full bg-black/80 backdrop-blur-md text-slate-300 font-sans text-[10px] font-bold border border-white/15">
-                  {art.country}
+                {/* Country Tag & Priority Badge */}
+                <div className="absolute top-3 left-3 z-10 flex flex-col gap-1">
+                  <div className="px-2.5 py-0.5 rounded-full bg-black/80 backdrop-blur-md text-slate-300 font-sans text-[10px] font-bold border border-white/15 w-fit">
+                    {art.country}
+                  </div>
+                  {isPriorityArtist(art, sellers, usersList) && (
+                    <div className="bg-gradient-to-r from-amber-500 via-art-gold to-yellow-500 text-black font-black text-[9px] px-2 py-0.5 rounded-full shadow-[0_0_10px_rgba(212,175,55,0.6)] flex items-center gap-1 border border-amber-300 w-fit">
+                      <Crown className="w-2.5 h-2.5 text-black fill-current" />
+                      <span>PRIORITY ARTIST</span>
+                    </div>
+                  )}
                 </div>
 
                 {/* Affordable Guarantee Tag */}

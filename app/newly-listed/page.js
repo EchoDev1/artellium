@@ -7,6 +7,7 @@ import ArtworkCard from '@/components/ArtworkCard';
 import CategoryBar from '@/components/CategoryBar';
 import { useStore } from '@/context/store-context';
 import { isCategoryMatch } from '@/lib/category-utils';
+import { sortArtworksByPriority } from '@/lib/priority-utils';
 import { 
   Sparkles, 
   Search, 
@@ -33,7 +34,9 @@ function NewlyListedContent() {
     selectedCategory, 
     setSelectedCategory,
     currency,
-    currentUser 
+    currentUser,
+    sellers = [],
+    usersList = []
   } = useStore();
 
   const [searchTerm, setSearchTerm] = useState(queryParam);
@@ -73,22 +76,14 @@ function NewlyListedContent() {
     });
   }, [artworks, searchTerm, categoryParam, selectedCategory, selectedMedium, priceFilter]);
 
-  // Sort: Real artist creations ALWAYS come first, followed by newest timestamp
+  // Sort: Subscribed Priority Artist creations ALWAYS come first, followed by newest timestamp
   const sortedArtworks = useMemo(() => {
-    return [...matchingArtworks].sort((a, b) => {
-      if (sortBy === 'price_low') {
-        return (a.price || 0) - (b.price || 0);
-      }
-      if (sortBy === 'price_high') {
-        return (b.price || 0) - (a.price || 0);
-      }
-      // Real artist creations strictly first
-      if (!a.isDemo && b.isDemo) return -1;
-      if (a.isDemo && !b.isDemo) return 1;
-
-      return new Date(b.created_at || 0) - new Date(a.created_at || 0);
+    return sortArtworksByPriority(matchingArtworks, {
+      sellers,
+      users: usersList,
+      secondarySort: sortBy
     });
-  }, [matchingArtworks, sortBy]);
+  }, [matchingArtworks, sortBy, sellers, usersList]);
 
   const realNewlyListedCount = useMemo(() => {
     return sortedArtworks.filter(a => !a.isDemo).length;

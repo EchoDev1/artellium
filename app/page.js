@@ -9,10 +9,10 @@ import JumiaQuickShortcuts from '@/components/JumiaQuickShortcuts';
 import JumiaFlashSales from '@/components/JumiaFlashSales';
 import ArtworkCard from '@/components/ArtworkCard';
 import AuctionCard from '@/components/AuctionCard';
-import ArtistVideoModal from '@/components/ArtistVideoModal';
 import CuratorialSpotlightBanner from '@/components/CuratorialSpotlightBanner';
 import { useStore } from '@/context/store-context';
 import { isCategoryMatch } from '@/lib/category-utils';
+import { sortArtworksByPriority, sortExhibitionsByPriority } from '@/lib/priority-utils';
 import { Sparkles, Flame, Eye, ArrowRight, Award, CheckCircle2, Crown, Zap, ShieldCheck, Tag, Gavel } from 'lucide-react';
 import LuxuryOverlay from '@/components/LuxuryOverlay.jsx';
 import TraditionalHeritageShowcase from '@/components/TraditionalHeritageShowcase.jsx';
@@ -23,7 +23,9 @@ export default function HomePage() {
     exhibitions, 
     selectedCategory, 
     heroConfig, 
-    homePageConfig 
+    homePageConfig,
+    sellers = [],
+    usersList = []
   } = useStore();
 
   const hConfig = heroConfig || { heroType: 'jumia_art_hero' };
@@ -46,44 +48,28 @@ export default function HomePage() {
 
   const getNewlyListed = (limit = 12) => {
     const matching = filteredArtworks.filter((art) => art.status !== 'sold');
-    
-    // Sort real artist creations strictly first, then newest
-    const realList = matching.filter(a => !a.isDemo);
-    const demoList = matching.filter(a => a.isDemo);
-
-    const sortedReal = [...realList].sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
-    const sortedDemo = [...demoList].sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
-
-    const combined = [...sortedReal, ...sortedDemo];
-    return combined.slice(0, limit);
+    return sortArtworksByPriority(matching, { sellers, users: usersList }).slice(0, limit);
   };
 
   const getLiveAuctions = (limit = 6) => {
     const matching = artworks.filter((art) => art.status === 'auction');
-    const realList = matching.filter(a => !a.isDemo);
-    const demoList = matching.filter(a => a.isDemo);
-    return [...realList, ...demoList].slice(0, limit);
+    return sortArtworksByPriority(matching, { sellers, users: usersList }).slice(0, limit);
   };
 
   const getRecentlySold = (limit = 3) => {
     const matching = artworks.filter((art) => art.status === 'sold');
-    const realList = matching.filter(a => !a.isDemo);
-    const demoList = matching.filter(a => a.isDemo);
+    const sorted = sortArtworksByPriority(matching, { sellers, users: usersList, secondarySort: 'sold_date' });
 
-    const sortedReal = [...realList].sort((a, b) => new Date(b.soldAt || b.created_at || 0) - new Date(a.soldAt || a.created_at || 0));
-    const sortedDemo = [...demoList].sort((a, b) => new Date(b.soldAt || b.created_at || 0) - new Date(a.soldAt || a.created_at || 0));
-
-    const combined = [...sortedReal, ...sortedDemo];
-    if (combined.length < limit) {
-      const extra = artworks.filter(a => a.status !== 'sold').slice(0, limit - combined.length).map(a => ({
+    if (sorted.length < limit) {
+      const extra = artworks.filter(a => a.status !== 'sold').slice(0, limit - sorted.length).map(a => ({
         ...a,
         status: 'sold',
         soldPrice: a.price,
         soldTo: 'Private Collector (Provenance Verified)'
       }));
-      return [...combined, ...extra].slice(0, limit);
+      return [...sorted, ...extra].slice(0, limit);
     }
-    return combined.slice(0, limit);
+    return sorted.slice(0, limit);
   };
 
   // Determine which hero to render based on heroConfig (JumiaArtHero is default)
@@ -110,11 +96,11 @@ export default function HomePage() {
         if (auctionsList.length === 0) return null;
         return (
           <section key={sec.id} className="relative rounded-2xl sm:rounded-3xl bg-white border-2 border-art-gold/30 shadow-[0_8px_30px_rgba(0,0,0,0.06)] p-5 sm:p-8 space-y-6 overflow-hidden">
-            <div className="absolute top-0 inset-x-8 h-[2px] bg-gradient-to-r from-transparent via-amber-400 to-transparent" />
+            <div className="absolute top-0 inset-x-8 h-[2px] bg-gradient-to-r from-transparent via-art-gold/50 to-transparent" />
             
             {/* Gold Luxury Heading Banner */}
-            <div className="bg-gradient-to-r from-[#1F1705]/95 via-[#3E2D07]/95 to-[#1F1705]/95 border-2 border-art-gold/60 rounded-xl sm:rounded-2xl p-5 sm:p-6 shadow-[0_6px_25px_rgba(212,175,55,0.25)] relative overflow-hidden flex flex-col sm:flex-row sm:items-center justify-between gap-4 backdrop-blur-md">
-              <div className="absolute top-0 inset-x-8 h-[2px] bg-gradient-to-r from-transparent via-amber-300 to-transparent" />
+            <div className="bg-gradient-to-r from-[#1F1705]/95 via-[#3E2D07]/95 to-[#1F1705]/95 border-2 border-art-gold/60 rounded-xl sm:rounded-2xl p-5 sm:p-6 shadow-[0_6px_25px_rgba(181,138,42,0.25)] relative overflow-hidden flex flex-col sm:flex-row sm:items-center justify-between gap-4 backdrop-blur-md">
+              <div className="absolute top-0 inset-x-8 h-[2px] bg-gradient-to-r from-transparent via-art-gold/40 to-transparent" />
               <div className="space-y-1 relative z-10">
                 <div className="flex items-center gap-2 mb-1 font-sans">
                   <span className="p-1.5 rounded-lg bg-red-950/80 text-red-400 border border-red-500/40 shadow-sm">
@@ -134,7 +120,7 @@ export default function HomePage() {
 
               <Link
                 href="/auctions"
-                className="text-xs font-bold text-black bg-gradient-to-r from-art-gold via-amber-300 to-art-gold hover:brightness-110 px-4 py-2.5 rounded-xl transition font-sans shadow-gold-glow shrink-0 relative z-10 flex items-center gap-1.5"
+                className="text-xs font-bold text-white bg-gradient-to-r from-art-gold via-[#9E7720] to-art-gold-dark hover:brightness-110 px-4 py-2.5 rounded-xl transition font-sans shadow-gold-glow shrink-0 relative z-10 flex items-center gap-1.5"
               >
                 <span>View All Live Lots</span>
                 <ArrowRight className="w-4 h-4" />
@@ -154,11 +140,11 @@ export default function HomePage() {
         const newlyListed = getNewlyListed(sec.maxItems || 12);
         return (
           <section key={sec.id} id="curated-marketplace" className="relative rounded-2xl sm:rounded-3xl bg-white border-2 border-art-gold/30 shadow-[0_8px_30px_rgba(0,0,0,0.06)] p-5 sm:p-8 space-y-6 scroll-mt-24 overflow-hidden">
-            <div className="absolute top-0 inset-x-8 h-[2px] bg-gradient-to-r from-transparent via-amber-400 to-transparent" />
+            <div className="absolute top-0 inset-x-8 h-[2px] bg-gradient-to-r from-transparent via-art-gold/50 to-transparent" />
 
             {/* Gold Luxury Heading Banner */}
-            <div className="bg-gradient-to-r from-[#1F1705]/95 via-[#3E2D07]/95 to-[#1F1705]/95 border-2 border-art-gold/60 rounded-xl sm:rounded-2xl p-5 sm:p-6 shadow-[0_6px_25px_rgba(212,175,55,0.25)] relative overflow-hidden flex flex-col sm:flex-row sm:items-center justify-between gap-4 backdrop-blur-md">
-              <div className="absolute top-0 inset-x-8 h-[2px] bg-gradient-to-r from-transparent via-amber-300 to-transparent" />
+            <div className="bg-gradient-to-r from-[#1F1705]/95 via-[#3E2D07]/95 to-[#1F1705]/95 border-2 border-art-gold/60 rounded-xl sm:rounded-2xl p-5 sm:p-6 shadow-[0_6px_25px_rgba(181,138,42,0.25)] relative overflow-hidden flex flex-col sm:flex-row sm:items-center justify-between gap-4 backdrop-blur-md">
+              <div className="absolute top-0 inset-x-8 h-[2px] bg-gradient-to-r from-transparent via-art-gold/40 to-transparent" />
               <div className="space-y-1 relative z-10">
                 <div className="flex items-center gap-2 mb-1 font-sans">
                   <span className="p-1.5 rounded-lg bg-art-gold/20 text-art-gold border border-art-gold/40 shadow-sm">
@@ -179,7 +165,7 @@ export default function HomePage() {
               <div className="flex items-center gap-2 relative z-10 shrink-0">
                 <Link
                   href="/newly-listed"
-                  className="text-xs font-bold text-black bg-gradient-to-r from-art-gold via-amber-300 to-art-gold hover:brightness-110 px-4 py-2.5 rounded-xl transition font-sans shadow-gold-glow flex items-center gap-1.5"
+                  className="text-xs font-bold text-white bg-gradient-to-r from-art-gold via-[#9E7720] to-art-gold-dark hover:brightness-110 px-4 py-2.5 rounded-xl transition font-sans shadow-gold-glow flex items-center gap-1.5"
                 >
                   <Sparkles className="w-3.5 h-3.5" />
                   <span>View All Fresh Arrivals</span>
@@ -205,8 +191,8 @@ export default function HomePage() {
 
       case 'subscriptions':
         return (
-          <section key={sec.id} className="relative rounded-3xl overflow-hidden bg-gradient-to-r from-[#1F1705]/95 via-[#3E2D07]/95 to-[#1F1705]/95 p-8 lg:p-12 border-2 border-art-gold/60 shadow-[0_8px_32px_rgba(212,175,55,0.25)] backdrop-blur-md">
-            <div className="absolute top-0 inset-x-8 h-[2px] bg-gradient-to-r from-transparent via-amber-300 to-transparent" />
+          <section key={sec.id} className="relative rounded-3xl overflow-hidden bg-gradient-to-r from-[#1F1705]/95 via-[#3E2D07]/95 to-[#1F1705]/95 p-8 lg:p-12 border-2 border-art-gold/60 shadow-[0_8px_32px_rgba(181,138,42,0.25)] backdrop-blur-md">
+            <div className="absolute top-0 inset-x-8 h-[2px] bg-gradient-to-r from-transparent via-art-gold/40 to-transparent" />
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center relative z-10">
               <div className="lg:col-span-7 space-y-4">
                 <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-art-gold/20 border border-art-gold/40 text-art-gold text-xs font-bold">
@@ -223,44 +209,67 @@ export default function HomePage() {
                 </p>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs pt-2">
-                  <div className="bg-[#120D02]/90 p-4 rounded-xl border border-art-gold/30 space-y-2 shadow-md">
-                    <div className="flex items-center justify-between">
-                      <span className="font-bold text-white text-sm">Standard Tier</span>
-                      <span className="badge-emerald px-2 py-0.5 rounded text-[10px] font-bold">Popular</span>
+                  <div className="bg-[#120D02]/90 p-4 rounded-xl border border-art-gold/30 space-y-2 shadow-md flex flex-col justify-between">
+                    <div>
+                      <div className="flex items-center justify-between">
+                        <span className="font-bold text-white text-sm">Standard Artist</span>
+                        <span className="bg-slate-800 text-slate-300 border border-slate-700 px-2 py-0.5 rounded text-[10px] font-bold uppercase">Free Open Tier</span>
+                      </div>
+                      <p className="font-serif text-lg font-bold text-white mt-1">
+                        ₦0 <span className="text-xs text-amber-200/60 font-sans font-normal">/ forever free</span>
+                      </p>
+                      <p className="text-[11px] text-slate-400">Open to every African creator to list artworks freely</p>
                     </div>
-                    <p className="font-serif text-lg font-bold text-art-gold">
-                      ₦30,000 <span className="text-xs text-amber-200/60 font-sans font-normal">/ month</span>
-                    </p>
-                    <p className="text-[11px] text-emerald-400">or ₦200,000 / year (Discounted)</p>
-                    <ul className="space-y-1 text-slate-300 text-[11px] pt-1">
+                    <ul className="space-y-1.5 text-slate-300 text-[11px] pt-2 border-t border-white/10">
                       <li className="flex items-center gap-1.5">
-                        <CheckCircle2 className="w-3.5 h-3.5 text-art-gold" />
-                        <span>Upload up to 15 artworks/mo</span>
+                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                        <span>Upload artworks freely in catalog</span>
                       </li>
                       <li className="flex items-center gap-1.5">
-                        <CheckCircle2 className="w-3.5 h-3.5 text-art-gold" />
-                        <span>Dedicated Seller Profile & Bio</span>
+                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                        <span>Direct WEMA Bank corporate settlements</span>
+                      </li>
+                      <li className="flex items-center gap-1.5">
+                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                        <span>Physical Provenance & Digital Certificates</span>
+                      </li>
+                      <li className="flex items-center gap-1.5">
+                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                        <span>Standard marketplace discovery</span>
                       </li>
                     </ul>
                   </div>
 
-                  <div className="bg-[#120D02]/90 p-4 rounded-xl border-2 border-art-gold/60 space-y-2 shadow-gold-glow">
-                    <div className="flex items-center justify-between">
-                      <span className="font-bold text-art-gold text-sm">Premium Tier</span>
-                      <span className="badge-gold px-2 py-0.5 rounded text-[10px] font-bold">Gold Crest</span>
+                  <div className="bg-[#120D02]/90 p-4 rounded-xl border-2 border-art-gold/80 space-y-2 shadow-gold-glow flex flex-col justify-between">
+                    <div>
+                      <div className="flex items-center justify-between">
+                        <span className="font-bold text-art-gold text-sm flex items-center gap-1">
+                          <span>Priority Subscribed</span>
+                          <Crown className="w-3.5 h-3.5 fill-current" />
+                        </span>
+                        <span className="bg-art-gold text-art-black px-2 py-0.5 rounded text-[10px] font-black uppercase">Top Placement</span>
+                      </div>
+                      <p className="font-serif text-lg font-bold text-art-gold mt-1">
+                        ₦25,000 <span className="text-xs text-amber-200/60 font-sans font-normal">/ month</span>
+                      </p>
+                      <p className="text-[11px] text-amber-300">or ₦240,000 / year (Save 20%)</p>
                     </div>
-                    <p className="font-serif text-lg font-bold text-art-gold">
-                      ₦50,000 <span className="text-xs text-amber-200/60 font-sans font-normal">/ month</span>
-                    </p>
-                    <p className="text-[11px] text-amber-300">or ₦350,000 / year (Save ₦250k)</p>
-                    <ul className="space-y-1 text-slate-300 text-[11px] pt-1">
+                    <ul className="space-y-1.5 text-slate-200 text-[11px] pt-2 border-t border-white/10">
                       <li className="flex items-center gap-1.5">
-                        <CheckCircle2 className="w-3.5 h-3.5 text-art-gold" />
-                        <span>Unlimited High-Res Uploads</span>
+                        <CheckCircle2 className="w-3.5 h-3.5 text-art-gold shrink-0" />
+                        <strong className="text-white">Strict Top Placement</strong> on Homepage & all main pages
                       </li>
                       <li className="flex items-center gap-1.5">
-                        <CheckCircle2 className="w-3.5 h-3.5 text-art-gold" />
-                        <span>Live Auction Access & Video Features</span>
+                        <CheckCircle2 className="w-3.5 h-3.5 text-art-gold shrink-0" />
+                        <strong className="text-white">👑 Authenticated Gold Crown Badge</strong> on all lots
+                      </li>
+                      <li className="flex items-center gap-1.5">
+                        <CheckCircle2 className="w-3.5 h-3.5 text-art-gold shrink-0" />
+                        <span>Premier Live Auction & Exhibition positioning</span>
+                      </li>
+                      <li className="flex items-center gap-1.5">
+                        <CheckCircle2 className="w-3.5 h-3.5 text-art-gold shrink-0" />
+                        <span>VIP collector concierge & buyout routing</span>
                       </li>
                     </ul>
                   </div>
@@ -276,7 +285,7 @@ export default function HomePage() {
                   </p>
                   <Link
                     href="/artist/register"
-                    className="block w-full py-3 bg-gradient-to-r from-art-gold via-amber-300 to-art-gold hover:brightness-110 text-black font-bold text-xs uppercase tracking-wider rounded-xl transition shadow-gold-glow"
+                    className="block w-full py-3 bg-gradient-to-r from-art-gold via-[#9E7720] to-art-gold-dark hover:brightness-110 text-white font-bold text-xs uppercase tracking-wider rounded-xl transition shadow-gold-glow"
                   >
                     Register as Artist Now
                   </Link>
@@ -291,11 +300,11 @@ export default function HomePage() {
         if (recentlySold.length === 0) return null;
         return (
           <section key={sec.id} className="relative rounded-2xl sm:rounded-3xl bg-white border-2 border-art-gold/30 shadow-[0_8px_30px_rgba(0,0,0,0.06)] p-5 sm:p-8 space-y-6 overflow-hidden">
-            <div className="absolute top-0 inset-x-8 h-[2px] bg-gradient-to-r from-transparent via-amber-400 to-transparent" />
+            <div className="absolute top-0 inset-x-8 h-[2px] bg-gradient-to-r from-transparent via-art-gold/50 to-transparent" />
 
             {/* Gold Luxury Heading Banner */}
-            <div className="bg-gradient-to-r from-[#1F1705]/95 via-[#3E2D07]/95 to-[#1F1705]/95 border-2 border-art-gold/60 rounded-xl sm:rounded-2xl p-5 sm:p-6 shadow-[0_6px_25px_rgba(212,175,55,0.25)] relative overflow-hidden flex flex-col sm:flex-row sm:items-center justify-between gap-4 backdrop-blur-md">
-              <div className="absolute top-0 inset-x-8 h-[2px] bg-gradient-to-r from-transparent via-amber-300 to-transparent" />
+            <div className="bg-gradient-to-r from-[#1F1705]/95 via-[#3E2D07]/95 to-[#1F1705]/95 border-2 border-art-gold/60 rounded-xl sm:rounded-2xl p-5 sm:p-6 shadow-[0_6px_25px_rgba(181,138,42,0.25)] relative overflow-hidden flex flex-col sm:flex-row sm:items-center justify-between gap-4 backdrop-blur-md">
+              <div className="absolute top-0 inset-x-8 h-[2px] bg-gradient-to-r from-transparent via-art-gold/40 to-transparent" />
               <div className="space-y-1 relative z-10">
                 <div className="flex items-center gap-2 mb-1 font-sans">
                   <span className="p-1.5 rounded-lg bg-art-gold/20 text-art-gold border border-art-gold/40 shadow-sm">
@@ -315,7 +324,7 @@ export default function HomePage() {
 
               <Link
                 href="/recently-sold"
-                className="text-xs font-bold text-black bg-gradient-to-r from-art-gold via-amber-300 to-art-gold hover:brightness-110 px-4 py-2.5 rounded-xl transition shrink-0 font-sans shadow-gold-glow relative z-10 flex items-center gap-1.5"
+                className="text-xs font-bold text-white bg-gradient-to-r from-art-gold via-[#9E7720] to-art-gold-dark hover:brightness-110 px-4 py-2.5 rounded-xl transition shrink-0 font-sans shadow-gold-glow relative z-10 flex items-center gap-1.5"
               >
                 <span>View More Recently Sold</span>
                 <ArrowRight className="w-4 h-4" />
@@ -332,14 +341,15 @@ export default function HomePage() {
       }
 
       case 'exhibitions': {
-        const exList = exhibitions.slice(0, sec.maxItems || 6);
+        const sortedEx = sortExhibitionsByPriority(exhibitions, sellers, usersList);
+        const exList = sortedEx.slice(0, sec.maxItems || 6);
         return (
           <section key={sec.id} className="relative rounded-2xl sm:rounded-3xl bg-white border-2 border-art-gold/30 shadow-[0_8px_30px_rgba(0,0,0,0.06)] p-5 sm:p-8 space-y-6 overflow-hidden">
-            <div className="absolute top-0 inset-x-8 h-[2px] bg-gradient-to-r from-transparent via-amber-400 to-transparent" />
+            <div className="absolute top-0 inset-x-8 h-[2px] bg-gradient-to-r from-transparent via-art-gold/50 to-transparent" />
 
             {/* Gold Luxury Heading Banner */}
-            <div className="bg-gradient-to-r from-[#1F1705]/95 via-[#3E2D07]/95 to-[#1F1705]/95 border-2 border-art-gold/60 rounded-xl sm:rounded-2xl p-5 sm:p-6 shadow-[0_6px_25px_rgba(212,175,55,0.25)] relative overflow-hidden flex flex-col sm:flex-row sm:items-center justify-between gap-4 backdrop-blur-md">
-              <div className="absolute top-0 inset-x-8 h-[2px] bg-gradient-to-r from-transparent via-amber-300 to-transparent" />
+            <div className="bg-gradient-to-r from-[#1F1705]/95 via-[#3E2D07]/95 to-[#1F1705]/95 border-2 border-art-gold/60 rounded-xl sm:rounded-2xl p-5 sm:p-6 shadow-[0_6px_25px_rgba(181,138,42,0.25)] relative overflow-hidden flex flex-col sm:flex-row sm:items-center justify-between gap-4 backdrop-blur-md">
+              <div className="absolute top-0 inset-x-8 h-[2px] bg-gradient-to-r from-transparent via-art-gold/40 to-transparent" />
               <div className="space-y-1 relative z-10">
                 <div className="flex items-center gap-2 mb-1 font-sans">
                   <span className="p-1.5 rounded-lg bg-art-gold/20 text-art-gold border border-art-gold/40 shadow-sm">
@@ -359,7 +369,7 @@ export default function HomePage() {
 
               <Link
                 href="/exhibitions"
-                className="text-xs font-bold text-black bg-gradient-to-r from-art-gold via-amber-300 to-art-gold hover:brightness-110 px-4 py-2.5 rounded-xl transition font-sans shadow-gold-glow relative z-10 flex items-center gap-1.5"
+                className="text-xs font-bold text-white bg-gradient-to-r from-art-gold via-[#9E7720] to-art-gold-dark hover:brightness-110 px-4 py-2.5 rounded-xl transition font-sans shadow-gold-glow relative z-10 flex items-center gap-1.5"
               >
                 <span>View All Exhibitions</span>
                 <ArrowRight className="w-4 h-4" />
@@ -417,7 +427,8 @@ export default function HomePage() {
     }
   };
 
-  const sectionsToRender = (pConfig.sections || []).filter(s => s.type !== 'hero');
+  const auctionsSection = (pConfig.sections || []).find(s => s.type === 'auctions');
+  const otherSections = (pConfig.sections || []).filter(s => s.type !== 'hero' && s.type !== 'auctions');
 
   return (
     <div className="space-y-0 bg-[#FAF9F6] min-h-screen text-slate-900 relative" suppressHydrationWarning>
@@ -432,17 +443,19 @@ export default function HomePage() {
 
       {/* Main Content Area (Archival Warm Alabaster Canvas) */}
       <div className="relative bg-[#FAF9F6] text-slate-900 pb-32 sm:pb-20 pt-6 sm:pt-8 space-y-12 sm:space-y-16 overflow-hidden">
-        {/* Spotlight Voices & Provenance (Voices of Master Artists) */}
-        <div className="relative z-10">
-          <ArtistVideoModal />
-        </div>
+        {/* LIVE BIDDING ARENA (Brought up to fill the space where Voices of Master Artists was) */}
+        {auctionsSection && (
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+            {renderSection(auctionsSection)}
+          </div>
+        )}
 
         {/* Curatorial Spotlight & Priority Artist Advert Banner */}
         <CuratorialSpotlightBanner />
 
         {/* Dynamic Homepage Sections */}
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-20 relative z-10">
-          {sectionsToRender.map(renderSection)}
+          {otherSections.map(renderSection)}
 
           {/* Sovereign African Craftsmanship & Provenance Guilds Showcase */}
           <TraditionalHeritageShowcase />

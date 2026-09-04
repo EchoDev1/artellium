@@ -78,7 +78,7 @@ export default function HeroBanner() {
               {cfg.primaryCta?.isVisible !== false && cfg.primaryCta?.label && (
                 <Link
                   href={cfg.primaryCta.href || '/explore'}
-                  className="px-6 py-3.5 rounded-xl bg-gradient-to-r from-art-gold via-amber-500 to-art-gold-dark hover:brightness-110 text-art-black font-bold text-xs uppercase tracking-wider transition shadow-gold-glow flex items-center gap-2"
+                  className="px-6 py-3.5 rounded-xl bg-gradient-to-r from-art-gold via-[#9E7720] to-art-gold-dark hover:brightness-110 text-white font-bold text-xs uppercase tracking-wider transition shadow-gold-glow flex items-center gap-2"
                 >
                   <span>{cfg.primaryCta.label}</span>
                   <ArrowRight className="w-4 h-4" />

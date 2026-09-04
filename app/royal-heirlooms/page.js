@@ -17,9 +17,10 @@ import {
   SlidersHorizontal,
   ChevronRight
 } from 'lucide-react';
+import { isPriorityArtist, sortArtworksByPriority } from '@/lib/priority-utils';
 
 export default function RoyalHeirloomsPage() {
-  const { artworks, currency, royalHeirlooms: storeRoyalHeirlooms = [], submitRoyalInquiry, currentUser } = useStore();
+  const { artworks, currency, royalHeirlooms: storeRoyalHeirlooms = [], submitRoyalInquiry, currentUser, sellers = [], usersList = [] } = useStore();
   const [selectedEpoch, setSelectedEpoch] = useState('All');
   const [inquirySubmitted, setInquirySubmitted] = useState(null);
 
@@ -106,14 +107,16 @@ export default function RoyalHeirloomsPage() {
     return (item.epoch || '').toLowerCase().includes(selectedEpoch.toLowerCase()) || (item.category || '').toLowerCase().includes(selectedEpoch.toLowerCase());
   });
 
+  const sortedHeirlooms = sortArtworksByPriority(filteredHeirlooms, { sellers, users: usersList });
+
   const handleInquiry = (heirloom) => {
     const itemTitle = heirloom?.title || heirloom;
     const valuation = heirloom?.valuation || 15000000;
     
     if (submitRoyalInquiry) {
       submitRoyalInquiry({
-        heirloomTitle: heirloomTitle,
-        offerAmount: heirloom.valuation,
+        heirloomTitle: itemTitle,
+        offerAmount: valuation,
         collectorName: currentUser?.name || 'Sovereign Collector',
         collectorEmail: currentUser?.email || 'collector@artellium.com',
         collectorPhone: '+234 800 000 0000',
@@ -124,7 +127,7 @@ export default function RoyalHeirloomsPage() {
       });
     }
     
-    setInquirySubmitted(heirloomTitle);
+    setInquirySubmitted(itemTitle);
     setTimeout(() => setInquirySubmitted(null), 4000);
   };
 
@@ -188,7 +191,7 @@ export default function RoyalHeirloomsPage() {
       {/* Grid of Rare Royal Masterworks */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-10">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-          {filteredHeirlooms.map((heirloom) => (
+          {sortedHeirlooms.map((heirloom) => (
             <div
               key={heirloom.id}
               className="group relative rounded-3xl overflow-hidden bg-[#0D1017] border border-art-gold/35 hover:border-art-gold transition-all duration-500 shadow-2xl flex flex-col justify-between"
@@ -202,10 +205,18 @@ export default function RoyalHeirloomsPage() {
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-[#0D1017] via-transparent to-black/40 pointer-events-none" />
 
-                {/* Royal Badge */}
-                <div className="absolute top-3 left-3 z-10 px-3 py-1 rounded-full bg-black/85 backdrop-blur-md text-art-gold font-mono font-bold text-xs shadow-lg flex items-center gap-1.5 border border-art-gold/40">
-                  <Crown className="w-3.5 h-3.5" />
-                  <span>{heirloom.dynasty}</span>
+                {/* Badges: Royal Dynasty & Priority */}
+                <div className="absolute top-3 left-3 z-10 flex flex-col gap-1 items-start">
+                  <div className="px-3 py-1 rounded-full bg-black/85 backdrop-blur-md text-art-gold font-mono font-bold text-xs shadow-lg flex items-center gap-1.5 border border-art-gold/40">
+                    <Crown className="w-3.5 h-3.5" />
+                    <span>{heirloom.dynasty}</span>
+                  </div>
+                  {isPriorityArtist(heirloom, sellers, usersList) && (
+                    <div className="px-2.5 py-0.5 rounded-full bg-gradient-to-r from-art-gold via-amber-300 to-art-gold text-art-black font-black text-[9px] shadow-lg flex items-center gap-1 uppercase tracking-wider">
+                      <Crown className="w-2.5 h-2.5 fill-current" />
+                      <span>PRIORITY ARTIST</span>
+                    </div>
+                  )}
                 </div>
 
                 {/* Provenance Hash */}

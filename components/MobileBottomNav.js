@@ -63,7 +63,7 @@ export default function MobileBottomNav() {
         className="bg-gradient-to-r from-[#1F1705]/95 via-[#3E2D07]/95 to-[#1F1705]/95 backdrop-blur-xl border-2 border-art-gold/60 rounded-2xl p-1.5 shadow-[0_12px_36px_rgba(212,175,55,0.35)] flex items-center justify-around relative"
       >
         {/* Subtle top gold accent glow */}
-        <div className="absolute top-0 inset-x-8 h-[2px] bg-gradient-to-r from-transparent via-amber-300 to-transparent" />
+        <div className="absolute top-0 inset-x-8 h-[2px] bg-gradient-to-r from-transparent via-art-gold/40 to-transparent" />
 
         {navItems.map((item) => {
           const Icon = item.icon;
@@ -73,12 +73,12 @@ export default function MobileBottomNav() {
               href={item.href}
               className={`relative flex flex-col items-center justify-center py-1.5 px-3 rounded-xl transition-all duration-200 active:scale-90 ${
                 item.isActive 
-                  ? 'text-black bg-gradient-to-r from-art-gold via-amber-300 to-art-gold font-bold shadow-md' 
+                  ? 'text-white bg-gradient-to-r from-art-gold via-[#9E7720] to-art-gold-dark font-bold shadow-md' 
                   : 'text-amber-100/80 hover:text-white'
               }`}
             >
               <div className="relative">
-                <Icon className={`w-4 h-4 ${item.isActive ? 'text-black' : 'text-amber-200/70'}`} />
+                <Icon className={`w-4 h-4 ${item.isActive ? 'text-white' : 'text-amber-200/70'}`} />
                 {item.badge && (
                   <span className={`absolute -top-1.5 -right-3 ${item.badgeColor} text-[8px] font-black text-white px-1 py-0.2 rounded-full uppercase leading-none shadow-sm`}>
                     {item.badge}

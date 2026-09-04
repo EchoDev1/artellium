@@ -10,10 +10,10 @@ module.exports = {
     extend: {
       colors: {
         art: {
-          gold: '#D4AF37',
-          'gold-light': '#F3E5AB',
-          'gold-bright': '#FFD700',
-          'gold-dark': '#9A7B1C',
+          gold: '#B58A2A',
+          'gold-light': '#CDB169',
+          'gold-bright': '#C99E38',
+          'gold-dark': '#7A570E',
           black: '#07080A',
           'black-card': '#0F1117',
           'black-surface': '#161922',
@@ -31,14 +31,14 @@ module.exports = {
         sans: ['var(--font-outfit)', 'Inter', 'system-ui', 'sans-serif'],
       },
       backgroundImage: {
-        'gold-gradient': 'linear-gradient(135deg, #FFD700 0%, #D4AF37 50%, #9A7B1C 100%)',
+        'gold-gradient': 'linear-gradient(135deg, #C99E38 0%, #B58A2A 50%, #7A570E 100%)',
         'dark-gradient': 'linear-gradient(180deg, #07080A 0%, #0F1117 100%)',
         'emerald-gradient': 'linear-gradient(135deg, #062319 0%, #0F3D2E 100%)',
         'crimson-gradient': 'linear-gradient(135deg, #8B0000 0%, #C0392B 100%)',
-        'hero-overlay': 'radial-gradient(circle at center, rgba(212,175,55,0.12) 0%, rgba(7,8,10,0.92) 80%)',
+        'hero-overlay': 'radial-gradient(circle at center, rgba(181,138,42,0.10) 0%, rgba(7,8,10,0.92) 80%)',
       },
       boxShadow: {
-        'gold-glow': '0 0 25px -5px rgba(212, 175, 55, 0.3)',
+        'gold-glow': '0 0 25px -5px rgba(181, 138, 42, 0.25)',
         'emerald-glow': '0 0 25px -5px rgba(15, 61, 46, 0.4)',
         'crimson-glow': '0 0 25px -5px rgba(139, 0, 0, 0.4)',
       },

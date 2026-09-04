@@ -27,13 +27,15 @@ import {
   CheckCircle2,
   Clock,
   Compass,
-  ShoppingBag
+  ShoppingBag,
+  Crown
 } from 'lucide-react';
+import { isPriorityArtist, sortArtworksByPriority } from '@/lib/priority-utils';
 
 export default function ExhibitionMiniPage() {
   const params = useParams();
   const router = useRouter();
-  const { exhibitions = [], artworks = [], addToCart, addToWishlist, wishlist = [], currency } = useStore();
+  const { exhibitions = [], artworks = [], addToCart, addToWishlist, wishlist = [], currency, sellers = [], usersList = [] } = useStore();
 
   const slug = params?.slug;
 
@@ -220,7 +222,7 @@ export default function ExhibitionMiniPage() {
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-              {(exhibition.exhibitedArtworks || []).map((art) => (
+              {sortArtworksByPriority(exhibition.exhibitedArtworks || [], { sellers, users: usersList }).map((art) => (
                 <div
                   key={art.id}
                   className="rounded-3xl overflow-hidden bg-[#0A0D14] border border-white/10 hover:border-art-gold/60 transition-all duration-300 shadow-xl flex flex-col justify-between p-4 space-y-3 group"
@@ -232,9 +234,17 @@ export default function ExhibitionMiniPage() {
                         alt={art.title}
                         className="w-full h-full object-cover group-hover:scale-105 transition duration-500"
                       />
-                      <span className="absolute top-2.5 left-2.5 bg-black/80 backdrop-blur-md text-art-gold text-[10px] font-mono font-bold px-2.5 py-0.5 rounded-lg border border-art-gold/30">
-                        Exhibition Piece
-                      </span>
+                      <div className="absolute top-2.5 left-2.5 flex flex-col gap-1 z-10">
+                        <span className="bg-black/80 backdrop-blur-md text-art-gold text-[10px] font-mono font-bold px-2.5 py-0.5 rounded-lg border border-art-gold/30">
+                          Exhibition Piece
+                        </span>
+                        {isPriorityArtist(art, sellers, usersList) && (
+                          <span className="bg-gradient-to-r from-amber-500 via-art-gold to-yellow-500 text-black font-black text-[9px] px-2 py-0.5 rounded-lg border border-amber-300 flex items-center gap-1 shadow">
+                            <Crown className="w-2.5 h-2.5 text-black fill-current" />
+                            <span>PRIORITY ARTIST</span>
+                          </span>
+                        )}
+                      </div>
                     </div>
 
                     <div>

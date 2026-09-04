@@ -26,8 +26,10 @@ import {
   AlertTriangle,
   BadgeCheck,
   Check,
-  SlidersHorizontal
+  SlidersHorizontal,
+  Crown
 } from 'lucide-react';
+import { isPriorityArtist, sortArtworksByPriority } from '@/lib/priority-utils';
 
 export default function ProvenanceLedgerPage() {
   const { 
@@ -37,7 +39,9 @@ export default function ProvenanceLedgerPage() {
     mintLedgerBlock,
     updateLedgerBlock,
     deleteLedgerBlock,
-    artworks = []
+    artworks = [],
+    sellers = [],
+    usersList = []
   } = useStore();
 
   const isAdmin = currentUser?.role === 'admin';
@@ -284,7 +288,7 @@ export default function ProvenanceLedgerPage() {
 
   const ledgerRecords = (storeLedgerBlocks && storeLedgerBlocks.length > 0) ? storeLedgerBlocks : fallbackLedgerRecords;
 
-  const filteredRecords = ledgerRecords
+  const rawFilteredRecords = ledgerRecords
     .filter(rec => {
       const q = searchQuery.trim().toLowerCase();
       const matchesSearch = !q || (
@@ -305,6 +309,8 @@ export default function ProvenanceLedgerPage() {
       if (sortBy === 'value_low') return (a.settlementPrice || 0) - (b.settlementPrice || 0);
       return 0;
     });
+
+  const filteredRecords = sortArtworksByPriority(rawFilteredRecords, { sellers, users: usersList });
 
   const totalVol = ledgerRecords.reduce((acc, r) => acc + (Number(r.settlementPrice) || 0), 0);
 
@@ -485,6 +491,12 @@ export default function ProvenanceLedgerPage() {
                           {rec.blockHeight}
                         </span>
                         <span className="text-xs text-slate-400 font-mono">{rec.timestamp}</span>
+                        {isPriorityArtist(rec, sellers, usersList) && (
+                          <span className="px-2 py-0.5 rounded bg-gradient-to-r from-art-gold via-amber-300 to-art-gold text-art-black text-[9px] font-black uppercase tracking-wider shadow flex items-center gap-1">
+                            <Crown className="w-2.5 h-2.5 fill-current" />
+                            <span>PRIORITY ARTIST</span>
+                          </span>
+                        )}
                         {rec.hologramType && (
                           <span className="px-2 py-0.5 rounded bg-amber-950/60 text-art-gold text-[9.5px] font-bold border border-art-gold/30">
                             {rec.hologramType}

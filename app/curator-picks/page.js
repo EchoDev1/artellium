@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { useStore } from '@/context/store-context';
+import { isPriorityArtist, sortArtworksByPriority } from '@/lib/priority-utils';
 import { 
   Sparkles, 
   Award, 
@@ -12,11 +13,12 @@ import {
   CheckCircle2, 
   Quote, 
   Bookmark, 
-  Building2 
+  Building2,
+  Crown
 } from 'lucide-react';
 
 export default function CuratorPicksPage() {
-  const { artworks, currency, curatorPicks: storeCuratorPicks = [] } = useStore();
+  const { artworks, currency, curatorPicks: storeCuratorPicks = [], sellers = [], usersList = [] } = useStore();
   const [selectedHall, setSelectedHall] = useState('All');
 
   const formatPrice = (amount) => {
@@ -98,6 +100,8 @@ export default function CuratorPicksPage() {
     return pick.exhibitionHall === selectedHall;
   });
 
+  const sortedPicks = sortArtworksByPriority(filteredPicks, { sellers, users: usersList });
+
   return (
     <div className="min-h-screen bg-[#07080A] text-slate-100 pb-20">
       {/* Header */}
@@ -146,7 +150,7 @@ export default function CuratorPicksPage() {
 
       {/* Curator Picks Grid */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-10 space-y-10">
-        {filteredPicks.map((pick) => (
+        {sortedPicks.map((pick) => (
           <div
             key={pick.id}
             className="group relative rounded-3xl overflow-hidden bg-[#0D1017] border border-purple-500/30 hover:border-purple-500/70 transition-all duration-500 shadow-2xl p-6 sm:p-8"
@@ -162,8 +166,16 @@ export default function CuratorPicksPage() {
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-[#0D1017] via-transparent to-black/30 pointer-events-none" />
 
-                <div className="absolute top-3 left-3 z-10 px-3 py-1 rounded-full bg-black/85 backdrop-blur-md text-purple-300 font-mono font-bold text-xs border border-purple-500/40">
-                  {pick.exhibitionHall}
+                <div className="absolute top-3 left-3 z-10 flex flex-col gap-1">
+                  <span className="px-3 py-1 rounded-full bg-black/85 backdrop-blur-md text-purple-300 font-mono font-bold text-xs border border-purple-500/40 w-fit">
+                    {pick.exhibitionHall}
+                  </span>
+                  {isPriorityArtist(pick, sellers, usersList) && (
+                    <span className="bg-gradient-to-r from-amber-500 via-art-gold to-yellow-500 text-black font-black text-[9px] px-2.5 py-0.5 rounded-full shadow-[0_0_10px_rgba(212,175,55,0.6)] flex items-center gap-1 border border-amber-300 w-fit">
+                      <Crown className="w-2.5 h-2.5 text-black fill-current" />
+                      <span>PRIORITY ARTIST</span>
+                    </span>
+                  )}
                 </div>
 
                 <div className="absolute bottom-3 right-3 z-10 px-3 py-1 rounded-full bg-art-gold text-art-black font-serif font-black text-sm shadow-lg">

@@ -26,9 +26,10 @@ import {
   ShieldCheck,
   Building
 } from 'lucide-react';
+import { sortExhibitionsByPriority } from '@/lib/priority-utils';
 
 export default function ExhibitionsPage() {
-  const { exhibitions = [] } = useStore();
+  const { exhibitions = [], sellers = [], usersList = [] } = useStore();
   
   // Timing Tabs: 'all', 'current', 'upcoming', 'past', 'virtual'
   const [activeTimingTab, setActiveTimingTab] = useState('current');
@@ -93,7 +94,9 @@ export default function ExhibitionsPage() {
 
       return matchTiming && matchFormat && matchSearch && matchCity;
     });
-  }, [exhibitions, activeTimingTab, selectedFormat, searchQuery, cityFilter]);
+
+    return sortExhibitionsByPriority(filtered, sellers, usersList);
+  }, [exhibitions, activeTimingTab, selectedFormat, searchQuery, cityFilter, sellers, usersList]);
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-10 font-sans pb-24 text-slate-100">

@@ -20,9 +20,11 @@ import {
   X,
   Lock,
   ArrowRight,
-  CheckCircle2
+  CheckCircle2,
+  Crown
 } from 'lucide-react';
 import { DEFAULT_FALLBACK_IMAGE } from '@/lib/image-utils';
+import { isPriorityArtist } from '@/lib/priority-utils';
 
 export default function AuctionCard({ artwork }) {
   const { 
@@ -225,6 +227,12 @@ export default function AuctionCard({ artwork }) {
           <span className="bg-black/80 backdrop-blur-md text-art-gold font-mono font-bold text-[10px] px-3 py-1 rounded-full border border-art-gold/40">
             {lotNumber}
           </span>
+          {isPriorityArtist(artwork) && (
+            <span className="bg-gradient-to-r from-amber-500 via-art-gold to-yellow-500 text-black font-black text-[10px] px-2.5 py-1 rounded-full shadow-[0_0_12px_rgba(212,175,55,0.6)] flex items-center gap-1 border border-amber-300">
+              <Crown className="w-3 h-3 text-black fill-current" />
+              <span>👑 PRIORITY ARTIST LOT</span>
+            </span>
+          )}
         </div>
 
         {/* Reserve Met Status */}
@@ -235,9 +243,9 @@ export default function AuctionCard({ artwork }) {
               <span>Reserve Met</span>
             </span>
           ) : (
-            <span className="bg-amber-950/90 text-amber-300 text-[10px] font-mono font-bold px-3 py-1 rounded-full border border-amber-500/60 flex items-center gap-1 shadow">
-              <AlertCircle className="w-3 h-3 text-amber-400" />
-              <span>Reserve Not Met</span>
+            <span className="bg-amber-950/90 text-art-gold text-[10px] font-mono font-bold px-3 py-1 rounded-full border border-art-gold/50 flex items-center gap-1 shadow">
+              <AlertCircle className="w-3 h-3 text-art-gold" />
+              <span>RESERVE NOT MET</span>
             </span>
           )}
         </div>
@@ -360,9 +368,9 @@ export default function AuctionCard({ artwork }) {
 
             <button
               onClick={handlePowerBid}
-              className="w-full sm:flex-1 bg-gradient-to-r from-art-gold via-amber-500 to-art-gold-dark hover:brightness-110 text-art-black font-black text-xs py-3 rounded-xl transition shadow-gold-glow flex items-center justify-center gap-1.5 uppercase tracking-wide cursor-pointer"
+              className="w-full sm:flex-1 bg-gradient-to-r from-art-gold via-[#9E7720] to-art-gold-dark hover:brightness-110 text-white font-black text-xs py-3 rounded-xl transition shadow-gold-glow flex items-center justify-center gap-1.5 uppercase tracking-wide cursor-pointer"
             >
-              <Zap className="w-3.5 h-3.5 fill-current animate-pulse text-art-black" />
+              <Zap className="w-3.5 h-3.5 fill-current animate-pulse text-white" />
               <span>POWER BID (+₦100K)</span>
             </button>
 
@@ -390,7 +398,7 @@ export default function AuctionCard({ artwork }) {
               {bidsFeed.map((b) => (
                 <div key={b.id} className="flex items-center justify-between p-1.5 rounded-lg bg-white/[0.02] border border-white/5 font-mono text-[11px]">
                   <div className="flex items-center gap-1.5">
-                    <span className={`w-1.5 h-1.5 rounded-full ${b.isPower ? 'bg-amber-400 animate-pulse' : 'bg-emerald-400'}`} />
+                    <span className={`w-1.5 h-1.5 rounded-full ${b.isPower ? 'bg-art-gold animate-pulse' : 'bg-emerald-400'}`} />
                     <span className="text-slate-200">{b.bidder} {b.isPower ? '⚡' : ''}</span>
                   </div>
                   <div className="flex items-center gap-2">
@@ -589,10 +597,10 @@ export default function AuctionCard({ artwork }) {
             <div className="space-y-2.5 pt-2">
               <Link
                 href="/login?redirect=/auctions"
-                className="w-full py-3.5 bg-gradient-to-r from-art-gold via-amber-400 to-art-gold hover:brightness-110 text-black font-black text-xs uppercase tracking-wider rounded-xl transition shadow-gold-glow flex items-center justify-center gap-2"
+                className="w-full py-3.5 bg-gradient-to-r from-art-gold via-[#9E7720] to-art-gold-dark hover:brightness-110 text-white font-black text-xs uppercase tracking-wider rounded-xl transition shadow-gold-glow flex items-center justify-center gap-2"
               >
                 <span>Sign In to Account</span>
-                <ArrowRight className="w-4 h-4 text-black" />
+                <ArrowRight className="w-4 h-4 text-white" />
               </Link>
 
               <Link
@@ -703,13 +711,13 @@ export default function AuctionCard({ artwork }) {
               <button
                 type="submit"
                 disabled={isRegisteringBidder}
-                className="w-full py-3.5 bg-gradient-to-r from-art-gold via-amber-400 to-art-gold hover:brightness-110 text-black font-black uppercase text-xs tracking-wider rounded-xl transition shadow-gold-glow flex items-center justify-center gap-2 cursor-pointer disabled:opacity-60"
+                className="w-full py-3.5 bg-gradient-to-r from-art-gold via-[#9E7720] to-art-gold-dark hover:brightness-110 text-white font-black uppercase text-xs tracking-wider rounded-xl transition shadow-gold-glow flex items-center justify-center gap-2 cursor-pointer disabled:opacity-60"
               >
                 {isRegisteringBidder ? (
                   <span>Activating Bidder Pass...</span>
                 ) : (
                   <>
-                    <ShieldCheck className="w-4 h-4 text-black" />
+                    <ShieldCheck className="w-4 h-4 text-white" />
                     <span>Submit & Activate Accredited Bidder Pass</span>
                   </>
                 )}

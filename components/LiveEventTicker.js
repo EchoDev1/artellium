@@ -81,9 +81,9 @@ export default function LiveEventTicker() {
   const Icon = activeEvent.icon;
 
   return (
-    <div className="w-full bg-gradient-to-r from-[#68490B] via-[#996F15] to-[#68490B] border-y border-[#FFD700]/40 relative overflow-hidden py-2.5 px-4 sm:px-6 lg:px-8">
+    <div className="w-full bg-gradient-to-r from-[#68490B] via-[#996F15] to-[#68490B] border-y border-art-gold/40 relative overflow-hidden py-2.5 px-4 sm:px-6 lg:px-8">
       {/* Subtle gold sheen overlay */}
-      <div className="absolute inset-0 bg-gradient-to-r from-amber-400/10 via-yellow-300/15 to-amber-400/10 pointer-events-none" />
+      <div className="absolute inset-0 bg-gradient-to-r from-art-gold/10 via-art-gold/15 to-art-gold/10 pointer-events-none" />
 
       <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3 relative z-10">
         

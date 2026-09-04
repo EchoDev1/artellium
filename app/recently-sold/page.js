@@ -3,22 +3,20 @@
 import React, { useState } from 'react';
 import ArtworkCard from '@/components/ArtworkCard';
 import { useStore } from '@/context/store-context';
+import { sortArtworksByPriority } from '@/lib/priority-utils';
 import { Award, ShieldCheck, Search, SlidersHorizontal, BookOpen, ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
 
 export default function RecentlySoldPage() {
-  const { artworks, currency } = useStore();
+  const { artworks, currency, sellers = [], usersList = [] } = useStore();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
 
-  // Filter only sold items with real sales strictly first
-  const soldArtworks = artworks
-    .filter((art) => art.status === 'sold')
-    .sort((a, b) => {
-      if (!a.isDemo && b.isDemo) return -1;
-      if (a.isDemo && !b.isDemo) return 1;
-      return new Date(b.soldAt || b.created_at || 0) - new Date(a.soldAt || a.created_at || 0);
-    });
+  // Filter only sold items with Subscribed Priority Artists strictly first
+  const soldArtworks = sortArtworksByPriority(
+    artworks.filter((art) => art.status === 'sold'),
+    { sellers, users: usersList, secondarySort: 'sold_date' }
+  );
 
   // Filter sold items by search / category
   const filteredSold = soldArtworks.filter((art) => {

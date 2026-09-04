@@ -271,12 +271,12 @@ export default function GoldRevealHero() {
           font-family: 'Cinzel', serif, Georgia;
           font-size: clamp(38px, 8vw, 76px);
           font-weight: 900;
-          color: #fff8e7;
+          color: #f7ecd2;
           text-shadow: 
-            0 0 8px rgba(255,180,60,0.95),
-            0 0 24px rgba(255,140,30,0.75),
-            0 0 48px rgba(200,100,0,0.55),
-            0 0 80px rgba(160,80,0,0.35),
+            0 0 8px rgba(181,138,42,0.9),
+            0 0 24px rgba(160,115,25,0.65),
+            0 0 48px rgba(130,90,15,0.45),
+            0 0 80px rgba(100,65,10,0.3),
             0 6px 16px rgba(0,0,0,0.98);
           opacity: 0;
           transform: rotateY(720deg) rotateX(45deg) scale(0.3) translateZ(-200px);
@@ -289,7 +289,7 @@ export default function GoldRevealHero() {
           position: absolute;
           left: 0;
           top: 0;
-          background: linear-gradient(180deg, #fffbe8 0%, #e8b84a 35%, #b8860b 70%, #5c3a00 100%);
+          background: linear-gradient(180deg, #f7ecd2 0%, #c99e38 35%, #96701b 70%, #4a3305 100%);
           -webkit-background-clip: text;
           background-clip: text;
           -webkit-text-fill-color: transparent;
@@ -305,7 +305,7 @@ export default function GoldRevealHero() {
           right: -8px;
           bottom: -6px;
           height: 3px;
-          background: linear-gradient(90deg, transparent 0%, rgba(255,180,60,0.8) 50%, transparent 100%);
+          background: linear-gradient(90deg, transparent 0%, rgba(181,138,42,0.8) 50%, transparent 100%);
           border-radius: 50%;
           filter: blur(2px);
           opacity: 0;
@@ -344,11 +344,11 @@ export default function GoldRevealHero() {
           position: absolute;
           width: 3px;
           height: 3px;
-          background: radial-gradient(circle, #ffd700 0%, #ff6b00 60%, transparent 100%);
+          background: radial-gradient(circle, #c99e38 0%, #825e12 60%, transparent 100%);
           border-radius: 50%;
           pointer-events: none;
           animation: emberBurst 1.2s ease-out forwards;
-          box-shadow: 0 0 8px 2px rgba(255,180,0,0.6);
+          box-shadow: 0 0 8px 2px rgba(181,138,42,0.5);
           z-index: 15;
         }
         @keyframes emberBurst {
@@ -435,9 +435,9 @@ export default function GoldRevealHero() {
           <svg viewBox="0 0 100 100" className="w-full h-full animate-[spin_30s_linear_infinite] drop-shadow-[0_4px_12px_rgba(212,175,55,0.25)]">
             <defs>
               <linearGradient id="goldGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                <stop offset="0%" stopColor="#FFF6D6" />
-                <stop offset="50%" stopColor="#FFD700" />
-                <stop offset="100%" stopColor="#B8860B" />
+                <stop offset="0%" stopColor="#E6D5A8" />
+                <stop offset="50%" stopColor="#C99E38" />
+                <stop offset="100%" stopColor="#7A570E" />
               </linearGradient>
               <path
                 id="circleTextPath"

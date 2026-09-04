@@ -3,9 +3,10 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { useStore } from '@/context/store-context';
-import { ShoppingBag, Star, ShieldCheck, Eye, Sparkles, CheckCircle, Tag, Heart } from 'lucide-react';
+import { ShoppingBag, Star, ShieldCheck, Eye, Sparkles, CheckCircle, Tag, Heart, Crown } from 'lucide-react';
 import VerificationBadge from '@/components/VerificationBadge';
 import { DEFAULT_FALLBACK_IMAGE } from '@/lib/image-utils';
+import { isPriorityArtist } from '@/lib/priority-utils';
 
 export default function ArtworkCard({ artwork }) {
   const { addToCart, currency, wishlist, addToWishlist, removeFromWishlist } = useStore();
@@ -36,17 +37,24 @@ export default function ArtworkCard({ artwork }) {
         {/* Badges Overlay */}
         <div className="absolute top-3 left-3 flex flex-wrap gap-1.5 z-10">
           {!artwork.isDemo && (
-            <span className="bg-gradient-to-r from-art-gold to-amber-500 text-art-black text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1 shadow-gold-glow">
-              <Sparkles className="w-3 h-3 text-art-black" />
+            <span className="bg-gradient-to-r from-art-gold to-art-gold-dark text-white text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1 shadow-gold-glow">
+              <Sparkles className="w-3 h-3 text-white" />
               <span>DIRECT ARTIST UPLOAD</span>
             </span>
           )}
 
-          {artwork.artistType === 'Premium' && (
-            <span className="badge-gold text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1 shadow-gold-glow">
-              <Sparkles className="w-3 h-3 text-art-gold" />
-              <span>PREMIUM ARTIST</span>
+          {isPriorityArtist(artwork) ? (
+            <span className="bg-gradient-to-r from-amber-500 via-art-gold to-yellow-500 text-black font-black text-[10px] px-2.5 py-0.5 rounded-full flex items-center gap-1 shadow-[0_0_12px_rgba(212,175,55,0.6)] border border-amber-300">
+              <Crown className="w-3 h-3 text-black fill-current" />
+              <span>PRIORITY ARTIST</span>
             </span>
+          ) : (
+            artwork.artistType === 'Premium' && (
+              <span className="badge-gold text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1 shadow-gold-glow">
+                <Sparkles className="w-3 h-3 text-art-gold" />
+                <span>PREMIUM ARTIST</span>
+              </span>
+            )
           )}
 
           {artwork.isNewlyListed && (
@@ -92,7 +100,7 @@ export default function ArtworkCard({ artwork }) {
         <div>
           <div className="flex items-center justify-between text-[11px] text-slate-400 mb-1">
             <span className="font-mono">{artwork.category}</span>
-            <div className="flex items-center gap-1 text-amber-400 font-semibold">
+            <div className="flex items-center gap-1 text-art-gold font-semibold">
               <Star className="w-3 h-3 fill-current" />
               <span>{artwork.rating || '5.0'}</span>
             </div>
@@ -141,7 +149,7 @@ export default function ArtworkCard({ artwork }) {
           {artwork.status === 'available' && (
             <button
               onClick={() => addToCart(artwork)}
-              className="bg-art-gold hover:brightness-110 text-art-black font-bold text-xs px-3 py-2 rounded-xl transition shadow-gold-glow flex items-center gap-1.5"
+              className="bg-art-gold hover:brightness-110 text-white font-bold text-xs px-3 py-2 rounded-xl transition shadow-gold-glow flex items-center gap-1.5"
             >
               <ShoppingBag className="w-3.5 h-3.5" />
               <span>Add to Cart</span>
@@ -217,7 +225,7 @@ export default function ArtworkCard({ artwork }) {
                       addToCart(artwork);
                       setQuickViewOpen(false);
                     }}
-                    className="bg-art-gold hover:brightness-110 text-art-black font-bold text-xs px-5 py-2.5 rounded-xl shadow-gold-glow flex items-center gap-2 shrink-0"
+                    className="bg-art-gold hover:brightness-110 text-white font-bold text-xs px-5 py-2.5 rounded-xl shadow-gold-glow flex items-center gap-2 shrink-0"
                   >
                     <ShoppingBag className="w-4 h-4" />
                     <span>Add to Collection</span>

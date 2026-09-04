@@ -447,13 +447,13 @@ export default function UserAccountMenu() {
                   <Link
                     href="/admin/dashboard"
                     onClick={() => setIsOpen(false)}
-                    className="w-full p-3 rounded-xl bg-gradient-to-r from-amber-950/60 to-yellow-950/40 border border-amber-500/40 hover:border-amber-400 text-amber-200 hover:text-white flex items-center justify-between text-xs font-semibold transition group"
+                    className="w-full p-3 rounded-xl bg-gradient-to-r from-amber-950/60 to-art-gold/10 border border-art-gold/40 hover:border-art-gold text-art-gold hover:text-white flex items-center justify-between text-xs font-semibold transition group"
                   >
                     <div className="flex items-center gap-2.5">
-                      <ShieldCheck className="w-4 h-4 text-amber-400 group-hover:scale-110 transition" />
+                      <ShieldCheck className="w-4 h-4 text-art-gold group-hover:scale-110 transition" />
                       <span>Admin Executive Center</span>
                     </div>
-                    <ArrowRight className="w-3.5 h-3.5 text-amber-400" />
+                    <ArrowRight className="w-3.5 h-3.5 text-art-gold" />
                   </Link>
                 )}
               </div>
@@ -600,7 +600,7 @@ export default function UserAccountMenu() {
                   <button
                     type="submit"
                     disabled={isLoading}
-                    className="w-full py-3.5 bg-gradient-to-r from-art-gold via-amber-400 to-art-gold text-art-black font-bold uppercase tracking-wider rounded-xl transition shadow-gold-glow hover:brightness-110 flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+                    className="w-full py-3.5 bg-gradient-to-r from-art-gold via-[#9E7720] to-art-gold-dark text-white font-bold uppercase tracking-wider rounded-xl transition shadow-gold-glow hover:brightness-110 flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
                   >
                     {isLoading ? (
                       <>
@@ -752,8 +752,8 @@ export default function UserAccountMenu() {
                       style={{ minHeight: '58px' }}
                       className={`w-full py-4 px-5 rounded-2xl font-black text-sm uppercase tracking-widest transition-all duration-300 flex items-center justify-center gap-2.5 cursor-pointer disabled:opacity-60 relative overflow-hidden group shadow-2xl ${
                         cloudflareVerified
-                          ? 'bg-gradient-to-r from-[#FFF59D] via-[#FFD700] to-[#F59E0B] text-black border-2 border-amber-200 shadow-[0_0_35px_rgba(255,215,0,0.9)] scale-[1.01] ring-4 ring-amber-300/60'
-                          : 'bg-gradient-to-r from-art-gold via-amber-300 to-art-gold text-black border-2 border-amber-200 shadow-[0_0_25px_rgba(212,175,55,0.7)] hover:brightness-110 active:scale-[0.99]'
+                          ? 'bg-gradient-to-r from-art-gold via-[#C99E38] to-art-gold-dark text-white border-2 border-art-gold/60 shadow-[0_0_25px_rgba(181,138,42,0.6)] scale-[1.01] ring-4 ring-art-gold/30'
+                          : 'bg-gradient-to-r from-art-gold via-[#9E7720] to-art-gold-dark text-white border-2 border-art-gold/40 shadow-[0_0_20px_rgba(181,138,42,0.4)] hover:brightness-110 active:scale-[0.99]'
                       }`}
                     >
                       {/* Animated Shimmer Flare Effect */}

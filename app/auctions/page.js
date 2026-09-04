@@ -31,6 +31,7 @@ import {
   CreditCard,
   Crown
 } from 'lucide-react';
+import { isPriorityArtist, sortArtworksByPriority } from '@/lib/priority-utils';
 
 export default function AuctionsPage() {
   const { 
@@ -42,6 +43,8 @@ export default function AuctionsPage() {
     isBidderRegistered, 
     registerAuctionBidder, 
     auctionBidders = [],
+    sellers = [],
+    usersList = [],
     updateUser 
   } = useStore();
 
@@ -351,6 +354,18 @@ export default function AuctionsPage() {
       payoutStatus: 'Disbursed to Tariq Ndebele'
     }
   ];
+
+  const sortedLiveLots = useMemo(() => {
+    return sortArtworksByPriority(liveLots, { sellers, users: usersList });
+  }, [liveLots, sellers, usersList]);
+
+  const sortedUpcomingLots = useMemo(() => {
+    return sortArtworksByPriority(upcomingLots, { sellers, users: usersList });
+  }, [upcomingLots, sellers, usersList]);
+
+  const sortedPastLots = useMemo(() => {
+    return sortArtworksByPriority(pastLots, { sellers, users: usersList, secondarySort: 'sold_date' });
+  }, [pastLots, sellers, usersList]);
 
   // Format countdown string
   const formatCountdown = (endTimestamp) => {
@@ -690,7 +705,7 @@ export default function AuctionsPage() {
         <div className="space-y-6">
           <div className="flex items-center justify-between text-xs text-slate-400 px-1">
             <span className="font-mono uppercase tracking-wider">
-              Showing {liveLots.length} Orderly Arranged Auction Lots
+              Showing {sortedLiveLots.length} Orderly Arranged Auction Lots
             </span>
             <span className="text-red-400 font-bold flex items-center gap-1">
               <span className="w-2 h-2 rounded-full bg-red-500 animate-ping" />
@@ -699,7 +714,7 @@ export default function AuctionsPage() {
           </div>
 
           <div className="space-y-8">
-            {liveLots.map((lot) => {
+            {sortedLiveLots.map((lot) => {
               const isHighest = lot.highestBidder?.includes('You') || lot.highestBidder?.includes(currentUser?.name || 'Folake');
               const isHistoryOpen = historyLotId === lot.id;
 
@@ -732,6 +747,12 @@ export default function AuctionsPage() {
                       <span className="bg-black/80 backdrop-blur-md text-art-gold font-mono font-bold text-[10px] px-3 py-1 rounded-full border border-art-gold/40">
                         {lot.lotNumber}
                       </span>
+                      {isPriorityArtist(lot, sellers, usersList) && (
+                        <span className="bg-gradient-to-r from-amber-500 via-art-gold to-yellow-500 text-black font-black text-[10px] px-2.5 py-1 rounded-full shadow-[0_0_12px_rgba(212,175,55,0.6)] flex items-center gap-1 border border-amber-300">
+                          <Crown className="w-3 h-3 text-black fill-current" />
+                          <span>👑 PRIORITY ARTIST LOT</span>
+                        </span>
+                      )}
                     </div>
 
                     {/* Reserve Status Overlay */}
@@ -921,13 +942,13 @@ export default function AuctionsPage() {
         <div className="space-y-6">
           <div className="flex items-center justify-between text-xs text-slate-400 px-1">
             <span className="font-mono uppercase tracking-wider">
-              Upcoming Curated Auction Sessions ({upcomingLots.length})
+              Upcoming Curated Auction Sessions ({sortedUpcomingLots.length})
             </span>
             <span className="text-cyan-400 font-bold">Catalog Preview & Pre-Registration Active</span>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {upcomingLots.map((lot) => (
+            {sortedUpcomingLots.map((lot) => (
               <div
                 key={lot.id}
                 className="rounded-3xl overflow-hidden bg-[#0A0D14] border border-cyan-800/40 hover:border-cyan-400 transition-all duration-300 shadow-xl flex flex-col justify-between p-5 space-y-4"
@@ -998,13 +1019,13 @@ export default function AuctionsPage() {
         <div className="space-y-6">
           <div className="flex items-center justify-between text-xs text-slate-400 px-1">
             <span className="font-mono uppercase tracking-wider">
-              Historical Realized Auction Hammer Results ({pastLots.length})
+              Historical Realized Auction Hammer Results ({sortedPastLots.length})
             </span>
             <span className="text-art-gold font-bold">Immutable Ledger Verified</span>
           </div>
 
           <div className="space-y-4">
-            {pastLots.map((lot) => (
+            {sortedPastLots.map((lot) => (
               <div
                 key={lot.id}
                 className="p-5 rounded-3xl bg-[#0A0D14] border border-amber-500/30 flex flex-col md:flex-row items-center justify-between gap-6 shadow-xl"

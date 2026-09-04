@@ -3,10 +3,11 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useStore } from '@/context/store-context';
-import { Zap, Flame, ArrowRight, Clock, ShieldCheck, ShoppingCart, Sparkles } from 'lucide-react';
+import { Zap, Flame, ArrowRight, Clock, ShieldCheck, ShoppingCart, Sparkles, Crown } from 'lucide-react';
+import { isPriorityArtist, sortArtworksByPriority } from '@/lib/priority-utils';
 
 export default function JumiaFlashSales() {
-  const { homePageConfig, currency, artworks = [] } = useStore();
+  const { homePageConfig, currency, artworks = [], sellers = [], usersList = [] } = useStore();
   const flashSaleConfig = homePageConfig?.flashSale;
 
   const [timeLeft, setTimeLeft] = useState({
@@ -94,9 +95,11 @@ export default function JumiaFlashSales() {
     }
   ];
 
-  const items = (flashSaleConfig?.items && flashSaleConfig.items.length > 0)
+  const rawItems = (flashSaleConfig?.items && flashSaleConfig.items.length > 0)
     ? flashSaleConfig.items
     : defaultFlashItems;
+
+  const items = sortArtworksByPriority(rawItems, { sellers, users: usersList });
 
   const formatPriceVal = (priceNgn, priceUsd) => {
     if (currency === 'USD' && priceUsd) {
@@ -158,10 +161,18 @@ export default function JumiaFlashSales() {
               key={it.id}
               className="w-[240px] xs:w-[265px] sm:w-auto shrink-0 snap-start bg-[#0F131C] rounded-2xl border border-white/10 hover:border-red-500/60 shadow-lg transition duration-300 p-3.5 space-y-3 flex flex-col justify-between group relative"
             >
-              {/* Discount Badge */}
-              <div className="absolute top-5 left-5 z-10 bg-red-600 text-white font-mono font-black text-xs px-2.5 py-0.5 rounded-lg shadow-md flex items-center gap-1">
-                <Flame className="w-3 h-3 fill-current" />
-                <span>-{it.discountPercent}%</span>
+              {/* Discount & Priority Badges */}
+              <div className="absolute top-5 left-5 z-10 flex flex-col gap-1 items-start">
+                <div className="bg-red-600 text-white font-mono font-black text-xs px-2.5 py-0.5 rounded-lg shadow-md flex items-center gap-1">
+                  <Flame className="w-3 h-3 fill-current" />
+                  <span>-{it.discountPercent}%</span>
+                </div>
+                {isPriorityArtist(it, sellers, usersList) && (
+                  <div className="bg-gradient-to-r from-art-gold via-amber-300 to-art-gold text-art-black font-black text-[9px] px-2 py-0.5 rounded shadow flex items-center gap-1 tracking-wider uppercase">
+                    <Crown className="w-2.5 h-2.5 fill-current" />
+                    <span>PRIORITY ARTIST</span>
+                  </div>
+                )}
               </div>
 
               {/* Artwork Thumbnail */}
@@ -196,7 +207,7 @@ export default function JumiaFlashSales() {
                 {/* Inventory Progress Bar */}
                 <div className="space-y-1 pt-1">
                   <div className="flex items-center justify-between text-[10px] font-bold">
-                    <span className="text-amber-400 flex items-center gap-1 font-sans">
+                    <span className="text-art-gold flex items-center gap-1 font-sans">
                       <Flame className="w-3 h-3 text-red-500 fill-current" />
                       <span>{it.itemsLeft || 1} available</span>
                     </span>
@@ -204,7 +215,7 @@ export default function JumiaFlashSales() {
                   </div>
                   <div className="w-full h-1.5 rounded-full bg-black overflow-hidden border border-white/10">
                     <div 
-                      className="h-full bg-gradient-to-r from-red-600 via-amber-500 to-art-gold rounded-full transition-all duration-500"
+                      className="h-full bg-gradient-to-r from-red-600 to-art-gold rounded-full transition-all duration-500"
                       style={{ width: `${it.claimedPercent || 60}%` }}
                     />
                   </div>

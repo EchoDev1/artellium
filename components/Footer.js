@@ -338,7 +338,7 @@ export default function Footer() {
             <div className="shrink-0 pt-2 lg:pt-0 border-t lg:border-t-0 border-white/10">
               <Link
                 href={`/artwork/${activeArtistSlide.artworkId}#artist-history`}
-                className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-art-gold via-amber-500 to-art-gold-dark hover:brightness-110 text-art-black font-bold text-xs uppercase tracking-wider transition shadow-sm flex items-center gap-1.5"
+                className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-art-gold via-[#9E7720] to-art-gold-dark hover:brightness-110 text-white font-bold text-xs uppercase tracking-wider transition shadow-sm flex items-center gap-1.5"
               >
                 <span>Read Full History</span>
                 <ArrowRight className="w-3.5 h-3.5" />

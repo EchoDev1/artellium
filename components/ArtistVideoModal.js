@@ -44,11 +44,11 @@ export default function ArtistVideoModal() {
     <section className="relative w-full overflow-hidden">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         <div className="relative rounded-2xl sm:rounded-3xl bg-white border-2 border-art-gold/30 shadow-[0_8px_30px_rgba(0,0,0,0.06)] p-5 sm:p-8 space-y-6 overflow-hidden">
-          <div className="absolute top-0 inset-x-8 h-[2px] bg-gradient-to-r from-transparent via-amber-400 to-transparent" />
+          <div className="absolute top-0 inset-x-8 h-[2px] bg-gradient-to-r from-transparent via-art-gold/50 to-transparent" />
 
           {/* Gold Luxury Heading Banner */}
-          <div className="bg-gradient-to-r from-[#1F1705]/95 via-[#3E2D07]/95 to-[#1F1705]/95 border-2 border-art-gold/60 rounded-xl sm:rounded-2xl p-5 sm:p-6 shadow-[0_6px_25px_rgba(212,175,55,0.25)] relative overflow-hidden flex flex-col sm:flex-row sm:items-center justify-between gap-4 backdrop-blur-md">
-            <div className="absolute top-0 inset-x-8 h-[2px] bg-gradient-to-r from-transparent via-amber-300 to-transparent" />
+          <div className="bg-gradient-to-r from-[#1F1705]/95 via-[#3E2D07]/95 to-[#1F1705]/95 border-2 border-art-gold/60 rounded-xl sm:rounded-2xl p-5 sm:p-6 shadow-[0_6px_25px_rgba(181,138,42,0.25)] relative overflow-hidden flex flex-col sm:flex-row sm:items-center justify-between gap-4 backdrop-blur-md">
+            <div className="absolute top-0 inset-x-8 h-[2px] bg-gradient-to-r from-transparent via-art-gold/40 to-transparent" />
             <div className="space-y-1 relative z-10">
               <div className="flex items-center gap-2 mb-1 font-sans">
                 <span className="p-1.5 rounded-lg bg-art-gold/20 text-art-gold border border-art-gold/40 shadow-sm">
@@ -69,7 +69,7 @@ export default function ArtistVideoModal() {
             {/* View More Full Page Link */}
             <Link
               href="/artist-voices"
-              className="text-xs font-bold text-black bg-gradient-to-r from-art-gold via-amber-300 to-art-gold hover:brightness-110 px-4 py-2.5 rounded-xl transition font-sans shadow-gold-glow relative z-10 flex items-center gap-1.5 shrink-0"
+              className="text-xs font-bold text-white bg-gradient-to-r from-art-gold via-[#9E7720] to-art-gold-dark hover:brightness-110 px-4 py-2.5 rounded-xl transition font-sans shadow-gold-glow relative z-10 flex items-center gap-1.5 shrink-0"
             >
               <span>View More</span>
               <ArrowRight className="w-4 h-4" />
@@ -78,7 +78,7 @@ export default function ArtistVideoModal() {
 
           {/* Video Cards Grid */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {videos.map((vid) => (
+          {(videos || []).filter(v => v.status === 'approved').map((vid) => (
             <div
               key={vid.id}
               className="group relative rounded-2xl overflow-hidden glass-card-gold hover:border-art-gold transition duration-300 transform hover:-translate-y-1.5 shadow-2xl flex flex-col justify-between"
@@ -194,11 +194,20 @@ export default function ArtistVideoModal() {
             <div className="relative aspect-video w-full bg-black overflow-y-auto">
               {selectedVideo.videoUrl.includes('youtube.com') || selectedVideo.videoUrl.includes('youtu.be') ? (
                 <iframe
-                  src={`${selectedVideo.videoUrl}?autoplay=1`}
+                  src={`${selectedVideo.videoUrl.replace('watch?v=', 'embed/')}?autoplay=1`}
                   title={selectedVideo.artistName}
                   className="w-full h-full border-0"
                   allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                   allowFullScreen
+                />
+              ) : selectedVideo.videoUrl ? (
+                <video
+                  src={selectedVideo.videoUrl}
+                  poster={selectedVideo.thumbnail}
+                  controls
+                  autoPlay
+                  playsInline
+                  className="w-full h-full object-contain bg-black"
                 />
               ) : (
                 <div className="w-full h-full flex flex-col items-center justify-center bg-zinc-900 p-8 text-center">
@@ -327,7 +336,7 @@ export default function ArtistVideoModal() {
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2 bg-art-gold hover:brightness-110 text-art-black font-bold rounded-lg shadow-gold-glow"
+                  className="px-5 py-2 bg-art-gold hover:brightness-110 text-white font-bold rounded-lg shadow-gold-glow"
                 >
                   Publish Video
                 </button>

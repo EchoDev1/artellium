@@ -34,6 +34,7 @@ import {
 import { safeSetItem } from '@/lib/safe-storage';
 import { getCategoryFallback, isValidImageSource, DEFAULT_FALLBACK_IMAGE } from '@/lib/image-utils';
 import { normalizeCategory, isCategoryMatch } from '@/lib/category-utils';
+import { isPriorityArtist, sortArtworksByPriority } from '@/lib/priority-utils';
 const StoreContext = createContext();
 
 export function StoreProvider({ children }) {
@@ -156,15 +157,16 @@ export function StoreProvider({ children }) {
       ? demoList.filter(a => a && a.id && a.isDemo !== false).map(a => ({ ...a, isDemo: true }))
       : [];
 
-    // Sort real artworks newest first
-    const sortedReal = [...validReal].sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
+    // Sort real artworks strictly prioritizing Subscribed Priority Artists at the top, then newest
+    const sortedReal = sortArtworksByPriority(validReal, { sellers, users: usersList });
+    const sortedDemo = sortArtworksByPriority(validDemo, { sellers, users: usersList });
 
     if (mode === 'live_only') {
       return sortedReal;
     }
 
     if (mode === 'hybrid') {
-      return [...sortedReal, ...validDemo];
+      return [...sortedReal, ...sortedDemo];
     }
 
     // Default 'progressive' mode:
@@ -322,6 +324,28 @@ export function StoreProvider({ children }) {
 
       const savedSignatures = localStorage.getItem('artellium_signatures');
       if (savedSignatures) setArtistSignatures(JSON.parse(savedSignatures));
+
+      const savedVideos = localStorage.getItem('artellium_artist_videos');
+      if (savedVideos) {
+        try {
+          const parsed = JSON.parse(savedVideos);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            // Self-heal and migrate any old mixkit URLs to guaranteed working local MP4s
+            const sanitized = parsed.map(v => {
+              const matched = ARTIST_VIDEOS.find(init => init.id === v.id);
+              if (matched && (!v.videoUrl || v.videoUrl.includes('mixkit.co'))) {
+                return { ...v, videoUrl: matched.videoUrl };
+              }
+              if (!v.videoUrl || v.videoUrl.includes('mixkit.co')) {
+                return { ...v, videoUrl: '/videos/artist-savannah.mp4' };
+              }
+              return v;
+            });
+            setVideos(sanitized);
+            try { localStorage.setItem('artellium_artist_videos', JSON.stringify(sanitized)); } catch (e) {}
+          }
+        } catch (e) {}
+      }
 
       const savedUsers = localStorage.getItem('artellium_users');
       if (savedUsers) {
@@ -841,6 +865,46 @@ export function StoreProvider({ children }) {
         localStorage.setItem('artellium_login_state', JSON.stringify({ isLoggedIn: true, user: merged }));
       } catch (e) {}
     }
+
+    // If subscription tier was changed, sync matching sellers and real artworks
+    if (updatedFields.subscription_tier || updatedFields.subscriptionTier) {
+      const newTier = updatedFields.subscription_tier || updatedFields.subscriptionTier;
+      const tierName = newTier === 'standard' ? 'Standard' : 'Premium';
+      const targetUser = usersList.find(u => u.id === userId);
+      const targetName = targetUser?.name || updatedFields.name || '';
+
+      setSellers(prev => {
+        const updated = prev.map(s => {
+          if (s.user_id === userId || (targetName && s.name?.toLowerCase() === targetName.toLowerCase())) {
+            return { ...s, tier: tierName, subscription_tier: newTier };
+          }
+          return s;
+        });
+        safeSetItem('artellium_sellers', updated);
+        return updated;
+      });
+
+      setRealArtworks(prevReal => {
+        const updatedReal = prevReal.map(art => {
+          const isTargetArt = (art.artistId === userId) || (targetName && art.artistName?.toLowerCase() === targetName.toLowerCase());
+          if (isTargetArt) {
+            return {
+              ...art,
+              artistType: tierName,
+              isPriorityArtist: newTier === 'premium',
+              verificationBadge: newTier === 'premium' ? 'gold' : art.verificationBadge
+            };
+          }
+          return art;
+        });
+        safeSetItem('artellium_real_artworks', updatedReal);
+        const assembled = assembleCatalog(updatedReal, INITIAL_ARTWORKS, demoTransitionMode);
+        setArtworks(assembled);
+        safeSetItem('artellium_artworks', assembled);
+        return updatedReal;
+      });
+    }
+
     try {
       supabase.from('users').update(updatedFields).eq('id', userId).then(() => {});
       fetch('/api/auth/update-user', {
@@ -887,6 +951,14 @@ export function StoreProvider({ children }) {
       ? newArt.image 
       : getCategoryFallback(newArt.category);
 
+    const isPriority = Boolean(
+      currentUser?.subscription_tier === 'premium' ||
+      currentUser?.subscriptionTier === 'premium' ||
+      newArt.artistType === 'Premium' ||
+      newArt.isPriorityArtist === true ||
+      isPriorityArtist(newArt, sellers, usersList)
+    );
+
     const created = {
       ...newArt,
       id: newArt.id || `art-live-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
@@ -895,6 +967,9 @@ export function StoreProvider({ children }) {
       created_at: newArt.created_at || new Date().toISOString(),
       isNewlyListed: true,
       isDemo: false,
+      isPriorityArtist: isPriority,
+      artistType: isPriority ? 'Premium' : (newArt.artistType || 'Standard'),
+      verificationBadge: isPriority ? 'gold' : (newArt.verificationBadge || 'verified'),
       rating: newArt.rating || 5.0,
       reviewsCount: newArt.reviewsCount || 0,
       status: newArt.status || 'available',
@@ -952,6 +1027,60 @@ export function StoreProvider({ children }) {
     supabase.from('artworks').update(updatedFields).eq('id', artworkId).then(({ error }) => {
       if (error) console.warn('Supabase update artwork notice:', error.message);
     });
+  };
+
+  const subscribeArtist = (targetTier = 'premium', billingCycle = 'monthly') => {
+    const tierName = targetTier === 'standard' ? 'Standard' : 'Premium';
+    
+    // 1. Update current user
+    if (currentUser) {
+      const updatedUser = {
+        ...currentUser,
+        subscription_tier: targetTier,
+        subscriptionTier: targetTier,
+        billingCycle
+      };
+      setCurrentUser(updatedUser);
+      updateUser(currentUser.id, updatedUser);
+    }
+
+    // 2. Update matching seller
+    const currentArtistName = currentUser?.name || '';
+    setSellers(prev => {
+      const updated = prev.map(s => {
+        if ((currentUser?.id && s.user_id === currentUser.id) || 
+            (currentArtistName && s.name?.toLowerCase() === currentArtistName.toLowerCase())) {
+          return { ...s, tier: tierName, subscription_tier: targetTier };
+        }
+        return s;
+      });
+      safeSetItem('artellium_sellers', updated);
+      return updated;
+    });
+
+    // 3. Elevate all artworks by this artist to Priority Tier
+    setRealArtworks(prevReal => {
+      const updatedReal = prevReal.map(art => {
+        const isMyArt = (currentUser?.id && art.artistId === currentUser.id) ||
+                        (currentArtistName && art.artistName?.toLowerCase() === currentArtistName.toLowerCase());
+        if (isMyArt) {
+          return {
+            ...art,
+            artistType: tierName,
+            isPriorityArtist: targetTier === 'premium',
+            verificationBadge: targetTier === 'premium' ? 'gold' : art.verificationBadge
+          };
+        }
+        return art;
+      });
+      safeSetItem('artellium_real_artworks', updatedReal);
+      const assembled = assembleCatalog(updatedReal, INITIAL_ARTWORKS, demoTransitionMode);
+      setArtworks(assembled);
+      safeSetItem('artellium_artworks', assembled);
+      return updatedReal;
+    });
+
+    broadcastNotification(`👑 Priority Artist Plan activated (${tierName})! Your artworks now have Top Priority Placement across Artellium.`);
   };
 
   const deleteArtwork = (artworkId) => {
@@ -1062,20 +1191,14 @@ export function StoreProvider({ children }) {
     safeSetItem('artellium_artworks', assembled);
   };
 
-  // Helper Selectors for Dynamic Feeds
+  // Helper Selectors for Dynamic Feeds with Subscribed Priority Placement
   const getNewlyListedArtworks = (limit = 9, category = 'All') => {
     const matching = artworks.filter(art => {
       if (!isCategoryMatch(art.category, category, art.medium, art.title)) return false;
       return art.status !== 'sold';
     });
 
-    const realList = matching.filter(a => !a.isDemo);
-    const demoList = matching.filter(a => a.isDemo);
-
-    const sortedReal = [...realList].sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
-    const sortedDemo = [...demoList].sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
-
-    return [...sortedReal, ...sortedDemo].slice(0, limit);
+    return sortArtworksByPriority(matching, { sellers, users: usersList }).slice(0, limit);
   };
 
   const getRecentlySoldArtworks = (limit = 6, category = 'All') => {
@@ -1084,20 +1207,12 @@ export function StoreProvider({ children }) {
       return art.status === 'sold';
     });
 
-    const realList = matching.filter(a => !a.isDemo);
-    const demoList = matching.filter(a => a.isDemo);
-
-    const sortedReal = [...realList].sort((a, b) => new Date(b.soldAt || b.created_at || 0) - new Date(a.soldAt || a.created_at || 0));
-    const sortedDemo = [...demoList].sort((a, b) => new Date(b.soldAt || b.created_at || 0) - new Date(a.soldAt || a.created_at || 0));
-
-    return [...sortedReal, ...sortedDemo].slice(0, limit);
+    return sortArtworksByPriority(matching, { sellers, users: usersList, secondarySort: 'sold_date' }).slice(0, limit);
   };
 
   const getLiveAuctionsArtworks = (limit = 3) => {
     const matching = artworks.filter(art => art.status === 'auction');
-    const realList = matching.filter(a => !a.isDemo);
-    const demoList = matching.filter(a => a.isDemo);
-    return [...realList, ...demoList].slice(0, limit);
+    return sortArtworksByPriority(matching, { sellers, users: usersList }).slice(0, limit);
   };
 
   const setArtistVerificationBadge = (artistNameOrId, badge) => {
@@ -1120,12 +1235,88 @@ export function StoreProvider({ children }) {
     );
   };
 
-  // Video Management
-  const addVideo = (newVideo) => {
-    const created = { ...newVideo, id: `vid-${Date.now()}` };
-    setVideos((prev) => [created, ...prev]);
+  // Artist Video Moderation & Lifecycle Management
+  const submitArtistVideo = (videoData) => {
+    const newSubmission = {
+      ...videoData,
+      id: `vid-${Date.now()}`,
+      status: 'pending',
+      submittedAt: new Date().toISOString(),
+      featuredOnHero: false,
+    };
+    setVideos((prev) => {
+      const updated = [newSubmission, ...prev];
+      try { localStorage.setItem('artellium_artist_videos', JSON.stringify(updated)); } catch (e) {}
+      return updated;
+    });
+    return newSubmission;
   };
-  const deleteVideo = (id) => setVideos((prev) => prev.filter((v) => v.id !== id));
+
+  const addVideo = (newVideo) => {
+    const created = { 
+      ...newVideo, 
+      id: newVideo.id || `vid-${Date.now()}`,
+      status: newVideo.status || 'approved',
+      submittedAt: newVideo.submittedAt || new Date().toISOString(),
+      reviewedAt: new Date().toISOString(),
+    };
+    setVideos((prev) => {
+      const updated = [created, ...prev];
+      try { localStorage.setItem('artellium_artist_videos', JSON.stringify(updated)); } catch (e) {}
+      return updated;
+    });
+    return created;
+  };
+
+  const approveVideo = (id) => {
+    setVideos((prev) => {
+      const updated = prev.map((v) =>
+        v.id === id
+          ? {
+              ...v,
+              status: 'approved',
+              reviewedAt: new Date().toISOString(),
+              rejectionReason: '',
+            }
+          : v
+      );
+      try { localStorage.setItem('artellium_artist_videos', JSON.stringify(updated)); } catch (e) {}
+      return updated;
+    });
+  };
+
+  const rejectVideo = (id, reason = 'Did not meet platform verification guidelines') => {
+    setVideos((prev) => {
+      const updated = prev.map((v) =>
+        v.id === id
+          ? {
+              ...v,
+              status: 'rejected',
+              reviewedAt: new Date().toISOString(),
+              rejectionReason: reason,
+            }
+          : v
+      );
+      try { localStorage.setItem('artellium_artist_videos', JSON.stringify(updated)); } catch (e) {}
+      return updated;
+    });
+  };
+
+  const deleteVideo = (id) => {
+    setVideos((prev) => {
+      const updated = prev.filter((v) => v.id !== id);
+      try { localStorage.setItem('artellium_artist_videos', JSON.stringify(updated)); } catch (e) {}
+      return updated;
+    });
+  };
+
+  const updateVideo = (id, updatedFields) => {
+    setVideos((prev) => {
+      const updated = prev.map((v) => (v.id === id ? { ...v, ...updatedFields } : v));
+      try { localStorage.setItem('artellium_artist_videos', JSON.stringify(updated)); } catch (e) {}
+      return updated;
+    });
+  };
 
   // Check if a given user or current user is an accredited registered bidder
   const isBidderRegistered = (user = currentUser) => {
@@ -2506,6 +2697,9 @@ export function StoreProvider({ children }) {
         addArtwork,
         updateArtwork,
         deleteArtwork,
+        subscribeArtist,
+        isPriorityArtist,
+        sortArtworksByPriority,
         setArtworkStatusSold,
         setArtistVerificationBadge,
         updateArtistStudioNotes,
@@ -2526,6 +2720,10 @@ export function StoreProvider({ children }) {
         videos,
         addVideo,
         deleteVideo,
+        submitArtistVideo,
+        approveVideo,
+        rejectVideo,
+        updateVideo,
         exhibitions,
         cart,
         addToCart,

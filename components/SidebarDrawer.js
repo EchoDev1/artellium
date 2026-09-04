@@ -25,7 +25,8 @@ import {
   Bookmark,
   FileCheck,
   Compass,
-  ShoppingBag
+  ShoppingBag,
+  Film
 } from 'lucide-react';
 
 export default function SidebarDrawer() {
@@ -97,9 +98,9 @@ export default function SidebarDrawer() {
       subtitle: 'Traditional terracotta, clay vessels & glazed stoneware',
       href: '/categories/pottery',
       icon: Sparkles,
-      iconColor: 'text-amber-300',
+      iconColor: 'text-art-gold',
       badge: 'Clay & Kiln',
-      badgeClass: 'bg-amber-500/10 text-amber-200 border-amber-500/30',
+      badgeClass: 'bg-art-gold/10 text-art-gold border-art-gold/30',
     },
     {
       id: 'nav-woodworks',
@@ -107,9 +108,9 @@ export default function SidebarDrawer() {
       subtitle: 'Carved mahogany masks, bronze reliefs & iron forged',
       href: '/categories/woodworks',
       icon: TreePine,
-      iconColor: 'text-yellow-500',
+      iconColor: 'text-art-gold',
       badge: 'Foundry & Wood',
-      badgeClass: 'bg-yellow-500/10 text-yellow-300 border-yellow-500/30',
+      badgeClass: 'bg-art-gold/10 text-art-gold border-art-gold/30',
     },
     {
       id: 'nav-crafts',
@@ -145,6 +146,16 @@ export default function SidebarDrawer() {
 
   const platformFeatures = [
     {
+      id: 'nav-artist-voices',
+      label: 'Voices of Master Artists',
+      subtitle: 'Watch master African painters & sculptors speak on origins & technique',
+      href: '/artist-voices',
+      icon: Film,
+      iconColor: 'text-art-gold',
+      badge: '🎥 SPOTLIGHT',
+      badgeClass: 'bg-art-gold/20 text-art-gold border-art-gold/40 font-bold',
+    },
+    {
       id: 'nav-auctions',
       label: 'Live Auctions Arena',
       subtitle: 'Real-time competitive bidding with +₦100k Power Bids',
@@ -167,11 +178,11 @@ export default function SidebarDrawer() {
     {
       id: 'nav-subscriptions',
       label: 'Artist Subscriptions',
-      subtitle: 'Sell fine art worldwide • Standard & Premium tiers',
+      subtitle: 'Sell fine art worldwide • Free & Priority Placement plans',
       href: '/artist/register',
       icon: Crown,
       iconColor: 'text-art-gold',
-      badge: '₦30k - ₦50k/mo',
+      badge: '👑 FREE & PRIORITY',
       badgeClass: 'bg-art-gold/20 text-art-gold border-art-gold/40 font-bold',
     },
     {

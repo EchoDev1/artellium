@@ -27,10 +27,10 @@ body {
 ::-webkit-scrollbar-thumb {
   background: #1F2430;
   border-radius: 4px;
-  border: 1px solid rgba(212, 175, 55, 0.2);
+  border: 1px solid rgba(181, 138, 42, 0.2);
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #D4AF37;
+  background: #B58A2A;
 }
 
 /* Glassmorphism Styles */
@@ -38,7 +38,7 @@ body {
   background: rgba(15, 17, 23, 0.75);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(212, 175, 55, 0.15);
+  border: 1px solid rgba(181, 138, 42, 0.15);
 }
 
 .glass-card {
@@ -49,33 +49,33 @@ body {
 
 .glass-card-gold {
   background: linear-gradient(135deg, rgba(15, 17, 23, 0.95) 0%, rgba(6, 35, 25, 0.9) 100%);
-  border: 1px solid rgba(212, 175, 55, 0.3);
+  border: 1px solid rgba(181, 138, 42, 0.3);
   box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
 }
 
 /* African Geometric Motifs Accent Line */
 .african-border-top {
   border-top: 3px solid transparent;
-  border-image: linear-gradient(90deg, #8B0000 0%, #D4AF37 50%, #062319 100%) 1;
+  border-image: linear-gradient(90deg, #8B0000 0%, #B58A2A 50%, #062319 100%) 1;
 }
 
 .african-border-bottom {
   border-bottom: 3px solid transparent;
-  border-image: linear-gradient(90deg, #062319 0%, #D4AF37 50%, #8B0000 100%) 1;
+  border-image: linear-gradient(90deg, #062319 0%, #B58A2A 50%, #8B0000 100%) 1;
 }
 
 /* Gold Text Shimmer */
 .gold-text-gradient {
-  background: linear-gradient(135deg, #FFF6D6 0%, #FFD700 40%, #D4AF37 70%, #AA820A 100%);
+  background: linear-gradient(135deg, #E6D5A8 0%, #C99E38 40%, #B58A2A 70%, #825E12 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
 }
 
 /* Glowing Badges */
 .badge-gold {
-  background: rgba(212, 175, 55, 0.15);
-  color: #FFD700;
-  border: 1px solid rgba(212, 175, 55, 0.4);
+  background: rgba(181, 138, 42, 0.15);
+  color: #C99E38;
+  border: 1px solid rgba(181, 138, 42, 0.4);
 }
 
 .badge-emerald {
@@ -92,7 +92,7 @@ body {
 
 /* Hero Pattern Overlay */
 .hero-pattern {
-  background-image: radial-gradient(rgba(212, 175, 55, 0.1) 1px, transparent 1px);
+  background-image: radial-gradient(rgba(181, 138, 42, 0.1) 1px, transparent 1px);
   background-size: 24px 24px;
 }
 
@@ -175,14 +175,14 @@ body {
 /* Simple Subtle Flash for Power Bid (Gold) */
 @keyframes simpleFlashGold {
   0%, 100% {
-    box-shadow: 0 0 10px rgba(212, 175, 55, 0.35);
-    border-color: rgba(212, 175, 55, 0.5);
+    box-shadow: 0 0 10px rgba(181, 138, 42, 0.35);
+    border-color: rgba(181, 138, 42, 0.5);
     filter: brightness(1);
   }
   50% {
-    box-shadow: 0 0 22px rgba(255, 215, 0, 0.85), 0 0 30px rgba(212, 175, 55, 0.5);
-    border-color: #ffd700;
-    filter: brightness(1.2);
+    box-shadow: 0 0 20px rgba(201, 158, 56, 0.7), 0 0 28px rgba(181, 138, 42, 0.4);
+    border-color: #C99E38;
+    filter: brightness(1.15);
   }
 }
 

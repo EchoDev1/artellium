@@ -17,6 +17,7 @@ import {
   ChevronDown,
   Menu,
   Eye,
+  Film,
 } from 'lucide-react';
 
 export default function Navbar() {
@@ -194,6 +195,16 @@ export default function Navbar() {
 
           {/* Right Action Icons & Directives */}
           <div className="flex items-center gap-2.5 sm:gap-3.5">
+            {/* Voices of Master Artists Quick Link */}
+            <Link
+              href="/artist-voices"
+              className="hidden lg:flex items-center gap-1.5 text-xs font-semibold text-art-gold hover:text-white bg-art-gold/10 border border-art-gold/30 px-3 py-1.5 rounded-full transition shadow-sm"
+              title="Voices of Master Artists"
+            >
+              <Film className="w-3.5 h-3.5 text-art-gold" />
+              <span>Voices of Artists</span>
+            </Link>
+
             {/* Live Auction Quick Link */}
             <Link
               href="/auctions"

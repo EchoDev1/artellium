@@ -82,6 +82,7 @@ import AdminPanAfricanHub from '@/components/AdminPanAfricanHub';
 import AdminPayoutGovernance from '@/components/AdminPayoutGovernance';
 import AdminImageDiagnostics from '@/components/AdminImageDiagnostics';
 import AdminDemoTransitionSuite from '@/components/AdminDemoTransitionSuite';
+import AdminVideoModeration from '@/components/AdminVideoModeration';
 import ArtworkPhotoUploader from '@/components/ArtworkPhotoUploader';
 
 export default function AdminDashboardPage() {
@@ -625,6 +626,20 @@ export default function AdminDashboardPage() {
                   <span>Hero Video</span>
                 </button>
                 <button
+                  onClick={() => setActiveTab('artist_videos')}
+                  className={`px-2 py-1 rounded-lg text-[11px] font-bold transition flex items-center gap-1.5 ${
+                    activeTab === 'artist_videos' ? 'bg-amber-600 text-white shadow-sm ring-2 ring-amber-400' : 'bg-white text-slate-700 hover:bg-amber-100 border border-amber-200/50'
+                  }`}
+                >
+                  <Film className="w-3 h-3 text-amber-700" />
+                  <span>Artist Videos</span>
+                  {videos.filter(v => v.status === 'pending').length > 0 && (
+                    <span className="px-1.5 py-0.2 rounded-full bg-red-600 text-white text-[9px] font-black animate-pulse">
+                      {videos.filter(v => v.status === 'pending').length}
+                    </span>
+                  )}
+                </button>
+                <button
                   onClick={() => setActiveTab('homepage')}
                   className={`px-2 py-1 rounded-lg text-[11px] font-bold transition flex items-center gap-1 ${
                     activeTab === 'homepage' ? 'bg-amber-600 text-white shadow-sm' : 'bg-white text-slate-700 hover:bg-amber-100 border border-amber-200/50'
@@ -922,6 +937,7 @@ export default function AdminDashboardPage() {
         {activeTab === 'payout_governance' && <AdminPayoutGovernance />}
         {activeTab === 'media_diagnostics' && <AdminImageDiagnostics />}
         {activeTab === 'demo_transition' && <AdminDemoTransitionSuite />}
+        {activeTab === 'artist_videos' && <AdminVideoModeration />}
 
         {/* 1. OVERVIEW TAB PANEL */}
         {activeTab === 'overview' && (
@@ -1472,6 +1488,39 @@ export default function AdminDashboardPage() {
                       </button>
                     </div>
 
+                    {/* Hero Video Carousel Slide Count Controller */}
+                    <div className="p-4 bg-slate-900 text-white rounded-2xl border border-art-gold/30 space-y-2">
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                        <div className="space-y-0.5">
+                          <span className="font-bold text-art-gold text-xs block">Hero Video Carousel Slide Capacity</span>
+                          <p className="text-[11px] text-slate-300">
+                            Increase or decrease the maximum number of approved video slides that rotate on the Homepage Hero.
+                          </p>
+                        </div>
+                        <div className="flex items-center gap-2 bg-black/60 px-3 py-1.5 rounded-xl border border-white/10 shrink-0 self-start sm:self-auto">
+                          <button
+                            type="button"
+                            onClick={() => updateHeroConfig({ maxHeroSlides: Math.max(1, (heroConfig?.maxHeroSlides ?? 4) - 1) })}
+                            disabled={(heroConfig?.maxHeroSlides ?? 4) <= 1}
+                            className="w-7 h-7 rounded bg-white/10 hover:bg-white/20 font-bold text-white flex items-center justify-center transition disabled:opacity-30"
+                          >
+                            -
+                          </button>
+                          <span className="font-mono text-base font-bold text-art-gold min-w-[2rem] text-center">
+                            {heroConfig?.maxHeroSlides ?? 4}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => updateHeroConfig({ maxHeroSlides: Math.min(20, (heroConfig?.maxHeroSlides ?? 4) + 1) })}
+                            disabled={(heroConfig?.maxHeroSlides ?? 4) >= 20}
+                            className="w-7 h-7 rounded bg-art-gold/20 hover:bg-art-gold/30 text-art-gold font-bold flex items-center justify-center transition border border-art-gold/40 disabled:opacity-30"
+                          >
+                            +
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+
                     {/* Video Overlay Dark Contrast & Particle Slider */}
                     <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 space-y-3 pt-4">
                       <div className="flex items-center justify-between">
@@ -1655,23 +1704,23 @@ export default function AdminDashboardPage() {
                         type="button"
                         onClick={() => {
                           updateHeroConfig({
-                            videoUrl: 'https://assets.mixkit.co/videos/preview/mixkit-golden-particles-in-the-dark-41712-large.mp4',
+                            videoUrl: '/videos/artist-savannah.mp4',
                             mediaType: 'video'
                           });
-                          alert('Golden Embers Video Preset Applied!');
+                          alert('African Savannah Video Preset Applied!');
                         }}
                         className="p-2 rounded-xl bg-white border border-slate-200 hover:border-art-gold text-left text-[11px] font-medium text-slate-700"
                       >
-                        🌟 Golden Luminescence Reel (MP4)
+                        🌟 African Savannah Master Reel (MP4)
                       </button>
                       <button
                         type="button"
                         onClick={() => {
                           updateHeroConfig({
-                            videoUrl: 'https://assets.mixkit.co/videos/preview/mixkit-artist-painting-with-acrylic-paint-42792-large.mp4',
+                            videoUrl: '/videos/artist-studio.mp4',
                             mediaType: 'video'
                           });
-                          alert('Master Atelier Painting Reel Preset Applied!');
+                          alert('Master Atelier Studio Reel Preset Applied!');
                         }}
                         className="p-2 rounded-xl bg-white border border-slate-200 hover:border-art-gold text-left text-[11px] font-medium text-slate-700"
                       >
