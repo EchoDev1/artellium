@@ -84,6 +84,13 @@ import AdminImageDiagnostics from '@/components/AdminImageDiagnostics';
 import AdminDemoTransitionSuite from '@/components/AdminDemoTransitionSuite';
 import AdminVideoModeration from '@/components/AdminVideoModeration';
 import ArtworkPhotoUploader from '@/components/ArtworkPhotoUploader';
+import { 
+  TRACKING_STAGES, 
+  CARRIER_OPTIONS, 
+  getStageConfig, 
+  getStageStep, 
+  generateTrackingNumber 
+} from '@/lib/tracking-utils';
 
 export default function AdminDashboardPage() {
   const { 
@@ -115,6 +122,7 @@ export default function AdminDashboardPage() {
     updateOrderStatus,
     updateOrder,
     deleteOrder,
+    updateOrderTracking,
     updateOrderLogistics,
     payments = [],
     updatePayment,
@@ -244,6 +252,38 @@ export default function AdminDashboardPage() {
 
   const [editingOrder, setEditingOrder] = useState(null);
   const [editOrderForm, setEditOrderForm] = useState({});
+
+  // Delivery Tracking modal state & handlers
+  const [trackingModalOrder, setTrackingModalOrder] = useState(null);
+  const [trackingForm, setTrackingForm] = useState({
+    stage: 'payment_confirmed',
+    carrier: 'DHL Express Fine Art',
+    trackingNumber: '',
+    location: '',
+    estimatedDelivery: '',
+    note: ''
+  });
+  const [trackingFilterStage, setTrackingFilterStage] = useState('All');
+
+  const openTrackingModal = (ord) => {
+    setTrackingModalOrder(ord);
+    setTrackingForm({
+      stage: ord.tracking?.currentStage || 'payment_confirmed',
+      carrier: ord.tracking?.carrier || 'DHL Express Fine Art',
+      trackingNumber: ord.tracking?.trackingNumber || generateTrackingNumber(ord.tracking?.carrier || 'DHL'),
+      location: ord.tracking?.currentLocation || (ord.items?.[0]?.city ? `${ord.items[0].city} Atelier` : 'Lagos Fine Art Transit Vault'),
+      estimatedDelivery: ord.tracking?.estimatedDelivery || '',
+      note: ''
+    });
+  };
+
+  const handleSaveTracking = (e) => {
+    e.preventDefault();
+    if (!trackingModalOrder) return;
+    updateOrderTracking(trackingModalOrder.id, trackingForm);
+    logSandboxAction(`Admin updated delivery tracking for Order ${trackingModalOrder.id} to "${getStageConfig(trackingForm.stage)?.label}"`);
+    setTrackingModalOrder(null);
+  };
 
   const [editingSeller, setEditingSeller] = useState(null);
   const [editSellerForm, setEditSellerForm] = useState({});
@@ -775,6 +815,15 @@ export default function AdminDashboardPage() {
                 >
                   <DollarSign className="w-3 h-3" />
                   <span>Vault</span>
+                </button>
+                <button
+                  onClick={() => setActiveTab('tracking')}
+                  className={`px-2 py-1 rounded-lg text-[11px] font-bold transition flex items-center gap-1 ${
+                    activeTab === 'tracking' ? 'bg-amber-600 text-white shadow-sm' : 'bg-white text-slate-700 hover:bg-amber-100 border border-amber-200/50'
+                  }`}
+                >
+                  <Truck className="w-3 h-3 text-amber-500" />
+                  <span>Delivery Tracking ({orders.filter(o => o.tracking).length})</span>
                 </button>
               </div>
             </div>
@@ -2809,6 +2858,14 @@ export default function AdminDashboardPage() {
 
                       <td className="py-4 text-right space-x-1.5">
                         <button
+                          onClick={() => openTrackingModal(ord)}
+                          className="px-2.5 py-1 bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300 rounded-lg font-bold text-[11px] inline-flex items-center gap-1 shadow-sm transition"
+                          title="Manage Delivery Tracking"
+                        >
+                          <Truck className="w-3.5 h-3.5 text-amber-700" />
+                          <span>Track</span>
+                        </button>
+                        <button
                           onClick={() => {
                             setEditingOrder(ord);
                             setEditOrderForm({
@@ -2903,6 +2960,394 @@ export default function AdminDashboardPage() {
                 </div>
               </div>
             )}
+          </div>
+        )}
+
+        {/* 3.5 DELIVERY TRACKING & LOGISTICS TAB */}
+        {activeTab === 'tracking' && (
+          <div className="bg-white rounded-3xl border border-slate-200 p-6 sm:p-8 space-y-6 shadow-sm animate-fade-in">
+            {/* Header & Metrics */}
+            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 border-b border-slate-100 pb-6">
+              <div>
+                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-50 text-amber-900 border border-amber-300 text-[11px] font-bold uppercase tracking-wider mb-2">
+                  <Truck className="w-3.5 h-3.5 text-amber-600" />
+                  <span>Administrative Logistics Engine</span>
+                </div>
+                <h3 className="font-serif text-2xl font-bold text-slate-900 flex items-center gap-2">
+                  <span>Consignment Delivery Tracking & Stage Control</span>
+                </h3>
+                <p className="text-xs text-slate-500 mt-1 max-w-2xl">
+                  Real-time fine art logistics oversight. Admin manages stages, assigns verified courier air waybills, and logs checkpoint milestones visible in the collector’s and artist’s dashboards.
+                </p>
+              </div>
+
+              {/* Metric Badges */}
+              <div className="flex flex-wrap gap-2.5 shrink-0">
+                <div className="px-3.5 py-2 rounded-2xl bg-slate-50 border border-slate-200 text-left">
+                  <span className="text-[10px] text-slate-400 font-mono uppercase block">Total Shipments</span>
+                  <span className="font-mono font-bold text-slate-900 text-sm">{orders.length} Consignments</span>
+                </div>
+                <div className="px-3.5 py-2 rounded-2xl bg-indigo-50 border border-indigo-200 text-left">
+                  <span className="text-[10px] text-indigo-600 font-mono uppercase block">In Transit</span>
+                  <span className="font-mono font-bold text-indigo-900 text-sm">
+                    {orders.filter(o => o.tracking?.currentStage === 'in_transit').length} Active
+                  </span>
+                </div>
+                <div className="px-3.5 py-2 rounded-2xl bg-purple-50 border border-purple-200 text-left">
+                  <span className="text-[10px] text-purple-600 font-mono uppercase block">Archival Crating</span>
+                  <span className="font-mono font-bold text-purple-900 text-sm">
+                    {orders.filter(o => o.tracking?.currentStage === 'archival_crating').length} In Crate
+                  </span>
+                </div>
+                <div className="px-3.5 py-2 rounded-2xl bg-emerald-50 border border-emerald-200 text-left">
+                  <span className="text-[10px] text-emerald-600 font-mono uppercase block">Delivered</span>
+                  <span className="font-mono font-bold text-emerald-900 text-sm">
+                    {orders.filter(o => o.tracking?.currentStage === 'delivered').length} Completed
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Filter Pills */}
+            <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-1 text-xs">
+              <span className="text-slate-400 font-medium shrink-0">Filter by Stage:</span>
+              <button
+                onClick={() => setTrackingFilterStage('All')}
+                className={`px-3 py-1.5 rounded-xl font-bold transition shrink-0 ${
+                  trackingFilterStage === 'All' ? 'bg-slate-900 text-white shadow-sm' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                }`}
+              >
+                All Consignments ({orders.length})
+              </button>
+              {TRACKING_STAGES.map(st => {
+                const count = orders.filter(o => (o.tracking?.currentStage || 'payment_confirmed') === st.id).length;
+                const isActive = trackingFilterStage === st.id;
+                return (
+                  <button
+                    key={st.id}
+                    onClick={() => setTrackingFilterStage(st.id)}
+                    className={`px-3 py-1.5 rounded-xl font-bold transition flex items-center gap-1.5 shrink-0 ${
+                      isActive ? 'bg-amber-700 text-white shadow-sm' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                    }`}
+                  >
+                    <span>{st.shortLabel}</span>
+                    <span className="font-mono text-[10px] opacity-75">({count})</span>
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Shipments List */}
+            <div className="space-y-6">
+              {orders
+                .filter(o => trackingFilterStage === 'All' || (o.tracking?.currentStage || 'payment_confirmed') === trackingFilterStage)
+                .map((ord) => {
+                  const trk = ord.tracking || {
+                    trackingNumber: 'ART-DHL-PENDING',
+                    carrier: 'DHL Express Fine Art',
+                    currentStage: 'payment_confirmed',
+                    origin: 'Lagos Atelier, Nigeria',
+                    destination: 'Collector Residence',
+                    estimatedDelivery: '2026-09-14',
+                    currentLocation: 'Artellium Transit Vault',
+                    checkpoints: []
+                  };
+                  const currentStageCfg = getStageConfig(trk.currentStage);
+                  const currentStepNum = getStageStep(trk.currentStage);
+                  const firstItem = ord.items?.[0];
+
+                  return (
+                    <div key={ord.id} className="p-6 rounded-3xl bg-slate-50 border border-slate-200 space-y-5 text-xs shadow-sm">
+                      {/* Top Bar */}
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-200 pb-4">
+                        <div className="space-y-1">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <span className="font-mono font-bold text-slate-900 text-sm">{ord.id}</span>
+                            <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase border ${currentStageCfg.badgeClass}`}>
+                              Step {currentStepNum} of 6: {currentStageCfg.shortLabel}
+                            </span>
+                            <span className="px-2.5 py-0.5 rounded-full text-[10px] font-mono font-semibold bg-slate-200 text-slate-700">
+                              {trk.carrier} · {trk.trackingNumber}
+                            </span>
+                          </div>
+                          <p className="text-[11px] text-slate-500">
+                            Collector: <strong className="text-slate-800">{ord.buyer_name}</strong> ({ord.buyer_email}) · Destination: <strong className="text-slate-800">{trk.destination}</strong>
+                          </p>
+                        </div>
+
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={() => openTrackingModal(ord)}
+                            className="px-4 py-2 bg-gradient-to-r from-amber-600 to-amber-700 hover:brightness-110 text-white rounded-xl font-bold text-xs flex items-center gap-1.5 shadow-sm cursor-pointer"
+                          >
+                            <Truck className="w-4 h-4" />
+                            <span>Update Stage & Checkpoints</span>
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Artwork & Transit Snapshot */}
+                      <div className="grid grid-cols-1 md:grid-cols-12 gap-4 bg-white p-4 rounded-2xl border border-slate-200 items-center">
+                        {/* Artwork info */}
+                        <div className="md:col-span-4 flex items-center gap-3">
+                          <img
+                            src={firstItem?.image}
+                            alt={firstItem?.title}
+                            className="w-16 h-16 rounded-xl object-cover border border-slate-200 shrink-0"
+                          />
+                          <div className="min-w-0">
+                            <h4 className="font-serif text-sm font-bold text-slate-900 truncate">{firstItem?.title}</h4>
+                            <p className="text-[11px] text-slate-500 truncate">By {firstItem?.artistName}</p>
+                            <span className="font-mono font-bold text-art-gold text-[11px]">{formatPrice(ord.total_amount)}</span>
+                          </div>
+                        </div>
+
+                        {/* Route info */}
+                        <div className="md:col-span-4 space-y-1">
+                          <div className="flex items-center gap-1.5 text-slate-600">
+                            <MapPin className="w-3.5 h-3.5 text-amber-600 shrink-0" />
+                            <span className="truncate"><strong>From:</strong> {trk.origin}</span>
+                          </div>
+                          <div className="flex items-center gap-1.5 text-slate-600">
+                            <Navigation className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                            <span className="truncate"><strong>To:</strong> {trk.destination}</span>
+                          </div>
+                          <div className="text-[10px] text-slate-400 font-mono">
+                            Current Location: <span className="text-slate-700 font-semibold">{trk.currentLocation}</span>
+                          </div>
+                        </div>
+
+                        {/* Delivery Estimate */}
+                        <div className="md:col-span-4 text-left md:text-right space-y-1 border-t md:border-t-0 md:border-l border-slate-100 pt-2 md:pt-0 md:pl-4">
+                          <span className="text-[10px] text-slate-400 font-mono uppercase block">Estimated Delivery</span>
+                          <span className="font-serif text-sm font-bold text-slate-900">
+                            {trk.currentStage === 'delivered' ? '✓ Delivered & Received' : trk.estimatedDelivery || 'In Transit'}
+                          </span>
+                          <span className="text-[10px] text-slate-400 font-mono block">
+                            Last Updated: {new Date(trk.lastUpdated || ord.updated_at).toLocaleDateString()}
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* 6-Stage Visual Progress Bar */}
+                      <div className="space-y-2 bg-slate-900 text-white p-5 rounded-2xl shadow-inner">
+                        <div className="flex justify-between items-center text-[10px] font-mono text-slate-400 uppercase">
+                          <span>Progress: Step {currentStepNum} of 6</span>
+                          <span className="text-art-gold font-bold">{currentStageCfg.label}</span>
+                        </div>
+
+                        {/* Stepper track */}
+                        <div className="grid grid-cols-6 gap-2">
+                          {TRACKING_STAGES.map((st, idx) => {
+                            const isDone = currentStepNum > st.step;
+                            const isCurrent = currentStepNum === st.step;
+                            return (
+                              <div key={st.id} className="space-y-1.5">
+                                <div
+                                  className={`h-2 rounded-full transition-all duration-500 ${
+                                    isDone 
+                                      ? 'bg-emerald-500' 
+                                      : isCurrent 
+                                      ? 'bg-gradient-to-r from-amber-400 to-amber-500 animate-pulse' 
+                                      : 'bg-slate-700'
+                                  }`}
+                                />
+                                <span className={`text-[10px] block leading-tight font-medium ${
+                                  isCurrent ? 'text-amber-300 font-bold' : isDone ? 'text-emerald-400' : 'text-slate-500'
+                                }`}>
+                                  {st.step}. {st.shortLabel}
+                                </span>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+
+                      {/* Checkpoint Milestones Collapsible Log */}
+                      {trk.checkpoints && trk.checkpoints.length > 0 && (
+                        <div className="bg-white p-4 rounded-2xl border border-slate-200 space-y-3">
+                          <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-slate-400 block">
+                            Logged Checkpoint History ({trk.checkpoints.length} events recorded)
+                          </span>
+                          <div className="space-y-2.5">
+                            {trk.checkpoints.map((chk, cIdx) => (
+                              <div key={chk.id || cIdx} className="flex items-start gap-3 text-xs">
+                                <div className="w-5 h-5 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0 mt-0.5">
+                                  <CheckCircle2 className="w-3.5 h-3.5" />
+                                </div>
+                                <div className="min-w-0 flex-1">
+                                  <div className="flex items-center justify-between">
+                                    <span className="font-bold text-slate-900">{chk.title}</span>
+                                    <span className="text-[10px] text-slate-400 font-mono">
+                                      {new Date(chk.timestamp).toLocaleString()}
+                                    </span>
+                                  </div>
+                                  <p className="text-[11px] text-slate-600 mt-0.5">{chk.note}</p>
+                                  {chk.location && (
+                                    <span className="text-[10px] text-slate-400 flex items-center gap-1 mt-0.5">
+                                      <MapPin className="w-3 h-3 text-slate-400" />
+                                      <span>{chk.location}</span>
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                    </div>
+                  );
+                })}
+            </div>
+          </div>
+        )}
+
+        {/* DELIVERY TRACKING UPDATE MODAL (Accessible from both Orders & Tracking tabs) */}
+        {trackingModalOrder && (
+          <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
+            <div className="bg-white rounded-3xl border border-slate-200 max-w-xl w-full p-6 sm:p-8 space-y-5 shadow-2xl animate-scale-in max-h-[90vh] overflow-y-auto">
+              <div className="flex justify-between items-center border-b border-slate-100 pb-3">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="p-1.5 rounded-lg bg-amber-50 text-amber-900 border border-amber-300">
+                      <Truck className="w-4 h-4 text-amber-600" />
+                    </span>
+                    <h3 className="font-serif text-xl font-bold text-slate-900">
+                      Update Delivery Stage · {trackingModalOrder.id}
+                    </h3>
+                  </div>
+                  <p className="text-xs text-slate-500 mt-1">
+                    Advancing this stage immediately updates the tracking dashboard for collector <strong>{trackingModalOrder.buyer_name}</strong> and artist <strong>{trackingModalOrder.items?.[0]?.artistName}</strong>.
+                  </p>
+                </div>
+                <button onClick={() => setTrackingModalOrder(null)} className="text-slate-400 hover:text-slate-700 font-bold p-1">✕</button>
+              </div>
+
+              <form onSubmit={handleSaveTracking} className="space-y-4 text-xs">
+                {/* Stage Selection */}
+                <div>
+                  <label className="block text-slate-700 font-bold mb-2">Select Active Delivery Stage *</label>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    {TRACKING_STAGES.map((stage) => {
+                      const isSelected = trackingForm.stage === stage.id;
+                      return (
+                        <button
+                          key={stage.id}
+                          type="button"
+                          onClick={() => setTrackingForm({ ...trackingForm, stage: stage.id })}
+                          className={`text-left p-3 rounded-xl border transition-all ${
+                            isSelected 
+                              ? 'bg-amber-50/80 border-amber-500 text-amber-950 shadow-sm ring-2 ring-amber-500/20' 
+                              : 'bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100'
+                          }`}
+                        >
+                          <div className="flex items-center justify-between font-bold text-[11px] mb-0.5">
+                            <span>Step {stage.step}: {stage.shortLabel}</span>
+                            {isSelected && <CheckCircle2 className="w-3.5 h-3.5 text-amber-600" />}
+                          </div>
+                          <p className="text-[10px] text-slate-500 leading-tight">{stage.description}</p>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Courier & Tracking Number */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-slate-700 font-bold mb-1">Carrier / Logistics Provider *</label>
+                    <select
+                      value={trackingForm.carrier}
+                      onChange={e => setTrackingForm({ ...trackingForm, carrier: e.target.value })}
+                      className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-slate-900 focus:outline-none focus:border-amber-500"
+                    >
+                      {CARRIER_OPTIONS.map(c => (
+                        <option key={c.id} value={c.name}>{c.name}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-slate-700 font-bold mb-1">Tracking ID / Air Waybill Number *</label>
+                    <div className="flex gap-1.5">
+                      <input
+                        type="text"
+                        required
+                        value={trackingForm.trackingNumber}
+                        onChange={e => setTrackingForm({ ...trackingForm, trackingNumber: e.target.value })}
+                        className="flex-1 bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 font-mono text-slate-900 focus:outline-none focus:border-amber-500"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setTrackingForm({ ...trackingForm, trackingNumber: generateTrackingNumber(trackingForm.carrier) })}
+                        className="px-2.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-mono text-[10px] font-bold"
+                        title="Generate New Code"
+                      >
+                        Gen
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Location & Estimated Date */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-slate-700 font-bold mb-1">Current Physical Location / Hub *</label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="e.g. Heathrow Airport Customs Hub, London"
+                      value={trackingForm.location}
+                      onChange={e => setTrackingForm({ ...trackingForm, location: e.target.value })}
+                      className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-slate-900 focus:outline-none focus:border-amber-500"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-slate-700 font-bold mb-1">Estimated Delivery Date</label>
+                    <input
+                      type="date"
+                      value={trackingForm.estimatedDelivery}
+                      onChange={e => setTrackingForm({ ...trackingForm, estimatedDelivery: e.target.value })}
+                      className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-slate-900 focus:outline-none focus:border-amber-500"
+                    />
+                  </div>
+                </div>
+
+                {/* Checkpoint Note */}
+                <div>
+                  <label className="block text-slate-700 font-bold mb-1">
+                    Checkpoint Milestone Note <span className="text-slate-400 font-normal">(Visible on collector tracking timeline)</span>
+                  </label>
+                  <textarea
+                    rows={2}
+                    placeholder="e.g. Consignment cleared customs in London. Climate-controlled packing casing inspected and approved for final white-glove handover."
+                    value={trackingForm.note}
+                    onChange={e => setTrackingForm({ ...trackingForm, note: e.target.value })}
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-slate-900 focus:outline-none focus:border-amber-500"
+                  />
+                </div>
+
+                {/* Actions */}
+                <div className="flex justify-end gap-2 pt-3 border-t border-slate-100">
+                  <button
+                    type="button"
+                    onClick={() => setTrackingModalOrder(null)}
+                    className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-bold"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="px-5 py-2 bg-gradient-to-r from-amber-600 to-amber-700 hover:brightness-110 text-white font-bold rounded-xl shadow-sm flex items-center gap-1.5 cursor-pointer"
+                  >
+                    <CheckCircle2 className="w-4 h-4" />
+                    <span>Save & Notify Collector</span>
+                  </button>
+                </div>
+              </form>
+            </div>
           </div>
         )}
 

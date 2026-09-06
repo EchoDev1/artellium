@@ -90,6 +90,7 @@ CREATE TABLE IF NOT EXISTS public.orders (
     currency TEXT NOT NULL DEFAULT 'NGN',
     settlement_bank TEXT DEFAULT 'Wema Bank PLC',
     status TEXT NOT NULL DEFAULT 'paid' CHECK (status IN ('pending_payment', 'paid', 'processing', 'in_transit', 'delivered', 'completed', 'cancelled')),
+    tracking JSONB DEFAULT '{}'::jsonb,
     items JSONB NOT NULL DEFAULT '[]'::jsonb,
     created_at TIMESTAMPTZ DEFAULT NOW(),
     updated_at TIMESTAMPTZ DEFAULT NOW()

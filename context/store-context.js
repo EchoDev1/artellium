@@ -35,6 +35,7 @@ import { safeSetItem } from '@/lib/safe-storage';
 import { getCategoryFallback, isValidImageSource, DEFAULT_FALLBACK_IMAGE } from '@/lib/image-utils';
 import { normalizeCategory, isCategoryMatch } from '@/lib/category-utils';
 import { isPriorityArtist, sortArtworksByPriority } from '@/lib/priority-utils';
+import { TRACKING_STAGES, createInitialTracking, getStageConfig } from '@/lib/tracking-utils';
 const StoreContext = createContext();
 
 export function StoreProvider({ children }) {
@@ -190,8 +191,8 @@ export function StoreProvider({ children }) {
       const realCount = realByCat[cat] || 0;
       const demoCount = demoUsedByCat[cat] || 0;
 
-      // Retain demo fallback items only if real items in this category are fewer than 4
-      if (realCount + demoCount < 4) {
+      // Retain demo fallback items so each category has a robust catalog (up to 8 items) until real artists upload
+      if (realCount + demoCount < 8) {
         remainingDemo.push(d);
         demoUsedByCat[cat] = demoCount + 1;
       }
@@ -200,13 +201,14 @@ export function StoreProvider({ children }) {
     return [...sortedReal, ...remainingDemo];
   };
 
-  const MOCK_VERSION = 'v16-progressive-catalog';
+  const MOCK_VERSION = 'v17-artworks-tracking';
 
   // 1. Load from LocalStorage synchronously first
   useEffect(() => {
     try {
       const storedVersion = localStorage.getItem('artellium_mock_version');
       if (storedVersion !== MOCK_VERSION) {
+        localStorage.removeItem('artellium_artworks');
         localStorage.removeItem('artellium_orders');
         localStorage.removeItem('artellium_payments');
         localStorage.removeItem('artellium_commissions');
@@ -281,24 +283,33 @@ export function StoreProvider({ children }) {
       if (savedOrders) {
         try {
           const parsed = JSON.parse(savedOrders);
-          setOrders(Array.isArray(parsed) ? parsed.filter(o => o.id !== 'ord-101' && o.id !== 'ord-102') : []);
-        } catch (e) { setOrders([]); }
+          setOrders(Array.isArray(parsed) && parsed.length > 0 ? parsed.filter(o => o.id !== 'ord-101' && o.id !== 'ord-102') : (INITIAL_ORDERS || []));
+        } catch (e) { setOrders(INITIAL_ORDERS || []); }
+      } else {
+        setOrders(INITIAL_ORDERS || []);
+        safeSetItem('artellium_orders', INITIAL_ORDERS || []);
       }
 
       const savedPayments = localStorage.getItem('artellium_payments');
       if (savedPayments) {
         try {
           const parsed = JSON.parse(savedPayments);
-          setPayments(Array.isArray(parsed) ? parsed.filter(p => p.id !== 'pay-101' && p.id !== 'pay-102') : []);
-        } catch (e) { setPayments([]); }
+          setPayments(Array.isArray(parsed) && parsed.length > 0 ? parsed.filter(p => p.id !== 'pay-101' && p.id !== 'pay-102') : (INITIAL_PAYMENTS || []));
+        } catch (e) { setPayments(INITIAL_PAYMENTS || []); }
+      } else {
+        setPayments(INITIAL_PAYMENTS || []);
+        safeSetItem('artellium_payments', INITIAL_PAYMENTS || []);
       }
 
       const savedCommissions = localStorage.getItem('artellium_commissions');
       if (savedCommissions) {
         try {
           const parsed = JSON.parse(savedCommissions);
-          setCommissions(Array.isArray(parsed) ? parsed.filter(c => c.id !== 'comm-101' && c.id !== 'comm-102') : []);
-        } catch (e) { setCommissions([]); }
+          setCommissions(Array.isArray(parsed) && parsed.length > 0 ? parsed.filter(c => c.id !== 'comm-101' && c.id !== 'comm-102') : (INITIAL_COMMISSIONS || []));
+        } catch (e) { setCommissions(INITIAL_COMMISSIONS || []); }
+      } else {
+        setCommissions(INITIAL_COMMISSIONS || []);
+        safeSetItem('artellium_commissions', INITIAL_COMMISSIONS || []);
       }
 
       const savedSellers = localStorage.getItem('artellium_sellers');
@@ -704,6 +715,13 @@ export function StoreProvider({ children }) {
       currency,
       status: 'paid', // paid -> completed
       settlement_bank: 'Wema Bank PLC',
+      tracking: createInitialTracking({
+        carrier: 'DHL Express Fine Art',
+        origin: items[0]?.city ? `${items[0].city} Atelier, ${items[0].country}` : 'Lagos Atelier, Nigeria',
+        destination: `${shippingCity ? shippingCity + ', ' : ''}${shippingCountry || 'Collector Residence / Vault'}`,
+        currentStage: 'payment_confirmed',
+        estimatedDays: 7
+      }),
       items: items.map(item => ({
         id: item.id,
         title: item.title,
@@ -810,11 +828,63 @@ export function StoreProvider({ children }) {
     supabase.from('orders').delete().eq('id', orderId).then(() => {});
   };
 
-  const updateOrderLogistics = (orderId, logisticsData) => {
-    setOrders(prev => prev.map(o => o.id === orderId ? { ...o, logistics: logisticsData, updated_at: new Date().toISOString() } : o));
+  const updateOrderTracking = (orderId, { stage, carrier, trackingNumber, location, estimatedDelivery, note } = {}) => {
+    setOrders(prev => prev.map(o => {
+      if (o.id !== orderId) return o;
+
+      const existingTracking = o.tracking || createInitialTracking({
+        origin: o.items?.[0]?.city ? `${o.items[0].city} Atelier, ${o.items[0].country}` : 'Lagos Atelier, Nigeria',
+        destination: 'Collector Residence / Vault'
+      });
+      const currentStage = stage || existingTracking.currentStage || 'payment_confirmed';
+      const stageCfg = getStageConfig(currentStage);
+
+      const newCheckpoint = {
+        id: `chk-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+        stage: currentStage,
+        title: stageCfg?.label || currentStage,
+        location: location || existingTracking.currentLocation || 'In Transit',
+        timestamp: new Date().toISOString(),
+        note: note || (stageCfg?.description || `Stage updated to ${stageCfg?.label || currentStage}`),
+        completed: true
+      };
+
+      const updatedTracking = {
+        ...existingTracking,
+        currentStage,
+        carrier: carrier || existingTracking.carrier,
+        trackingNumber: trackingNumber || existingTracking.trackingNumber,
+        currentLocation: location || existingTracking.currentLocation,
+        estimatedDelivery: estimatedDelivery || existingTracking.estimatedDelivery,
+        notes: note || existingTracking.notes,
+        lastUpdated: new Date().toISOString(),
+        checkpoints: [
+          ...(existingTracking.checkpoints || []),
+          newCheckpoint
+        ]
+      };
+
+      return {
+        ...o,
+        tracking: updatedTracking,
+        status: currentStage === 'delivered' ? 'completed' : o.status,
+        updated_at: new Date().toISOString()
+      };
+    }));
+
+    const stageName = getStageConfig(stage)?.label || stage || 'Update';
+    broadcastNotification(`Delivery update for Order ${orderId}: ${stageName}`);
+    try {
+      supabase.from('orders').update({ updated_at: new Date().toISOString() }).eq('id', orderId).then(() => {});
+    } catch (e) {}
   };
 
   const confirmCollectorDelivery = (orderId) => {
+    updateOrderTracking(orderId, {
+      stage: 'delivered',
+      location: 'Collector Residence / Handover Confirmed',
+      note: 'Collector confirmed safe delivery and inspected physical Certificate of Authenticity.'
+    });
     setOrders(prev => prev.map(o => o.id === orderId ? { ...o, collectorConfirmedDelivery: true, collectorConfirmedAt: new Date().toISOString(), status: 'completed' } : o));
   };
 
@@ -2728,7 +2798,8 @@ export function StoreProvider({ children }) {
         orders,
         updateOrder,
         deleteOrder,
-        updateOrderLogistics,
+        updateOrderTracking,
+        TRACKING_STAGES,
         confirmCollectorDelivery,
         payments,
         updatePayment,

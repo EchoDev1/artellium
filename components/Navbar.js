@@ -162,7 +162,7 @@ export default function Navbar() {
             onSubmit={handleSearchSubmit}
             className="hidden md:flex flex-1 max-w-xl items-center bg-art-black-card border border-art-gold/25 rounded-xl overflow-hidden focus-within:border-art-gold transition shadow-inner"
           >
-            <div className="relative border-r border-art-black-border">
+            <div className="relative border-r border-art-black-border shrink-0">
               <select
                 value={selectedCategory}
                 onChange={handleCategoryChange}
@@ -182,14 +182,14 @@ export default function Navbar() {
               placeholder={t('searchPlaceholder', 'Search painters, bronze sculptors, artwork titles...')}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="flex-1 bg-transparent px-3 py-2 text-sm text-white placeholder-slate-400 focus:outline-none"
+              className="flex-1 min-w-0 bg-transparent px-3 py-2 text-sm text-white placeholder-slate-400 focus:outline-none"
             />
             <button
               type="submit"
-              className="bg-gradient-to-r from-art-gold to-art-gold-dark hover:brightness-110 text-art-black px-4 py-2.5 font-semibold text-xs transition flex items-center gap-1.5 cursor-pointer"
+              className="shrink-0 whitespace-nowrap leading-none bg-gradient-to-r from-art-gold to-art-gold-dark hover:brightness-110 text-art-black px-4 sm:px-5 py-2.5 font-bold text-xs transition flex items-center justify-center gap-1.5 cursor-pointer select-none shadow-sm"
             >
-              <Search className="w-4 h-4" />
-              <span>{t('searchBtn', 'SEARCH')}</span>
+              <Search className="w-4 h-4 shrink-0" />
+              <span className="leading-none whitespace-nowrap tracking-wide">{t('searchBtn', 'SEARCH')}</span>
             </button>
           </form>
 

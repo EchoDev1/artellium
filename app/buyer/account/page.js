@@ -45,6 +45,7 @@ import Link from 'next/link';
 import DigitalCertificateModal from '@/components/DigitalCertificateModal';
 import ProfilePhotoStudioModal from '@/components/ProfilePhotoStudioModal';
 import CollectorPanAfricanSuite from '@/components/CollectorPanAfricanSuite';
+import { TRACKING_STAGES, getStageConfig, getStageStep } from '@/lib/tracking-utils';
 
 export default function BuyerAccountPage() {
   const { 
@@ -88,6 +89,19 @@ export default function BuyerAccountPage() {
   // Navigation Tabs: 'orders', 'auction_registration', 'followed_artists', 'wishlist', 'collection', 'my_offers', 'my_questions', 'notifications', 'profile'
   const [activeTab, setActiveTab] = useState('orders');
   const [copiedTracking, setCopiedTracking] = useState(null);
+  const [expandedTracking, setExpandedTracking] = useState({});
+
+  const toggleTrackingHistory = (orderId) => {
+    setExpandedTracking(prev => ({ ...prev, [orderId]: !prev[orderId] }));
+  };
+
+  const handleCopyTracking = (code) => {
+    if (typeof navigator !== 'undefined' && navigator.clipboard) {
+      navigator.clipboard.writeText(code).catch(() => {});
+    }
+    setCopiedTracking(code);
+    setTimeout(() => setCopiedTracking(null), 3000);
+  };
 
   // Collector Auction Registration Form state
   const [bidderRegForm, setBidderRegForm] = useState({
@@ -518,6 +532,186 @@ export default function BuyerAccountPage() {
                           </button>
                         </div>
                       </div>
+
+                      {/* Consignment Live Delivery Tracking Tracker */}
+                      {(() => {
+                        const trk = ord.tracking || {
+                          trackingNumber: 'ART-DHL-789234',
+                          carrier: 'DHL Express Fine Art',
+                          currentStage: 'payment_confirmed',
+                          origin: 'Lagos Atelier, Nigeria',
+                          destination: 'Collector Residence / Vault',
+                          estimatedDelivery: '2026-09-14',
+                          currentLocation: 'Artellium Transit Vault',
+                          checkpoints: []
+                        };
+                        const currentStageCfg = getStageConfig(trk.currentStage);
+                        const currentStepNum = getStageStep(trk.currentStage);
+
+                        return (
+                          <div className="bg-white p-5 rounded-2xl border border-slate-200 space-y-4 shadow-sm">
+                            {/* Delivery Tracker Header */}
+                            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-3">
+                              <div className="flex items-center gap-2.5">
+                                <span className="p-2 rounded-xl bg-amber-50 text-amber-900 border border-amber-300">
+                                  <Truck className="w-5 h-5 text-amber-600" />
+                                </span>
+                                <div>
+                                  <h5 className="font-serif font-bold text-slate-900 text-sm flex flex-wrap items-center gap-2">
+                                    <span>Consignment Delivery Tracking</span>
+                                    <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold uppercase border ${currentStageCfg.badgeClass}`}>
+                                      Step {currentStepNum} of 6: {currentStageCfg.shortLabel}
+                                    </span>
+                                  </h5>
+                                  <div className="text-[11px] text-slate-500 flex flex-wrap items-center gap-1.5 mt-0.5">
+                                    <span>Carrier: <strong className="text-slate-800">{trk.carrier}</strong></span>
+                                    <span>·</span>
+                                    <span>Air Waybill / Tracking ID:</span>
+                                    <span className="font-mono font-bold text-slate-900 bg-slate-100 px-2 py-0.5 rounded border border-slate-200">
+                                      {trk.trackingNumber}
+                                    </span>
+                                    <button
+                                      onClick={() => handleCopyTracking(trk.trackingNumber)}
+                                      className="inline-flex items-center gap-1 text-[10px] text-amber-700 hover:text-amber-950 font-bold px-1.5 py-0.5 rounded hover:bg-amber-50 transition"
+                                      title="Copy Tracking ID"
+                                    >
+                                      <Copy className="w-3 h-3" />
+                                      <span>{copiedTracking === trk.trackingNumber ? 'Copied!' : 'Copy'}</span>
+                                    </button>
+                                  </div>
+                                </div>
+                              </div>
+
+                              <div className="text-left sm:text-right space-y-0.5">
+                                <span className="text-[10px] text-slate-400 font-mono uppercase block">Estimated Delivery</span>
+                                <span className="font-serif text-sm font-bold text-slate-900 block">
+                                  {trk.currentStage === 'delivered' ? '✓ Delivered & Received' : trk.estimatedDelivery || 'In Transit'}
+                                </span>
+                              </div>
+                            </div>
+
+                            {/* Visual 6-Step Delivery Stepper */}
+                            <div className="space-y-3 bg-slate-900 text-white p-4 sm:p-5 rounded-2xl shadow-inner">
+                              <div className="flex justify-between items-center text-[10px] font-mono text-slate-400 uppercase">
+                                <span>Shipment Lifecycle: Step {currentStepNum} of 6</span>
+                                <span className="text-art-gold font-bold">{currentStageCfg.label}</span>
+                              </div>
+
+                              <div className="grid grid-cols-2 sm:grid-cols-6 gap-2.5">
+                                {TRACKING_STAGES.map((st) => {
+                                  const isDone = currentStepNum > st.step;
+                                  const isCurrent = currentStepNum === st.step;
+                                  return (
+                                    <div key={st.id} className="space-y-1.5">
+                                      <div
+                                        className={`h-2 rounded-full transition-all duration-500 ${
+                                          isDone 
+                                            ? 'bg-emerald-500' 
+                                            : isCurrent 
+                                            ? 'bg-gradient-to-r from-amber-400 to-amber-500 animate-pulse' 
+                                            : 'bg-slate-700'
+                                        }`}
+                                      />
+                                      <span className={`text-[10px] block leading-tight font-medium ${
+                                        isCurrent ? 'text-amber-300 font-bold' : isDone ? 'text-emerald-400' : 'text-slate-500'
+                                      }`}>
+                                        {st.step}. {st.shortLabel}
+                                      </span>
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            </div>
+
+                            {/* Origin, Destination & Current Location Snapshot */}
+                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs bg-slate-50 p-3 rounded-xl border border-slate-200">
+                              <div className="flex items-center gap-2">
+                                <MapPin className="w-4 h-4 text-amber-600 shrink-0" />
+                                <div className="min-w-0">
+                                  <span className="text-[10px] text-slate-400 uppercase block font-mono">Origin Atelier</span>
+                                  <span className="font-semibold text-slate-800 truncate block">{trk.origin}</span>
+                                </div>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <Navigation className="w-4 h-4 text-emerald-600 shrink-0" />
+                                <div className="min-w-0">
+                                  <span className="text-[10px] text-slate-400 uppercase block font-mono">Destination</span>
+                                  <span className="font-semibold text-slate-800 truncate block">{trk.destination}</span>
+                                </div>
+                              </div>
+                              <div className="flex items-center gap-2 sm:border-l sm:border-slate-200 sm:pl-3">
+                                <Truck className="w-4 h-4 text-indigo-600 shrink-0" />
+                                <div className="min-w-0">
+                                  <span className="text-[10px] text-slate-400 uppercase block font-mono">Current Location</span>
+                                  <span className="font-semibold text-slate-800 truncate block">{trk.currentLocation}</span>
+                                </div>
+                              </div>
+                            </div>
+
+                            {/* Checkpoints & Milestone Log Toggle & Delivery Confirmation Button */}
+                            <div className="space-y-2 border-t border-slate-100 pt-3">
+                              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                                {trk.checkpoints && trk.checkpoints.length > 0 ? (
+                                  <button
+                                    onClick={() => toggleTrackingHistory(ord.id)}
+                                    className="text-xs font-bold text-amber-800 hover:text-amber-950 flex items-center gap-1.5 transition cursor-pointer"
+                                  >
+                                    <span>{expandedTracking[ord.id] ? 'Hide Checkpoints History' : `View Full Delivery Milestones (${trk.checkpoints.length} logged)`}</span>
+                                    <ChevronRight className={`w-3.5 h-3.5 transform transition-transform ${expandedTracking[ord.id] ? 'rotate-90' : ''}`} />
+                                  </button>
+                                ) : <div />}
+
+                                {/* Confirm Delivery Button for Collector */}
+                                {trk.currentStage !== 'delivered' && !ord.collectorConfirmedDelivery ? (
+                                  <button
+                                    onClick={() => {
+                                      if (confirm(`Confirm receipt of artwork "${firstItem?.title}"? This will complete the acquisition lifecycle.`)) {
+                                        confirmCollectorDelivery(ord.id);
+                                      }
+                                    }}
+                                    className="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 shadow-sm transition cursor-pointer"
+                                  >
+                                    <CheckCircle2 className="w-3.5 h-3.5" />
+                                    <span>Confirm Delivery Receipt</span>
+                                  </button>
+                                ) : (
+                                  <span className="inline-flex items-center gap-1.5 text-xs font-bold text-emerald-700 bg-emerald-50 px-3 py-1.5 rounded-xl border border-emerald-200">
+                                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                                    <span>Delivery Confirmed & Received</span>
+                                  </span>
+                                )}
+                              </div>
+
+                              {expandedTracking[ord.id] && trk.checkpoints && (
+                                <div className="mt-3 space-y-2.5 bg-slate-50 p-4 rounded-xl border border-slate-200 animate-fade-in">
+                                  {trk.checkpoints.map((chk, cIdx) => (
+                                    <div key={chk.id || cIdx} className="flex items-start gap-3 text-xs border-b border-slate-200/60 last:border-b-0 pb-2.5 last:pb-0">
+                                      <div className="w-4 h-4 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0 mt-0.5">
+                                        <CheckCircle2 className="w-3 h-3" />
+                                      </div>
+                                      <div className="min-w-0 flex-1">
+                                        <div className="flex items-center justify-between">
+                                          <span className="font-bold text-slate-900">{chk.title}</span>
+                                          <span className="text-[10px] text-slate-400 font-mono">
+                                            {new Date(chk.timestamp).toLocaleString()}
+                                          </span>
+                                        </div>
+                                        <p className="text-[11px] text-slate-600 mt-0.5">{chk.note}</p>
+                                        {chk.location && (
+                                          <span className="text-[10px] text-slate-400 flex items-center gap-1 mt-0.5 font-mono">
+                                            <MapPin className="w-3 h-3 text-slate-400" />
+                                            <span>{chk.location}</span>
+                                          </span>
+                                        )}
+                                      </div>
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })()}
 
                     </div>
                   );

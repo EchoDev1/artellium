@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useStore } from '@/context/store-context';
 import { ShoppingBag, Star, ShieldCheck, Eye, Sparkles, CheckCircle, Tag, Heart, Crown } from 'lucide-react';
 import VerificationBadge from '@/components/VerificationBadge';
-import { DEFAULT_FALLBACK_IMAGE } from '@/lib/image-utils';
+import { DEFAULT_FALLBACK_IMAGE, getCategoryFallback } from '@/lib/image-utils';
 import { isPriorityArtist } from '@/lib/priority-utils';
 
 export default function ArtworkCard({ artwork }) {
@@ -20,15 +20,17 @@ export default function ArtworkCard({ artwork }) {
     return `₦${amount.toLocaleString()}`;
   };
 
+  const fallbackImg = getCategoryFallback(artwork.category) || DEFAULT_FALLBACK_IMAGE;
+
   return (
     <div className="group relative rounded-2xl overflow-hidden glass-card hover:border-art-gold/60 transition duration-300 transform hover:-translate-y-1.5 shadow-xl flex flex-col justify-between">
       {/* Image Container */}
       <div className="relative aspect-[4/3] w-full overflow-hidden bg-art-black">
         <img
-          src={artwork.image || DEFAULT_FALLBACK_IMAGE}
+          src={artwork.image || fallbackImg}
           alt={artwork.title}
           onError={(e) => {
-            e.currentTarget.src = DEFAULT_FALLBACK_IMAGE;
+            e.currentTarget.src = fallbackImg;
           }}
           className="w-full h-full object-cover group-hover:scale-105 transition duration-500"
         />

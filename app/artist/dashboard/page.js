@@ -44,7 +44,9 @@ import {
   Film,
   Video,
   Play,
-  Crown
+  Crown,
+  ChevronDown,
+  ChevronUp
 } from 'lucide-react';
 import Link from 'next/link';
 import ProfilePhotoStudioModal from '@/components/ProfilePhotoStudioModal';
@@ -52,6 +54,7 @@ import ArtistLiveAuctionConsole from '@/components/ArtistLiveAuctionConsole';
 import ArtistPanAfricanSuite from '@/components/ArtistPanAfricanSuite';
 import ArtworkPhotoUploader from '@/components/ArtworkPhotoUploader';
 import { isPriorityArtist } from '@/lib/priority-utils';
+import { TRACKING_STAGES, getStageConfig, getStageStep } from '@/lib/tracking-utils';
 
 export default function ArtistDashboardPage() {
   const { 
@@ -163,6 +166,15 @@ export default function ArtistDashboardPage() {
       duration: '1:30',
     });
     setTimeout(() => setVideoSubmitNotice(''), 8000);
+  };
+
+  // Live Delivery Tracking Accordion State
+  const [expandedOrderTracking, setExpandedOrderTracking] = useState({});
+  const toggleOrderTracking = (orderId) => {
+    setExpandedOrderTracking(prev => ({
+      ...prev,
+      [orderId]: !prev[orderId]
+    }));
   };
 
   // Priority Banner State
@@ -1754,6 +1766,17 @@ export default function ArtistDashboardPage() {
                 <div className="space-y-4">
                   {myOrders.map(ord => {
                     const firstItem = ord.items?.[0];
+                    const tracking = ord.tracking || {
+                      stage: ord.status === 'delivered' ? 'delivered' : 'payment_confirmed',
+                      carrier: 'Artellium Insured Courier',
+                      tracking_id: ord.id,
+                      destination: ord.shipping_address?.city ? `${ord.shipping_address.city}, ${ord.shipping_address.country}` : 'Collector Residence',
+                      checkpoints: []
+                    };
+                    const currentStageConfig = getStageConfig(tracking.stage);
+                    const currentStep = getStageStep(tracking.stage);
+                    const progressPercent = Math.min(100, Math.round((currentStep / 6) * 100));
+
                     return (
                       <div key={ord.id} className="p-5 bg-slate-50 border border-slate-200 rounded-2xl space-y-4 text-xs">
                         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-200 pb-3">
@@ -1785,6 +1808,90 @@ export default function ArtistDashboardPage() {
                               <span>{artistPayoutPercentage}% Net Disbursed</span>
                             </span>
                           </div>
+                        </div>
+
+                        {/* Live Delivery Tracking Overview for Artist */}
+                        <div className="bg-white p-4 rounded-xl border border-slate-200 space-y-3">
+                          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                            <div className="flex items-center gap-2.5">
+                              <div className="w-8 h-8 rounded-lg bg-amber-500/10 text-art-gold flex items-center justify-center font-bold shrink-0">
+                                <Truck className="w-4 h-4 text-amber-700" />
+                              </div>
+                              <div>
+                                <div className="flex flex-wrap items-center gap-2">
+                                  <span className="font-serif font-bold text-xs text-slate-900">Shipment & Delivery Tracking</span>
+                                  <span className={`text-[10px] font-mono px-2 py-0.5 rounded-full font-bold border ${currentStageConfig.badgeClass}`}>
+                                    Step {currentStep} of 6: {currentStageConfig.shortLabel}
+                                  </span>
+                                </div>
+                                <p className="text-[10px] text-slate-500 mt-0.5">
+                                  Carrier: <strong className="text-slate-700">{tracking.carrier || 'Artellium Logistics'}</strong> • 
+                                  Tracking ID: <span className="font-mono text-slate-700 font-bold">{tracking.tracking_id || ord.id}</span>
+                                </p>
+                              </div>
+                            </div>
+                            
+                            <div className="flex items-center gap-2 self-start sm:self-auto">
+                              <button
+                                type="button"
+                                onClick={() => toggleOrderTracking(ord.id)}
+                                className="inline-flex items-center gap-1 text-[11px] font-bold text-slate-700 hover:text-amber-700 bg-slate-100 hover:bg-slate-200 px-3 py-1.5 rounded-lg transition-colors cursor-pointer"
+                              >
+                                <span>{expandedOrderTracking[ord.id] ? 'Hide Milestones' : 'View Milestones'}</span>
+                                {expandedOrderTracking[ord.id] ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+                              </button>
+                            </div>
+                          </div>
+
+                          {/* Visual Progress Bar */}
+                          <div className="space-y-1.5">
+                            <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden border border-slate-200">
+                              <div 
+                                className="bg-gradient-to-r from-art-gold via-amber-500 to-emerald-500 h-full rounded-full transition-all duration-500"
+                                style={{ width: `${progressPercent}%` }}
+                              />
+                            </div>
+                            <div className="flex justify-between items-center text-[9px] text-slate-400 font-mono">
+                              <span>1. Payment Settled</span>
+                              <span className="hidden sm:inline">2. Atelier COA</span>
+                              <span className="hidden sm:inline">3. Crating</span>
+                              <span>4. In Transit</span>
+                              <span>6. Delivered</span>
+                            </div>
+                          </div>
+
+                          {/* Expandable Logistics Milestones */}
+                          {expandedOrderTracking[ord.id] && (
+                            <div className="mt-3 pt-3 border-t border-slate-100 space-y-2 bg-slate-50/80 p-3.5 rounded-xl">
+                              <div className="flex items-center justify-between">
+                                <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Live Logistics Checkpoints</span>
+                                <span className="text-[9px] text-slate-400 italic">Managed by Artellium Logistics Admin Desk</span>
+                              </div>
+                              <div className="space-y-2.5 pl-2 border-l-2 border-amber-300 mt-2">
+                                {(tracking.checkpoints && tracking.checkpoints.length > 0 ? tracking.checkpoints : [
+                                  {
+                                    id: 'chk-default',
+                                    title: currentStageConfig.label,
+                                    location: tracking.current_location || 'Lagos Atelier Hub',
+                                    timestamp: tracking.last_updated || ord.created_at,
+                                    note: currentStageConfig.description
+                                  }
+                                ]).map((chk, idx) => (
+                                  <div key={chk.id || idx} className="text-[11px] text-slate-600 relative pl-3">
+                                    <div className="absolute -left-[13px] top-1.5 w-2 h-2 rounded-full bg-amber-500 border border-white" />
+                                    <div className="flex items-center justify-between">
+                                      <span className="font-bold text-slate-800">{chk.title}</span>
+                                      <span className="text-[9px] text-slate-400 font-mono">
+                                        {chk.timestamp ? new Date(chk.timestamp).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : ''}
+                                      </span>
+                                    </div>
+                                    {chk.location && <p className="text-[10px] text-slate-500 font-mono">📍 {chk.location}</p>}
+                                    {chk.note && <p className="text-[10px] text-slate-600 mt-0.5">{chk.note}</p>}
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
                         </div>
 
                       </div>
