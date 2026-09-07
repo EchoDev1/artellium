@@ -31,6 +31,7 @@ export default function ArtistLiveAuctionConsole({ artistName }) {
     updateArtwork, 
     addArtwork, 
     currency, 
+    usdExchangeRate = 1480,
     liveAuctionActive,
     auctionLots = [],
     placeBid,
@@ -68,7 +69,8 @@ export default function ArtistLiveAuctionConsole({ artistName }) {
 
   const formatPrice = (amount) => {
     if (currency === 'USD') {
-      return `$${Math.round(amount / 1480).toLocaleString()}`;
+      const rate = (usdExchangeRate && usdExchangeRate > 0) ? usdExchangeRate : 1480;
+      return `$${Math.round(amount / rate).toLocaleString()}`;
     }
     return `₦${amount?.toLocaleString() || '0'}`;
   };

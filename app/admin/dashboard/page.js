@@ -47,6 +47,7 @@ import {
   FileCheck, 
   Building,
   Crown,
+  Coins,
   Image as ImageIcon,
   Film,
   Layout,
@@ -104,6 +105,9 @@ export default function AdminDashboardPage() {
     addVideo, 
     deleteVideo, 
     currency, 
+    usdExchangeRate = 1480,
+    demoTransitionMode = 'progressive',
+    hideDemoVideos = false,
     transactions = [], 
     settleTransaction, 
     freezeTransaction,
@@ -521,7 +525,8 @@ export default function AdminDashboardPage() {
 
   const formatPrice = (amount) => {
     if (currency === 'USD') {
-      return `$${Math.round(amount / 1480).toLocaleString()}`;
+      const rate = (usdExchangeRate && usdExchangeRate > 0) ? usdExchangeRate : 1480;
+      return `$${Math.round(amount / rate).toLocaleString()}`;
     }
     return `₦${amount?.toLocaleString() || '0'}`;
   };
@@ -617,6 +622,30 @@ export default function AdminDashboardPage() {
             </div>
 
             <div className="flex flex-wrap items-center gap-3">
+              <button
+                type="button"
+                onClick={() => setActiveTab('pan_african_hub')}
+                className="bg-amber-50 hover:bg-amber-100 border border-amber-300 text-amber-900 font-bold text-xs px-3.5 py-2.5 rounded-xl transition shadow-sm flex items-center gap-2 cursor-pointer"
+                title="Click to fix or adjust daily USD exchange rate"
+              >
+                <Coins className="w-4 h-4 text-amber-600 animate-pulse" />
+                <span className="font-mono">USD Rate: ₦{usdExchangeRate.toLocaleString()}</span>
+                <span className="text-[10px] bg-amber-200/80 px-1.5 py-0.5 rounded text-amber-900 font-sans font-semibold">Adjust</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setActiveTab('demo_transition')}
+                className="bg-emerald-50 hover:bg-emerald-100 border border-emerald-300 text-emerald-900 font-bold text-xs px-3.5 py-2.5 rounded-xl transition shadow-sm flex items-center gap-2 cursor-pointer"
+                title="Catalog & dummy content clean launch control"
+              >
+                <Sparkles className="w-4 h-4 text-emerald-600" />
+                <span>Clean Launch Controls</span>
+                <span className="text-[10px] bg-emerald-200/80 px-1.5 py-0.5 rounded text-emerald-900 font-mono font-bold uppercase">
+                  {demoTransitionMode === 'live_only' && hideDemoVideos ? '100% Live' : 'Active'}
+                </span>
+              </button>
+
               <button
                 onClick={() => setIsAddArtModalOpen(true)}
                 className="bg-art-gold hover:brightness-110 text-art-black font-bold text-xs uppercase tracking-wider px-4 py-3 rounded-xl transition shadow flex items-center gap-2"

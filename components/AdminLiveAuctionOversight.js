@@ -30,6 +30,7 @@ export default function AdminLiveAuctionOversight() {
     artworks = [], 
     updateArtwork, 
     currency, 
+    usdExchangeRate = 1480,
     liveAuctionActive, 
     setLiveAuctionActive,
     transactions = [],
@@ -47,7 +48,8 @@ export default function AdminLiveAuctionOversight() {
 
   const formatPrice = (amount) => {
     if (currency === 'USD') {
-      return `$${Math.round(amount / 1480).toLocaleString()}`;
+      const rate = (usdExchangeRate && usdExchangeRate > 0) ? usdExchangeRate : 1480;
+      return `$${Math.round(amount / rate).toLocaleString()}`;
     }
     return `₦${amount?.toLocaleString() || '0'}`;
   };

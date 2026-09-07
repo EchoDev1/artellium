@@ -36,7 +36,7 @@ import {
 } from 'lucide-react';
 
 export default function JumiaArtHero() {
-  const { videos = [], artworks = [], heroConfig, currency, formatPrice, setSelectedCategory } = useStore();
+  const { videos = [], activeVideos = [], artworks = [], heroConfig, currency, formatPrice, setSelectedCategory } = useStore();
   const maxSlides = typeof heroConfig?.maxHeroSlides === 'number' ? heroConfig.maxHeroSlides : 4;
 
   const [currentSlideIndex, setCurrentSlideIndex] = useState(0);
@@ -71,10 +71,11 @@ export default function JumiaArtHero() {
 
   // Approved Artist Videos for the Hero Carousel (bounded by admin maxSlides capacity)
   const heroVideos = useMemo(() => {
-    const list = (videos || []).filter(v => v.status === 'approved');
-    const pool = list.length > 0 ? list : (videos || []);
+    const videoSource = (activeVideos && activeVideos.length > 0) ? activeVideos : videos;
+    const list = (videoSource || []).filter(v => v.status === 'approved');
+    const pool = list.length > 0 ? list : (videoSource || []);
     return pool.slice(0, Math.max(1, maxSlides));
-  }, [videos, maxSlides]);
+  }, [activeVideos, videos, maxSlides]);
 
   const [isMuted, setIsMuted] = useState(false);
   const [isPlaying, setIsPlaying] = useState(true);
@@ -194,8 +195,11 @@ export default function JumiaArtHero() {
   ];
 
   const formatPriceVal = (priceNgn, priceUsd) => {
-    if (currency === 'USD' && priceUsd) {
-      return `$${priceUsd.toLocaleString()}`;
+    if (typeof formatPrice === 'function') {
+      return formatPrice(priceNgn);
+    }
+    if (currency === 'USD') {
+      return `$${Math.round(priceNgn / 1480).toLocaleString()}`;
     }
     return `₦${priceNgn.toLocaleString()}`;
   };

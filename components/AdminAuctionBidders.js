@@ -37,6 +37,7 @@ export default function AdminAuctionBidders() {
     deleteAuctionBidder, 
     broadcastNotification, 
     currency,
+    usdExchangeRate = 1480,
     artworks = [] 
   } = useStore();
 
@@ -59,7 +60,8 @@ export default function AdminAuctionBidders() {
   const formatPrice = (amount) => {
     if (!amount) return '₦0';
     if (currency === 'USD') {
-      return `$${Math.round(amount / 1480).toLocaleString()}`;
+      const rate = (usdExchangeRate && usdExchangeRate > 0) ? usdExchangeRate : 1480;
+      return `$${Math.round(amount / rate).toLocaleString()}`;
     }
     return `₦${amount.toLocaleString()}`;
   };

@@ -20,14 +20,15 @@ import {
 import { isPriorityArtist, sortArtworksByPriority } from '@/lib/priority-utils';
 
 export default function RoyalHeirloomsPage() {
-  const { artworks, currency, royalHeirlooms: storeRoyalHeirlooms = [], submitRoyalInquiry, currentUser, sellers = [], usersList = [] } = useStore();
+  const { artworks, currency, usdExchangeRate = 1480, royalHeirlooms: storeRoyalHeirlooms = [], submitRoyalInquiry, currentUser, sellers = [], usersList = [] } = useStore();
   const [selectedEpoch, setSelectedEpoch] = useState('All');
   const [inquirySubmitted, setInquirySubmitted] = useState(null);
 
   const formatPrice = (amount) => {
     if (!amount) return '₦0';
     if (currency === 'USD') {
-      return `$${Math.round(amount / 1480).toLocaleString()}`;
+      const rate = (usdExchangeRate && usdExchangeRate > 0) ? usdExchangeRate : 1480;
+      return `$${Math.round(amount / rate).toLocaleString()}`;
     }
     return `₦${amount.toLocaleString()}`;
   };

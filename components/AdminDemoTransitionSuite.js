@@ -21,7 +21,10 @@ import {
   Plus,
   Eye,
   TrendingUp,
-  Tag
+  Tag,
+  Film,
+  Video,
+  Rocket
 } from 'lucide-react';
 
 export default function AdminDemoTransitionSuite() {
@@ -32,6 +35,11 @@ export default function AdminDemoTransitionSuite() {
     setDemoTransitionMode,
     purgeAllDemoArtworks,
     restoreDemoArtworks,
+    purgeAllDemoVideos,
+    restoreDemoVideos,
+    purgeAllDemoContent,
+    restoreAllDemoContent,
+    hideDemoVideos = false,
     updateArtwork,
     deleteArtwork,
     setArtworkStatusSold,
@@ -39,6 +47,8 @@ export default function AdminDemoTransitionSuite() {
     realArtworksCount = 0,
     demoArtworksCount = 0,
     realSoldArtworksCount = 0,
+    demoVideosCount = 0,
+    realVideosCount = 0,
     formatCurrency
   } = useStore();
 
@@ -148,7 +158,7 @@ export default function AdminDemoTransitionSuite() {
         </div>
       </div>
 
-      {/* Real-time Telemetry Cards */}
+      {/* Real-time Telemetry Cards (Artworks & Videos) */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         
         {/* Real Artworks Card */}
@@ -166,47 +176,56 @@ export default function AdminDemoTransitionSuite() {
           </p>
         </div>
 
-        {/* Demo Artworks Card */}
-        <div className="bg-white rounded-2xl border border-slate-200 p-5 space-y-2 shadow-sm">
+        {/* Real Video Stories Card */}
+        <div className="bg-white rounded-2xl border-2 border-amber-200 p-5 space-y-2 shadow-sm">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Transitional Demo Items</span>
+            <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Real Video Stories</span>
             <span className="p-2 rounded-xl bg-amber-100 text-amber-700">
-              <Package className="w-4 h-4" />
+              <Film className="w-4 h-4" />
             </span>
           </div>
-          <p className="font-serif text-3xl font-bold text-slate-800">{demoCount}</p>
-          <p className="text-[11px] text-slate-500 font-medium">
-            Phasing out as real artworks are added
+          <p className="font-serif text-3xl font-bold text-amber-700">{realVideosCount}</p>
+          <p className="text-[11px] text-amber-600 font-medium flex items-center gap-1">
+            <CheckCircle2 className="w-3.5 h-3.5" />
+            <span>Artist video story uploads</span>
           </p>
         </div>
 
-        {/* Real Sold Artworks */}
+        {/* Demo Content Status */}
         <div className="bg-white rounded-2xl border border-slate-200 p-5 space-y-2 shadow-sm">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Sold Masterpieces</span>
-            <span className="p-2 rounded-xl bg-blue-100 text-blue-700">
-              <DollarSign className="w-4 h-4" />
+            <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Demo Padding Status</span>
+            <span className="p-2 rounded-xl bg-slate-100 text-slate-700">
+              <Package className="w-4 h-4" />
             </span>
           </div>
-          <p className="font-serif text-3xl font-bold text-blue-700">{soldCount}</p>
+          <div className="flex items-baseline gap-2">
+            <p className="font-serif text-2xl font-bold text-slate-800">{demoCount} Arts</p>
+            <span className="text-slate-400 font-mono text-xs">/</span>
+            <p className="font-serif text-2xl font-bold text-slate-800">{demoVideosCount} Vids</p>
+          </div>
           <p className="text-[11px] text-slate-500 font-medium">
-            Logged on Provenance Ledger
+            {demoTransitionMode === 'live_only' && hideDemoVideos 
+              ? '🚫 100% Taken Off (Hidden)' 
+              : '⚡ Auto-displacing with new uploads'}
           </p>
         </div>
 
         {/* Phase-Out Conversion Progress */}
         <div className="bg-white rounded-2xl border border-slate-200 p-5 space-y-2 shadow-sm">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Phase-Out Progress</span>
+            <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Production Launch Status</span>
             <span className="p-2 rounded-xl bg-purple-100 text-purple-700">
               <TrendingUp className="w-4 h-4" />
             </span>
           </div>
-          <p className="font-serif text-3xl font-bold text-purple-700">{conversionRate}%</p>
+          <p className="font-serif text-2xl font-bold text-purple-700">
+            {demoTransitionMode === 'live_only' && hideDemoVideos ? '100% Pure Live' : `${conversionRate}% Progressive`}
+          </p>
           <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
             <div 
               className="bg-gradient-to-r from-art-gold to-emerald-500 h-full transition-all duration-500"
-              style={{ width: `${Math.max(5, conversionRate)}%` }}
+              style={{ width: `${demoTransitionMode === 'live_only' && hideDemoVideos ? 100 : Math.max(10, conversionRate)}%` }}
             />
           </div>
         </div>
@@ -330,29 +349,100 @@ export default function AdminDemoTransitionSuite() {
 
         </div>
 
-        {/* 1-Click Action Buttons */}
-        <div className="flex flex-wrap items-center gap-3 pt-2">
-          <button
-            onClick={() => {
-              purgeAllDemoArtworks();
-              showNotification('🧹 1-Click Action Executed: All demo artworks purged from live catalog.');
-            }}
-            className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-xl text-xs font-bold transition flex items-center gap-1.5 shadow"
-          >
-            <Trash2 className="w-3.5 h-3.5" />
-            <span>Purge All Demo Artworks (1-Click)</span>
-          </button>
+        {/* Master 1-Click Production Launch & Granular Purge Suite */}
+        <div className="p-5 sm:p-6 rounded-2xl bg-gradient-to-r from-slate-950 via-slate-900 to-[#10141e] border-2 border-art-gold/50 text-white space-y-4 shadow-xl">
+          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+            <div className="space-y-1">
+              <div className="flex items-center gap-2">
+                <Rocket className="w-5 h-5 text-art-gold animate-bounce" />
+                <span className="font-mono text-xs font-bold text-art-gold uppercase tracking-wider">
+                  OFFICIAL PRODUCTION LAUNCH SUITE · SELF-SERVICE CONTROL
+                </span>
+              </div>
+              <h4 className="font-serif text-lg font-bold text-white">
+                One-Click Clean Launch: Remove All Dummy Data
+              </h4>
+              <p className="text-xs text-slate-300 max-w-2xl leading-relaxed">
+                When the platform is ready for public collectors, click the master button below to completely take off all dummy artworks and dummy videos. Moving forward, as real artists upload artworks and story videos, their new uploads will organically fill up the catalog.
+              </p>
+            </div>
+            
+            <div className="flex flex-wrap items-center gap-2.5 shrink-0">
+              <button
+                type="button"
+                onClick={() => {
+                  purgeAllDemoContent();
+                  showNotification('🚀 100% PRODUCTION LIVE LAUNCH: All dummy artworks & dummy videos removed site-wide!');
+                }}
+                className="px-5 py-3 bg-gradient-to-r from-art-gold to-art-gold-dark hover:from-amber-400 hover:to-amber-600 text-black font-black text-xs uppercase tracking-wider rounded-xl transition shadow-gold-glow flex items-center gap-2 cursor-pointer"
+              >
+                <Rocket className="w-4 h-4 text-black" />
+                <span>Launch 100% Live (Purge All Dummies)</span>
+              </button>
 
-          <button
-            onClick={() => {
-              restoreDemoArtworks();
-              showNotification('🔄 Restored transitional demo fallback catalog.');
-            }}
-            className="px-4 py-2 bg-slate-800 hover:bg-slate-900 text-white rounded-xl text-xs font-bold transition flex items-center gap-1.5"
-          >
-            <RefreshCw className="w-3.5 h-3.5" />
-            <span>Restore Demo Fallbacks</span>
-          </button>
+              <button
+                type="button"
+                onClick={() => {
+                  restoreAllDemoContent();
+                  showNotification('📦 Restored sample dummy artworks & videos for preview.');
+                }}
+                className="px-4 py-3 bg-white/10 hover:bg-white/20 text-white font-bold text-xs uppercase tracking-wider rounded-xl transition border border-white/20 flex items-center gap-2 cursor-pointer"
+              >
+                <RefreshCw className="w-4 h-4 text-slate-300" />
+                <span>Restore Sample Dummies</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Granular Sub-Actions */}
+          <div className="pt-3 border-t border-white/10 flex flex-wrap items-center gap-2.5 text-xs">
+            <span className="text-[10px] font-mono text-slate-400 uppercase font-bold tracking-wider mr-1">
+              Individual Toggles:
+            </span>
+            <button
+              type="button"
+              onClick={() => {
+                purgeAllDemoArtworks();
+                showNotification('🎨 All dummy artworks taken off. Live catalog shows real artist listings only.');
+              }}
+              className="px-3 py-1.5 rounded-lg bg-red-500/20 hover:bg-red-500/30 text-red-300 border border-red-500/40 font-bold transition flex items-center gap-1.5 cursor-pointer"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+              <span>Take Off Dummy Artworks</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                restoreDemoArtworks();
+                showNotification('🔄 Restored demo artworks fallback.');
+              }}
+              className="px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-slate-300 border border-white/10 font-medium transition cursor-pointer"
+            >
+              <span>Restore Dummy Artworks</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                purgeAllDemoVideos();
+                showNotification('🎬 All dummy videos taken off. Only real artist/admin video stories are live.');
+              }}
+              className="px-3 py-1.5 rounded-lg bg-red-500/20 hover:bg-red-500/30 text-red-300 border border-red-500/40 font-bold transition flex items-center gap-1.5 cursor-pointer ml-1"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+              <span>Take Off Dummy Videos</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                restoreDemoVideos();
+                showNotification('🔄 Restored sample story videos.');
+              }}
+              className="px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-slate-300 border border-white/10 font-medium transition cursor-pointer"
+            >
+              <span>Restore Dummy Videos</span>
+            </button>
+          </div>
         </div>
 
       </div>

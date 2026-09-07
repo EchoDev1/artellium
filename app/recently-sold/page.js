@@ -8,7 +8,7 @@ import { Award, ShieldCheck, Search, SlidersHorizontal, BookOpen } from 'lucide-
 import Link from 'next/link';
 
 export default function RecentlySoldPage() {
-  const { artworks, currency, sellers = [], usersList = [] } = useStore();
+  const { artworks, currency, usdExchangeRate = 1480, sellers = [], usersList = [] } = useStore();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
 
@@ -33,7 +33,8 @@ export default function RecentlySoldPage() {
 
   const formatPrice = (amount) => {
     if (currency === 'USD') {
-      return `$${Math.round(amount / 1480).toLocaleString()}`;
+      const rate = (usdExchangeRate && usdExchangeRate > 0) ? usdExchangeRate : 1480;
+      return `$${Math.round(amount / rate).toLocaleString()}`;
     }
     return `₦${amount.toLocaleString()}`;
   };

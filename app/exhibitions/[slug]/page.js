@@ -35,7 +35,7 @@ import { isPriorityArtist, sortArtworksByPriority } from '@/lib/priority-utils';
 export default function ExhibitionMiniPage() {
   const params = useParams();
   const router = useRouter();
-  const { exhibitions = [], artworks = [], addToCart, addToWishlist, wishlist = [], currency, sellers = [], usersList = [] } = useStore();
+  const { exhibitions = [], artworks = [], addToCart, addToWishlist, wishlist = [], currency, usdExchangeRate = 1480, sellers = [], usersList = [] } = useStore();
 
   const slug = params?.slug;
 
@@ -55,7 +55,8 @@ export default function ExhibitionMiniPage() {
   const formatPrice = (amount) => {
     if (!amount) return '₦0';
     if (currency === 'USD') {
-      return `$${Math.round(amount / 1480).toLocaleString()}`;
+      const rate = (usdExchangeRate && usdExchangeRate > 0) ? usdExchangeRate : 1480;
+      return `$${Math.round(amount / rate).toLocaleString()}`;
     }
     return `₦${amount.toLocaleString()}`;
   };

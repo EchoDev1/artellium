@@ -6,7 +6,7 @@ import { useStore } from '@/context/store-context';
 import { Play, Video, Plus, Trash2, X, Sparkles, UserCheck, ShieldCheck, ArrowRight } from 'lucide-react';
 
 export default function ArtistVideoModal() {
-  const { videos, addVideo, deleteVideo, currentUser } = useStore();
+  const { videos, activeVideos, addVideo, deleteVideo, currentUser } = useStore();
   const [selectedVideo, setSelectedVideo] = useState(null);
   const [isAdminAddOpen, setIsAdminAddOpen] = useState(false);
 
@@ -39,6 +39,8 @@ export default function ArtistVideoModal() {
     });
     setIsAdminAddOpen(false);
   };
+
+  const displayVideos = (activeVideos && activeVideos.length > 0) ? activeVideos : videos;
 
   return (
     <section className="relative w-full overflow-hidden">
@@ -78,7 +80,7 @@ export default function ArtistVideoModal() {
 
           {/* Video Cards Grid */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {(videos || []).filter(v => v.status === 'approved').map((vid) => (
+          {(displayVideos || []).filter(v => v.status === 'approved').map((vid) => (
             <div
               key={vid.id}
               className="group relative rounded-2xl overflow-hidden glass-card-gold hover:border-art-gold transition duration-300 transform hover:-translate-y-1.5 shadow-2xl flex flex-col justify-between"

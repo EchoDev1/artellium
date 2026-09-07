@@ -18,13 +18,14 @@ import {
 } from 'lucide-react';
 
 export default function CuratorPicksPage() {
-  const { artworks, currency, curatorPicks: storeCuratorPicks = [], sellers = [], usersList = [] } = useStore();
+  const { artworks, currency, usdExchangeRate = 1480, curatorPicks: storeCuratorPicks = [], sellers = [], usersList = [] } = useStore();
   const [selectedHall, setSelectedHall] = useState('All');
 
   const formatPrice = (amount) => {
     if (!amount) return '₦0';
     if (currency === 'USD') {
-      return `$${Math.round(amount / 1480).toLocaleString()}`;
+      const rate = (usdExchangeRate && usdExchangeRate > 0) ? usdExchangeRate : 1480;
+      return `$${Math.round(amount / rate).toLocaleString()}`;
     }
     return `₦${amount.toLocaleString()}`;
   };

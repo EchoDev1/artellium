@@ -35,6 +35,7 @@ export default function ProvenanceLedgerPage() {
   const { 
     currentUser,
     currency, 
+    usdExchangeRate = 1480,
     ledgerBlocks: storeLedgerBlocks = [],
     mintLedgerBlock,
     updateLedgerBlock,
@@ -100,7 +101,8 @@ export default function ProvenanceLedgerPage() {
   const formatPrice = (amount) => {
     if (!amount) return '₦0';
     if (currency === 'USD') {
-      return `$${Math.round(amount / 1480).toLocaleString()}`;
+      const rate = (usdExchangeRate && usdExchangeRate > 0) ? usdExchangeRate : 1480;
+      return `$${Math.round(amount / rate).toLocaleString()}`;
     }
     return `₦${Number(amount).toLocaleString()}`;
   };

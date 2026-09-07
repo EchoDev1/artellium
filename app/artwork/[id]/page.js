@@ -33,6 +33,7 @@ export default function ArtworkDetailPage() {
     artworks, 
     addToCart, 
     currency, 
+    usdExchangeRate = 1480,
     currentUser, 
     makeBuyoutOffer,
     wishlist,
@@ -73,7 +74,8 @@ export default function ArtworkDetailPage() {
 
   const formatPrice = (amount) => {
     if (currency === 'USD') {
-      return `$${Math.round(amount / 1480).toLocaleString()}`;
+      const rate = (usdExchangeRate && usdExchangeRate > 0) ? usdExchangeRate : 1480;
+      return `$${Math.round(amount / rate).toLocaleString()}`;
     }
     return `₦${amount.toLocaleString()}`;
   };

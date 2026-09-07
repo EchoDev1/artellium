@@ -26,6 +26,7 @@ export default function AdminPayoutGovernance() {
     artistPayoutPercentage = 85, 
     updateArtistPayoutPercentage,
     currency,
+    usdExchangeRate = 1480,
     sellers = [],
     commissions = []
   } = useStore();
@@ -51,7 +52,10 @@ export default function AdminPayoutGovernance() {
 
   const formatPrice = (amount) => {
     if (!amount) return '₦0';
-    if (currency === 'USD') return `$${Math.round(amount / 1480).toLocaleString()}`;
+    if (currency === 'USD') {
+      const rate = (usdExchangeRate && usdExchangeRate > 0) ? usdExchangeRate : 1480;
+      return `$${Math.round(amount / rate).toLocaleString()}`;
+    }
     return `₦${Number(amount).toLocaleString()}`;
   };
 

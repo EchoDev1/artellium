@@ -21,7 +21,7 @@ import {
 } from 'lucide-react';
 
 export default function ArtistVoicesPage() {
-  const { videos, addVideo, deleteVideo, submitArtistVideo, currentUser } = useStore();
+  const { videos, activeVideos, addVideo, deleteVideo, submitArtistVideo, currentUser } = useStore();
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [selectedVideo, setSelectedVideo] = useState(null);
   const [isAdminAddOpen, setIsAdminAddOpen] = useState(false);
@@ -61,7 +61,8 @@ export default function ArtistVoicesPage() {
     setIsAdminAddOpen(false);
   };
 
-  const filteredVideos = (videos || [])
+  const videoPool = (currentUser?.role === 'admin') ? (videos || []) : (activeVideos || videos || []);
+  const filteredVideos = videoPool
     .filter(vid => currentUser?.role === 'admin' || vid.status === 'approved')
     .filter(vid => {
       if (selectedCategory === 'All') return true;

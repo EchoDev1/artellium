@@ -254,13 +254,34 @@ export default function SidebarDrawer() {
               className="h-8 w-auto object-contain group-hover:scale-105 transition duration-300"
             />
           </Link>
-          <button
-            onClick={() => setIsSidebarOpen(false)}
-            className="p-2 rounded-xl bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white border border-white/10 transition"
-            aria-label="Close menu"
-          >
-            <X className="w-4 h-4" />
-          </button>
+          <div className="flex items-center gap-2">
+            {/* Mobile Language Selector */}
+            <div className="flex items-center gap-1.5 bg-black/50 px-2.5 py-1 rounded-lg border border-art-gold/30 text-[11px] shadow-sm">
+              <span className="text-[11px]">🌐</span>
+              <select
+                value={currentLanguage}
+                onChange={(e) => {
+                  setLanguage(e.target.value);
+                  setIsSidebarOpen(false);
+                }}
+                className="bg-transparent text-slate-200 text-[11px] focus:outline-none cursor-pointer pr-1 font-medium font-sans border-none select-none appearance-none"
+                title="Change Platform Language"
+              >
+                {languagesList.map((lang) => (
+                  <option key={lang.code} value={lang.code} className="bg-[#0b0c10] text-white">
+                    {lang.flag} {lang.code} ({lang.name})
+                  </option>
+                ))}
+              </select>
+            </div>
+            <button
+              onClick={() => setIsSidebarOpen(false)}
+              className="p-2 rounded-xl bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white border border-white/10 transition"
+              aria-label="Close menu"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
         </div>
 
         {/* Drawer Content Area */}

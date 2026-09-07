@@ -40,7 +40,8 @@ export default function AdminProvenanceLedger() {
     updateLedgerBlock,
     deleteLedgerBlock,
     artworks = [], 
-    currency 
+    currency,
+    usdExchangeRate = 1480
   } = useStore();
 
   const [searchQuery, setSearchQuery] = useState('');
@@ -96,7 +97,10 @@ export default function AdminProvenanceLedger() {
 
   const formatPrice = (amount) => {
     if (!amount) return '₦0';
-    if (currency === 'USD') return `$${Math.round(amount / 1480).toLocaleString()}`;
+    if (currency === 'USD') {
+      const rate = (usdExchangeRate && usdExchangeRate > 0) ? usdExchangeRate : 1480;
+      return `$${Math.round(amount / rate).toLocaleString()}`;
+    }
     return `₦${Number(amount).toLocaleString()}`;
   };
 

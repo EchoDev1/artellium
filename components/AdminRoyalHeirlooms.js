@@ -28,7 +28,8 @@ export default function AdminRoyalHeirlooms() {
     deleteRoyalHeirloom,
     royalInquiries = [],
     updateRoyalInquiryStatus,
-    currency 
+    currency,
+    usdExchangeRate = 1480
   } = useStore();
 
   const [activeSubTab, setActiveSubTab] = useState('heirlooms'); // 'heirlooms' or 'inquiries'
@@ -51,7 +52,10 @@ export default function AdminRoyalHeirlooms() {
 
   const formatPrice = (amount) => {
     if (!amount) return '₦0';
-    if (currency === 'USD') return `$${Math.round(amount / 1480).toLocaleString()}`;
+    if (currency === 'USD') {
+      const rate = (usdExchangeRate && usdExchangeRate > 0) ? usdExchangeRate : 1480;
+      return `$${Math.round(amount / rate).toLocaleString()}`;
+    }
     return `₦${amount.toLocaleString()}`;
   };
 

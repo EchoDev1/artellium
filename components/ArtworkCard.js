@@ -9,13 +9,14 @@ import { DEFAULT_FALLBACK_IMAGE, getCategoryFallback } from '@/lib/image-utils';
 import { isPriorityArtist } from '@/lib/priority-utils';
 
 export default function ArtworkCard({ artwork }) {
-  const { addToCart, currency, wishlist, addToWishlist, removeFromWishlist } = useStore();
+  const { addToCart, currency, wishlist, addToWishlist, removeFromWishlist, usdExchangeRate = 1480 } = useStore();
   const [quickViewOpen, setQuickViewOpen] = useState(false);
   const isWishlisted = wishlist?.includes(artwork.id);
 
   const formatPrice = (amount) => {
     if (currency === 'USD') {
-      return `$${Math.round(amount / 1480).toLocaleString()}`;
+      const rate = (usdExchangeRate && usdExchangeRate > 0) ? usdExchangeRate : 1480;
+      return `$${Math.round(amount / rate).toLocaleString()}`;
     }
     return `₦${amount.toLocaleString()}`;
   };

@@ -66,6 +66,7 @@ export default function ArtistDashboardPage() {
     deleteArtwork, 
     updateArtistStudioNotes, 
     currency, 
+    usdExchangeRate = 1480,
     orders = [], 
     updateOrderLogistics, 
     commissions = [], 
@@ -594,7 +595,8 @@ export default function ArtistDashboardPage() {
 
   const formatPrice = (amount) => {
     if (currency === 'USD') {
-      return `$${Math.round(amount / 1480).toLocaleString()}`;
+      const rate = (usdExchangeRate && usdExchangeRate > 0) ? usdExchangeRate : 1480;
+      return `$${Math.round(amount / rate).toLocaleString()}`;
     }
     return `₦${amount?.toLocaleString() || '0'}`;
   };

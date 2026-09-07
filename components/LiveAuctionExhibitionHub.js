@@ -30,6 +30,7 @@ export default function LiveAuctionExhibitionHub() {
     artworks, 
     exhibitions, 
     currency, 
+    usdExchangeRate = 1480,
     placeBid, 
     currentUser, 
     isLoggedIn, 
@@ -204,7 +205,8 @@ export default function LiveAuctionExhibitionHub() {
 
   const formatPrice = (amount) => {
     if (currency === 'USD') {
-      return `$${Math.round(amount / 1480).toLocaleString()}`;
+      const rate = (usdExchangeRate && usdExchangeRate > 0) ? usdExchangeRate : 1480;
+      return `$${Math.round(amount / rate).toLocaleString()}`;
     }
     return `₦${amount.toLocaleString()}`;
   };

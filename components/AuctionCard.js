@@ -30,6 +30,7 @@ export default function AuctionCard({ artwork }) {
   const { 
     placeBid, 
     currency, 
+    usdExchangeRate = 1480,
     currentUser, 
     isLoggedIn, 
     isBidderRegistered, 
@@ -105,7 +106,8 @@ export default function AuctionCard({ artwork }) {
   const formatPrice = (amount) => {
     if (!amount) return '₦0';
     if (currency === 'USD') {
-      return `$${Math.round(amount / 1480).toLocaleString()}`;
+      const rate = (usdExchangeRate && usdExchangeRate > 0) ? usdExchangeRate : 1480;
+      return `$${Math.round(amount / rate).toLocaleString()}`;
     }
     return `₦${amount.toLocaleString()}`;
   };

@@ -346,56 +346,72 @@ export function LanguageProvider({ children }) {
     }
   }, []);
 
-  const applyGoogleTranslate = (langCode) => {
+  const setCookiesForLanguage = (googleCode) => {
     if (typeof window === 'undefined') return;
-
-    const langObj = LANGUAGES.find((l) => l.code === langCode);
-    const googleCode = langObj ? langObj.googleCode : 'en';
-
-    // Set Google Translate cookie
     const hostname = window.location.hostname;
-    document.cookie = `googtrans=/en/${googleCode}; path=/;`;
+
+    // Remove legacy / conflicting cookies
+    document.cookie = 'googtrans=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
     if (hostname && hostname !== 'localhost') {
-      document.cookie = `googtrans=/en/${googleCode}; path=/; domain=.${hostname};`;
-      document.cookie = `googtrans=/en/${googleCode}; path=/; domain=${hostname};`;
+      document.cookie = `googtrans=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; domain=.${hostname};`;
+      document.cookie = `googtrans=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; domain=${hostname};`;
     }
 
-    // If Google Translate element exists in DOM, trigger its select
-    const selectElem = document.querySelector('.goog-te-combo');
-    if (selectElem) {
-      selectElem.value = googleCode;
-      selectElem.dispatchEvent(new Event('change'));
+    const targetCode = googleCode || 'en';
+    document.cookie = `googtrans=/en/${targetCode}; path=/;`;
+    if (hostname && hostname !== 'localhost') {
+      document.cookie = `googtrans=/en/${targetCode}; path=/; domain=.${hostname};`;
+      document.cookie = `googtrans=/en/${targetCode}; path=/; domain=${hostname};`;
     }
   };
 
+  // Load language from storage on mount (no reload)
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem('artellium_language');
+      if (saved && TRANSLATIONS[saved]) {
+        setCurrentLanguageState(saved);
+        const langObj = LANGUAGES.find((l) => l.code === saved);
+        if (langObj) {
+          setCookiesForLanguage(langObj.googleCode);
+        }
+      }
+    } catch (e) {
+      console.warn('Language load error:', e);
+    }
+  }, []);
+
   const changeLanguage = (newLang) => {
+    if (!newLang) return;
     if (!TRANSLATIONS[newLang]) newLang = 'EN';
+
+    // If same language already active, do nothing
+    if (newLang === currentLanguage) return;
+
     setCurrentLanguageState(newLang);
 
     try {
       localStorage.setItem('artellium_language', newLang);
-      applyGoogleTranslate(newLang);
 
-      // Trigger custom event so any listeners update immediately
-      window.dispatchEvent(new CustomEvent('artellium:languageChange', { detail: newLang }));
-
-      // If Google Translate needs a fresh parse for dynamic content
       const langObj = LANGUAGES.find((l) => l.code === newLang);
       const googleCode = langObj ? langObj.googleCode : 'en';
-      
+
+      setCookiesForLanguage(googleCode);
+
+      // Attempt to update google combo if present in DOM
       const combo = document.querySelector('.goog-te-combo');
       if (combo) {
         combo.value = googleCode;
         combo.dispatchEvent(new Event('change'));
-      } else {
-        // Fast reload if Google Translate cookie was updated and combo not yet mounted
-        const currentCookie = document.cookie.split('; ').find(row => row.startsWith('googtrans='));
-        if (currentCookie && !currentCookie.includes(`/en/${googleCode}`)) {
-          window.location.reload();
-        }
       }
+
+      // Automatically reload straight into the clicked language
+      setTimeout(() => {
+        window.location.reload();
+      }, 60);
     } catch (e) {
       console.warn('Error saving language:', e);
+      window.location.reload();
     }
   };
 

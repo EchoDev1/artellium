@@ -15,6 +15,7 @@ export default function CheckoutModal() {
     cartTotal, 
     clearCart, 
     currency, 
+    usdExchangeRate = 1480,
     currentUser, 
     createOrderWithPayment,
     paymentSettings 
@@ -53,7 +54,8 @@ export default function CheckoutModal() {
 
   const formatPrice = (amount) => {
     if (currency === 'USD') {
-      return `$${Math.round(amount / 1480).toLocaleString()}`;
+      const rate = (usdExchangeRate && usdExchangeRate > 0) ? usdExchangeRate : 1480;
+      return `$${Math.round(amount / rate).toLocaleString()}`;
     }
     return `₦${amount.toLocaleString()}`;
   };
@@ -86,6 +88,7 @@ export default function CheckoutModal() {
           items: cart,
           totalAmount: cartTotal,
           currency,
+          usdExchangeRate,
           settlementBank: wemaDetails.bankName
         });
       }
@@ -101,6 +104,7 @@ export default function CheckoutModal() {
           netPayout: Math.round((art.price || 0) * 0.85),
           platformFee: Math.round((art.price || 0) * 0.15),
           currency,
+          usdExchangeRate,
           orderId: res.order.id
         });
       });

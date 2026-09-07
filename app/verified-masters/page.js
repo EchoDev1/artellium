@@ -19,13 +19,14 @@ import {
 import { isPriorityArtist } from '@/lib/priority-utils';
 
 export default function VerifiedMastersPage() {
-  const { artworks, currency, artistVerifications: storeVerifications = [], sellers = [], usersList = [] } = useStore();
+  const { artworks, currency, usdExchangeRate = 1480, artistVerifications: storeVerifications = [], sellers = [], usersList = [] } = useStore();
   const [selectedCountry, setSelectedCountry] = useState('All');
 
   const formatPrice = (amount) => {
     if (!amount) return '₦0';
     if (currency === 'USD') {
-      return `$${Math.round(amount / 1480).toLocaleString()}`;
+      const rate = (usdExchangeRate && usdExchangeRate > 0) ? usdExchangeRate : 1480;
+      return `$${Math.round(amount / rate).toLocaleString()}`;
     }
     return `₦${amount.toLocaleString()}`;
   };

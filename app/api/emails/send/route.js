@@ -1,4 +1,4 @@
-﻿import { NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import {
   sendEmail,
   sendAccountVerificationEmail,
@@ -57,6 +57,7 @@ export async function POST(request) {
           items: payload.items || [],
           totalAmount: payload.totalAmount || 0,
           currency: payload.currency || 'NGN',
+          usdExchangeRate: payload.usdExchangeRate,
           settlementBank: payload.settlementBank || 'Wema Bank PLC'
         });
         break;
@@ -72,6 +73,7 @@ export async function POST(request) {
           netPayout: payload.netPayout || Math.round((payload.grossAmount || 0) * 0.85),
           platformFee: payload.platformFee || Math.round((payload.grossAmount || 0) * 0.15),
           currency: payload.currency || 'NGN',
+          usdExchangeRate: payload.usdExchangeRate,
           orderId: payload.orderId || `ORD-${Date.now().toString().slice(-6)}`
         });
         break;
@@ -98,6 +100,7 @@ export async function POST(request) {
           currentBid: payload.currentBid || 0,
           previousBid: payload.previousBid || 0,
           currency: payload.currency || 'NGN',
+          usdExchangeRate: payload.usdExchangeRate,
           auctionUrl: payload.auctionUrl
         });
         break;
@@ -112,6 +115,7 @@ export async function POST(request) {
           artistName: payload.artistName || 'Pan-African Master',
           bidAmount: payload.bidAmount || 0,
           currency: payload.currency || 'NGN',
+          usdExchangeRate: payload.usdExchangeRate,
           auctionUrl: payload.auctionUrl
         });
         break;

@@ -30,6 +30,11 @@ export default function AdminVideoModeration() {
     rejectVideo, 
     deleteVideo, 
     addVideo,
+    purgeAllDemoVideos,
+    restoreDemoVideos,
+    hideDemoVideos = false,
+    demoVideosCount = 0,
+    realVideosCount = 0,
     heroConfig,
     updateHeroConfig
   } = useStore();
@@ -162,7 +167,35 @@ export default function AdminVideoModeration() {
           </p>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3">
+          {hideDemoVideos ? (
+            <button
+              type="button"
+              onClick={() => {
+                restoreDemoVideos();
+                setActionNotice('Sample dummy videos restored to video library.');
+                setTimeout(() => setActionNotice(''), 5000);
+              }}
+              className="flex items-center gap-2 px-3.5 py-2.5 rounded-xl bg-white hover:bg-slate-50 text-slate-700 border border-slate-300 font-bold text-xs uppercase tracking-wider transition shadow-sm cursor-pointer"
+            >
+              <RotateCcw className="w-3.5 h-3.5 text-slate-500" />
+              <span>Restore Dummy Videos</span>
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={() => {
+                purgeAllDemoVideos();
+                setActionNotice('All dummy videos taken off! Live player shows real artist video stories only.');
+                setTimeout(() => setActionNotice(''), 5000);
+              }}
+              className="flex items-center gap-2 px-3.5 py-2.5 rounded-xl bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 font-bold text-xs uppercase tracking-wider transition shadow-sm cursor-pointer"
+            >
+              <Trash2 className="w-3.5 h-3.5 text-red-500" />
+              <span>Take Off Dummy Videos</span>
+            </button>
+          )}
+
           <button
             onClick={() => setIsDirectAddOpen(true)}
             className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs uppercase tracking-wider transition shadow-sm cursor-pointer"

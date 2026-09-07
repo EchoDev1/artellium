@@ -21,19 +21,18 @@ export default function GoogleTranslateScript() {
           'google_translate_element'
         );
 
-        // Sync with current stored language if not English
-        const savedLang = localStorage.getItem('artellium_language');
-        if (savedLang && savedLang !== 'EN') {
-          const langObj = languagesList.find((l) => l.code === savedLang);
-          if (langObj) {
-            setTimeout(() => {
-              const combo = document.querySelector('.goog-te-combo');
-              if (combo) {
-                combo.value = langObj.googleCode;
-                combo.dispatchEvent(new Event('change'));
-              }
-            }, 800);
-          }
+        // Sync with current stored language
+        const savedLang = localStorage.getItem('artellium_language') || 'EN';
+        const langObj = languagesList.find((l) => l.code === savedLang);
+        if (langObj) {
+          const googleCode = langObj.googleCode;
+          setTimeout(() => {
+            const combo = document.querySelector('.goog-te-combo');
+            if (combo) {
+              combo.value = googleCode;
+              combo.dispatchEvent(new Event('change'));
+            }
+          }, 300);
         }
       }
     };

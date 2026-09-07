@@ -21,7 +21,7 @@ import {
 import { isPriorityArtist, sortArtworksByPriority } from '@/lib/priority-utils';
 
 export default function FlashDealsPage() {
-  const { artworks, addToCart, currency, flashDeals = [], claimFlashDeal, sellers = [], usersList = [] } = useStore();
+  const { artworks, addToCart, currency, usdExchangeRate = 1480, flashDeals = [], claimFlashDeal, sellers = [], usersList = [] } = useStore();
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [timeLeft, setTimeLeft] = useState({ hours: 6, minutes: 12, seconds: 40 });
   const [claimedNotice, setClaimedNotice] = useState(null);
@@ -42,7 +42,8 @@ export default function FlashDealsPage() {
   const formatPrice = (amount) => {
     if (!amount) return '₦0';
     if (currency === 'USD') {
-      return `$${Math.round(amount / 1480).toLocaleString()}`;
+      const rate = (usdExchangeRate && usdExchangeRate > 0) ? usdExchangeRate : 1480;
+      return `$${Math.round(amount / rate).toLocaleString()}`;
     }
     return `₦${amount.toLocaleString()}`;
   };

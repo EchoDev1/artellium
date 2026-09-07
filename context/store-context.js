@@ -1,6 +1,6 @@
 'use client';
 
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useMemo } from 'react';
 import { 
   INITIAL_ARTWORKS, 
   ARTIST_VIDEOS, 
@@ -116,6 +116,31 @@ export function StoreProvider({ children }) {
   const [artistCuratorSubmissions, setArtistCuratorSubmissions] = useState([]);
   const [panAfricanRegions, setPanAfricanRegions] = useState(PAN_AFRICAN_REGIONS || []);
   const [panAfricanCurrencies, setPanAfricanCurrencies] = useState(PAN_AFRICAN_CURRENCIES || {});
+
+  // Daily USD Exchange Rate (Admin Fixed / Volatility Shield)
+  const [usdExchangeRate, setUsdExchangeRate] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('artellium_usd_exchange_rate');
+      if (saved && !isNaN(Number(saved)) && Number(saved) > 0) return Number(saved);
+    }
+    return 1480;
+  });
+
+  const [usdRateLastUpdated, setUsdRateLastUpdated] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('artellium_usd_rate_updated');
+      if (saved) return saved;
+    }
+    return new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  });
+
+  // Demo Video Removal / Live Mode State
+  const [hideDemoVideos, setHideDemoVideos] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('artellium_hide_demo_videos') === 'true';
+    }
+    return false;
+  });
 
   // Auction Bidders & Patron Lead Directory (for Admin and Notification Broadcasts)
   const [auctionBidders, setAuctionBidders] = useState([]);
@@ -1283,6 +1308,101 @@ export function StoreProvider({ children }) {
     safeSetItem('artellium_artworks', assembled);
   };
 
+  // Demo Video Removal & Restoration Controls
+  const isDemoVideoItem = (video) => {
+    if (!video) return false;
+    if (video.isDemo === true) return true;
+    if (video.isDemo === false) return false;
+    const demoIds = ['vid-1', 'vid-2', 'vid-3', 'vid-4', 'vid-pending-1', 'vid-pending-2', 'vid-pending-3'];
+    return demoIds.includes(video.id);
+  };
+
+  const purgeAllDemoVideos = () => {
+    setHideDemoVideos(true);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('artellium_hide_demo_videos', 'true');
+    }
+    broadcastNotification('🎬 All dummy videos removed. Live feed shows genuine artist and admin story videos only.');
+  };
+
+  const restoreDemoVideos = () => {
+    setHideDemoVideos(false);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('artellium_hide_demo_videos', 'false');
+    }
+    broadcastNotification('🔄 Sample artist story videos restored to library.');
+  };
+
+  // 1-Click Complete Platform Launch & Clean State
+  const purgeAllDemoContent = () => {
+    purgeAllDemoArtworks();
+    purgeAllDemoVideos();
+    broadcastNotification('🚀 100% PRODUCTION LIVE LAUNCH: All dummy artworks & videos removed platform-wide!');
+  };
+
+  const restoreAllDemoContent = () => {
+    restoreDemoArtworks();
+    restoreDemoVideos();
+    broadcastNotification('📦 Sample demo artworks and videos restored for evaluation.');
+  };
+
+  // FX Rate Fixing Controls (Admin Daily Volatility Shield)
+  const updateUsdExchangeRate = (newRate) => {
+    const parsed = Math.round(Number(newRate));
+    if (!parsed || parsed <= 0) return;
+    setUsdExchangeRate(parsed);
+    const nowStr = new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+    setUsdRateLastUpdated(nowStr);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('artellium_usd_exchange_rate', parsed.toString());
+      localStorage.setItem('artellium_usd_rate_updated', nowStr);
+    }
+    setPanAfricanCurrencies(prev => ({
+      ...prev,
+      USD: {
+        ...(prev.USD || { code: 'USD', symbol: '$', name: 'US Dollar ($)', flag: '🌐', country: 'International' }),
+        rate: 1 / parsed
+      }
+    }));
+    broadcastNotification(`💵 Daily USD Exchange Rate fixed at ₦${parsed.toLocaleString()} / $1.00 USD.`);
+  };
+
+  const updateRegionalCurrencyRate = (currencyCode, rateInNgn) => {
+    const parsed = Number(rateInNgn);
+    if (!parsed || parsed <= 0) return;
+    setPanAfricanCurrencies(prev => {
+      const updated = {
+        ...prev,
+        [currencyCode]: {
+          ...prev[currencyCode],
+          rate: 1 / parsed
+        }
+      };
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('artellium_pan_african_currencies', JSON.stringify(updated));
+      }
+      return updated;
+    });
+    broadcastNotification(`🌍 Exchange rate for ${currencyCode} updated to 1 ${currencyCode} = ₦${parsed.toLocaleString()} NGN.`);
+  };
+
+  // Progressive Video Assembler: Real approved videos fill front slots, demo only pad if enabled
+  const activeVideos = useMemo(() => {
+    if (hideDemoVideos || demoTransitionMode === 'live_only') {
+      return (videos || []).filter(v => !isDemoVideoItem(v));
+    }
+    if (demoTransitionMode === 'progressive') {
+      const real = (videos || []).filter(v => !isDemoVideoItem(v));
+      const demo = (videos || []).filter(v => isDemoVideoItem(v));
+      return [...real, ...demo];
+    }
+    return videos || [];
+  }, [videos, hideDemoVideos, demoTransitionMode]);
+
+  const activeApprovedVideos = useMemo(() => {
+    return (activeVideos || []).filter(v => v.status === 'approved');
+  }, [activeVideos]);
+
   // Helper Selectors for Dynamic Feeds with Subscribed Priority Placement
   const getNewlyListedArtworks = (limit = 9, category = 'All') => {
     const matching = artworks.filter(art => {
@@ -1332,6 +1452,7 @@ export function StoreProvider({ children }) {
     const newSubmission = {
       ...videoData,
       id: `vid-${Date.now()}`,
+      isDemo: false,
       status: 'pending',
       submittedAt: new Date().toISOString(),
       featuredOnHero: false,
@@ -1348,6 +1469,7 @@ export function StoreProvider({ children }) {
     const created = { 
       ...newVideo, 
       id: newVideo.id || `vid-${Date.now()}`,
+      isDemo: false,
       status: newVideo.status || 'approved',
       submittedAt: newVideo.submittedAt || new Date().toISOString(),
       reviewedAt: new Date().toISOString(),
@@ -1558,6 +1680,7 @@ export function StoreProvider({ children }) {
       artistName: targetArt?.artistName || 'Pan-African Master',
       bidAmount: bidAmount,
       currency: currency || 'NGN',
+      usdExchangeRate,
       auctionUrl: `${appOrigin}/auctions`
     });
 
@@ -1577,6 +1700,7 @@ export function StoreProvider({ children }) {
         currentBid: bidAmount,
         previousBid: previousBidAmount,
         currency: currency || 'NGN',
+        usdExchangeRate,
         auctionUrl: `${appOrigin}/auctions`
       });
     }
@@ -2744,12 +2868,28 @@ export function StoreProvider({ children }) {
     broadcastNotification(`🏅 Artist verification status updated to "${status}".`);
   };
 
-  // 6. Universal Multi-Currency Formatter
+  // 6. Universal Multi-Currency Formatter & Dynamic Daily FX Price Engine
+  const formatPrice = (amount) => {
+    if (!amount && amount !== 0) return currency === 'USD' ? '$0' : '₦0';
+    const num = typeof amount === 'number' ? amount : (Number(amount) || 0);
+    if (currency === 'USD') {
+      const rate = (usdExchangeRate && usdExchangeRate > 0) ? usdExchangeRate : 1480;
+      return `$${Math.round(num / rate).toLocaleString()}`;
+    }
+    return `₦${Math.round(num).toLocaleString()}`;
+  };
+
   const formatCurrency = (amountInNGN, targetCurrency = currency) => {
     if (!amountInNGN && amountInNGN !== 0) return '₦0';
-    const currMeta = PAN_AFRICAN_CURRENCIES[targetCurrency] || PAN_AFRICAN_CURRENCIES.NGN;
-    const converted = Math.round(amountInNGN * currMeta.rate);
-    return `${currMeta.symbol}${converted.toLocaleString()}`;
+    const num = typeof amountInNGN === 'number' ? amountInNGN : (Number(amountInNGN) || 0);
+    if (targetCurrency === 'USD') {
+      const rate = (usdExchangeRate && usdExchangeRate > 0) ? usdExchangeRate : 1480;
+      return `$${Math.round(num / rate).toLocaleString()}`;
+    }
+    const currMeta = panAfricanCurrencies[targetCurrency] || panAfricanCurrencies.NGN || { symbol: '₦', rate: 1 };
+    const rate = currMeta.rate || 1;
+    const converted = Math.round(num * rate);
+    return `${currMeta.symbol || '₦'}${converted.toLocaleString()}`;
   };
 
   return (
@@ -2780,12 +2920,25 @@ export function StoreProvider({ children }) {
         updateDemoTransitionMode,
         purgeAllDemoArtworks,
         restoreDemoArtworks,
+        purgeAllDemoVideos,
+        restoreDemoVideos,
+        purgeAllDemoContent,
+        restoreAllDemoContent,
+        hideDemoVideos,
+        setHideDemoVideos,
+        usdExchangeRate,
+        usdRateLastUpdated,
+        updateUsdExchangeRate,
+        updateRegionalCurrencyRate,
+        formatPrice,
         getNewlyListedArtworks,
         getRecentlySoldArtworks,
         getLiveAuctionsArtworks,
         realArtworksCount: (realArtworks || []).length,
         demoArtworksCount: (artworks || []).filter(a => a.isDemo).length,
         realSoldArtworksCount: (realArtworks || []).filter(a => a.status === 'sold').length,
+        demoVideosCount: (videos || []).filter(v => isDemoVideoItem(v)).length,
+        realVideosCount: (videos || []).filter(v => !isDemoVideoItem(v)).length,
         addArtwork,
         updateArtwork,
         deleteArtwork,
@@ -2810,7 +2963,11 @@ export function StoreProvider({ children }) {
         createOrderWithPayment,
         updateOrderStatus,
         disburseCommission,
-        videos,
+        videos: activeVideos,
+        activeVideos,
+        allVideos: videos,
+        rawVideos: videos,
+        activeApprovedVideos,
         addVideo,
         deleteVideo,
         submitArtistVideo,

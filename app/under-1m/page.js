@@ -18,7 +18,7 @@ import {
 } from 'lucide-react';
 
 export default function Under1MPage() {
-  const { artworks, addToCart, currency, sellers = [], usersList = [] } = useStore();
+  const { artworks, addToCart, currency, usdExchangeRate = 1480, sellers = [], usersList = [] } = useStore();
   const [selectedMaxPrice, setSelectedMaxPrice] = useState(1000000);
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [cartSuccess, setCartSuccess] = useState(null);
@@ -26,7 +26,8 @@ export default function Under1MPage() {
   const formatPrice = (amount) => {
     if (!amount) return '₦0';
     if (currency === 'USD') {
-      return `$${Math.round(amount / 1480).toLocaleString()}`;
+      const rate = (usdExchangeRate && usdExchangeRate > 0) ? usdExchangeRate : 1480;
+      return `$${Math.round(amount / rate).toLocaleString()}`;
     }
     return `₦${amount.toLocaleString()}`;
   };
