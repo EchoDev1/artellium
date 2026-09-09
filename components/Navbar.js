@@ -157,40 +157,27 @@ export default function Navbar() {
             />
           </Link>
 
-          {/* Jumia-Style Main Search Box */}
+          {/* Main Search Box - Styled Matching Mobile Design */}
           <form
             onSubmit={handleSearchSubmit}
-            className="hidden md:flex flex-1 max-w-xl items-center bg-art-black-card border border-art-gold/25 rounded-xl overflow-hidden focus-within:border-art-gold transition shadow-inner"
+            className="hidden md:flex flex-1 max-w-2xl items-center relative"
           >
-            <div className="relative border-r border-art-black-border shrink-0">
-              <select
-                value={selectedCategory}
-                onChange={handleCategoryChange}
-                className="bg-transparent text-slate-300 text-xs px-3 py-2.5 focus:outline-none appearance-none cursor-pointer pr-7 font-medium"
+            <div className="relative w-full flex items-center bg-[#0E121A] border border-art-gold/30 focus-within:border-art-gold rounded-xl overflow-hidden shadow-inner transition">
+              <Search className="w-4 h-4 text-art-gold absolute left-3.5 pointer-events-none" />
+              <input
+                type="text"
+                placeholder={t('searchPlaceholder', 'Search painters, bronze sculptors, artwork titles...')}
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full bg-transparent pl-10 pr-24 py-2 text-sm text-white placeholder-slate-400 focus:outline-none"
+              />
+              <button
+                type="submit"
+                className="absolute right-1.5 px-4 py-1.5 bg-gradient-to-r from-art-gold to-amber-600 hover:brightness-110 text-art-black rounded-lg font-bold text-xs uppercase tracking-wider shadow-sm flex items-center gap-1 cursor-pointer transition select-none"
               >
-                {searchCategories.map((cat) => (
-                  <option key={cat.value} value={cat.value} className="bg-art-black-card text-white">
-                    {cat.label}
-                  </option>
-                ))}
-              </select>
-              <ChevronDown className="w-3.5 h-3.5 text-slate-400 absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none" />
+                <span>{t('searchBtn', 'Search')}</span>
+              </button>
             </div>
-
-            <input
-              type="text"
-              placeholder={t('searchPlaceholder', 'Search painters, bronze sculptors, artwork titles...')}
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="flex-1 min-w-0 bg-transparent px-3 py-2 text-sm text-white placeholder-slate-400 focus:outline-none"
-            />
-            <button
-              type="submit"
-              className="shrink-0 whitespace-nowrap leading-none bg-gradient-to-r from-art-gold to-art-gold-dark hover:brightness-110 text-art-black px-4 sm:px-5 py-2.5 font-bold text-xs transition flex items-center justify-center gap-1.5 cursor-pointer select-none shadow-sm"
-            >
-              <Search className="w-4 h-4 shrink-0" />
-              <span className="leading-none whitespace-nowrap tracking-wide">{t('searchBtn', 'SEARCH')}</span>
-            </button>
           </form>
 
           {/* Right Action Icons & Directives */}
