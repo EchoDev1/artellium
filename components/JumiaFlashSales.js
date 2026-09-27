@@ -175,24 +175,26 @@ export default function JumiaFlashSales() {
                 )}
               </div>
 
-              {/* Artwork Thumbnail */}
-              <div className="relative aspect-[4/3] rounded-xl overflow-hidden bg-black">
+              {/* Artwork Thumbnail (Clickable) */}
+              <Link href={`/artwork/${it.artworkId || it.id}`} className="block relative aspect-[4/3] rounded-xl overflow-hidden bg-black cursor-pointer group/thumb">
                 <img
                   src={it.image}
                   alt={it.title}
-                  className="w-full h-full object-cover group-hover:scale-105 transition duration-500"
+                  className="w-full h-full object-cover group-hover:scale-105 group-hover/thumb:scale-105 transition duration-500"
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
-                <span className="absolute bottom-2 left-2 text-[10px] text-slate-300 font-sans font-medium line-clamp-1">
+                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent pointer-events-none" />
+                <span className="absolute bottom-2 left-2 text-[10px] text-slate-300 font-sans font-medium line-clamp-1 pointer-events-none">
                   {it.artist}
                 </span>
-              </div>
+              </Link>
 
               {/* Details */}
               <div className="space-y-1.5">
-                <h4 className="font-serif font-bold text-white text-sm line-clamp-1 group-hover:text-red-400 transition">
-                  {it.title}
-                </h4>
+                <Link href={`/artwork/${it.artworkId || it.id}`}>
+                  <h4 className="font-serif font-bold text-white text-sm line-clamp-1 group-hover:text-red-400 transition hover:underline">
+                    {it.title}
+                  </h4>
+                </Link>
 
                 {/* Price Display: Deal vs Strikethrough */}
                 <div className="flex items-baseline gap-2">

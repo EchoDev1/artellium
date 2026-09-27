@@ -61,6 +61,24 @@ export default function ExhibitionMiniPage() {
     return `₦${amount.toLocaleString()}`;
   };
 
+  const combinedExhibitedArtworks = useMemo(() => {
+    const baseWorks = exhibition.exhibitedArtworks || [];
+    const realExhibitionWorks = (artworks || [])
+      .filter(art => (art.status === 'exhibition' || art.isExhibition) && !baseWorks.some(b => b.id === art.id))
+      .map(art => ({
+        id: art.id,
+        title: art.title,
+        artist: art.artistName,
+        medium: art.medium,
+        dimensions: art.dimensions,
+        price: art.price,
+        image: art.image,
+        description: art.description,
+        isPriorityArtist: isPriorityArtist(art, sellers, usersList)
+      }));
+    return [...realExhibitionWorks, ...baseWorks];
+  }, [exhibition, artworks, sellers, usersList]);
+
   if (!exhibition) {
     return (
       <div className="min-h-screen bg-[#07080A] text-slate-100 flex items-center justify-center p-6">
@@ -192,7 +210,7 @@ export default function ExhibitionMiniPage() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-10 space-y-8">
         <div className="flex items-center gap-2 border-b border-white/10 pb-4 overflow-x-auto no-scrollbar text-xs">
           {[
-            { id: 'artworks', label: `Exhibited Artworks (${(exhibition.exhibitedArtworks || []).length})` },
+            { id: 'artworks', label: `Exhibited Artworks (${(combinedExhibitedArtworks || []).length})` },
             { id: 'statement', label: 'Curator’s Statement' },
             { id: 'artists', label: `Participating Master Artists (${(exhibition.participatingArtists || []).length})` },
             { id: 'virtual_3d', label: '🌐 3D Spatial Virtual Room' },
@@ -223,35 +241,43 @@ export default function ExhibitionMiniPage() {
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-              {sortArtworksByPriority(exhibition.exhibitedArtworks || [], { sellers, users: usersList }).map((art) => (
+              {sortArtworksByPriority(combinedExhibitedArtworks || [], { sellers, users: usersList }).map((art) => (
                 <div
                   key={art.id}
                   className="rounded-3xl overflow-hidden bg-[#0A0D14] border border-white/10 hover:border-art-gold/60 transition-all duration-300 shadow-xl flex flex-col justify-between p-4 space-y-3 group"
                 >
                   <div className="space-y-3">
-                    <div className="relative aspect-square rounded-2xl overflow-hidden bg-black border border-white/5">
+                    {/* Top Badge Strip (Above Painting Canvas) */}
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      <span className="bg-black/80 backdrop-blur-md text-art-gold text-[10px] font-mono font-bold px-2.5 py-0.5 rounded-lg border border-art-gold/30">
+                        Exhibition Piece
+                      </span>
+                      {isPriorityArtist(art, sellers, usersList) && (
+                        <span className="bg-gradient-to-r from-amber-500 via-art-gold to-yellow-500 text-black font-black text-[9px] px-2 py-0.5 rounded-lg border border-amber-300 flex items-center gap-1 shadow">
+                          <Crown className="w-2.5 h-2.5 text-black fill-current" />
+                          <span>PRIORITY ARTIST</span>
+                        </span>
+                      )}
+                    </div>
+
+                    {/* Clickable Image Container (Canvas completely clear of badges) */}
+                    <Link
+                      href={`/artwork/${art.id}`}
+                      className="block relative aspect-square rounded-2xl overflow-hidden bg-black border border-white/5 cursor-pointer group/canvas"
+                    >
                       <img
                         src={art.image}
                         alt={art.title}
-                        className="w-full h-full object-cover group-hover:scale-105 transition duration-500"
+                        className="w-full h-full object-cover group-hover:scale-105 group-hover/canvas:scale-105 transition duration-500"
                       />
-                      <div className="absolute top-2.5 left-2.5 flex flex-col gap-1 z-10">
-                        <span className="bg-black/80 backdrop-blur-md text-art-gold text-[10px] font-mono font-bold px-2.5 py-0.5 rounded-lg border border-art-gold/30">
-                          Exhibition Piece
-                        </span>
-                        {isPriorityArtist(art, sellers, usersList) && (
-                          <span className="bg-gradient-to-r from-amber-500 via-art-gold to-yellow-500 text-black font-black text-[9px] px-2 py-0.5 rounded-lg border border-amber-300 flex items-center gap-1 shadow">
-                            <Crown className="w-2.5 h-2.5 text-black fill-current" />
-                            <span>PRIORITY ARTIST</span>
-                          </span>
-                        )}
-                      </div>
-                    </div>
+                    </Link>
 
                     <div>
-                      <h3 className="font-serif text-lg font-bold text-white group-hover:text-art-gold transition">
-                        {art.title}
-                      </h3>
+                      <Link href={`/artwork/${art.id}`}>
+                        <h3 className="font-serif text-lg font-bold text-white hover:text-art-gold transition cursor-pointer">
+                          {art.title}
+                        </h3>
+                      </Link>
                       <p className="text-xs text-art-gold font-semibold">{art.artist}</p>
                       <p className="text-[11px] text-slate-400 font-mono mt-0.5">{art.medium} • {art.dimensions}</p>
                     </div>

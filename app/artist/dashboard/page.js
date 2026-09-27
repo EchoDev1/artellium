@@ -72,6 +72,7 @@ export default function ArtistDashboardPage() {
     commissions = [], 
     sellers = [], 
     updateSeller, 
+    saveArtistProfile,
     artistSignatures = {}, 
     saveArtistSignature, 
     artworkQuestions = [], 
@@ -207,6 +208,8 @@ export default function ArtistDashboardPage() {
     image: '',
     additionalImages: [],
     status: 'available',
+    startingBid: '',
+    reservePrice: '',
     country: 'Nigeria',
     city: 'Lagos',
     countryFlag: '🇳🇬',
@@ -266,47 +269,68 @@ export default function ArtistDashboardPage() {
 
   // Dedicated Master Artist Profile Form State
   const [artistProfileForm, setArtistProfileForm] = useState({
-    name: myArtistName || '',
-    artistTitle: mySellerProfile?.artistTitle || 'Contemporary Master Visual Artist',
-    bio: mySellerProfile?.bio || '',
-    country: mySellerProfile?.country || currentUser?.country || 'Nigeria',
-    city: mySellerProfile?.city || '',
-    countryFlag: mySellerProfile?.country_flag || '🌍',
-    guildLineage: mySellerProfile?.guildLineage || '',
-    primaryMediums: 'Oil, Acrylic & Mixed Media on Canvas',
-    exhibitionsHistory: '',
-    studioAddress: '',
-    instagram: '',
-    website: '',
+    name: currentUser?.name || mySellerProfile?.name || myArtistName || '',
+    artistTitle: currentUser?.artistTitle || mySellerProfile?.artistTitle || 'Contemporary Master Visual Artist',
+    bio: currentUser?.bio || mySellerProfile?.bio || '',
+    country: currentUser?.country || mySellerProfile?.country || 'Nigeria',
+    city: currentUser?.city || mySellerProfile?.city || 'Lagos',
+    countryFlag: currentUser?.countryFlag || mySellerProfile?.country_flag || '🇳🇬',
+    guildLineage: currentUser?.guildLineage || mySellerProfile?.guildLineage || '',
+    primaryMediums: currentUser?.primaryMediums || mySellerProfile?.primaryMediums || 'Oil, Acrylic & Mixed Media on Canvas',
+    exhibitionsHistory: currentUser?.exhibitionsHistory || mySellerProfile?.exhibitionsHistory || '',
+    studioAddress: currentUser?.studioAddress || mySellerProfile?.studioAddress || '',
+    instagram: currentUser?.instagram || mySellerProfile?.instagram || '',
+    website: currentUser?.website || mySellerProfile?.website || '',
     phone: currentUser?.phone || '',
     email: currentUser?.email || '',
-    experienceYears: ''
+    experienceYears: currentUser?.experienceYears || mySellerProfile?.experienceYears || ''
   });
   const [artistProfileSaveMsg, setArtistProfileSaveMsg] = useState(false);
+  const [isEditingProfile, setIsEditingProfile] = useState(false);
+
+  // Synchronize profile form whenever currentUser or sellers change
+  useEffect(() => {
+    const s = sellers.find(sel => 
+      (currentUser?.id && sel.user_id === currentUser.id) || 
+      (myArtistName && sel.name?.toLowerCase() === myArtistName.toLowerCase())
+    ) || mySellerProfile;
+
+    if (currentUser || s) {
+      setArtistProfileForm(prev => ({
+        name: currentUser?.name || s?.name || prev.name || '',
+        artistTitle: currentUser?.artistTitle || s?.artistTitle || prev.artistTitle || 'Contemporary Master Visual Artist',
+        bio: currentUser?.bio || s?.bio || prev.bio || '',
+        country: currentUser?.country || s?.country || prev.country || 'Nigeria',
+        city: currentUser?.city || s?.city || prev.city || 'Lagos',
+        countryFlag: currentUser?.countryFlag || s?.country_flag || prev.countryFlag || '🇳🇬',
+        guildLineage: currentUser?.guildLineage || s?.guildLineage || prev.guildLineage || '',
+        primaryMediums: currentUser?.primaryMediums || s?.primaryMediums || prev.primaryMediums || 'Oil, Acrylic & Mixed Media on Canvas',
+        exhibitionsHistory: currentUser?.exhibitionsHistory || s?.exhibitionsHistory || prev.exhibitionsHistory || '',
+        studioAddress: currentUser?.studioAddress || s?.studioAddress || prev.studioAddress || '',
+        instagram: currentUser?.instagram || s?.instagram || prev.instagram || '',
+        website: currentUser?.website || s?.website || prev.website || '',
+        phone: currentUser?.phone || s?.phone || prev.phone || '',
+        email: currentUser?.email || s?.email || prev.email || '',
+        experienceYears: currentUser?.experienceYears || s?.experienceYears || prev.experienceYears || ''
+      }));
+    }
+  }, [currentUser, sellers, myArtistName]);
 
   const handleSaveArtistProfile = (e) => {
     e.preventDefault();
-    if (currentUser?.id) {
-      updateUser(currentUser.id, {
-        name: artistProfileForm.name,
-        email: artistProfileForm.email,
-        phone: artistProfileForm.phone,
-        country: artistProfileForm.country
-      });
-    }
-    if (mySellerProfile?.id) {
-      updateSeller(mySellerProfile.id, {
-        name: artistProfileForm.name,
-        bio: artistProfileForm.bio,
-        country: artistProfileForm.country,
-        city: artistProfileForm.city,
-        country_flag: artistProfileForm.countryFlag,
-        guildLineage: artistProfileForm.guildLineage,
-        artistTitle: artistProfileForm.artistTitle
-      });
+    if (saveArtistProfile) {
+      saveArtistProfile(artistProfileForm);
+    } else {
+      if (currentUser?.id) {
+        updateUser(currentUser.id, artistProfileForm);
+      }
+      if (mySellerProfile?.id) {
+        updateSeller(mySellerProfile.id, artistProfileForm);
+      }
     }
     setArtistProfileSaveMsg(true);
-    setTimeout(() => setArtistProfileSaveMsg(false), 4000);
+    setIsEditingProfile(false);
+    setTimeout(() => setArtistProfileSaveMsg(false), 5000);
   };
 
   // Logistics Dispatch Editor Modal State
@@ -437,7 +461,11 @@ export default function ArtistDashboardPage() {
 
   // Filter artworks by this specific artist
   const myArtworks = artworks.filter((a) => {
-    return a.artistName?.toLowerCase().includes(myArtistName.toLowerCase()) || a.artistId === currentUser?.id;
+    const nameMatch = myArtistName && a.artistName?.toLowerCase().includes(myArtistName.toLowerCase());
+    const idMatch = currentUser?.id && (a.artistId === currentUser.id || a.artist_id === currentUser.id);
+    const userMatch = currentUser?.name && a.artistName?.toLowerCase() === currentUser.name.toLowerCase();
+    const liveUploadMatch = !a.isDemo && a.id && String(a.id).startsWith('art-live-');
+    return Boolean(nameMatch || idMatch || userMatch || (liveUploadMatch && (!myArtistName || myArtistName === 'Master Artist')));
   });
 
   // Commissions and earnings for this artist (85% net payout)
@@ -508,6 +536,8 @@ export default function ArtistDashboardPage() {
     const created = addArtwork({
       ...artForm,
       price: parseFloat(artForm.price),
+      startingBid: artForm.startingBid ? parseFloat(artForm.startingBid) : undefined,
+      reservePrice: artForm.reservePrice ? parseFloat(artForm.reservePrice) : undefined,
       artistName: currentUser?.name || myArtistName || 'Master Artist',
       artistId: currentUser?.id || `artist-${Date.now()}`,
       artistType: currentUser?.subscriptionTier === 'premium' ? 'Premium' : 'Standard',
@@ -515,7 +545,13 @@ export default function ArtistDashboardPage() {
       verificationBadge: currentUser?.subscriptionTier === 'premium' ? 'gold' : 'verified'
     });
 
-    setSuccessMsg(`Artwork "${created.title}" published! Available in catalogue.`);
+    const statusNotice = artForm.status === 'auction'
+      ? `🔥 Live Auction Lot "${created.title}" published! Live on Auction Floor & Explore All.`
+      : artForm.status === 'exhibition'
+      ? `🏛️ Exhibition Piece "${created.title}" published! Featured in Curatorial Showcase.`
+      : `🎨 Masterpiece "${created.title}" published! Available in Marketplace & Explore All.`;
+
+    setSuccessMsg(statusNotice);
 
     setArtForm({
       title: '',
@@ -523,6 +559,8 @@ export default function ArtistDashboardPage() {
       medium: '',
       dimensions: '',
       price: '',
+      startingBid: '',
+      reservePrice: '',
       provenance: '',
       description: '',
       image: '',
@@ -535,7 +573,7 @@ export default function ArtistDashboardPage() {
       studioNotes: ''
     });
 
-    setTimeout(() => setSuccessMsg(''), 4500);
+    setTimeout(() => setSuccessMsg(''), 5500);
   };
 
   const handleSaveEditArt = (e) => {
@@ -1314,12 +1352,22 @@ export default function ArtistDashboardPage() {
                   </button>
 
                   <Link
-                    href={`/explore?q=${encodeURIComponent(artistProfileForm.name)}`}
+                    href={`/artist/${currentUser?.id || encodeURIComponent(artistProfileForm.name)}`}
                     className="px-4 py-2.5 bg-white/10 hover:bg-white/20 text-white font-bold text-xs rounded-xl transition border border-white/20 flex items-center gap-1.5"
+                    target="_blank"
                   >
                     <ExternalLink className="w-4 h-4" />
-                    <span>Preview Public Catalog</span>
+                    <span>View Public Profile</span>
                   </Link>
+
+                  <button
+                    type="button"
+                    onClick={() => setIsEditingProfile(!isEditingProfile)}
+                    className="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-xl transition flex items-center gap-1.5 cursor-pointer"
+                  >
+                    <Edit className="w-3.5 h-3.5" />
+                    <span>{isEditingProfile ? 'Preview Published Profile' : 'Edit Profile'}</span>
+                  </button>
                 </div>
               </div>
 
@@ -1351,213 +1399,349 @@ export default function ArtistDashboardPage() {
               </div>
             </div>
 
-            {/* Profile & Atelier Editor Form */}
-            <div className="bg-white rounded-3xl border border-slate-200 p-6 sm:p-8 shadow-sm space-y-6">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-4">
-                <div>
-                  <h3 className="font-serif text-xl font-bold text-slate-900 flex items-center gap-2">
-                    <Palette className="w-5 h-5 text-art-gold" />
-                    <span>Master Artist Atelier Dossier & Curatorial Biography</span>
-                  </h3>
-                  <p className="text-xs text-slate-500 mt-1">
-                    This dossier is presented to institutional buyers, museum curators, and international auction houses across Artellium Africa.
-                  </p>
+            {/* Profile & Atelier: Published View vs Editor Mode */}
+            {!isEditingProfile ? (
+              <div className="bg-white rounded-3xl border border-slate-200 p-6 sm:p-8 shadow-sm space-y-6 animate-fade-in">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-4">
+                  <div>
+                    <div className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-mono font-bold uppercase border border-emerald-300 mb-1">
+                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                      <span>Live & Verified on Artellium Africa</span>
+                    </div>
+                    <h3 className="font-serif text-xl font-bold text-slate-900 flex items-center gap-2">
+                      <Palette className="w-5 h-5 text-art-gold" />
+                      <span>Master Artist Published Dossier</span>
+                    </h3>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setIsEditingProfile(true)}
+                      className="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-sm"
+                    >
+                      <Edit className="w-3.5 h-3.5" />
+                      <span>Edit Profile Details</span>
+                    </button>
+                    <Link
+                      href={`/artist/${currentUser?.id || encodeURIComponent(artistProfileForm.name)}`}
+                      target="_blank"
+                      className="px-4 py-2 bg-art-gold hover:brightness-110 text-art-black rounded-xl text-xs font-bold uppercase tracking-wider transition flex items-center gap-1.5 shadow-gold-glow"
+                    >
+                      <ExternalLink className="w-3.5 h-3.5" />
+                      <span>Inspect Public Profile</span>
+                    </Link>
+                  </div>
                 </div>
 
                 {artistProfileSaveMsg && (
-                  <span className="px-3.5 py-1.5 bg-emerald-100 text-emerald-800 border border-emerald-300 rounded-xl text-xs font-bold flex items-center gap-1.5 animate-fade-in">
-                    <Check className="w-4 h-4 text-emerald-700" />
-                    <span>Artist Profile Saved & Published!</span>
-                  </span>
+                  <div className="p-4 bg-emerald-50 border border-emerald-300 rounded-2xl text-emerald-900 text-xs font-bold flex items-center gap-2 animate-fade-in">
+                    <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
+                    <span>Your artist profile has been permanently saved and published to the live platform catalogue!</span>
+                  </div>
                 )}
+
+                {/* Published Biography */}
+                <div className="p-5 bg-slate-50 rounded-2xl border border-slate-200/80 space-y-2">
+                  <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-slate-500 block">
+                    Curatorial Biography & Artistic Philosophy
+                  </span>
+                  <p className="text-xs text-slate-800 leading-relaxed font-serif whitespace-pre-line">
+                    {artistProfileForm.bio || 'No biography written yet. Click "Edit Profile Details" to document your artist statement.'}
+                  </p>
+                </div>
+
+                {/* Grid of Mediums, Guild, Location */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 text-xs">
+                  <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200/80 space-y-1">
+                    <span className="text-[10px] font-mono font-bold uppercase text-slate-400 block">Primary Mediums & Craft</span>
+                    <p className="font-semibold text-slate-900">{artistProfileForm.primaryMediums || 'Fine Art'}</p>
+                  </div>
+
+                  <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200/80 space-y-1">
+                    <span className="text-[10px] font-mono font-bold uppercase text-slate-400 block">Master Guild & Lineage</span>
+                    <p className="font-semibold text-slate-900">{artistProfileForm.guildLineage || 'Independent Living Master'}</p>
+                  </div>
+
+                  <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200/80 space-y-1">
+                    <span className="text-[10px] font-mono font-bold uppercase text-slate-400 block">Atelier Location</span>
+                    <p className="font-semibold text-slate-900">{artistProfileForm.city}, {artistProfileForm.country} {artistProfileForm.countryFlag}</p>
+                  </div>
+                </div>
+
+                {/* Selected Exhibitions */}
+                {artistProfileForm.exhibitionsHistory && (
+                  <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200/80 space-y-1 text-xs">
+                    <span className="text-[10px] font-mono font-bold uppercase text-slate-400 block">Documented Exhibitions & Honours</span>
+                    <p className="font-medium text-slate-800">{artistProfileForm.exhibitionsHistory}</p>
+                  </div>
+                )}
+
+                {/* Public Channels */}
+                <div className="flex flex-wrap items-center gap-4 text-xs font-mono p-4 bg-slate-50 rounded-2xl border border-slate-200/80">
+                  <span className="text-slate-400 text-[10px] uppercase font-bold">Public Channels:</span>
+                  {artistProfileForm.website ? (
+                    <a href={artistProfileForm.website.startsWith('http') ? artistProfileForm.website : `https://${artistProfileForm.website}`} target="_blank" rel="noreferrer" className="text-art-gold font-bold hover:underline flex items-center gap-1">
+                      <Globe className="w-3.5 h-3.5" />
+                      <span>{artistProfileForm.website}</span>
+                    </a>
+                  ) : <span className="text-slate-400">No website added</span>}
+                  <span>·</span>
+                  {artistProfileForm.instagram ? (
+                    <span className="text-slate-700 font-bold flex items-center gap-1">
+                      <span className="text-pink-600 font-bold">📸</span>
+                      <span>{artistProfileForm.instagram}</span>
+                    </span>
+                  ) : <span className="text-slate-400">No Instagram handle</span>}
+                </div>
+
+                {/* Protected Coordinates Notice */}
+                <div className="p-5 bg-amber-50/70 border border-amber-200 rounded-2xl space-y-2 text-xs">
+                  <div className="flex items-center gap-2 text-amber-900 font-bold">
+                    <ShieldCheck className="w-4 h-4 text-amber-700" />
+                    <span>Protected Atelier Coordinates (Shielded from Public Buyers)</span>
+                  </div>
+                  <p className="text-[11px] text-amber-900/80 leading-relaxed">
+                    Under Artellium patron escrow protocols, your direct telephone number ({artistProfileForm.phone || 'not configured'}), studio email ({artistProfileForm.email}), and physical studio address ({artistProfileForm.studioAddress || 'not configured'}) are strictly private. Only Platform Administrators have verified access to coordinate insured fine art dispatch.
+                  </p>
+                </div>
               </div>
+            ) : (
+              /* Profile & Atelier Editor Form */
+              <div className="bg-white rounded-3xl border border-slate-200 p-6 sm:p-8 shadow-sm space-y-6 animate-fade-in">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-4">
+                  <div>
+                    <h3 className="font-serif text-xl font-bold text-slate-900 flex items-center gap-2">
+                      <Palette className="w-5 h-5 text-art-gold" />
+                      <span>Edit Master Artist Atelier Dossier & Curatorial Biography</span>
+                    </h3>
+                    <p className="text-xs text-slate-500 mt-1">
+                      This dossier is presented to institutional buyers, museum curators, and international auction houses across Artellium Africa.
+                    </p>
+                  </div>
 
-              <form onSubmit={handleSaveArtistProfile} className="space-y-6 text-xs text-slate-700">
-                {/* 1. Basic Atelier Identity */}
-                <div className="space-y-4">
-                  <h4 className="font-bold text-slate-900 uppercase text-[11px] tracking-wider border-b border-slate-100 pb-2">
-                    1. Professional Identity & Atelier Specialty
-                  </h4>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                    <div>
-                      <label className="block font-semibold mb-1">Full Artist Professional Moniker</label>
-                      <input
-                        type="text"
-                        required
-                        value={artistProfileForm.name}
-                        onChange={e => setArtistProfileForm({ ...artistProfileForm, name: e.target.value })}
-                        className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-slate-900 font-bold focus:border-art-gold focus:outline-none"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block font-semibold mb-1">Master Specialty / Curatorial Title</label>
-                      <input
-                        type="text"
-                        required
-                        value={artistProfileForm.artistTitle}
-                        onChange={e => setArtistProfileForm({ ...artistProfileForm, artistTitle: e.target.value })}
-                        placeholder="e.g. Master Painter & 24k Gold Leaf Specialist"
-                        className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-slate-900 focus:border-art-gold focus:outline-none"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block font-semibold mb-1">Master Guild & Traditional Lineage</label>
-                      <input
-                        type="text"
-                        value={artistProfileForm.guildLineage}
-                        onChange={e => setArtistProfileForm({ ...artistProfileForm, guildLineage: e.target.value })}
-                        placeholder="e.g. Royal Akan Guild of Master Craftsmen"
-                        className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-slate-900 focus:border-art-gold focus:outline-none"
-                      />
-                    </div>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setIsEditingProfile(false)}
+                      className="px-3.5 py-1.5 border border-slate-300 hover:bg-slate-100 rounded-xl text-xs font-bold text-slate-700 transition"
+                    >
+                      Close Editor
+                    </button>
+                    {artistProfileSaveMsg && (
+                      <span className="px-3.5 py-1.5 bg-emerald-100 text-emerald-800 border border-emerald-300 rounded-xl text-xs font-bold flex items-center gap-1.5 animate-fade-in">
+                        <Check className="w-4 h-4 text-emerald-700" />
+                        <span>Saved!</span>
+                      </span>
+                    )}
                   </div>
                 </div>
 
-                {/* 2. Atelier Geographic Location */}
-                <div className="space-y-4">
-                  <h4 className="font-bold text-slate-900 uppercase text-[11px] tracking-wider border-b border-slate-100 pb-2">
-                    2. Atelier Location & Geographic Heritage
-                  </h4>
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                    <div>
-                      <label className="block font-semibold mb-1">Country of Practice</label>
-                      <input
-                        type="text"
-                        required
-                        value={artistProfileForm.country}
-                        onChange={e => setArtistProfileForm({ ...artistProfileForm, country: e.target.value })}
-                        className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-slate-900 focus:border-art-gold focus:outline-none"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block font-semibold mb-1">Atelier City / Region</label>
-                      <input
-                        type="text"
-                        required
-                        value={artistProfileForm.city}
-                        onChange={e => setArtistProfileForm({ ...artistProfileForm, city: e.target.value })}
-                        className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-slate-900 focus:border-art-gold focus:outline-none"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block font-semibold mb-1">Country Flag Emoji</label>
-                      <input
-                        type="text"
-                        value={artistProfileForm.countryFlag}
-                        onChange={e => setArtistProfileForm({ ...artistProfileForm, countryFlag: e.target.value })}
-                        className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-slate-900 text-center font-bold text-base focus:border-art-gold focus:outline-none"
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                {/* 3. Materials & Creative Philosophy */}
-                <div className="space-y-4">
-                  <h4 className="font-bold text-slate-900 uppercase text-[11px] tracking-wider border-b border-slate-100 pb-2">
-                    3. Mediums, Atelier Techniques & Curatorial Bio
-                  </h4>
+                <form onSubmit={handleSaveArtistProfile} className="space-y-6 text-xs text-slate-700">
+                  {/* 1. Basic Atelier Identity */}
                   <div className="space-y-4">
-                    <div>
-                      <label className="block font-semibold mb-1">Primary Materials, Mediums & Sacred Techniques</label>
-                      <input
-                        type="text"
-                        value={artistProfileForm.primaryMediums}
-                        onChange={e => setArtistProfileForm({ ...artistProfileForm, primaryMediums: e.target.value })}
-                        placeholder="e.g. Oil, Acrylic & 24K Gold Leaf on Linen Canvas, Natural Ochre Pigments"
-                        className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-slate-900 focus:border-art-gold focus:outline-none"
-                      />
-                    </div>
+                    <h4 className="font-bold text-slate-900 uppercase text-[11px] tracking-wider border-b border-slate-100 pb-2">
+                      1. Professional Identity & Atelier Specialty
+                    </h4>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                      <div>
+                        <label className="block font-semibold mb-1">Full Artist Professional Moniker</label>
+                        <input
+                          type="text"
+                          required
+                          value={artistProfileForm.name}
+                          onChange={e => setArtistProfileForm({ ...artistProfileForm, name: e.target.value })}
+                          className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-slate-900 font-bold focus:border-art-gold focus:outline-none"
+                        />
+                      </div>
 
-                    <div>
-                      <label className="block font-semibold mb-1">Comprehensive Artist Statement & Biography</label>
-                      <textarea
-                        rows="4"
-                        required
-                        value={artistProfileForm.bio}
-                        onChange={e => setArtistProfileForm({ ...artistProfileForm, bio: e.target.value })}
-                        placeholder="Detail your artistic philosophy, studio rituals, sacred iconography, and cultural narrative..."
-                        className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-slate-900 leading-relaxed focus:border-art-gold focus:outline-none"
-                      />
-                    </div>
+                      <div>
+                        <label className="block font-semibold mb-1">Master Specialty / Curatorial Title</label>
+                        <input
+                          type="text"
+                          required
+                          value={artistProfileForm.artistTitle}
+                          onChange={e => setArtistProfileForm({ ...artistProfileForm, artistTitle: e.target.value })}
+                          placeholder="e.g. Master Painter & 24k Gold Leaf Specialist"
+                          className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-slate-900 focus:border-art-gold focus:outline-none"
+                        />
+                      </div>
 
-                    <div>
-                      <label className="block font-semibold mb-1">Selected Biennales, Museum Exhibitions & Honours</label>
-                      <input
-                        type="text"
-                        value={artistProfileForm.exhibitionsHistory}
-                        onChange={e => setArtistProfileForm({ ...artistProfileForm, exhibitionsHistory: e.target.value })}
-                        placeholder="e.g. Venice Biennale African Pavilion, Dakar Biennale (Dak'Art), Lagos National Museum"
-                        className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-slate-900 focus:border-art-gold focus:outline-none"
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                {/* 4. Atelier Studio Physical & Digital Coordinates */}
-                <div className="space-y-4">
-                  <h4 className="font-bold text-slate-900 uppercase text-[11px] tracking-wider border-b border-slate-100 pb-2">
-                    4. Atelier Studio Physical & Digital Coordinates
-                  </h4>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                    <div>
-                      <label className="block font-semibold mb-1">Official Studio Email</label>
-                      <input
-                        type="email"
-                        required
-                        value={artistProfileForm.email}
-                        onChange={e => setArtistProfileForm({ ...artistProfileForm, email: e.target.value })}
-                        className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-slate-900 focus:border-art-gold focus:outline-none"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block font-semibold mb-1">Direct Atelier Phone / WhatsApp</label>
-                      <input
-                        type="tel"
-                        value={artistProfileForm.phone}
-                        onChange={e => setArtistProfileForm({ ...artistProfileForm, phone: e.target.value })}
-                        className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-slate-900 font-mono focus:border-art-gold focus:outline-none"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block font-semibold mb-1">Instagram Atelier Handle</label>
-                      <input
-                        type="text"
-                        value={artistProfileForm.instagram}
-                        onChange={e => setArtistProfileForm({ ...artistProfileForm, instagram: e.target.value })}
-                        className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-slate-900 focus:border-art-gold focus:outline-none"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block font-semibold mb-1">Official Website / Catalogue URL</label>
-                      <input
-                        type="url"
-                        value={artistProfileForm.website}
-                        onChange={e => setArtistProfileForm({ ...artistProfileForm, website: e.target.value })}
-                        className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-slate-900 focus:border-art-gold focus:outline-none"
-                      />
+                      <div>
+                        <label className="block font-semibold mb-1">Master Guild & Traditional Lineage</label>
+                        <input
+                          type="text"
+                          value={artistProfileForm.guildLineage}
+                          onChange={e => setArtistProfileForm({ ...artistProfileForm, guildLineage: e.target.value })}
+                          placeholder="e.g. Royal Akan Guild of Master Craftsmen"
+                          className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-slate-900 focus:border-art-gold focus:outline-none"
+                        />
+                      </div>
                     </div>
                   </div>
-                </div>
 
-                {/* Submit & Save */}
-                <div className="flex justify-end pt-4 border-t border-slate-100">
-                  <button
-                    type="submit"
-                    className="px-6 py-3 bg-gradient-to-r from-art-gold via-amber-500 to-art-gold-dark hover:brightness-110 text-art-black font-bold uppercase tracking-wider rounded-xl transition shadow-gold-glow flex items-center gap-2 cursor-pointer"
-                  >
-                    <Check className="w-4 h-4" />
-                    <span>Save & Publish Master Artist Profile</span>
-                  </button>
-                </div>
-              </form>
-            </div>
+                  {/* 2. Atelier Geographic Location */}
+                  <div className="space-y-4">
+                    <h4 className="font-bold text-slate-900 uppercase text-[11px] tracking-wider border-b border-slate-100 pb-2">
+                      2. Atelier Location & Geographic Heritage
+                    </h4>
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                      <div>
+                        <label className="block font-semibold mb-1">Country of Practice</label>
+                        <input
+                          type="text"
+                          required
+                          value={artistProfileForm.country}
+                          onChange={e => setArtistProfileForm({ ...artistProfileForm, country: e.target.value })}
+                          className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-slate-900 focus:border-art-gold focus:outline-none"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block font-semibold mb-1">Atelier City / Region</label>
+                        <input
+                          type="text"
+                          required
+                          value={artistProfileForm.city}
+                          onChange={e => setArtistProfileForm({ ...artistProfileForm, city: e.target.value })}
+                          className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-slate-900 focus:border-art-gold focus:outline-none"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block font-semibold mb-1">Country Flag Emoji</label>
+                        <input
+                          type="text"
+                          value={artistProfileForm.countryFlag}
+                          onChange={e => setArtistProfileForm({ ...artistProfileForm, countryFlag: e.target.value })}
+                          className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-slate-900 text-center font-bold text-base focus:border-art-gold focus:outline-none"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* 3. Materials & Creative Philosophy */}
+                  <div className="space-y-4">
+                    <h4 className="font-bold text-slate-900 uppercase text-[11px] tracking-wider border-b border-slate-100 pb-2">
+                      3. Mediums, Atelier Techniques & Curatorial Bio
+                    </h4>
+                    <div className="space-y-4">
+                      <div>
+                        <label className="block font-semibold mb-1">Primary Materials, Mediums & Sacred Techniques</label>
+                        <input
+                          type="text"
+                          value={artistProfileForm.primaryMediums}
+                          onChange={e => setArtistProfileForm({ ...artistProfileForm, primaryMediums: e.target.value })}
+                          placeholder="e.g. Oil, Acrylic & 24K Gold Leaf on Linen Canvas, Natural Ochre Pigments"
+                          className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-slate-900 focus:border-art-gold focus:outline-none"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block font-semibold mb-1">Comprehensive Artist Statement & Biography</label>
+                        <textarea
+                          rows="4"
+                          required
+                          value={artistProfileForm.bio}
+                          onChange={e => setArtistProfileForm({ ...artistProfileForm, bio: e.target.value })}
+                          placeholder="Detail your artistic philosophy, studio rituals, sacred iconography, and cultural narrative..."
+                          className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-slate-900 leading-relaxed focus:border-art-gold focus:outline-none"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block font-semibold mb-1">Selected Biennales, Museum Exhibitions & Honours</label>
+                        <input
+                          type="text"
+                          value={artistProfileForm.exhibitionsHistory}
+                          onChange={e => setArtistProfileForm({ ...artistProfileForm, exhibitionsHistory: e.target.value })}
+                          placeholder="e.g. Venice Biennale African Pavilion, Dakar Biennale (Dak'Art), Lagos National Museum"
+                          className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-slate-900 focus:border-art-gold focus:outline-none"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* 4. Atelier Studio Physical & Digital Coordinates */}
+                  <div className="space-y-4">
+                    <h4 className="font-bold text-slate-900 uppercase text-[11px] tracking-wider border-b border-slate-100 pb-2">
+                      4. Atelier Studio Physical & Digital Coordinates
+                    </h4>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                      <div>
+                        <label className="block font-semibold mb-1">Official Studio Email</label>
+                        <input
+                          type="email"
+                          required
+                          value={artistProfileForm.email}
+                          onChange={e => setArtistProfileForm({ ...artistProfileForm, email: e.target.value })}
+                          className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-slate-900 focus:border-art-gold focus:outline-none"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block font-semibold mb-1">Direct Atelier Phone / WhatsApp</label>
+                        <input
+                          type="tel"
+                          value={artistProfileForm.phone}
+                          onChange={e => setArtistProfileForm({ ...artistProfileForm, phone: e.target.value })}
+                          className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-slate-900 font-mono focus:border-art-gold focus:outline-none"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block font-semibold mb-1">Instagram Atelier Handle</label>
+                        <input
+                          type="text"
+                          value={artistProfileForm.instagram}
+                          onChange={e => setArtistProfileForm({ ...artistProfileForm, instagram: e.target.value })}
+                          className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-slate-900 focus:border-art-gold focus:outline-none"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block font-semibold mb-1">Official Website / Catalogue URL</label>
+                        <input
+                          type="url"
+                          value={artistProfileForm.website}
+                          onChange={e => setArtistProfileForm({ ...artistProfileForm, website: e.target.value })}
+                          className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-slate-900 focus:border-art-gold focus:outline-none"
+                        />
+                      </div>
+
+                      <div className="sm:col-span-2 lg:col-span-4">
+                        <label className="block font-semibold mb-1">Physical Atelier / Studio Street Address (Confidential - Shielded from Public Buyers)</label>
+                        <input
+                          type="text"
+                          value={artistProfileForm.studioAddress || ''}
+                          onChange={e => setArtistProfileForm({ ...artistProfileForm, studioAddress: e.target.value })}
+                          placeholder="e.g. 14 Victoria Island Arts Corridor, Lagos"
+                          className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-slate-900 focus:border-art-gold focus:outline-none"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Submit & Save */}
+                  <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-100">
+                    <button
+                      type="button"
+                      onClick={() => setIsEditingProfile(false)}
+                      className="px-5 py-3 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-100 font-bold transition cursor-pointer text-xs"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      className="px-6 py-3 bg-gradient-to-r from-art-gold via-amber-500 to-art-gold-dark hover:brightness-110 text-art-black font-bold uppercase tracking-wider rounded-xl transition shadow-gold-glow flex items-center gap-2 cursor-pointer"
+                    >
+                      <Check className="w-4 h-4" />
+                      <span>Save & Publish Master Artist Profile</span>
+                    </button>
+                  </div>
+                </form>
+              </div>
+            )}
           </div>
         )}
 
@@ -1961,6 +2145,105 @@ export default function ArtistDashboardPage() {
               )}
 
               <form onSubmit={handleArtworkSubmit} className="space-y-4 text-xs text-slate-700">
+                {/* Listing Destination & Channel Selector */}
+                <div className="p-4 bg-amber-50/70 rounded-2xl border border-amber-200/90 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <label className="block text-slate-900 font-bold flex items-center gap-1.5">
+                      <Sparkles className="w-4 h-4 text-art-gold" />
+                      <span>Listing Destination & Sales Channel *</span>
+                    </label>
+                    <span className="text-[10px] font-mono font-bold text-amber-900 bg-amber-100/90 px-2.5 py-0.5 rounded-full border border-amber-300 uppercase">
+                      {artForm.status === 'available' ? '🛍️ Marketplace / Explore All' : artForm.status === 'auction' ? '🔥 Live Auction Floor' : '🏛️ Curatorial Exhibition'}
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                    <button
+                      type="button"
+                      onClick={() => setArtForm({ ...artForm, status: 'available' })}
+                      className={`p-3 rounded-xl border text-left transition flex flex-col justify-between cursor-pointer ${
+                        artForm.status === 'available'
+                          ? 'bg-white border-art-gold shadow-md ring-2 ring-art-gold/30'
+                          : 'bg-white/60 border-slate-200 hover:bg-white text-slate-600'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="font-bold text-slate-900 text-xs">Curated Marketplace</span>
+                        <span className="text-base">🛍️</span>
+                      </div>
+                      <p className="text-[10.5px] text-slate-500 leading-snug">
+                        Instant buy-now acquisition, listed on <strong>Explore All</strong>, categories & homepage.
+                      </p>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setArtForm({ ...artForm, status: 'auction' })}
+                      className={`p-3 rounded-xl border text-left transition flex flex-col justify-between cursor-pointer ${
+                        artForm.status === 'auction'
+                          ? 'bg-white border-red-500 shadow-md ring-2 ring-red-500/30'
+                          : 'bg-white/60 border-slate-200 hover:bg-white text-slate-600'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="font-bold text-slate-900 text-xs">Live Auction Arena</span>
+                        <span className="text-base">🔥</span>
+                      </div>
+                      <p className="text-[10.5px] text-slate-500 leading-snug">
+                        Listed on <strong>Live Auctions Floor</strong> & Explore All with countdown timer & live bidding.
+                      </p>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setArtForm({ ...artForm, status: 'exhibition' })}
+                      className={`p-3 rounded-xl border text-left transition flex flex-col justify-between cursor-pointer ${
+                        artForm.status === 'exhibition'
+                          ? 'bg-white border-emerald-500 shadow-md ring-2 ring-emerald-500/30'
+                          : 'bg-white/60 border-slate-200 hover:bg-white text-slate-600'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="font-bold text-slate-900 text-xs">Museum Exhibition</span>
+                        <span className="text-base">🏛️</span>
+                      </div>
+                      <p className="text-[10.5px] text-slate-500 leading-snug">
+                        Featured in <strong>Virtual & SDGs Exhibitions</strong> and Explore All curatorial archives.
+                      </p>
+                    </button>
+                  </div>
+
+                  {/* Conditional Auction Floor Inputs */}
+                  {artForm.status === 'auction' && (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2.5 border-t border-amber-200/60 animate-fade-in">
+                      <div>
+                        <label className="block text-[11px] font-bold text-slate-800 mb-1">
+                          Starting Bid in NGN (₦) *
+                        </label>
+                        <input
+                          type="number"
+                          placeholder="e.g. 500000"
+                          value={artForm.startingBid || ''}
+                          onChange={(e) => setArtForm({ ...artForm, startingBid: e.target.value, price: e.target.value })}
+                          className="w-full bg-white border border-amber-300 rounded-xl p-2.5 text-xs text-slate-900 font-mono focus:border-red-500 focus:outline-none"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[11px] font-bold text-slate-800 mb-1">
+                          Reserve Price / Floor in NGN (₦)
+                        </label>
+                        <input
+                          type="number"
+                          placeholder="e.g. 1200000"
+                          value={artForm.reservePrice || ''}
+                          onChange={(e) => setArtForm({ ...artForm, reservePrice: e.target.value })}
+                          className="w-full bg-white border border-amber-300 rounded-xl p-2.5 text-xs text-slate-900 font-mono focus:border-red-500 focus:outline-none"
+                        />
+                      </div>
+                    </div>
+                  )}
+                </div>
+
                 <div>
                   <label className="block text-slate-600 mb-1 font-medium">Artwork Title</label>
                   <input

@@ -117,11 +117,13 @@ export default function CuratorialSpotlightBanner() {
             
             {/* CANVAS DISPLAY (PRESERVED PANORAMIC ASPECT RATIO) */}
             <div className="relative aspect-[18/9] sm:aspect-[2.8/1] lg:aspect-[3.2/1] max-h-[300px] sm:max-h-[340px] w-full rounded-lg overflow-hidden bg-black flex items-center justify-center">
-              <img
-                src={currentSlide.image || currentSlide.artworkImage}
-                alt={currentSlide.title || 'Masterpiece'}
-                className="w-full h-full object-cover object-center transition-transform duration-700 group-hover:scale-[1.02]"
-              />
+              <Link href={`/artwork/${artworkTargetId}`} className="block w-full h-full cursor-pointer">
+                <img
+                  src={currentSlide.image || currentSlide.artworkImage}
+                  alt={currentSlide.title || 'Masterpiece'}
+                  className="w-full h-full object-cover object-center transition-transform duration-700 group-hover:scale-[1.02]"
+                />
+              </Link>
 
               {/* Natural Archival Vignette */}
               <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/35 to-black/25 pointer-events-none" />
@@ -179,9 +181,11 @@ export default function CuratorialSpotlightBanner() {
                   </div>
 
                   {/* MASTER ARTIST NAME */}
-                  <h2 className="font-serif text-lg sm:text-2xl lg:text-3xl font-bold text-white tracking-wide uppercase">
-                    {currentSlide.artistName}
-                  </h2>
+                  <Link href={`/artwork/${artworkTargetId}`}>
+                    <h2 className="font-serif text-lg sm:text-2xl lg:text-3xl font-bold text-white hover:text-art-gold transition-colors tracking-wide uppercase cursor-pointer">
+                      {currentSlide.artistName}
+                    </h2>
+                  </Link>
 
                   {/* Artwork Title & Medium */}
                   <p className="text-[11px] sm:text-xs text-slate-200 font-serif italic">

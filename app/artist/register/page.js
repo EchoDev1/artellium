@@ -8,7 +8,7 @@ import { Crown, CheckCircle2, Award, Sparkles, ArrowRight, ShieldCheck } from 'l
 
 export default function ArtistRegisterPage() {
   const router = useRouter();
-  const { switchUserRole, subscribeArtist } = useStore();
+  const { switchUserRole, subscribeArtist, addSeller, currentUser } = useStore();
   const [billingCycle, setBillingCycle] = useState('monthly'); // monthly vs yearly
   const [selectedPlan, setSelectedPlan] = useState('premium'); // standard vs premium
   const [isSubmitted, setIsSubmitted] = useState(false);
@@ -16,7 +16,7 @@ export default function ArtistRegisterPage() {
   const [formData, setFormData] = useState({
     fullName: '',
     email: '',
-    artistCategory: 'Painters',
+    artistCategory: 'Paintings',
     country: 'Nigeria',
     bio: '',
     portfolioUrl: '',
@@ -25,7 +25,38 @@ export default function ArtistRegisterPage() {
   const handleRegistrationSubmit = (e) => {
     e.preventDefault();
     setIsSubmitted(true);
-    switchUserRole('artist');
+
+    const artistName = formData.fullName.trim() || 'Master Artist';
+    const artistEmail = formData.email.trim() || 'artist@artellium.com';
+    const artistId = currentUser?.id || `artist-${Date.now()}`;
+
+    // Establish authenticated artist session
+    switchUserRole('artist', {
+      id: artistId,
+      name: artistName,
+      email: artistEmail,
+      country: formData.country || 'Nigeria',
+      bio: formData.bio || '',
+      subscriptionTier: selectedPlan,
+      subscription_tier: selectedPlan,
+      artistCategory: formData.artistCategory || 'Paintings',
+      portfolioUrl: formData.portfolioUrl || ''
+    });
+
+    // Ensure atelier seller profile is active
+    if (addSeller) {
+      addSeller({
+        id: artistId,
+        user_id: artistId,
+        name: artistName,
+        bio: formData.bio || '',
+        country: formData.country || 'Nigeria',
+        tier: selectedPlan === 'premium' ? 'Premium' : 'Standard',
+        verification_badge: selectedPlan === 'premium' ? 'gold' : 'verified',
+        payout_bank: 'Wema Bank PLC',
+        payout_account_name: `${artistName} Studio`
+      });
+    }
 
     if (subscribeArtist) {
       subscribeArtist(selectedPlan, billingCycle);
@@ -34,7 +65,7 @@ export default function ArtistRegisterPage() {
     // Trigger Artist Welcome & Atelier Setup Email via Resend
     if (formData.email) {
       triggerEmailNotification('artist_welcome', formData.email.trim(), {
-        name: formData.fullName || 'Master Artist',
+        name: artistName,
         plan: selectedPlan === 'premium' ? 'Priority Subscribed Artist' : 'Standard Artist (Free)',
         billingCycle: billingCycle === 'yearly' ? 'Yearly Billing' : 'Monthly Billing',
         price: selectedPlan === 'premium' ? '₦25,000 / mo' : '₦0 / Free'

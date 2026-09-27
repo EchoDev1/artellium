@@ -23,6 +23,23 @@ function ExploreContent() {
   const [selectedMedium, setSelectedMedium] = useState('All');
   const [shipsFilter, setShipsFilter] = useState('All');
   const [sortBy, setSortBy] = useState('newest'); // newest, price_low, price_high
+  const [visibleCount, setVisibleCount] = useState(24);
+
+  // Reset pagination when search or filters change
+  React.useEffect(() => {
+    setVisibleCount(24);
+  }, [searchTerm, selectedMedium, shipsFilter, sortBy, categoryParam]);
+
+  // When visiting explore without an explicit category param, ensure "All" is active so all uploaded artworks appear
+  React.useEffect(() => {
+    if (!categoryParam) {
+      setSelectedCategory('All');
+    } else {
+      setSelectedCategory(categoryParam);
+    }
+  }, [categoryParam, setSelectedCategory]);
+
+  const activeCategory = categoryParam || selectedCategory || 'All';
 
   // Filter artworks
   const filtered = artworks.filter((art) => {
@@ -37,7 +54,7 @@ function ExploreContent() {
       art.description?.toLowerCase().includes(term)
     );
 
-    const matchesCategory = isCategoryMatch(art.category, categoryParam || selectedCategory, art.medium, art.title);
+    const matchesCategory = isCategoryMatch(art.category, activeCategory, art.medium, art.title);
 
     const matchesMedium =
       selectedMedium === 'All' ? true : art.medium?.toLowerCase().includes(selectedMedium.toLowerCase());
@@ -175,7 +192,7 @@ function ExploreContent() {
         </div>
       </div>
 
-      {/* Grid Display */}
+      {/* Grid Display with Progressive Scalable Loading */}
       {sorted.length === 0 ? (
         <div className="py-20 text-center space-y-3 bg-art-black-card rounded-2xl border border-white/10">
           <Sparkles className="w-10 h-10 text-art-gold mx-auto" />
@@ -183,10 +200,43 @@ function ExploreContent() {
           <p className="text-xs text-slate-400">Try clearing filters or search terms.</p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {sorted.map((art) => (
-            <ArtworkCard key={art.id} artwork={art} />
-          ))}
+        <div className="space-y-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {sorted.slice(0, visibleCount).map((art) => (
+              <ArtworkCard key={art.id} artwork={art} />
+            ))}
+          </div>
+
+          {/* Scalable Progressive Pagination Controls */}
+          {sorted.length > visibleCount && (
+            <div className="pt-6 pb-4 flex flex-col items-center justify-center gap-3 text-center">
+              <span className="text-xs text-slate-400 font-mono">
+                Showing <strong className="text-white font-bold">{Math.min(visibleCount, sorted.length)}</strong> of <strong className="text-art-gold font-bold">{sorted.length}</strong> Masterpieces
+              </span>
+              <div className="w-48 h-1.5 bg-white/10 rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-gradient-to-r from-art-gold to-amber-500 rounded-full transition-all duration-300"
+                  style={{ width: `${Math.min(100, (visibleCount / sorted.length) * 100)}%` }}
+                />
+              </div>
+              <div className="flex items-center gap-3 pt-2">
+                <button
+                  onClick={() => setVisibleCount(prev => prev + 24)}
+                  className="px-6 py-3 bg-gradient-to-r from-art-gold via-amber-400 to-art-gold hover:brightness-110 text-art-black font-bold text-xs uppercase tracking-wider rounded-xl transition shadow-gold-glow cursor-pointer"
+                >
+                  Load Next 24 Masterpieces
+                </button>
+                {sorted.length > visibleCount + 24 && (
+                  <button
+                    onClick={() => setVisibleCount(sorted.length)}
+                    className="px-4 py-3 bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white font-medium text-xs rounded-xl border border-white/10 transition cursor-pointer"
+                  >
+                    View All ({sorted.length})
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
         </div>
       )}
     </div>

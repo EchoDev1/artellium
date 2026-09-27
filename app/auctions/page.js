@@ -357,9 +357,39 @@ export default function AuctionsPage() {
     }
   ];
 
+  // Merge uploaded artworks that are set for Live Auction Arena
+  const dynamicLiveLots = useMemo(() => {
+    const artistAuctionWorks = (artworks || [])
+      .filter(art => (art.status === 'auction' || art.isAuction) && !liveLots.some(l => l.artworkId === art.id || l.id === art.id))
+      .map((art, idx) => ({
+        id: art.id,
+        lotNumber: `Lot #${810 + idx}`,
+        artworkId: art.id,
+        title: art.title,
+        artistName: art.artistName,
+        artistTier: art.artistType || (isPriorityArtist(art, sellers, usersList) ? 'Priority Master' : 'Verified Artist'),
+        medium: art.medium,
+        dimensions: art.dimensions,
+        image: art.image,
+        country: `${art.city || 'Lagos'}, ${art.country || 'Nigeria'} ${art.countryFlag || '🇳🇬'}`,
+        estimateMin: art.auction?.estimateMin || art.price || 1000000,
+        estimateMax: art.auction?.estimateMax || Math.round((art.price || 1000000) * 1.5),
+        startingBid: art.auction?.startingBid || art.price || 1000000,
+        currentBid: art.auction?.currentBid || art.price || 1000000,
+        reservePrice: art.auction?.reservePrice || Math.round((art.price || 1000000) * 1.2),
+        isReserveMet: Boolean(art.auction?.currentBid && art.auction?.reservePrice && art.auction.currentBid >= art.auction.reservePrice),
+        totalBids: art.auction?.totalBids || 0,
+        endTimestamp: art.auction?.endTimestamp || (Date.now() + 1000 * 60 * 60 * 24),
+        isHighValue: Boolean((art.price || 0) >= 10000000),
+        highestBidder: art.auction?.highestBidder || 'Be the first to bid',
+        bidHistory: art.auction?.bidHistory || []
+      }));
+    return [...artistAuctionWorks, ...liveLots];
+  }, [artworks, liveLots, sellers, usersList]);
+
   const sortedLiveLots = useMemo(() => {
-    return sortArtworksByPriority(liveLots, { sellers, users: usersList });
-  }, [liveLots, sellers, usersList]);
+    return sortArtworksByPriority(dynamicLiveLots, { sellers, users: usersList });
+  }, [dynamicLiveLots, sellers, usersList]);
 
   const sortedUpcomingLots = useMemo(() => {
     return sortArtworksByPriority(upcomingLots, { sellers, users: usersList });

@@ -20,7 +20,10 @@ import {
   Globe,
   DollarSign,
   Info,
-  Camera
+  Camera,
+  UserPlus,
+  UserCheck,
+  ExternalLink
 } from 'lucide-react';
 import Link from 'next/link';
 import OriginMapPin from '@/components/OriginMapPin';
@@ -30,7 +33,8 @@ import { DEFAULT_FALLBACK_IMAGE } from '@/lib/image-utils';
 export default function ArtworkDetailPage() {
   const { id } = useParams();
   const { 
-    artworks, 
+    artworks = [], 
+    realArtworks = [],
     addToCart, 
     currency, 
     usdExchangeRate = 1480,
@@ -41,10 +45,14 @@ export default function ArtworkDetailPage() {
     removeFromWishlist,
     artworkQuestions = [],
     askQuestion,
-    submitCollectorOffer
+    submitCollectorOffer,
+    toggleFollowArtist,
+    isFollowingArtist
   } = useStore();
 
-  const artwork = artworks.find((item) => item.id === id) || artworks[0];
+  const artwork = (artworks || []).find((item) => String(item.id) === String(id) || encodeURIComponent(String(item.id)) === String(id)) ||
+                  (realArtworks || []).find((item) => String(item.id) === String(id) || encodeURIComponent(String(item.id)) === String(id)) ||
+                  (artworks || [])[0] || {};
   const isWishlisted = wishlist?.includes(artwork.id);
 
   const [reviews, setReviews] = useState(
@@ -150,6 +158,16 @@ export default function ArtworkDetailPage() {
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
         {/* Left Column: Image Display */}
         <div className="lg:col-span-7 space-y-4">
+          {/* Top Badge Strip (Above the painting, not covering canvas) */}
+          {(artwork.artistType === 'Premium' || artwork.isPriorityArtist) && (
+            <div className="flex items-center gap-2">
+              <span className="badge-gold text-xs font-bold px-3 py-1 rounded-full inline-flex items-center gap-1.5 shadow-gold-glow">
+                <Sparkles className="w-3.5 h-3.5 text-art-gold" />
+                <span>PREMIUM VERIFIED ARTIST</span>
+              </span>
+            </div>
+          )}
+
           <div className="relative aspect-[4/3] rounded-3xl overflow-hidden glass-card-gold border border-art-gold/40 shadow-2xl bg-black">
             <img
               src={activeDisplayImage}
@@ -159,13 +177,6 @@ export default function ArtworkDetailPage() {
               }}
               className="w-full h-full object-cover transition duration-300"
             />
-
-            {artwork.artistType === 'Premium' && (
-              <span className="absolute top-4 left-4 badge-gold text-xs font-bold px-3 py-1 rounded-full flex items-center gap-1 shadow-gold-glow">
-                <Sparkles className="w-3.5 h-3.5 text-art-gold" />
-                <span>PREMIUM VERIFIED ARTIST</span>
-              </span>
-            )}
           </div>
 
           {/* Multi-Angle Detail Photos Thumbnail Gallery */}
@@ -230,19 +241,55 @@ export default function ArtworkDetailPage() {
               <h1 className="font-serif text-3xl font-bold text-white mb-2">{artwork.title}</h1>
 
               {/* Artist row */}
-              <div className="flex items-center gap-3 py-2 border-y border-white/10 my-3">
-                <img
-                  src={artwork.artistAvatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=300'}
-                  alt={artwork.artistName}
-                  className="w-11 h-11 rounded-full object-cover border-2 border-art-gold/50"
-                />
-                <div>
-                  <h3 className="text-sm font-bold text-white">{artwork.artistName}</h3>
-                  <p className="text-xs text-art-gold flex items-center gap-1">
-                    <span>{artwork.city || 'Lagos'}, {artwork.country || 'Nigeria'}</span>
-                    <span>{artwork.countryFlag || '🇳🇬'}</span>
-                  </p>
-                </div>
+              <div className="flex flex-wrap items-center justify-between gap-3 py-3 border-y border-white/10 my-3">
+                <Link
+                  href={`/artist/${artwork.artistId || encodeURIComponent(artwork.artistName)}`}
+                  className="flex items-center gap-3 group hover:opacity-90 transition"
+                >
+                  <img
+                    src={artwork.artistAvatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=300'}
+                    alt={artwork.artistName}
+                    className="w-11 h-11 rounded-full object-cover border-2 border-art-gold/50 group-hover:border-art-gold transition shadow-sm"
+                  />
+                  <div>
+                    <h3 className="text-sm font-bold text-white group-hover:text-art-gold transition flex items-center gap-1.5">
+                      <span>{artwork.artistName}</span>
+                      <ExternalLink className="w-3 h-3 text-slate-500 group-hover:text-art-gold" />
+                    </h3>
+                    <p className="text-xs text-art-gold flex items-center gap-1">
+                      <span>{artwork.city || 'Lagos'}, {artwork.country || 'Nigeria'}</span>
+                      <span>{artwork.countryFlag || '🇳🇬'}</span>
+                    </p>
+                  </div>
+                </Link>
+
+                <button
+                  type="button"
+                  onClick={() => toggleFollowArtist(artwork.artistId || artwork.artistName, {
+                    name: artwork.artistName,
+                    avatar: artwork.artistAvatar,
+                    country: artwork.country,
+                    city: artwork.city,
+                    countryFlag: artwork.countryFlag
+                  })}
+                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer ${
+                    (isFollowingArtist && isFollowingArtist(artwork.artistId || artwork.artistName))
+                      ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 hover:bg-emerald-500/30'
+                      : 'bg-art-gold/20 text-art-gold border border-art-gold/40 hover:bg-art-gold hover:text-black'
+                  }`}
+                >
+                  {(isFollowingArtist && isFollowingArtist(artwork.artistId || artwork.artistName)) ? (
+                    <>
+                      <UserCheck className="w-3.5 h-3.5 text-emerald-400" />
+                      <span>Following Master</span>
+                    </>
+                  ) : (
+                    <>
+                      <UserPlus className="w-3.5 h-3.5" />
+                      <span>Follow Artist</span>
+                    </>
+                  )}
+                </button>
               </div>
             </div>
 

@@ -1016,8 +1016,10 @@ export default function BuyerAccountPage() {
                     >
                       <div className="space-y-3">
                         <div className="relative aspect-[4/3] rounded-2xl overflow-hidden bg-black border border-slate-200">
-                          <img src={lot.image} alt={lot.title} className="w-full h-full object-cover" />
-                          <span className="absolute top-2.5 left-2.5 bg-red-600 text-white font-bold text-[10px] px-2.5 py-0.5 rounded-lg shadow animate-pulse">
+                          <Link href={`/artwork/${lot.id}`} className="block w-full h-full cursor-pointer">
+                            <img src={lot.image} alt={lot.title} className="w-full h-full object-cover hover:scale-105 transition duration-500" />
+                          </Link>
+                          <span className="absolute top-2.5 left-2.5 bg-red-600 text-white font-bold text-[10px] px-2.5 py-0.5 rounded-lg shadow animate-pulse pointer-events-none">
                             🔥 LIVE LOT
                           </span>
 
@@ -1039,7 +1041,9 @@ export default function BuyerAccountPage() {
                             <span>{lot.category}</span>
                             <span className="text-red-600 font-bold">Closes in: 14h : 22m</span>
                           </div>
-                          <h4 className="font-serif text-base font-bold text-slate-900 mt-0.5">{lot.title}</h4>
+                          <Link href={`/artwork/${lot.id}`}>
+                            <h4 className="font-serif text-base font-bold text-slate-900 mt-0.5 hover:text-art-gold transition cursor-pointer">{lot.title}</h4>
+                          </Link>
                           <p className="text-xs text-slate-600">By {lot.artistName} · {lot.country}</p>
                         </div>
                       </div>
@@ -1155,12 +1159,17 @@ export default function BuyerAccountPage() {
                       key={artist.id}
                       className="p-5 rounded-2xl bg-slate-50 border border-slate-200 flex flex-col justify-between items-center text-center space-y-3"
                     >
-                      <div className="w-16 h-16 rounded-full overflow-hidden border-2 border-art-gold bg-black shadow-sm">
+                      <Link 
+                        href={`/artist/${artist.id}`}
+                        className="w-16 h-16 rounded-full overflow-hidden border-2 border-art-gold bg-black shadow-sm hover:scale-105 transition block"
+                      >
                         <img src={artist.avatar} alt={artist.name} className="w-full h-full object-cover" />
-                      </div>
+                      </Link>
 
                       <div>
-                        <h5 className="font-serif font-bold text-slate-900 text-sm">{artist.name}</h5>
+                        <Link href={`/artist/${artist.id}`}>
+                          <h5 className="font-serif font-bold text-slate-900 text-sm hover:text-art-gold transition">{artist.name}</h5>
+                        </Link>
                         <p className="text-[11px] text-art-gold font-semibold">{artist.category}</p>
                         <p className="text-[10px] text-slate-400 font-mono">{artist.city}, {artist.country} {artist.countryFlag}</p>
                       </div>
@@ -1207,8 +1216,10 @@ export default function BuyerAccountPage() {
                 {followedArtistsNewWorks.slice(0, 6).map((art) => (
                   <div key={art.id} className="rounded-2xl border border-slate-200 bg-white overflow-hidden shadow-sm hover:shadow-md transition flex flex-col justify-between">
                     <div className="relative aspect-[4/3] bg-slate-100 overflow-hidden">
-                      <img src={art.image} alt={art.title} className="w-full h-full object-cover" />
-                      <span className="absolute top-2.5 left-2.5 bg-black/80 backdrop-blur-md text-emerald-300 font-mono text-[9px] font-bold px-2.5 py-0.5 rounded-lg border border-emerald-500/40">
+                      <Link href={`/artwork/${art.id}`} className="block w-full h-full cursor-pointer">
+                        <img src={art.image} alt={art.title} className="w-full h-full object-cover hover:scale-105 transition duration-500" />
+                      </Link>
+                      <span className="absolute top-2.5 left-2.5 bg-black/80 backdrop-blur-md text-emerald-300 font-mono text-[9px] font-bold px-2.5 py-0.5 rounded-lg border border-emerald-500/40 pointer-events-none">
                         ✨ NEW STUDIO UPLOAD
                       </span>
                     </div>
@@ -1218,7 +1229,9 @@ export default function BuyerAccountPage() {
                         <span className="text-[10px] text-art-gold font-bold uppercase tracking-wider block">
                           {art.category} • {art.country}
                         </span>
-                        <h5 className="font-serif text-base font-bold text-slate-900 line-clamp-1">{art.title}</h5>
+                        <Link href={`/artwork/${art.id}`}>
+                          <h5 className="font-serif text-base font-bold text-slate-900 line-clamp-1 hover:text-art-gold transition cursor-pointer">{art.title}</h5>
+                        </Link>
                         <p className="text-slate-500">By {art.artistName}</p>
                       </div>
 
@@ -1339,10 +1352,12 @@ export default function BuyerAccountPage() {
                 {wishlistedArtworks.map((art) => (
                   <div key={art.id} className="rounded-2xl border border-slate-200 bg-white overflow-hidden shadow-sm hover:shadow-md transition flex flex-col justify-between">
                     <div className="relative aspect-[4/3] bg-slate-100 overflow-hidden">
-                      <img src={art.image} alt={art.title} className="w-full h-full object-cover" />
+                      <Link href={`/artwork/${art.id}`} className="block w-full h-full cursor-pointer">
+                        <img src={art.image} alt={art.title} className="w-full h-full object-cover hover:scale-105 transition duration-500" />
+                      </Link>
                       <button
                         onClick={() => removeFromWishlist(art.id)}
-                        className="absolute top-3 right-3 p-1.5 bg-white/90 hover:bg-white text-red-500 rounded-xl shadow transition"
+                        className="absolute top-3 right-3 p-1.5 bg-white/90 hover:bg-white text-red-500 rounded-xl shadow transition z-10"
                         title="Remove from wishlist"
                       >
                         <Trash2 className="w-4 h-4" />
@@ -1354,7 +1369,9 @@ export default function BuyerAccountPage() {
                         <span className="text-[10px] text-art-gold font-bold uppercase tracking-wider block">
                           {art.category} • {art.city}, {art.country}
                         </span>
-                        <h4 className="font-serif text-base font-bold text-slate-900 line-clamp-1">{art.title}</h4>
+                        <Link href={`/artwork/${art.id}`}>
+                          <h4 className="font-serif text-base font-bold text-slate-900 line-clamp-1 hover:text-art-gold transition cursor-pointer">{art.title}</h4>
+                        </Link>
                         <p className="text-slate-500">{art.artistName}</p>
                       </div>
 
@@ -1439,9 +1456,13 @@ export default function BuyerAccountPage() {
 
               {myCollection.map((art) => (
                 <div key={art.id} className="p-4 rounded-2xl bg-slate-50 border border-slate-200 flex flex-col sm:flex-row gap-4 items-center hover:border-art-gold transition text-xs">
-                  <img src={art.image} alt={art.title} className="w-16 h-16 object-cover rounded-xl border border-slate-300 shrink-0" />
+                  <Link href={`/artwork/${art.id}`} className="shrink-0">
+                    <img src={art.image} alt={art.title} className="w-16 h-16 object-cover rounded-xl border border-slate-300 hover:border-art-gold transition cursor-pointer" />
+                  </Link>
                   <div className="flex-1 text-center sm:text-left">
-                    <h4 className="font-serif text-sm font-bold text-slate-900">{art.title}</h4>
+                    <Link href={`/artwork/${art.id}`}>
+                      <h4 className="font-serif text-sm font-bold text-slate-900 hover:text-art-gold transition cursor-pointer">{art.title}</h4>
+                    </Link>
                     <span className="text-[11px] text-art-gold font-semibold block mb-1">By {art.artistName} · {art.country}</span>
                     <span className="px-2.5 py-0.5 rounded-full text-[9px] font-bold uppercase bg-emerald-100 text-emerald-800">
                       Vault Custody Confirmed

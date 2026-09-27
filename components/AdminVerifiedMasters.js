@@ -15,6 +15,7 @@ import {
   MapPin,
   Building
 } from 'lucide-react';
+import Link from 'next/link';
 
 export default function AdminVerifiedMasters() {
   const { 
@@ -107,6 +108,14 @@ export default function AdminVerifiedMasters() {
               </span>
 
               <div className="flex items-center gap-2">
+                <Link
+                  href={`/artist/${encodeURIComponent(verif.artistName)}`}
+                  target="_blank"
+                  className="px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold text-xs transition"
+                >
+                  View Profile
+                </Link>
+
                 {verif.status !== 'approved' ? (
                   <button
                     onClick={() => updateArtistVerificationStatus(verif.id, 'approved', 'gold', 'Gold Crest Certified')}

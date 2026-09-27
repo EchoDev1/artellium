@@ -204,19 +204,11 @@ export default function Under1MPage() {
           {sortedItems.map((art) => (
             <div
               key={art.id}
-              className="group relative rounded-3xl overflow-hidden bg-[#0D1017] border border-white/10 hover:border-art-gold/60 transition-all duration-300 shadow-2xl flex flex-col justify-between hover:-translate-y-1.5"
+              className="group relative rounded-3xl overflow-hidden bg-[#0D1017] border border-white/10 hover:border-art-gold/60 transition-all duration-300 shadow-2xl flex flex-col justify-between hover:-translate-y-1.5 p-4 sm:p-5"
             >
-              {/* Image Frame */}
-              <div className="relative aspect-[4/3] w-full overflow-hidden bg-black">
-                <img
-                  src={art.image}
-                  alt={art.title}
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-[#0D1017] via-transparent to-black/30 pointer-events-none" />
-
-                {/* Country Tag & Priority Badge */}
-                <div className="absolute top-3 left-3 z-10 flex flex-col gap-1">
+              {/* Top Badge Strip (Above Painting Canvas) */}
+              <div className="flex items-center justify-between gap-2 pb-3">
+                <div className="flex items-center gap-1.5 flex-wrap">
                   <div className="px-2.5 py-0.5 rounded-full bg-black/80 backdrop-blur-md text-slate-300 font-sans text-[10px] font-bold border border-white/15 w-fit">
                     {art.country}
                   </div>
@@ -228,21 +220,35 @@ export default function Under1MPage() {
                   )}
                 </div>
 
-                {/* Affordable Guarantee Tag */}
-                <div className="absolute top-3 right-3 z-10 px-2.5 py-0.5 rounded-full bg-art-gold/90 text-art-black font-mono font-black text-[9px] shadow-sm">
+                <div className="px-2.5 py-0.5 rounded-full bg-art-gold/90 text-art-black font-mono font-black text-[9px] shadow-sm shrink-0">
                   100% Provenance
                 </div>
               </div>
 
+              {/* Clickable Image Frame (Canvas completely clear of badges) */}
+              <Link
+                href={`/artwork/${art.id}`}
+                className="block relative aspect-[4/3] w-full rounded-2xl overflow-hidden bg-black cursor-pointer group/canvas"
+              >
+                <img
+                  src={art.image}
+                  alt={art.title}
+                  className="w-full h-full object-cover group-hover:scale-105 group-hover/canvas:scale-105 transition-transform duration-500"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-[#0D1017] via-transparent to-transparent pointer-events-none" />
+              </Link>
+
               {/* Artwork Details */}
-              <div className="p-5 sm:p-6 space-y-4 flex-1 flex flex-col justify-between">
+              <div className="pt-4 space-y-4 flex-1 flex flex-col justify-between">
                 <div className="space-y-1.5">
                   <span className="text-[11px] font-sans font-semibold text-art-gold uppercase tracking-wider block">
                     {art.artistName}
                   </span>
-                  <h3 className="font-serif text-xl font-bold text-white group-hover:text-art-gold transition-colors">
-                    {art.title}
-                  </h3>
+                  <Link href={`/artwork/${art.id}`}>
+                    <h3 className="font-serif text-xl font-bold text-white hover:text-art-gold transition-colors cursor-pointer">
+                      {art.title}
+                    </h3>
+                  </Link>
                   <p className="text-xs text-slate-400 font-sans line-clamp-2 leading-relaxed">
                     {art.medium} · {art.dimensions}
                   </p>

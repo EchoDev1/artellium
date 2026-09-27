@@ -25,35 +25,24 @@ export default function ArtworkCard({ artwork }) {
 
   return (
     <div className="group relative rounded-2xl overflow-hidden glass-card hover:border-art-gold/60 transition duration-300 transform hover:-translate-y-1.5 shadow-xl flex flex-col justify-between">
-      {/* Image Container */}
-      <div className="relative aspect-[4/3] w-full overflow-hidden bg-art-black">
-        <img
-          src={artwork.image || fallbackImg}
-          alt={artwork.title}
-          onError={(e) => {
-            e.currentTarget.src = fallbackImg;
-          }}
-          className="w-full h-full object-cover group-hover:scale-105 transition duration-500"
-        />
-        <div className="absolute inset-0 bg-gradient-to-t from-art-black via-transparent to-transparent opacity-80" />
-
-        {/* Badges Overlay */}
-        <div className="absolute top-3 left-3 flex flex-wrap gap-1.5 z-10">
+      {/* Top Badge Strip (Above painting, not on painting) */}
+      <div className="px-3.5 pt-2.5 pb-2 flex items-center justify-between gap-1.5 z-10 bg-[#0B0D14]/95 border-b border-white/5">
+        <div className="flex flex-wrap items-center gap-1.5">
           {!artwork.isDemo && (
-            <span className="bg-gradient-to-r from-art-gold to-art-gold-dark text-white text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1 shadow-gold-glow">
+            <span className="bg-gradient-to-r from-art-gold to-art-gold-dark text-white text-[9.5px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1 shadow-gold-glow">
               <Sparkles className="w-3 h-3 text-white" />
               <span>DIRECT ARTIST UPLOAD</span>
             </span>
           )}
 
           {isPriorityArtist(artwork) ? (
-            <span className="bg-gradient-to-r from-amber-500 via-art-gold to-yellow-500 text-black font-black text-[10px] px-2.5 py-0.5 rounded-full flex items-center gap-1 shadow-[0_0_12px_rgba(212,175,55,0.6)] border border-amber-300">
+            <span className="bg-gradient-to-r from-amber-500 via-art-gold to-yellow-500 text-black font-black text-[9.5px] px-2 py-0.5 rounded-full flex items-center gap-1 shadow-[0_0_12px_rgba(212,175,55,0.6)] border border-amber-300">
               <Crown className="w-3 h-3 text-black fill-current" />
               <span>PRIORITY ARTIST</span>
             </span>
           ) : (
             artwork.artistType === 'Premium' && (
-              <span className="badge-gold text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1 shadow-gold-glow">
+              <span className="badge-gold text-[9.5px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1 shadow-gold-glow">
                 <Sparkles className="w-3 h-3 text-art-gold" />
                 <span>PREMIUM ARTIST</span>
               </span>
@@ -61,42 +50,61 @@ export default function ArtworkCard({ artwork }) {
           )}
 
           {artwork.isNewlyListed && (
-            <span className="badge-emerald text-[10px] font-bold px-2 py-0.5 rounded-full">
+            <span className="badge-emerald text-[9.5px] font-bold px-2 py-0.5 rounded-full">
               NEW LISTING
             </span>
           )}
 
           {artwork.status === 'sold' && (
-            <span className="badge-crimson text-[10px] font-bold px-2.5 py-0.5 rounded-full">
+            <span className="badge-crimson text-[9.5px] font-bold px-2.5 py-0.5 rounded-full">
               RECENTLY SOLD
             </span>
           )}
 
           {artwork.status === 'auction' && (
-            <span className="bg-red-600 text-white font-bold text-[10px] px-2 py-0.5 rounded-full animate-pulse">
+            <span className="bg-red-600 text-white font-bold text-[9.5px] px-2 py-0.5 rounded-full animate-pulse">
               🔥 LIVE AUCTION
+            </span>
+          )}
+
+          {artwork.status === 'exhibition' && (
+            <span className="bg-emerald-700 text-white font-bold text-[9.5px] px-2 py-0.5 rounded-full">
+              🏛️ EXHIBITION
             </span>
           )}
         </div>
 
         {/* Wishlist Heart Button */}
         <button
-          onClick={(e) => { e.preventDefault(); isWishlisted ? removeFromWishlist(artwork.id) : addToWishlist(artwork.id); }}
-          className="absolute top-3 right-3 p-1.5 bg-art-black/70 hover:bg-art-black text-white rounded-xl backdrop-blur-md transition shadow-lg z-10"
+          onClick={(e) => { e.preventDefault(); e.stopPropagation(); isWishlisted ? removeFromWishlist(artwork.id) : addToWishlist(artwork.id); }}
+          className="p-1.5 hover:bg-white/10 text-white rounded-lg transition shrink-0"
           title={isWishlisted ? 'Remove from Wishlist' : 'Save to Wishlist'}
         >
-          <Heart className={`w-4 h-4 ${isWishlisted ? 'fill-red-500 text-red-500' : 'text-white'}`} />
+          <Heart className={`w-4 h-4 ${isWishlisted ? 'fill-red-500 text-red-500' : 'text-slate-400 hover:text-white'}`} />
         </button>
+      </div>
+
+      {/* Clickable Image Container (Clean Canvas with zero overlay obscuring artwork) */}
+      <Link href={`/artwork/${artwork.id}`} className="block relative aspect-[4/3] w-full overflow-hidden bg-art-black cursor-pointer group/img">
+        <img
+          src={artwork.image || fallbackImg}
+          alt={artwork.title}
+          onError={(e) => {
+            e.currentTarget.src = fallbackImg;
+          }}
+          className="w-full h-full object-cover group-hover:scale-105 group-hover/img:scale-105 transition duration-500"
+        />
+        <div className="absolute inset-0 bg-gradient-to-t from-art-black via-transparent to-transparent opacity-60 pointer-events-none" />
 
         {/* Quick View Button */}
         <button
-          onClick={() => setQuickViewOpen(true)}
-          className="absolute bottom-3 right-3 p-2 bg-art-black/80 hover:bg-art-gold hover:text-art-black text-white rounded-xl backdrop-blur-md transition shadow-lg opacity-0 group-hover:opacity-100 transform translate-y-2 group-hover:translate-y-0"
+          onClick={(e) => { e.preventDefault(); e.stopPropagation(); setQuickViewOpen(true); }}
+          className="absolute bottom-3 right-3 p-2 bg-art-black/80 hover:bg-art-gold hover:text-art-black text-white rounded-xl backdrop-blur-md transition shadow-lg opacity-0 group-hover:opacity-100 transform translate-y-2 group-hover:translate-y-0 z-10"
           title="Quick View Details"
         >
           <Eye className="w-4 h-4" />
         </button>
-      </div>
+      </Link>
 
       {/* Card Content */}
       <div className="p-4 flex-1 flex flex-col justify-between">
@@ -115,16 +123,19 @@ export default function ArtworkCard({ artwork }) {
             </h3>
           </Link>
 
-          <div className="flex items-center gap-2 mt-1 mb-2">
+          <Link 
+            href={`/artist/${artwork.artistId || encodeURIComponent(artwork.artistName)}`}
+            className="flex items-center gap-2 mt-1 mb-2 group/artist hover:opacity-85 transition"
+          >
             <img
               src={artwork.artistAvatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=300'}
               alt={artwork.artistName}
-              className="w-5 h-5 rounded-full object-cover border border-art-gold/40"
+              className="w-5 h-5 rounded-full object-cover border border-art-gold/40 group-hover/artist:border-art-gold"
             />
-            <span className="text-xs text-art-gold font-medium truncate">
+            <span className="text-xs text-art-gold font-medium truncate group-hover/artist:underline">
               {artwork.artistName}
             </span>
-          </div>
+          </Link>
 
           {/* Verification Badge */}
           <div className="mb-2">

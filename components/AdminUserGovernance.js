@@ -33,8 +33,10 @@ import {
   Lock,
   X,
   Check,
-  Building
+  Building,
+  ExternalLink
 } from 'lucide-react';
+import Link from 'next/link';
 import VerificationBadge from '@/components/VerificationBadge';
 
 export default function AdminUserGovernance({
@@ -454,7 +456,19 @@ export default function AdminUserGovernance({
                           </div>
                           <div>
                             <div className="flex items-center gap-1.5">
-                              <span className="font-serif font-bold text-slate-900 text-sm">{user.name}</span>
+                              {user.role === 'artist' ? (
+                                <Link 
+                                  href={`/artist/${user.id}`}
+                                  target="_blank"
+                                  className="font-serif font-bold text-slate-900 text-sm hover:text-art-gold transition flex items-center gap-1 group/name"
+                                  title="View Complete Artist Profile & Confidential Dossier"
+                                >
+                                  <span>{user.name}</span>
+                                  <ExternalLink className="w-3 h-3 text-slate-400 group-hover/name:text-art-gold" />
+                                </Link>
+                              ) : (
+                                <span className="font-serif font-bold text-slate-900 text-sm">{user.name}</span>
+                              )}
                               {user.country && <span className="text-xs">{user.country === 'Nigeria' ? '🇳🇬' : user.country === 'Ghana' ? '🇬🇭' : user.country === 'South Africa' ? '🇿🇦' : user.country === 'France' ? '🇫🇷' : '🌍'}</span>}
                             </div>
                             <span className="text-[11px] text-slate-500 font-sans block">{user.email}</span>
@@ -601,6 +615,19 @@ export default function AdminUserGovernance({
                       <td className="py-4 px-4 text-right">
                         <div className="flex items-center justify-end gap-1.5 flex-wrap">
                           
+                          {/* View Complete Artist Profile & Confidential Dossier */}
+                          {user.role === 'artist' && (
+                            <Link
+                              href={`/artist/${user.id}`}
+                              target="_blank"
+                              className="px-2.5 py-1.5 rounded-lg bg-art-gold/15 hover:bg-art-gold text-amber-950 hover:text-black border border-art-gold/40 font-bold text-[10px] transition flex items-center gap-1 cursor-pointer"
+                              title="View Complete Artist Profile & Confidential Dossier"
+                            >
+                              <Palette className="w-3 h-3 text-art-gold" />
+                              <span>View Dossier</span>
+                            </Link>
+                          )}
+
                           {/* Suspend / Lift Suspension */}
                           {status === 'suspended' ? (
                             <button

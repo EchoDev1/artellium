@@ -42,6 +42,12 @@ function NewlyListedContent() {
   const [selectedMedium, setSelectedMedium] = useState('All');
   const [priceFilter, setPriceFilter] = useState('All');
   const [sortBy, setSortBy] = useState('newest'); // newest, price_low, price_high
+  const [visibleCount, setVisibleCount] = useState(24);
+
+  // Reset pagination when search or filters change
+  React.useEffect(() => {
+    setVisibleCount(24);
+  }, [searchTerm, selectedMedium, priceFilter, sortBy, categoryParam]);
 
   // Filter artworks strictly for newly listed / available
   const matchingArtworks = useMemo(() => {
@@ -224,12 +230,45 @@ function NewlyListedContent() {
         </div>
       )}
 
-      {/* Artworks Grid */}
+      {/* Artworks Grid with Progressive Scalable Loading */}
       {sortedArtworks.length > 0 ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {sortedArtworks.map((art) => (
-            <ArtworkCard key={art.id} artwork={art} />
-          ))}
+        <div className="space-y-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {sortedArtworks.slice(0, visibleCount).map((art) => (
+              <ArtworkCard key={art.id} artwork={art} />
+            ))}
+          </div>
+
+          {/* Scalable Progressive Pagination Controls */}
+          {sortedArtworks.length > visibleCount && (
+            <div className="pt-6 pb-4 flex flex-col items-center justify-center gap-3 text-center">
+              <span className="text-xs text-slate-400 font-mono">
+                Showing <strong className="text-white font-bold">{Math.min(visibleCount, sortedArtworks.length)}</strong> of <strong className="text-art-gold font-bold">{sortedArtworks.length}</strong> Masterpieces
+              </span>
+              <div className="w-48 h-1.5 bg-white/10 rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-gradient-to-r from-art-gold to-amber-500 rounded-full transition-all duration-300"
+                  style={{ width: `${Math.min(100, (visibleCount / sortedArtworks.length) * 100)}%` }}
+                />
+              </div>
+              <div className="flex items-center gap-3 pt-2">
+                <button
+                  onClick={() => setVisibleCount(prev => prev + 24)}
+                  className="px-6 py-3 bg-gradient-to-r from-art-gold via-amber-400 to-art-gold hover:brightness-110 text-art-black font-bold text-xs uppercase tracking-wider rounded-xl transition shadow-gold-glow cursor-pointer"
+                >
+                  Load Next 24 Masterpieces
+                </button>
+                {sortedArtworks.length > visibleCount + 24 && (
+                  <button
+                    onClick={() => setVisibleCount(sortedArtworks.length)}
+                    className="px-4 py-3 bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white font-medium text-xs rounded-xl border border-white/10 transition cursor-pointer"
+                  >
+                    View All ({sortedArtworks.length})
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
         </div>
       ) : (
         <div className="bg-[#0D111A] p-12 rounded-3xl border border-white/10 text-center space-y-4 max-w-lg mx-auto">

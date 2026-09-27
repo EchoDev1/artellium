@@ -53,6 +53,9 @@ function getPageTitle(pathname) {
   if (pathname.startsWith('/exhibitions/')) {
     return 'Exhibition Showcase';
   }
+  if (pathname.startsWith('/artist/') && !pathname.includes('/artist/dashboard') && !pathname.includes('/artist/register')) {
+    return 'Master Artist Profile';
+  }
 
   // Fallback: parse last segment
   const segments = pathname.split('/').filter(Boolean);

@@ -158,16 +158,19 @@ export default function CuratorPicksPage() {
           >
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
               
-              {/* Masterpiece Photo Frame (5 cols) */}
-              <div className="lg:col-span-5 relative aspect-[4/3] w-full rounded-2xl overflow-hidden bg-black shadow-xl">
+              {/* Masterpiece Photo Frame (5 cols - Clickable) */}
+              <Link
+                href={`/artwork/${pick.artworkId || pick.id}`}
+                className="lg:col-span-5 block relative aspect-[4/3] w-full rounded-2xl overflow-hidden bg-black shadow-xl cursor-pointer group/pick"
+              >
                 <img
                   src={pick.image}
                   alt={pick.title}
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
+                  className="w-full h-full object-cover group-hover:scale-105 group-hover/pick:scale-105 transition-transform duration-700"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-[#0D1017] via-transparent to-black/30 pointer-events-none" />
 
-                <div className="absolute top-3 left-3 z-10 flex flex-col gap-1">
+                <div className="absolute top-3 left-3 z-10 flex flex-col gap-1 pointer-events-none">
                   <span className="px-3 py-1 rounded-full bg-black/85 backdrop-blur-md text-purple-300 font-mono font-bold text-xs border border-purple-500/40 w-fit">
                     {pick.exhibitionHall}
                   </span>
@@ -179,10 +182,10 @@ export default function CuratorPicksPage() {
                   )}
                 </div>
 
-                <div className="absolute bottom-3 right-3 z-10 px-3 py-1 rounded-full bg-art-gold text-art-black font-serif font-black text-sm shadow-lg">
+                <div className="absolute bottom-3 right-3 z-10 px-3 py-1 rounded-full bg-art-gold text-art-black font-serif font-black text-sm shadow-lg pointer-events-none">
                   {formatPrice(pick.price)}
                 </div>
-              </div>
+              </Link>
 
               {/* Curatorial Review Details (7 cols) */}
               <div className="lg:col-span-7 space-y-4">
@@ -190,9 +193,11 @@ export default function CuratorPicksPage() {
                   <span className="text-xs font-mono font-bold text-art-gold uppercase tracking-widest block">
                     {pick.artistName} ({pick.country})
                   </span>
-                  <h2 className="font-serif text-2xl sm:text-3xl font-bold text-white group-hover:text-purple-300 transition-colors">
-                    {pick.title}
-                  </h2>
+                  <Link href={`/artwork/${pick.artworkId || pick.id}`}>
+                    <h2 className="font-serif text-2xl sm:text-3xl font-bold text-white group-hover:text-purple-300 transition-colors hover:underline">
+                      {pick.title}
+                    </h2>
+                  </Link>
                   <p className="text-xs text-slate-400 font-sans">
                     {pick.medium}
                   </p>

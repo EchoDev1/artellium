@@ -26,10 +26,11 @@ import {
   ShieldCheck,
   Building
 } from 'lucide-react';
-import { sortExhibitionsByPriority } from '@/lib/priority-utils';
+import { sortExhibitionsByPriority, sortArtworksByPriority } from '@/lib/priority-utils';
+import ArtworkCard from '@/components/ArtworkCard';
 
 export default function ExhibitionsPage() {
-  const { exhibitions = [], sellers = [], usersList = [] } = useStore();
+  const { exhibitions = [], artworks = [], sellers = [], usersList = [] } = useStore();
   
   // Timing Tabs: 'all', 'current', 'upcoming', 'past', 'virtual'
   const [activeTimingTab, setActiveTimingTab] = useState('current');
@@ -62,7 +63,7 @@ export default function ExhibitionsPage() {
 
   // Filtered Exhibitions Logic
   const filteredExhibitions = useMemo(() => {
-    return exhibitions.filter((ex) => {
+    const filtered = exhibitions.filter((ex) => {
       // Timing Match
       let matchTiming = true;
       if (activeTimingTab === 'current') {
@@ -97,6 +98,12 @@ export default function ExhibitionsPage() {
 
     return sortExhibitionsByPriority(filtered, sellers, usersList);
   }, [exhibitions, activeTimingTab, selectedFormat, searchQuery, cityFilter, sellers, usersList]);
+
+  // Artworks uploaded for Museum / Exhibition Listing
+  const exhibitionMasterpieces = useMemo(() => {
+    const matching = artworks.filter(a => a.status === 'exhibition' || a.isExhibition);
+    return sortArtworksByPriority(matching, { sellers, users: usersList });
+  }, [artworks, sellers, usersList]);
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-10 font-sans pb-24 text-slate-100">
@@ -242,11 +249,11 @@ export default function ExhibitionsPage() {
                   className="group relative rounded-3xl overflow-hidden bg-[#0A0D14] border border-emerald-500/30 hover:border-emerald-400 transition-all duration-300 shadow-2xl flex flex-col justify-between"
                 >
                   {/* Exhibition Cover Image */}
-                  <div className="relative aspect-[16/9] w-full overflow-hidden bg-black">
+                  <Link href={`/exhibitions/${slug}`} className="block relative aspect-[16/9] w-full overflow-hidden bg-black cursor-pointer group/cover">
                     <img
                       src={ex.coverImage}
                       alt={ex.title}
-                      className="w-full h-full object-cover group-hover:scale-105 transition duration-700 opacity-90"
+                      className="w-full h-full object-cover group-hover:scale-105 group-hover/cover:scale-105 transition duration-700 opacity-90"
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-[#0A0D14] via-[#0A0D14]/40 to-transparent" />
 
@@ -275,7 +282,7 @@ export default function ExhibitionsPage() {
                         <span className="truncate">{ex.location}</span>
                       </div>
                     )}
-                  </div>
+                  </Link>
 
                   {/* Exhibition Card Content */}
                   <div className="p-6 space-y-4 flex-1 flex flex-col justify-between">
@@ -293,9 +300,11 @@ export default function ExhibitionsPage() {
                       </div>
 
                       {/* Title */}
-                      <h2 className="font-serif text-2xl font-bold text-white group-hover:text-art-gold transition leading-snug">
-                        {ex.title}
-                      </h2>
+                      <Link href={`/exhibitions/${slug}`}>
+                        <h2 className="font-serif text-2xl font-bold text-white hover:text-art-gold transition leading-snug cursor-pointer">
+                          {ex.title}
+                        </h2>
+                      </Link>
 
                       {/* Curator & SDG */}
                       <div className="space-y-1 text-xs">
@@ -362,6 +371,39 @@ export default function ExhibitionsPage() {
           </div>
         )}
       </div>
+
+      {/* 3. ARTIST EXHIBITION MASTERPIECES */}
+      {exhibitionMasterpieces.length > 0 && (
+        <div className="space-y-6 pt-6 border-t border-white/10">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div>
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/15 text-emerald-300 text-[10px] font-mono font-bold tracking-widest uppercase border border-emerald-500/30 mb-1">
+                <Sparkles className="w-3.5 h-3.5 text-emerald-400" />
+                <span>EXHIBITED ARTWORKS & ARTIST SUBMISSIONS</span>
+              </div>
+              <h2 className="font-serif text-2xl sm:text-3xl font-bold text-white tracking-wide">
+                Exhibition Gallery Masterpieces ({exhibitionMasterpieces.length})
+              </h2>
+              <p className="text-xs text-slate-300">
+                Original artworks listed under curatorial museum exhibitions by verified African master artists.
+              </p>
+            </div>
+            <Link
+              href="/explore?category=All"
+              className="text-xs font-bold text-emerald-400 hover:text-emerald-300 flex items-center gap-1 shrink-0"
+            >
+              <span>Explore All Artworks</span>
+              <ArrowRight className="w-3.5 h-3.5" />
+            </Link>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {exhibitionMasterpieces.map((art) => (
+              <ArtworkCard key={art.id} artwork={art} />
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* ========================================================================= */}
       {/* QUICK 3D VIRTUAL GALLERY SPATIAL WALKTHROUGH MODAL                       */}

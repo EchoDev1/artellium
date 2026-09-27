@@ -476,17 +476,19 @@ export default function JumiaArtHero() {
 
                 {/* Artwork Thumbnail & Details */}
                 <div className="flex items-center gap-2.5">
-                  <div className="w-14 h-14 rounded-xl overflow-hidden bg-black shrink-0 border border-red-800/40">
+                  <Link href="/artwork/art-102" className="w-14 h-14 rounded-xl overflow-hidden bg-black shrink-0 border border-red-800/40 block cursor-pointer">
                     <img
                       src="https://images.unsplash.com/photo-1605721911519-3dfeb3be25e7?auto=format&fit=crop&q=80&w=200"
                       alt="The Golden Benin Queen"
-                      className="w-full h-full object-cover group-hover:scale-110 transition duration-500"
+                      className="w-full h-full object-cover hover:scale-110 transition duration-500"
                     />
-                  </div>
+                  </Link>
                   <div>
-                    <h4 className="font-serif font-bold text-white text-xs line-clamp-1 group-hover:text-red-300 transition">
-                      The Golden Benin Queen
-                    </h4>
+                    <Link href="/artwork/art-102">
+                      <h4 className="font-serif font-bold text-white text-xs line-clamp-1 hover:text-red-300 transition cursor-pointer">
+                        The Golden Benin Queen
+                      </h4>
+                    </Link>
                     <span className="text-[10px] text-slate-400 font-sans block">Amina Diallo · Lost-Wax Bronze</span>
                     <div className="flex items-baseline gap-1 mt-0.5">
                       <span className="text-[10px] text-slate-400">Current Bid:</span>

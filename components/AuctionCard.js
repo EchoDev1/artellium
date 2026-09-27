@@ -209,48 +209,53 @@ export default function AuctionCard({ artwork }) {
   return (
     <div className="group relative rounded-3xl overflow-hidden bg-[#0A0D14] border border-art-gold/30 shadow-2xl flex flex-col md:flex-row gap-6 p-6 hover:border-art-gold transition duration-300">
       
-      {/* Artwork Image Container */}
-      <div className="relative aspect-[4/3] md:w-5/12 rounded-2xl overflow-hidden bg-black shrink-0 border border-white/10">
-        <img
-          src={artwork.image || DEFAULT_FALLBACK_IMAGE}
-          alt={artwork.title}
-          onError={(e) => {
-            e.currentTarget.src = DEFAULT_FALLBACK_IMAGE;
-          }}
-          className="w-full h-full object-cover group-hover:scale-105 transition duration-700"
-        />
-        
-        {/* Top Badges */}
-        <div className="absolute top-3 left-3 flex flex-wrap gap-1.5">
-          <span className="bg-red-600 text-white font-black text-[10px] px-3 py-1 rounded-full shadow-crimson-glow flex items-center gap-1 animate-pulse">
+      {/* Artwork Image Container (Clickable and Clean) */}
+      <div className="relative md:w-5/12 flex flex-col gap-2 shrink-0">
+        {/* Top Badges Strip (Above painting, not on painting) */}
+        <div className="flex flex-wrap items-center gap-1.5 pb-1">
+          <span className="bg-red-600 text-white font-black text-[10px] px-2.5 py-0.5 rounded-full shadow-crimson-glow flex items-center gap-1 animate-pulse">
             <Flame className="w-3 h-3 fill-current" />
             <span>LIVE AUCTION</span>
           </span>
-          <span className="bg-black/80 backdrop-blur-md text-art-gold font-mono font-bold text-[10px] px-3 py-1 rounded-full border border-art-gold/40">
+          <span className="bg-black/80 backdrop-blur-md text-art-gold font-mono font-bold text-[10px] px-2.5 py-0.5 rounded-full border border-art-gold/40">
             {lotNumber}
           </span>
           {isPriorityArtist(artwork) && (
-            <span className="bg-gradient-to-r from-amber-500 via-art-gold to-yellow-500 text-black font-black text-[10px] px-2.5 py-1 rounded-full shadow-[0_0_12px_rgba(212,175,55,0.6)] flex items-center gap-1 border border-amber-300">
+            <span className="bg-gradient-to-r from-amber-500 via-art-gold to-yellow-500 text-black font-black text-[10px] px-2.5 py-0.5 rounded-full shadow-[0_0_12px_rgba(212,175,55,0.6)] flex items-center gap-1 border border-amber-300">
               <Crown className="w-3 h-3 text-black fill-current" />
               <span>👑 PRIORITY ARTIST LOT</span>
             </span>
           )}
         </div>
 
-        {/* Reserve Met Status */}
-        <div className="absolute bottom-3 left-3">
-          {isReserveMet ? (
-            <span className="bg-emerald-950/90 text-emerald-300 text-[10px] font-mono font-bold px-3 py-1 rounded-full border border-emerald-500/60 flex items-center gap-1 shadow">
-              <Check className="w-3 h-3 text-emerald-400" />
-              <span>Reserve Met</span>
-            </span>
-          ) : (
-            <span className="bg-amber-950/90 text-art-gold text-[10px] font-mono font-bold px-3 py-1 rounded-full border border-art-gold/50 flex items-center gap-1 shadow">
-              <AlertCircle className="w-3 h-3 text-art-gold" />
-              <span>RESERVE NOT MET</span>
-            </span>
-          )}
-        </div>
+        <Link
+          href={`/artwork/${artwork.id || artwork.artworkId}`}
+          className="block relative aspect-[4/3] w-full rounded-2xl overflow-hidden bg-black border border-white/10 cursor-pointer group/lot"
+        >
+          <img
+            src={artwork.image || DEFAULT_FALLBACK_IMAGE}
+            alt={artwork.title}
+            onError={(e) => {
+              e.currentTarget.src = DEFAULT_FALLBACK_IMAGE;
+            }}
+            className="w-full h-full object-cover group-hover:scale-105 group-hover/lot:scale-105 transition duration-700"
+          />
+
+          {/* Reserve Met Status Pill */}
+          <div className="absolute bottom-3 left-3">
+            {isReserveMet ? (
+              <span className="bg-emerald-950/90 text-emerald-300 text-[10px] font-mono font-bold px-3 py-1 rounded-full border border-emerald-500/60 flex items-center gap-1 shadow">
+                <Check className="w-3 h-3 text-emerald-400" />
+                <span>Reserve Met</span>
+              </span>
+            ) : (
+              <span className="bg-amber-950/90 text-art-gold text-[10px] font-mono font-bold px-3 py-1 rounded-full border border-art-gold/50 flex items-center gap-1 shadow">
+                <AlertCircle className="w-3 h-3 text-art-gold" />
+                <span>RESERVE NOT MET</span>
+              </span>
+            )}
+          </div>
+        </Link>
       </div>
 
       {/* Auction Details & Bid Arena */}

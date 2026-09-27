@@ -247,46 +247,52 @@ export default function FlashDealsPage() {
           {filteredDeals.map((deal) => (
             <div
               key={deal.id}
-              className="group relative rounded-3xl overflow-hidden bg-[#0D1017] border border-white/10 hover:border-red-500/60 transition-all duration-300 shadow-2xl flex flex-col justify-between hover:-translate-y-1.5"
+              className="group relative rounded-3xl overflow-hidden bg-[#0D1017] border border-white/10 hover:border-red-500/60 transition-all duration-300 shadow-2xl flex flex-col justify-between hover:-translate-y-1.5 p-4 sm:p-5"
             >
-              {/* Image Container */}
-              <div className="relative aspect-[4/3] w-full overflow-hidden bg-black">
-                <img
-                  src={deal.image}
-                  alt={deal.title}
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-[#0D1017] via-transparent to-black/30 pointer-events-none" />
-
-                {/* Discount & Priority Badges */}
-                <div className="absolute top-3 left-3 z-10 flex flex-col gap-1 items-start">
-                  <div className="px-3 py-1 rounded-full bg-red-600 text-white font-mono font-black text-xs shadow-lg flex items-center gap-1 border border-red-400">
-                    <Percent className="w-3.5 h-3.5" />
+              {/* Top Badge Strip (Above Painting Canvas) */}
+              <div className="flex items-center justify-between gap-2 pb-3">
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  <div className="px-2.5 py-0.5 rounded-full bg-red-600 text-white font-mono font-black text-[10px] shadow flex items-center gap-1 border border-red-400">
+                    <Percent className="w-3 h-3" />
                     <span>{deal.discountPercent}% OFF</span>
                   </div>
                   {isPriorityArtist(deal, sellers, usersList) && (
-                    <div className="px-2 py-0.5 rounded-full bg-gradient-to-r from-art-gold via-amber-300 to-art-gold text-art-black font-black text-[9px] shadow-lg flex items-center gap-1 uppercase tracking-wider">
+                    <div className="px-2 py-0.5 rounded-full bg-gradient-to-r from-art-gold via-amber-300 to-art-gold text-art-black font-black text-[9px] shadow flex items-center gap-1 uppercase tracking-wider">
                       <Crown className="w-2.5 h-2.5 fill-current" />
                       <span>PRIORITY ARTIST</span>
                     </div>
                   )}
                 </div>
 
-                {/* Units Left Pill */}
-                <div className="absolute top-3 right-3 z-10 px-2.5 py-1 rounded-full bg-black/80 backdrop-blur-md text-amber-300 font-mono font-bold text-[10px] border border-amber-500/30">
+                <div className="px-2.5 py-0.5 rounded-full bg-black/80 backdrop-blur-md text-amber-300 font-mono font-bold text-[10px] border border-amber-500/30 shrink-0">
                   {deal.availableUnits} Available
                 </div>
               </div>
 
+              {/* Clickable Image Container (Canvas completely clear of badges) */}
+              <Link 
+                href={`/artwork/${deal.id || deal.artworkId}`}
+                className="block relative aspect-[4/3] w-full rounded-2xl overflow-hidden bg-black cursor-pointer group/canvas"
+              >
+                <img
+                  src={deal.image}
+                  alt={deal.title}
+                  className="w-full h-full object-cover group-hover:scale-105 group-hover/canvas:scale-105 transition-transform duration-500"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-[#0D1017] via-transparent to-transparent pointer-events-none" />
+              </Link>
+
               {/* Card Details */}
-              <div className="p-5 sm:p-6 space-y-4 flex-1 flex flex-col justify-between">
+              <div className="pt-4 space-y-4 flex-1 flex flex-col justify-between">
                 <div className="space-y-1.5">
                   <span className="text-[11px] font-sans font-semibold text-art-gold uppercase tracking-wider block">
                     {deal.artistName} ({deal.country})
                   </span>
-                  <h3 className="font-serif text-xl font-bold text-white group-hover:text-red-400 transition-colors">
-                    {deal.title}
-                  </h3>
+                  <Link href={`/artwork/${deal.id || deal.artworkId}`}>
+                    <h3 className="font-serif text-xl font-bold text-white hover:text-red-400 transition-colors cursor-pointer">
+                      {deal.title}
+                    </h3>
+                  </Link>
                   <p className="text-xs text-slate-400 font-sans line-clamp-2 leading-relaxed">
                     {deal.medium} · {deal.description}
                   </p>

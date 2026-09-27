@@ -2,17 +2,25 @@
 
 import React from 'react';
 import { useStore } from '@/context/store-context';
-import { Palette, Box, Monitor, Sparkles, Layers } from 'lucide-react';
+import { Palette, Box, Monitor, Sparkles, Layers, Camera, Compass } from 'lucide-react';
 
 export default function CategoryBar() {
   const { selectedCategory, setSelectedCategory } = useStore();
 
   const categories = [
-    { name: 'All', icon: Layers, label: 'All Artwork Categories' },
-    { name: 'Painters', icon: Palette, label: 'Oil & Acrylic Painters' },
-    { name: 'Sculpture Makers', icon: Box, label: 'Bronze & Wood Sculptors' },
-    { name: 'Digital Art', icon: Monitor, label: 'Afrofuturist 3D & Digital' },
-    { name: 'Mixed Media', icon: Sparkles, label: 'Textile & Mixed Media' },
+    { name: 'All', icon: Layers, label: 'All Categories' },
+    { name: 'Paintings', icon: Palette, label: 'Paintings' },
+    { name: 'Sculptures', icon: Box, label: 'Sculptures' },
+    { name: 'Drawings', icon: Sparkles, label: 'Drawings' },
+    { name: 'Photography', icon: Camera, label: 'Photography' },
+    { name: 'Textiles', icon: Sparkles, label: 'Textiles' },
+    { name: 'Pottery', icon: Box, label: 'Pottery' },
+    { name: 'Ceramics', icon: Box, label: 'Ceramics' },
+    { name: 'Woodworks', icon: Box, label: 'Woodworks' },
+    { name: 'Metal works', icon: Box, label: 'Metal Works' },
+    { name: 'Handmade crafts', icon: Sparkles, label: 'Handmade Crafts' },
+    { name: 'Indigenous artworks', icon: Compass, label: 'Indigenous Art' },
+    { name: 'Limited edition collections', icon: Monitor, label: 'Limited Editions' },
   ];
 
   return (

@@ -1,4 +1,4 @@
-﻿import { NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { supabaseServer } from '@/lib/supabaseServer';
 
 export const dynamic = 'force-dynamic';
@@ -11,7 +11,12 @@ export async function POST(request) {
       return NextResponse.json({ success: false, error: 'User ID or email is required.' }, { status: 400 });
     }
 
-    const allowedFields = ['name', 'password', 'role', 'phone', 'country', 'avatar_url', 'subscription_tier'];
+    const allowedFields = [
+      'name', 'password', 'role', 'phone', 'country', 'avatar_url', 'subscription_tier',
+      'artistTitle', 'bio', 'city', 'countryFlag', 'guildLineage', 'primaryMediums',
+      'exhibitionsHistory', 'studioAddress', 'instagram', 'website', 'experienceYears',
+      'payout_bank', 'payout_account', 'payout_account_name'
+    ];
     const sanitized = {};
     for (const key of allowedFields) {
       if (updatedFields && updatedFields[key] !== undefined) {

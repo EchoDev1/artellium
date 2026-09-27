@@ -131,16 +131,36 @@ export default function LiveAuctionExhibitionHub() {
     }
   ];
 
+  const artistAuctionLots = (artworks || [])
+    .filter(a => (a.status === 'auction' || a.isAuction) && !liveAuctionLots.some(l => l.id === a.id))
+    .map((art, idx) => ({
+      id: art.id,
+      lotNumber: `81${idx}`,
+      title: art.title,
+      artistName: art.artistName,
+      artistAvatar: art.artistAvatar || 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=300',
+      image: art.image,
+      medium: art.medium,
+      country: `${art.city || 'Lagos'}, ${art.country || 'Nigeria'} ${art.countryFlag || '🇳🇬'}`,
+      currentBid: art.auction?.currentBid || art.price || 2500000,
+      totalBids: art.auction?.totalBids || 0,
+      endTimeHours: 24,
+      activeViewers: 45,
+      recentBids: art.auction?.bidHistory || []
+    }));
+
+  const activeLotsList = artistAuctionLots.length > 0 ? [...artistAuctionLots, ...liveAuctionLots] : liveAuctionLots;
+
   const [selectedLotIndex, setSelectedLotIndex] = useState(0);
   const [selectedExhibitionIndex, setSelectedExhibitionIndex] = useState(0);
 
-  const activeLot = liveAuctionLots[selectedLotIndex];
+  const activeLot = activeLotsList[selectedLotIndex] || activeLotsList[0];
   const activeExhibition = liveExhibitions[selectedExhibitionIndex];
 
   // Live countdown timer state
   const [timer, setTimer] = useState({ hours: 14, minutes: 48, seconds: 22 });
-  const [bidsFeed, setBidsFeed] = useState(activeLot.recentBids);
-  const [currentHighestBid, setCurrentHighestBid] = useState(activeLot.currentBid);
+  const [bidsFeed, setBidsFeed] = useState(activeLot?.recentBids || []);
+  const [currentHighestBid, setCurrentHighestBid] = useState(activeLot?.currentBid || 1000000);
   const [flashNewBid, setFlashNewBid] = useState(false);
   const [userBidNotification, setUserBidNotification] = useState('');
   const [isAudioPlaying, setIsAudioPlaying] = useState(false);
@@ -468,24 +488,26 @@ export default function LiveAuctionExhibitionHub() {
 
             {/* Artwork Preview Card + Details */}
             <div className="flex gap-4 p-3.5 rounded-xl bg-gradient-to-r from-red-950/25 to-black border border-red-900/25 items-center">
-              <div className="relative w-24 sm:w-28 aspect-square rounded-xl overflow-hidden shrink-0 border border-red-500/30">
+              <Link href={`/artwork/${activeLot.id}`} className="relative w-24 sm:w-28 aspect-square rounded-xl overflow-hidden shrink-0 border border-red-500/30 block cursor-pointer">
                 <img
                   src={activeLot.image}
                   alt={activeLot.title}
-                  className="w-full h-full object-cover"
+                  className="w-full h-full object-cover hover:scale-105 transition duration-500"
                 />
-                <span className="absolute top-1.5 left-1.5 bg-red-600 text-white font-bold text-[8.5px] px-2 py-0.5 rounded-md animate-pulse">
+                <span className="absolute top-1.5 left-1.5 bg-red-600 text-white font-bold text-[8.5px] px-2 py-0.5 rounded-md animate-pulse pointer-events-none">
                   🔥 LIVE
                 </span>
-              </div>
+              </Link>
 
               <div className="space-y-1.5 flex-1 min-w-0">
                 <span className="text-[10px] text-art-gold font-mono uppercase block truncate">
                   Lot #{activeLot.lotNumber} • {activeLot.medium}
                 </span>
-                <h3 className="font-serif text-lg font-bold text-white truncate">
-                  {activeLot.title}
-                </h3>
+                <Link href={`/artwork/${activeLot.id}`}>
+                  <h3 className="font-serif text-lg font-bold text-white hover:text-red-400 transition cursor-pointer truncate">
+                    {activeLot.title}
+                  </h3>
+                </Link>
                 <p className="text-xs text-slate-300 truncate">
                   By <strong className="text-art-gold">{activeLot.artistName}</strong> • {activeLot.country}
                 </p>
@@ -717,7 +739,7 @@ export default function LiveAuctionExhibitionHub() {
             </div>
 
             {/* Immersive 3D Gallery Preview Screen */}
-            <div className="relative h-44 sm:h-48 rounded-xl overflow-hidden border border-emerald-500/30 group">
+            <Link href={`/exhibitions/${activeExhibition.slug || activeExhibition.id}`} className="block relative h-44 sm:h-48 rounded-xl overflow-hidden border border-emerald-500/30 group cursor-pointer">
               <img
                 src={activeExhibition.coverImage}
                 alt={activeExhibition.title}

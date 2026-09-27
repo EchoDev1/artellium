@@ -197,7 +197,7 @@ export function StoreProvider({ children }) {
 
     // Default 'progressive' mode:
     // Real artist artworks are strictly prioritized at the top of the catalogue.
-    // In each category, real artist artworks replace demo items so the demo fades out.
+    // In each category, real artist artworks take top priority.
     if (sortedReal.length === 0) {
       return validDemo;
     }
@@ -211,18 +211,19 @@ export function StoreProvider({ children }) {
     const demoUsedByCat = {};
     const remainingDemo = [];
 
+    // Provide light demo fallback only if a category has no real artist uploads yet
     validDemo.forEach(d => {
       const cat = normalizeCategory(d.category);
       const realCount = realByCat[cat] || 0;
       const demoCount = demoUsedByCat[cat] || 0;
 
-      // Retain demo fallback items so each category has a robust catalog (up to 8 items) until real artists upload
-      if (realCount + demoCount < 8) {
+      if (realCount === 0 || demoCount < Math.max(0, 4 - realCount)) {
         remainingDemo.push(d);
         demoUsedByCat[cat] = demoCount + 1;
       }
     });
 
+    // Real artworks are never capped or restricted
     return [...sortedReal, ...remainingDemo];
   };
 
@@ -355,6 +356,14 @@ export function StoreProvider({ children }) {
       const savedWishlist = localStorage.getItem('artellium_wishlist');
       if (savedWishlist) {
         try { setWishlist(JSON.parse(savedWishlist)); } catch (e) {}
+      }
+
+      const savedFollowed = localStorage.getItem('artellium_followed_artists');
+      if (savedFollowed) {
+        try {
+          const parsedFollowed = JSON.parse(savedFollowed);
+          if (Array.isArray(parsedFollowed)) setFollowedArtists(parsedFollowed);
+        } catch (e) {}
       }
 
       const savedQuestions = localStorage.getItem('artellium_questions');
@@ -599,12 +608,43 @@ export function StoreProvider({ children }) {
         if (!artError && dbArtworks && dbArtworks.length > 0) {
           const dbReal = dbArtworks
             .filter(a => !a.isDemo && !INITIAL_ARTWORKS.some(ia => ia.id === a.id) && !String(a.id).startsWith('mock-'))
-            .map(a => ({
-              ...a,
-              isDemo: false,
-              image: (a.image && isValidImageSource(a.image)) ? a.image : getCategoryFallback(a.category),
-              additionalImages: Array.isArray(a.additionalImages) ? a.additionalImages : []
-            }));
+            .map(a => {
+              const isAuction = a.status === 'auction' || Boolean(a.is_auction || a.isAuction);
+              const isExhibition = a.status === 'exhibition' || Boolean(a.is_exhibition || a.isExhibition);
+              const auctionData = isAuction ? (a.auction || {
+                startingBid: Number(a.starting_bid || a.price || 1000000),
+                currentBid: Number(a.current_bid || a.price || 1000000),
+                reservePrice: Number(a.reserve_price || Math.round((a.price || 1000000) * 1.2)),
+                estimateMin: Number(a.estimate_min || a.price || 1000000),
+                estimateMax: Number(a.estimate_max || Math.round((a.price || 1000000) * 1.5)),
+                totalBids: Number(a.total_bids || 0),
+                endTimestamp: a.auction_end_time ? new Date(a.auction_end_time).getTime() : (Date.now() + 1000 * 60 * 60 * 24 * 3),
+                highestBidder: 'No bids yet',
+                bidHistory: []
+              }) : undefined;
+
+              return {
+                ...a,
+                artistName: a.artistName || a.artist_name || 'Master Artist',
+                artistId: a.artistId || a.artist_id || a.seller_id || `artist-${a.id}`,
+                artistType: a.artistType || a.artist_type || 'Standard',
+                artistAvatar: a.artistAvatar || a.artist_avatar || '',
+                priceUSD: a.priceUSD || a.price_usd || 0,
+                verificationBadge: a.verificationBadge || a.verification_badge || 'verified',
+                studioNotes: a.studioNotes || a.studio_notes || '',
+                reviewsCount: a.reviewsCount || a.reviews_count || 0,
+                isNewlyListed: a.isNewlyListed !== undefined ? a.isNewlyListed : (a.is_newly_listed !== undefined ? a.is_newly_listed : true),
+                countryFlag: a.countryFlag || a.country_flag || '🌍',
+                shipsTo: a.shipsTo || a.ships_to || ['Africa', 'Europe', 'North America'],
+                status: isAuction ? 'auction' : isExhibition ? 'exhibition' : (a.status || 'available'),
+                isAuction,
+                isExhibition,
+                auction: auctionData,
+                isDemo: false,
+                image: (a.image && isValidImageSource(a.image)) ? a.image : getCategoryFallback(a.category),
+                additionalImages: Array.isArray(a.additionalImages) ? a.additionalImages : []
+              };
+            });
 
           if (dbReal.length > 0) {
             setRealArtworks((prevReal) => {
@@ -625,6 +665,17 @@ export function StoreProvider({ children }) {
               return mergedReal;
             });
           }
+        }
+
+        const { data: dbSellers, error: sellError } = await supabase.from('sellers').select('*');
+        if (!sellError && dbSellers && dbSellers.length > 0) {
+          setSellers(prev => {
+            const map = new Map(prev.map(s => [s.id, s]));
+            dbSellers.forEach(ds => map.set(ds.id, { ...map.get(ds.id), ...ds }));
+            const merged = Array.from(map.values());
+            safeSetItem('artellium_sellers', merged);
+            return merged;
+          });
         }
 
         const { data: dbOrders, error: ordError } = await supabase.from('orders').select('*');
@@ -662,6 +713,7 @@ export function StoreProvider({ children }) {
       safeSetItem('artellium_cart', cart);
       safeSetItem('artellium_transactions', transactions);
       safeSetItem('artellium_wishlist', wishlist);
+      safeSetItem('artellium_followed_artists', followedArtists);
       safeSetItem('artellium_questions', artworkQuestions);
       safeSetItem('artellium_notifications', notifications);
       safeSetItem('artellium_collector_offers', collectorOffers);
@@ -676,7 +728,7 @@ export function StoreProvider({ children }) {
     } catch (e) {
       console.error('Storage write error:', e);
     }
-  }, [artworks, realArtworks, demoTransitionMode, orders, payments, commissions, sellers, usersList, cart, transactions, wishlist, artworkQuestions, notifications, collectorOffers, artistSignatures, headerConfig, heroConfig, homePageConfig, footerConfig, priorityBannerPricing, priorityBannerPlacements, isLoggedIn, currentUser]);
+  }, [artworks, realArtworks, demoTransitionMode, orders, payments, commissions, sellers, usersList, cart, transactions, wishlist, followedArtists, artworkQuestions, notifications, collectorOffers, artistSignatures, headerConfig, heroConfig, homePageConfig, footerConfig, priorityBannerPricing, priorityBannerPlacements, isLoggedIn, currentUser]);
 
   // Cart Functions
   const addToCart = (artwork) => {
@@ -1076,6 +1128,21 @@ export function StoreProvider({ children }) {
       isPriorityArtist(newArt, sellers, usersList)
     );
 
+    const isAuction = newArt.status === 'auction' || newArt.isAuction;
+    const isExhibition = newArt.status === 'exhibition' || newArt.isExhibition;
+
+    const auctionData = isAuction ? (newArt.auction || {
+      startingBid: parseFloat(newArt.price) || 1000000,
+      currentBid: parseFloat(newArt.price) || 1000000,
+      reservePrice: parseFloat(newArt.reservePrice) || (newArt.price ? Math.round(parseFloat(newArt.price) * 1.25) : 2000000),
+      estimateMin: parseFloat(newArt.estimateMin) || parseFloat(newArt.price) || 1000000,
+      estimateMax: parseFloat(newArt.estimateMax) || (newArt.price ? Math.round(parseFloat(newArt.price) * 1.6) : 3500000),
+      totalBids: 0,
+      endTimestamp: Date.now() + 1000 * 60 * 60 * 24 * 3, // 3 days
+      highestBidder: 'No bids yet',
+      bidHistory: []
+    }) : undefined;
+
     const created = {
       ...newArt,
       id: newArt.id || `art-live-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
@@ -1089,7 +1156,10 @@ export function StoreProvider({ children }) {
       verificationBadge: isPriority ? 'gold' : (newArt.verificationBadge || 'verified'),
       rating: newArt.rating || 5.0,
       reviewsCount: newArt.reviewsCount || 0,
-      status: newArt.status || 'available',
+      status: newArt.status || (isAuction ? 'auction' : isExhibition ? 'exhibition' : 'available'),
+      isAuction: Boolean(isAuction),
+      isExhibition: Boolean(isExhibition),
+      auction: auctionData,
       artistName: newArt.artistName || currentUser?.name || 'Master Artist',
       artistId: newArt.artistId || currentUser?.id || `artist-${Date.now()}`
     };
@@ -1109,8 +1179,46 @@ export function StoreProvider({ children }) {
       return updatedReal;
     });
 
-    supabase.from('artworks').insert([created]).then(({ error }) => {
-      if (error) console.warn('Supabase upload artwork notice:', error.message);
+    const dbPayload = {
+      id: created.id,
+      title: created.title,
+      category: created.category,
+      medium: created.medium,
+      dimensions: created.dimensions,
+      price: created.price,
+      // Map exhibition to 'available' with is_featured=true for DB check constraint compliance
+      status: created.status === 'exhibition' ? 'available' : (created.status || 'available'),
+      image: created.image,
+      country: created.country || 'Nigeria',
+      city: created.city || 'Lagos',
+      description: created.description || '',
+      provenance: created.provenance || '',
+      year: created.year || '2026',
+      artist_name: created.artistName,
+      artist_type: created.artistType,
+      artist_avatar: created.artistAvatar || '',
+      verification_badge: created.verificationBadge,
+      studio_notes: created.studioNotes || '',
+      rating: created.rating || 5.0,
+      reviews_count: created.reviewsCount || 0,
+      is_newly_listed: true,
+      is_featured: created.status === 'exhibition' || created.isPriorityArtist === true,
+      price_usd: created.priceUSD || Math.round((created.price || 0) / (usdExchangeRate || 1480)),
+      country_flag: created.countryFlag || '🇳🇬',
+      ships_to: created.shipsTo || ['Africa', 'Europe', 'North America']
+    };
+
+    if (created.status === 'auction' && created.auction) {
+      dbPayload.starting_bid = created.auction.startingBid;
+      dbPayload.current_bid = created.auction.currentBid;
+      dbPayload.total_bids = created.auction.totalBids || 0;
+      dbPayload.auction_end_time = new Date(created.auction.endTimestamp || Date.now() + 1000 * 60 * 60 * 24 * 3).toISOString();
+    }
+
+    supabase.from('artworks').insert([dbPayload]).then(({ error }) => {
+      if (error) {
+        console.warn('Supabase insert notice (stored in local ledger):', error.message);
+      }
     });
 
     broadcastNotification(`🎨 Masterpiece "${created.title}" published by ${created.artistName}! Real catalog updated.`);
@@ -1768,19 +1876,142 @@ export function StoreProvider({ children }) {
   const clearWishlist = () => setWishlist([]);
 
   // Followed Artists
-  const followArtist = (artistId) => {
-    setFollowedArtists((prev) => (prev.includes(artistId) ? prev : [...prev, artistId]));
+  const followArtist = (artistIdentifier) => {
+    if (!artistIdentifier) return;
+    const key = typeof artistIdentifier === 'object' ? (artistIdentifier.id || artistIdentifier.name) : String(artistIdentifier);
+    setFollowedArtists((prev) => {
+      const updated = prev.includes(key) ? prev : [...prev, key];
+      safeSetItem('artellium_followed_artists', updated);
+      return updated;
+    });
     broadcastNotification('You are now following this master artist. You will receive notifications when they upload new works.');
   };
-  const unfollowArtist = (artistId) => {
-    setFollowedArtists((prev) => prev.filter((id) => id !== artistId));
+
+  const unfollowArtist = (artistIdentifier) => {
+    if (!artistIdentifier) return;
+    const key = typeof artistIdentifier === 'object' ? (artistIdentifier.id || artistIdentifier.name) : String(artistIdentifier);
+    setFollowedArtists((prev) => {
+      const updated = prev.filter((id) => id !== key && id !== artistIdentifier);
+      safeSetItem('artellium_followed_artists', updated);
+      return updated;
+    });
+    broadcastNotification('Unfollowed artist.');
   };
-  const toggleFollowArtist = (artistId) => {
-    if (followedArtists.includes(artistId)) {
-      unfollowArtist(artistId);
+
+  const toggleFollowArtist = (artistIdentifier) => {
+    if (!artistIdentifier) return;
+    const key = typeof artistIdentifier === 'object' ? (artistIdentifier.id || artistIdentifier.name) : String(artistIdentifier);
+    if (followedArtists.includes(key) || (typeof artistIdentifier === 'object' && followedArtists.includes(artistIdentifier.name))) {
+      unfollowArtist(artistIdentifier);
     } else {
-      followArtist(artistId);
+      followArtist(artistIdentifier);
     }
+  };
+
+  const isFollowingArtist = (artistIdentifier) => {
+    if (!artistIdentifier) return false;
+    if (typeof artistIdentifier === 'object') {
+      return followedArtists.includes(artistIdentifier.id) || followedArtists.includes(artistIdentifier.name);
+    }
+    return followedArtists.includes(String(artistIdentifier));
+  };
+
+  // Master Artist Profile Persistence API
+  const saveArtistProfile = (profileData) => {
+    const artistName = profileData.name || currentUser?.name || 'Master Artist';
+    const targetUserId = currentUser?.id || `user-artist-${Date.now()}`;
+
+    // 1. Update User Record
+    const userUpdates = {
+      ...profileData,
+      role: 'artist',
+      name: artistName,
+    };
+    updateUser(targetUserId, userUpdates);
+
+    // 2. Update or Create Seller Record
+    setSellers((prev) => {
+      const existingIdx = prev.findIndex(
+        (s) =>
+          (currentUser?.id && s.user_id === currentUser.id) ||
+          s.id === targetUserId ||
+          (s.name && s.name.toLowerCase() === artistName.toLowerCase())
+      );
+
+      const sellerPayload = {
+        name: artistName,
+        artistTitle: profileData.artistTitle || 'Contemporary Master Visual Artist',
+        bio: profileData.bio || '',
+        country: profileData.country || currentUser?.country || 'Nigeria',
+        city: profileData.city || 'Lagos',
+        country_flag: profileData.countryFlag || '🇳🇬',
+        guildLineage: profileData.guildLineage || '',
+        primaryMediums: profileData.primaryMediums || 'Oil, Acrylic & Mixed Media on Canvas',
+        exhibitionsHistory: profileData.exhibitionsHistory || '',
+        studioAddress: profileData.studioAddress || '',
+        instagram: profileData.instagram || '',
+        website: profileData.website || '',
+        phone: profileData.phone || currentUser?.phone || '',
+        email: profileData.email || currentUser?.email || '',
+        experienceYears: profileData.experienceYears || '',
+        avatar_url: profileData.avatar_url || currentUser?.avatar_url || '',
+        tier: currentUser?.subscription_tier === 'premium' ? 'Premium' : 'Standard',
+        verification_badge: currentUser?.subscription_tier === 'premium' ? 'gold' : 'verified',
+        payout_bank: profileData.payout_bank || '',
+        payout_account: profileData.payout_account || '',
+        payout_account_name: profileData.payout_account_name || `${artistName} Studio`,
+        updated_at: new Date().toISOString()
+      };
+
+      let updatedSellers;
+      if (existingIdx >= 0) {
+        updatedSellers = prev.map((s, idx) => (idx === existingIdx ? { ...s, ...sellerPayload } : s));
+        try {
+          supabase.from('sellers').update(sellerPayload).eq('id', prev[existingIdx].id).then(() => {});
+        } catch (e) {}
+      } else {
+        const newSeller = {
+          id: `artist-${Date.now()}`,
+          user_id: targetUserId,
+          ...sellerPayload,
+          created_at: new Date().toISOString()
+        };
+        updatedSellers = [...prev, newSeller];
+        try {
+          supabase.from('sellers').insert([newSeller]).then(() => {});
+        } catch (e) {}
+      }
+      safeSetItem('artellium_sellers', updatedSellers);
+      return updatedSellers;
+    });
+
+    // 3. Update Existing Artworks with updated artist metadata
+    setRealArtworks((prevReal) => {
+      const updatedReal = prevReal.map((art) => {
+        if (
+          art.artistId === targetUserId ||
+          (art.artistName && art.artistName.toLowerCase() === artistName.toLowerCase())
+        ) {
+          return {
+            ...art,
+            artistName: artistName,
+            artistAvatar: profileData.avatar_url || currentUser?.avatar_url || art.artistAvatar,
+            country: profileData.country || art.country,
+            city: profileData.city || art.city,
+            countryFlag: profileData.countryFlag || art.countryFlag
+          };
+        }
+        return art;
+      });
+      safeSetItem('artellium_real_artworks', updatedReal);
+      const assembled = assembleCatalog(updatedReal, INITIAL_ARTWORKS, demoTransitionMode);
+      setArtworks(assembled);
+      safeSetItem('artellium_artworks', assembled);
+      return updatedReal;
+    });
+
+    broadcastNotification(`Master Artist profile for ${artistName} successfully saved and published!`);
+    return userUpdates;
   };
 
   // Auction Reminders
@@ -1962,14 +2193,22 @@ export function StoreProvider({ children }) {
     }
   };
 
-  const switchUserRole = (role) => {
-    if (currentUser) {
-      const updated = { ...currentUser, role };
-      setCurrentUser(updated);
-      try {
-        localStorage.setItem('artellium_login_state', JSON.stringify({ isLoggedIn: true, user: updated }));
-      } catch (e) {}
-    }
+  const switchUserRole = (role, extraUserData = {}) => {
+    const baseUser = currentUser || {
+      id: extraUserData.id || `user-${role}-${Date.now()}`,
+      name: extraUserData.name || (role === 'artist' ? 'Master Artist' : 'Verified Collector'),
+      email: extraUserData.email || (role === 'artist' ? 'artist@artellium.com' : 'collector@artellium.com'),
+      country: extraUserData.country || 'Nigeria',
+      subscription_tier: extraUserData.subscriptionTier || 'standard',
+      subscriptionTier: extraUserData.subscriptionTier || 'standard',
+    };
+    const updated = { ...baseUser, ...extraUserData, role };
+    setCurrentUser(updated);
+    setIsLoggedIn(true);
+    try {
+      localStorage.setItem('artellium_login_state', JSON.stringify({ isLoggedIn: true, user: updated }));
+    } catch (e) {}
+    return updated;
   };
 
   // Self-Healing Credential & Master Admin Restorer
@@ -3054,6 +3293,8 @@ export function StoreProvider({ children }) {
         followArtist,
         unfollowArtist,
         toggleFollowArtist,
+        isFollowingArtist,
+        saveArtistProfile,
         auctionReminders,
         toggleAuctionReminder,
         notifications,
