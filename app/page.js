@@ -19,14 +19,26 @@ import TraditionalHeritageShowcase from '@/components/TraditionalHeritageShowcas
 
 export default function HomePage() {
   const { 
-    artworks, 
+    artworks = [], 
     exhibitions, 
     selectedCategory, 
     heroConfig, 
     homePageConfig,
     sellers = [],
-    usersList = []
+    usersList = [],
+    demoTransitionMode = 'progressive'
   } = useStore();
+
+  const isLiveOnly = demoTransitionMode === 'live_only';
+  const isMockOrDemo = (a) => !a || a.isDemo === true || String(a.id || '').startsWith('mock-');
+
+  // In live-only mode, strictly filter out any demo artworks site-wide
+  const activeArtworks = React.useMemo(() => {
+    if (isLiveOnly) {
+      return (artworks || []).filter(a => !isMockOrDemo(a));
+    }
+    return artworks || [];
+  }, [artworks, isLiveOnly]);
 
   const hConfig = heroConfig || { heroType: 'jumia_art_hero' };
   const pConfig = homePageConfig || {
@@ -42,7 +54,7 @@ export default function HomePage() {
   };
 
   // Filter artworks by selected category using intelligent matching
-  const filteredArtworks = artworks.filter((art) => {
+  const filteredArtworks = activeArtworks.filter((art) => {
     return isCategoryMatch(art.category, selectedCategory, art.medium, art.title);
   });
 
@@ -52,16 +64,20 @@ export default function HomePage() {
   };
 
   const getLiveAuctions = (limit = 6) => {
-    const matching = artworks.filter((art) => art.status === 'auction');
+    const matching = activeArtworks.filter((art) => art.status === 'auction' || art.isAuction);
     return sortArtworksByPriority(matching, { sellers, users: usersList }).slice(0, limit);
   };
 
   const getRecentlySold = (limit = 3) => {
-    const matching = artworks.filter((art) => art.status === 'sold');
+    const matching = activeArtworks.filter((art) => art.status === 'sold');
     const sorted = sortArtworksByPriority(matching, { sellers, users: usersList, secondarySort: 'sold_date' });
 
+    if (isLiveOnly) {
+      return sorted.slice(0, limit);
+    }
+
     if (sorted.length < limit) {
-      const extra = artworks.filter(a => a.status !== 'sold').slice(0, limit - sorted.length).map(a => ({
+      const extra = activeArtworks.filter(a => a.status !== 'sold').slice(0, limit - sorted.length).map(a => ({
         ...a,
         status: 'sold',
         soldPrice: a.price,

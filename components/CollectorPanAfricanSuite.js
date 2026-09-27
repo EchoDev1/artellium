@@ -270,7 +270,7 @@ export default function CollectorPanAfricanSuite({ onOpenCertModal }) {
                   <div className="flex justify-end pt-1">
                     <button
                       onClick={() => onOpenCertModal && onOpenCertModal({
-                        artworkId: 'art-101',
+                        artworkId: block.artworkId || block.id || 'art-echo-101',
                         artworkTitle: block.artworkTitle,
                         artistName: block.artistName,
                         collectorName: block.custodian || 'Dr. Evelyn Carter',

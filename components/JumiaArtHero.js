@@ -36,11 +36,23 @@ import {
 } from 'lucide-react';
 
 export default function JumiaArtHero() {
-  const { videos = [], activeVideos = [], artworks = [], heroConfig, currency, formatPrice, setSelectedCategory } = useStore();
+  const { videos = [], activeVideos = [], artworks = [], heroConfig, currency, formatPrice, setSelectedCategory, demoTransitionMode = 'progressive' } = useStore();
   const maxSlides = typeof heroConfig?.maxHeroSlides === 'number' ? heroConfig.maxHeroSlides : 4;
+  const isLiveOnly = demoTransitionMode === 'live_only';
 
   const [currentSlideIndex, setCurrentSlideIndex] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
+
+  // Candidate lots for Card 1 (Live Auction Quick Card)
+  const candidateLots = useMemo(() => {
+    const isMockOrDemo = (a) => !a || a.isDemo === true || String(a.id || '').startsWith('mock-');
+    const pool = isLiveOnly ? artworks.filter(a => !isMockOrDemo(a)) : artworks;
+    const auctionLots = pool.filter(a => a.status === 'auction' || a.isAuction);
+    if (auctionLots.length > 0) return auctionLots;
+    return pool;
+  }, [artworks, isLiveOnly]);
+
+  const featuredAuctionLot = candidateLots[0] || null;
 
   // Countdown timer state for the Right Rail Live Auction card
   const [auctionTimeLeft, setAuctionTimeLeft] = useState({
@@ -100,20 +112,35 @@ export default function JumiaArtHero() {
   };
 
   const safeIndex = heroVideos.length > 0 ? currentSlideIndex % heroVideos.length : 0;
-  const currentSlide = heroVideos[safeIndex] || {
-    artistName: 'Kofi Mensah',
-    artistTitle: 'Master Painter & Gold Leaf Specialist',
-    country: 'Ghana',
-    countryFlag: '🇬🇭',
-    city: 'Accra',
-    artworkTitle: 'The Ancestral Horizon',
-    videoUrl: '/videos/artist-savannah.mp4',
-    thumbnail: 'https://images.unsplash.com/photo-1579783902614-a3fb3927b675?auto=format&fit=crop&q=80&w=1200',
-    quote: 'Every stroke of gold leaf represents a prayer for our forebears.',
-    duration: '1:45',
-    priceNGN: 1850000,
-    priceUSD: 1250,
-  };
+  const currentSlide = heroVideos[safeIndex] || (
+    isLiveOnly ? {
+      artistName: artworks[0]?.artistName || 'Ebuka Eke Echo',
+      artistTitle: 'Verified Sovereign Master Artist',
+      country: artworks[0]?.country || 'Nigeria',
+      countryFlag: artworks[0]?.countryFlag || '🇳🇬',
+      city: artworks[0]?.city || 'Lagos',
+      artworkTitle: artworks[0]?.title || 'The Golden Crown of Benin (Echo of Eternity)',
+      videoUrl: '/videos/artist-savannah.mp4',
+      thumbnail: artworks[0]?.image || 'https://images.unsplash.com/photo-1579783900882-c0d3dad7b119?auto=format&fit=crop&q=80&w=1200',
+      quote: 'The future of African art is sovereign, verified, and uncompromised.',
+      duration: '1:45',
+      priceNGN: artworks[0]?.price || 2800000,
+      priceUSD: artworks[0]?.priceUSD || 1890,
+    } : {
+      artistName: 'Kofi Mensah',
+      artistTitle: 'Master Painter & Gold Leaf Specialist',
+      country: 'Ghana',
+      countryFlag: '🇬🇭',
+      city: 'Accra',
+      artworkTitle: 'The Ancestral Horizon',
+      videoUrl: '/videos/artist-savannah.mp4',
+      thumbnail: 'https://images.unsplash.com/photo-1579783902614-a3fb3927b675?auto=format&fit=crop&q=80&w=1200',
+      quote: 'Every stroke of gold leaf represents a prayer for our forebears.',
+      duration: '1:45',
+      priceNGN: 1850000,
+      priceUSD: 1250,
+    }
+  );
 
   // Video element playback synchronization (Autoplays with sound by default; users can mute)
   useEffect(() => {
@@ -464,7 +491,7 @@ export default function JumiaArtHero() {
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-1.5 text-red-400 text-[10px] font-bold uppercase tracking-wider font-mono">
                     <span className="w-2 h-2 rounded-full bg-red-500 animate-ping" />
-                    <span>LIVE LOT #803</span>
+                    <span>{featuredAuctionLot ? `LIVE LOT #${String(featuredAuctionLot.id).replace(/\D/g, '').slice(-3) || '801'}` : 'LIVE ARENA'}</span>
                   </div>
 
                   {/* Real-time Ticking Timer */}
@@ -475,27 +502,39 @@ export default function JumiaArtHero() {
                 </div>
 
                 {/* Artwork Thumbnail & Details */}
-                <div className="flex items-center gap-2.5">
-                  <Link href="/artwork/art-102" className="w-14 h-14 rounded-xl overflow-hidden bg-black shrink-0 border border-red-800/40 block cursor-pointer">
-                    <img
-                      src="https://images.unsplash.com/photo-1605721911519-3dfeb3be25e7?auto=format&fit=crop&q=80&w=200"
-                      alt="The Golden Benin Queen"
-                      className="w-full h-full object-cover hover:scale-110 transition duration-500"
-                    />
-                  </Link>
-                  <div>
-                    <Link href="/artwork/art-102">
-                      <h4 className="font-serif font-bold text-white text-xs line-clamp-1 hover:text-red-300 transition cursor-pointer">
-                        The Golden Benin Queen
-                      </h4>
+                {featuredAuctionLot ? (
+                  <div className="flex items-center gap-2.5">
+                    <Link href={`/artwork/${featuredAuctionLot.id}`} className="w-14 h-14 rounded-xl overflow-hidden bg-black shrink-0 border border-red-800/40 block cursor-pointer">
+                      <img
+                        src={featuredAuctionLot.image}
+                        alt={featuredAuctionLot.title}
+                        className="w-full h-full object-cover hover:scale-110 transition duration-500"
+                      />
                     </Link>
-                    <span className="text-[10px] text-slate-400 font-sans block">Amina Diallo · Lost-Wax Bronze</span>
-                    <div className="flex items-baseline gap-1 mt-0.5">
-                      <span className="text-[10px] text-slate-400">Current Bid:</span>
-                      <span className="font-serif text-xs font-black text-red-400">₦4,900,000</span>
+                    <div className="min-w-0 flex-1">
+                      <Link href={`/artwork/${featuredAuctionLot.id}`}>
+                        <h4 className="font-serif font-bold text-white text-xs line-clamp-1 hover:text-red-300 transition cursor-pointer">
+                          {featuredAuctionLot.title}
+                        </h4>
+                      </Link>
+                      <span className="text-[10px] text-slate-400 font-sans block truncate">
+                        {featuredAuctionLot.artistName} · {featuredAuctionLot.medium || 'Fine Art'}
+                      </span>
+                      <div className="flex items-baseline gap-1 mt-0.5">
+                        <span className="text-[10px] text-slate-400">Current Bid:</span>
+                        <span className="font-serif text-xs font-black text-red-400">
+                          {formatPriceVal(featuredAuctionLot.auction?.currentBid || featuredAuctionLot.price || 1500000)}
+                        </span>
+                      </div>
                     </div>
                   </div>
-                </div>
+                ) : (
+                  <div className="p-3 rounded-xl bg-black/40 border border-red-900/30 text-center space-y-1">
+                    <Flame className="w-5 h-5 text-red-400 mx-auto animate-pulse" />
+                    <span className="text-xs font-bold text-white block">Next Session Opening Soon</span>
+                    <span className="text-[10px] text-slate-400 block">Verified artist lots staging in arena</span>
+                  </div>
+                )}
               </div>
 
               {/* Action Button */}

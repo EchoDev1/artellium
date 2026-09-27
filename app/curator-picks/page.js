@@ -18,7 +18,7 @@ import {
 } from 'lucide-react';
 
 export default function CuratorPicksPage() {
-  const { artworks, currency, usdExchangeRate = 1480, curatorPicks: storeCuratorPicks = [], sellers = [], usersList = [] } = useStore();
+  const { artworks, currency, usdExchangeRate = 1480, curatorPicks: storeCuratorPicks = [], sellers = [], usersList = [], demoTransitionMode = 'progressive' } = useStore();
   const [selectedHall, setSelectedHall] = useState('All');
 
   const formatPrice = (amount) => {
@@ -94,7 +94,27 @@ export default function CuratorPicksPage() {
     }
   ];
 
-  const curatorPicksList = (storeCuratorPicks && storeCuratorPicks.length > 0) ? storeCuratorPicks : fallbackCuratorPicks;
+  const isMockOrDemo = (a) => !a || a.isDemo === true || String(a.id || '').startsWith('mock-') || a.id === 'art-101' || a.id === 'art-102';
+  const realArtworks = (artworks || []).filter(a => !isMockOrDemo(a));
+  const curatorPicksList = (storeCuratorPicks && storeCuratorPicks.length > 0)
+    ? (demoTransitionMode === 'live_only' ? storeCuratorPicks.filter(p => !isMockOrDemo(p)) : storeCuratorPicks)
+    : (demoTransitionMode === 'live_only'
+        ? realArtworks.map((art) => ({
+            id: art.id,
+            title: art.title,
+            artistName: art.artistName,
+            country: `${art.country || 'Nigeria'} ${art.countryFlag || '🇳🇬'}`,
+            category: art.category,
+            medium: art.medium,
+            price: art.price,
+            curatorName: 'Dr. Evelyn Carter',
+            curatorRole: 'Chief Senior Curator, Artellium Pan-African Board',
+            rating: 5.0,
+            image: art.image,
+            curatorCritique: art.studioNotes || 'A commanding masterwork embodying authentic African cultural heritage, technical distinction, and archival permanence.',
+            exhibitionHall: 'West African Modernism Pavilion'
+          }))
+        : fallbackCuratorPicks);
 
   const filteredPicks = curatorPicksList.filter(pick => {
     if (selectedHall === 'All') return true;

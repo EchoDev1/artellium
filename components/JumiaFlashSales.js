@@ -7,7 +7,7 @@ import { Zap, Flame, ArrowRight, Clock, ShieldCheck, ShoppingCart, Sparkles, Cro
 import { isPriorityArtist, sortArtworksByPriority } from '@/lib/priority-utils';
 
 export default function JumiaFlashSales() {
-  const { homePageConfig, currency, artworks = [], sellers = [], usersList = [] } = useStore();
+  const { homePageConfig, currency, artworks = [], sellers = [], usersList = [], demoTransitionMode = 'progressive' } = useStore();
   const flashSaleConfig = homePageConfig?.flashSale;
 
   const [timeLeft, setTimeLeft] = useState({
@@ -95,11 +95,30 @@ export default function JumiaFlashSales() {
     }
   ];
 
+  const isMockOrDemo = (a) => !a || a.isDemo === true || String(a.id || '').startsWith('mock-');
+  const realArtworks = (artworks || []).filter(a => !isMockOrDemo(a));
   const rawItems = (flashSaleConfig?.items && flashSaleConfig.items.length > 0)
-    ? flashSaleConfig.items
-    : defaultFlashItems;
+    ? (demoTransitionMode === 'live_only' ? flashSaleConfig.items.filter(it => !isMockOrDemo(it)) : flashSaleConfig.items)
+    : (demoTransitionMode === 'live_only'
+        ? realArtworks.slice(0, 4).map((art, idx) => ({
+            id: `flash-live-${art.id}`,
+            artworkId: art.id,
+            title: art.title,
+            artist: `${art.artistName} (${art.country || 'Africa'} ${art.countryFlag || '🌍'})`,
+            originalPrice: Math.round(art.price * 1.25),
+            dealPrice: art.price,
+            originalPriceUSD: Math.round((art.priceUSD || Math.round(art.price / 1480)) * 1.25),
+            dealPriceUSD: art.priceUSD || Math.round(art.price / 1480),
+            discountPercent: 20,
+            itemsLeft: 1,
+            claimedPercent: 75,
+            image: art.image
+          }))
+        : defaultFlashItems);
 
   const items = sortArtworksByPriority(rawItems, { sellers, users: usersList });
+
+  if (items.length === 0) return null;
 
   const formatPriceVal = (priceNgn, priceUsd) => {
     if (currency === 'USD' && priceUsd) {
@@ -226,7 +245,7 @@ export default function JumiaFlashSales() {
 
               {/* Action Button */}
               <Link
-                href={`/artwork/${it.artworkId || 'art-101'}`}
+                href={`/artwork/${it.artworkId || it.id || ''}`}
                 className="w-full py-2 bg-gradient-to-r from-red-600 to-amber-600 hover:brightness-110 text-white font-bold text-xs uppercase tracking-wider rounded-xl transition shadow text-center flex items-center justify-center gap-1.5 mt-1"
               >
                 <ShoppingCart className="w-3.5 h-3.5" />

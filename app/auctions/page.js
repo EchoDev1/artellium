@@ -46,7 +46,8 @@ export default function AuctionsPage() {
     auctionBidders = [],
     sellers = [],
     usersList = [],
-    updateUser 
+    updateUser,
+    demoTransitionMode = 'progressive'
   } = useStore();
 
   // Active Tab: 'live' (LIVE NOW), 'upcoming' (UPCOMING), 'past' (PAST AUCTIONS)
@@ -359,8 +360,9 @@ export default function AuctionsPage() {
 
   // Merge uploaded artworks that are set for Live Auction Arena
   const dynamicLiveLots = useMemo(() => {
+    const isMockOrDemo = (a) => !a || a.isDemo === true || String(a.id || '').startsWith('mock-') || a.id === 'art-102' || a.id === 'art-106';
     const artistAuctionWorks = (artworks || [])
-      .filter(art => (art.status === 'auction' || art.isAuction) && !liveLots.some(l => l.artworkId === art.id || l.id === art.id))
+      .filter(art => (art.status === 'auction' || art.isAuction) && (demoTransitionMode !== 'live_only' || !isMockOrDemo(art)))
       .map((art, idx) => ({
         id: art.id,
         lotNumber: `Lot #${810 + idx}`,
@@ -384,8 +386,13 @@ export default function AuctionsPage() {
         highestBidder: art.auction?.highestBidder || 'Be the first to bid',
         bidHistory: art.auction?.bidHistory || []
       }));
-    return [...artistAuctionWorks, ...liveLots];
-  }, [artworks, liveLots, sellers, usersList]);
+
+    if (demoTransitionMode === 'live_only') {
+      return artistAuctionWorks;
+    }
+
+    return [...artistAuctionWorks, ...liveLots.filter(l => !artistAuctionWorks.some(a => a.artworkId === l.artworkId || a.id === l.id))];
+  }, [artworks, liveLots, sellers, usersList, demoTransitionMode]);
 
   const sortedLiveLots = useMemo(() => {
     return sortArtworksByPriority(dynamicLiveLots, { sellers, users: usersList });

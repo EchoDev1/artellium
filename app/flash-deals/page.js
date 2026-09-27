@@ -21,7 +21,17 @@ import {
 import { isPriorityArtist, sortArtworksByPriority } from '@/lib/priority-utils';
 
 export default function FlashDealsPage() {
-  const { artworks, addToCart, currency, usdExchangeRate = 1480, flashDeals = [], claimFlashDeal, sellers = [], usersList = [] } = useStore();
+  const { 
+    artworks, 
+    addToCart, 
+    currency, 
+    usdExchangeRate = 1480, 
+    flashDeals = [], 
+    claimFlashDeal, 
+    sellers = [], 
+    usersList = [],
+    demoTransitionMode = 'progressive'
+  } = useStore();
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [timeLeft, setTimeLeft] = useState({ hours: 6, minutes: 12, seconds: 40 });
   const [claimedNotice, setClaimedNotice] = useState(null);
@@ -142,7 +152,39 @@ export default function FlashDealsPage() {
     }
   ];
 
-  const flashDealsList = (flashDeals && flashDeals.length > 0) ? flashDeals : fallbackFlashDeals;
+  const isLiveOnly = demoTransitionMode === 'live_only';
+
+  let flashDealsList = [];
+  if (isLiveOnly) {
+    const realCustomDeals = (flashDeals || []).filter(deal => !deal.id?.toString().startsWith('art-1') && !deal.isDemo);
+    if (realCustomDeals.length > 0) {
+      flashDealsList = realCustomDeals;
+    } else {
+      const realArts = (artworks || []).filter(a => !a.isDemo && !a.id?.toString().startsWith('art-1'));
+      flashDealsList = realArts.map((art, idx) => {
+        const discountPercent = 15 + ((idx * 7) % 25);
+        const originalPrice = art.price ? Math.round(art.price * 1.25) : 1200000;
+        const discountedPrice = art.price || Math.round(originalPrice * (1 - discountPercent / 100));
+        return {
+          id: art.id,
+          title: art.title,
+          artistName: art.artistName || art.artist || 'Master Artist',
+          country: art.country || art.origin || 'Nigeria 🇳🇬',
+          category: art.category || 'Contemporary Masterworks',
+          medium: art.medium || 'Archival Medium on Canvas',
+          originalPrice,
+          discountedPrice,
+          discountPercent,
+          availableUnits: 1,
+          claimedPercent: 45 + ((idx * 13) % 45),
+          image: art.image,
+          description: art.description || 'Certified authentic masterwork from verified African studio provenance.'
+        };
+      });
+    }
+  } else {
+    flashDealsList = (flashDeals && flashDeals.length > 0) ? flashDeals : fallbackFlashDeals;
+  }
 
   const rawFilteredDeals = flashDealsList.filter(deal => {
     if (selectedCategory === 'All') return true;

@@ -19,7 +19,7 @@ import {
 import { isPriorityArtist } from '@/lib/priority-utils';
 
 export default function VerifiedMastersPage() {
-  const { artworks, currency, usdExchangeRate = 1480, artistVerifications: storeVerifications = [], sellers = [], usersList = [] } = useStore();
+  const { artworks, currency, usdExchangeRate = 1480, artistVerifications: storeVerifications = [], sellers = [], usersList = [], demoTransitionMode = 'progressive' } = useStore();
   const [selectedCountry, setSelectedCountry] = useState('All');
 
   const formatPrice = (amount) => {
@@ -115,7 +115,54 @@ export default function VerifiedMastersPage() {
     }
   ];
 
-  const verifiedMastersList = fallbackVerifiedMasters;
+  const isMockOrDemo = (a) => !a || a.isDemo === true || String(a.id || '').startsWith('mock-') || a.id === 'art-101' || a.id === 'art-102';
+  const realSellers = (sellers || []).filter(s => s && s.name && !s.name.includes('Kofi Mensah') && !s.name.includes('Amina Diallo'));
+  const realArtworks = (artworks || []).filter(a => !isMockOrDemo(a));
+
+  const realMasters = realSellers.length > 0 ? realSellers.map(s => {
+    const art = realArtworks.find(a => a.artistId === s.id || a.artistName?.toLowerCase() === s.name?.toLowerCase()) || realArtworks[0];
+    return {
+      id: s.id,
+      name: s.name,
+      title: s.bio || 'Verified Sovereign Master Artist',
+      country: s.country || 'Nigeria',
+      flag: s.country_flag || '🇳🇬',
+      city: s.city || 'Lagos',
+      avatar: s.avatar_url || 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=300',
+      accreditation: 'Artellium Verified Atelier Sovereign Guild',
+      verificationBadge: 'Gold Crest Certified',
+      kycHash: `VERIF-NG-${s.id.toUpperCase()}-GOLD`,
+      biography: s.bio || `${s.name} is an authenticated creator registered with Artellium's Pan-African atelier network.`,
+      featuredArtwork: art ? {
+        id: art.id,
+        title: art.title,
+        medium: art.medium,
+        price: art.price,
+        image: art.image
+      } : null
+    };
+  }).filter(m => m.featuredArtwork) : (realArtworks.length > 0 ? [{
+    id: 'artist-ebuka-eke',
+    name: 'Ebuka Eke Echo',
+    title: 'Royal Heritage Master Painter',
+    country: 'Nigeria',
+    flag: '🇳🇬',
+    city: 'Lagos',
+    avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=300',
+    accreditation: 'Pan-African Fine Art Guild Sovereign Fellow',
+    verificationBadge: 'Gold Crest Certified',
+    kycHash: 'VERIF-NG-EEE-2026-SOVEREIGN',
+    biography: 'Renowned for monumental historical compositions with 24K gold leaf, deep indigo pigments, and sacred ancestral iconography.',
+    featuredArtwork: {
+      id: realArtworks[0].id,
+      title: realArtworks[0].title,
+      medium: realArtworks[0].medium,
+      price: realArtworks[0].price,
+      image: realArtworks[0].image
+    }
+  }] : []);
+
+  const verifiedMastersList = demoTransitionMode === 'live_only' ? realMasters : fallbackVerifiedMasters;
 
   const filteredMasters = verifiedMastersList.filter(master => {
     if (selectedCountry === 'All') return true;

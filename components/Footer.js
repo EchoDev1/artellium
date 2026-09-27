@@ -22,7 +22,8 @@ import {
 } from 'lucide-react';
 
 export default function Footer() {
-  const { footerConfig, artworks = [] } = useStore();
+  const { footerConfig, artworks = [], demoTransitionMode = 'progressive' } = useStore();
+  const isLiveOnly = demoTransitionMode === 'live_only';
 
   const cfg = footerConfig || {
     brandTitle: 'ARTELLIUM',
@@ -37,24 +38,12 @@ export default function Footer() {
   };
 
   // Curate artist history slides from artworks with studio notes
-  const artworksWithNotes = (artworks || []).filter(a => a.studioNotes && a.artistName);
+  const artworksWithNotes = (artworks || []).filter(a => {
+    if (isLiveOnly && (a.isDemo || a.id?.toString().startsWith('art-1'))) return false;
+    return a.studioNotes && a.artistName;
+  });
 
-  const artistHistorySlides = artworksWithNotes.length > 0 ? artworksWithNotes.map(a => {
-    // Extract first 1-2 lines/sentences of history
-    const firstLine = a.studioNotes.split('. ')[0] + (a.studioNotes.includes('. ') ? '.' : '');
-    return {
-      artworkId: a.id,
-      artistName: a.artistName,
-      artistAvatar: a.artistAvatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=300',
-      country: a.country || 'Africa',
-      city: a.city || 'Atelier',
-      countryFlag: a.countryFlag || '🌍',
-      artworkTitle: a.title,
-      artworkImage: a.image,
-      historySnippet: a.studioNotes,
-      firstLine: firstLine || a.studioNotes
-    };
-  }) : [
+  const fallbackSlides = [
     {
       artworkId: 'art-101',
       artistName: 'Kofi Mensah',
@@ -116,6 +105,49 @@ export default function Footer() {
       historySnippet: 'My studio overlooks the Nile. I spend hours just watching the light change on the water before I pick up a brush.'
     }
   ];
+
+  let artistHistorySlides = [];
+  if (artworksWithNotes.length > 0) {
+    artistHistorySlides = artworksWithNotes.map(a => {
+      const firstLine = a.studioNotes.split('. ')[0] + (a.studioNotes.includes('. ') ? '.' : '');
+      return {
+        artworkId: a.id,
+        artistName: a.artistName,
+        artistAvatar: a.artistAvatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=300',
+        country: a.country || 'Nigeria',
+        city: a.city || 'Lagos',
+        countryFlag: a.countryFlag || '🇳🇬',
+        artworkTitle: a.title,
+        artworkImage: a.image,
+        historySnippet: a.studioNotes,
+        firstLine: firstLine || a.studioNotes
+      };
+    });
+  } else if (isLiveOnly) {
+    const realArts = (artworks || []).filter(a => !a.isDemo && !a.id?.toString().startsWith('art-1'));
+    if (realArts.length > 0) {
+      artistHistorySlides = realArts.map(a => {
+        const snippet = a.description || 'Master artist creating authentic contemporary works with certified provenance.';
+        const firstLine = snippet.split('. ')[0] + (snippet.includes('. ') ? '.' : '');
+        return {
+          artworkId: a.id,
+          artistName: a.artistName || a.artist || 'Master Artist',
+          artistAvatar: a.artistAvatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=300',
+          country: a.country || 'Nigeria',
+          city: a.city || 'Lagos',
+          countryFlag: a.countryFlag || '🇳🇬',
+          artworkTitle: a.title,
+          artworkImage: a.image,
+          historySnippet: snippet,
+          firstLine: firstLine
+        };
+      });
+    } else {
+      artistHistorySlides = [];
+    }
+  } else {
+    artistHistorySlides = fallbackSlides;
+  }
 
   const [currentSlideIndex, setCurrentSlideIndex] = useState(0);
   const [isSlidePaused, setIsSlidePaused] = useState(false);
@@ -242,6 +274,7 @@ export default function Footer() {
         {/* ========================================================================= */}
         {/* 1. TOP SPOT: AUTOMATIC SLIDESHOW OF FIRST LINES OF ARTIST HISTORIES       */}
         {/* ========================================================================= */}
+        {artistHistorySlides.length > 0 && activeArtistSlide && (
         <div
           className="rounded-3xl overflow-hidden bg-[#0A0D14] border border-art-gold/30 p-5 sm:p-7 shadow-2xl relative select-none"
           onMouseEnter={() => setIsSlidePaused(true)}
@@ -364,6 +397,7 @@ export default function Footer() {
           </div>
 
         </div>
+        )}
 
         {/* ========================================================================= */}
         {/* 2. FOOTER NAVIGATION COLUMNS & NEWSLETTER                                 */}

@@ -6,19 +6,26 @@ import { useStore } from '@/context/store-context';
 import { ChevronLeft, ChevronRight, ArrowRight, Eye, Sparkles } from 'lucide-react';
 
 export default function CuratorialSpotlightBanner() {
-  const { priorityBannerPlacements = [], artworks = [], currency } = useStore();
+  const { priorityBannerPlacements = [], artworks = [], currency, demoTransitionMode = 'progressive' } = useStore();
+  const isLiveOnly = demoTransitionMode === 'live_only';
+  const isMockOrDemo = (a) => !a || a.isDemo === true || String(a.id || '').startsWith('mock-') || a.id === 'art-101' || a.id === 'art-102';
 
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
 
   // Active placements from admin/artist approved queue, or fall back to high-value masterworks
-  const activePlacements = (priorityBannerPlacements || []).filter(p => p.status === 'active');
+  const realArtworksPool = (artworks || []).filter(a => !isMockOrDemo(a));
+  const eligiblePlacements = isLiveOnly
+    ? (priorityBannerPlacements || []).filter(p => p.status === 'active' && !isMockOrDemo(p))
+    : (priorityBannerPlacements || []).filter(p => p.status === 'active');
 
-  const fallbackArtworks = (artworks || []).filter(
+  const fallbackArtworks = (isLiveOnly ? realArtworksPool : (artworks || [])).filter(
     (art) => art.artistType === 'Premium' || art.verificationBadge === 'gold' || art.isFeatured
   ).slice(0, 6);
 
-  const slides = activePlacements.length > 0 ? activePlacements : (fallbackArtworks.length > 0 ? fallbackArtworks : [
+  const realFallbacks = fallbackArtworks.length > 0 ? fallbackArtworks : realArtworksPool.slice(0, 4);
+
+  const slides = eligiblePlacements.length > 0 ? eligiblePlacements : (realFallbacks.length > 0 ? realFallbacks : (isLiveOnly ? [] : [
     {
       id: 'art-101',
       title: 'The Ancestral Horizon',
@@ -71,7 +78,7 @@ export default function CuratorialSpotlightBanner() {
       priceUSD: 1790,
       image: 'https://images.unsplash.com/photo-1470770903676-69b98201ea1c?auto=format&fit=crop&q=80&w=1400',
     }
-  ]);
+  ]));
 
   // Auto-slide effect every 6 seconds
   useEffect(() => {
@@ -92,8 +99,10 @@ export default function CuratorialSpotlightBanner() {
     setCurrentIndex((prev) => (prev - 1 + slides.length) % slides.length);
   };
 
+  if (!slides || slides.length === 0) return null;
+
   const currentSlide = slides[currentIndex] || slides[0];
-  const artworkTargetId = currentSlide.artworkId || currentSlide.id || 'art-101';
+  const artworkTargetId = currentSlide.artworkId || currentSlide.id || (isLiveOnly ? (realArtworksPool[0]?.id || '') : 'art-101');
 
   const formatPriceDisplay = (priceNgn, priceUsd) => {
     if (currency === 'USD' && priceUsd) {

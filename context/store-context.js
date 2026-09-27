@@ -1,6 +1,6 @@
 'use client';
 
-import React, { createContext, useContext, useState, useEffect, useMemo } from 'react';
+import React, { createContext, useContext, useState, useEffect, useMemo, useRef } from 'react';
 import { 
   INITIAL_ARTWORKS, 
   ARTIST_VIDEOS, 
@@ -43,9 +43,61 @@ export function StoreProvider({ children }) {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [usersList, setUsersList] = useState(INITIAL_USERS || []);
   const [sellers, setSellers] = useState(INITIAL_SELLERS || []);
-  const [artworks, setArtworks] = useState(INITIAL_ARTWORKS);
-  const [realArtworks, setRealArtworks] = useState([]);
-  const [demoTransitionMode, setDemoTransitionMode] = useState('progressive'); // 'progressive' | 'live_only' | 'hybrid'
+  const [demoTransitionMode, setDemoTransitionMode] = useState(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const saved = localStorage.getItem('artellium_demo_transition_mode');
+        if (saved === 'live_only' || saved === 'hybrid' || saved === 'progressive') return saved;
+      } catch (e) {}
+    }
+    return 'progressive';
+  });
+
+  const demoTransitionModeRef = useRef(demoTransitionMode);
+  useEffect(() => {
+    demoTransitionModeRef.current = demoTransitionMode;
+  }, [demoTransitionMode]);
+
+  const [realArtworks, setRealArtworks] = useState(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const saved = localStorage.getItem('artellium_real_artworks');
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            return parsed.filter(a => a && a.id && a.isDemo === false);
+          }
+        }
+      } catch (e) {}
+    }
+    return INITIAL_ARTWORKS.filter(a => a.isDemo === false);
+  });
+
+  const [artworks, setArtworks] = useState(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const savedMode = localStorage.getItem('artellium_demo_transition_mode');
+        const savedReal = localStorage.getItem('artellium_real_artworks');
+        const savedArts = localStorage.getItem('artellium_artworks');
+
+        if (savedMode === 'live_only') {
+          if (savedReal) {
+            const parsedReal = JSON.parse(savedReal);
+            if (Array.isArray(parsedReal) && parsedReal.length > 0) {
+              return parsedReal.filter(a => a && a.id && a.isDemo === false);
+            }
+          }
+          return INITIAL_ARTWORKS.filter(a => a.isDemo === false);
+        }
+
+        if (savedArts) {
+          const parsed = JSON.parse(savedArts);
+          if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        }
+      } catch (e) {}
+    }
+    return INITIAL_ARTWORKS;
+  });
   const [orders, setOrders] = useState(INITIAL_ORDERS || []);
   const [payments, setPayments] = useState(INITIAL_PAYMENTS || []);
   const [commissions, setCommissions] = useState(INITIAL_COMMISSIONS || []);
@@ -174,10 +226,19 @@ export function StoreProvider({ children }) {
 
   const [priorityBannerPlacements, setPriorityBannerPlacements] = useState([]);
 
+  // Helper to reliably detect whether an artwork is dummy/mock data
+  const isMockOrDemoArtwork = (a) => {
+    if (!a) return true;
+    if (a.isDemo === true) return true;
+    if (String(a.id || '').startsWith('mock-')) return true;
+    if (INITIAL_ARTWORKS.some(ia => ia.id === a.id && ia.isDemo !== false)) return true;
+    return false;
+  };
+
   // Progressive Demo Replacement Engine: Assembles active catalogue prioritizing real artist artworks
   const assembleCatalog = (realList = [], demoList = INITIAL_ARTWORKS, mode = 'progressive') => {
     const validReal = Array.isArray(realList) 
-      ? realList.filter(a => a && a.id).map(a => ({ ...a, isDemo: false }))
+      ? realList.filter(a => a && a.id && !isMockOrDemoArtwork(a)).map(a => ({ ...a, isDemo: false }))
       : [];
     const validDemo = Array.isArray(demoList) 
       ? demoList.filter(a => a && a.id && a.isDemo !== false).map(a => ({ ...a, isDemo: true }))
@@ -657,7 +718,8 @@ export function StoreProvider({ children }) {
               safeSetItem('artellium_real_artworks', mergedReal);
 
               setArtworks(() => {
-                const assembled = assembleCatalog(mergedReal, INITIAL_ARTWORKS, demoTransitionMode);
+                const currentMode = demoTransitionModeRef.current || (typeof window !== 'undefined' ? localStorage.getItem('artellium_demo_transition_mode') : null) || 'progressive';
+                const assembled = assembleCatalog(mergedReal, INITIAL_ARTWORKS, currentMode);
                 safeSetItem('artellium_artworks', assembled);
                 return assembled;
               });
@@ -1067,7 +1129,8 @@ export function StoreProvider({ children }) {
           return art;
         });
         safeSetItem('artellium_real_artworks', updatedReal);
-        const assembled = assembleCatalog(updatedReal, INITIAL_ARTWORKS, demoTransitionMode);
+        const activeMode = demoTransitionModeRef.current || demoTransitionMode || 'progressive';
+        const assembled = assembleCatalog(updatedReal, INITIAL_ARTWORKS, activeMode);
         setArtworks(assembled);
         safeSetItem('artellium_artworks', assembled);
         return updatedReal;
@@ -1170,7 +1233,8 @@ export function StoreProvider({ children }) {
         safeSetItem('artellium_real_artworks', updatedReal);
       } catch (e) {}
 
-      const assembled = assembleCatalog(updatedReal, INITIAL_ARTWORKS, demoTransitionMode);
+      const activeMode = demoTransitionModeRef.current || demoTransitionMode || 'progressive';
+      const assembled = assembleCatalog(updatedReal, INITIAL_ARTWORKS, activeMode);
       setArtworks(assembled);
       try {
         safeSetItem('artellium_artworks', assembled);
@@ -1232,7 +1296,8 @@ export function StoreProvider({ children }) {
         safeSetItem('artellium_real_artworks', updatedReal);
       } catch (e) {}
 
-      const assembled = assembleCatalog(updatedReal, INITIAL_ARTWORKS, demoTransitionMode);
+      const activeMode = demoTransitionModeRef.current || demoTransitionMode || 'progressive';
+      const assembled = assembleCatalog(updatedReal, INITIAL_ARTWORKS, activeMode);
       setArtworks(assembled);
       try {
         safeSetItem('artellium_artworks', assembled);
@@ -1299,7 +1364,8 @@ export function StoreProvider({ children }) {
         return art;
       });
       safeSetItem('artellium_real_artworks', updatedReal);
-      const assembled = assembleCatalog(updatedReal, INITIAL_ARTWORKS, demoTransitionMode);
+      const activeMode = demoTransitionModeRef.current || demoTransitionMode || 'progressive';
+      const assembled = assembleCatalog(updatedReal, INITIAL_ARTWORKS, activeMode);
       setArtworks(assembled);
       safeSetItem('artellium_artworks', assembled);
       return updatedReal;
@@ -1315,7 +1381,8 @@ export function StoreProvider({ children }) {
         safeSetItem('artellium_real_artworks', updatedReal);
       } catch (e) {}
 
-      const assembled = assembleCatalog(updatedReal, INITIAL_ARTWORKS, demoTransitionMode);
+      const activeMode = demoTransitionModeRef.current || demoTransitionMode || 'progressive';
+      const assembled = assembleCatalog(updatedReal, INITIAL_ARTWORKS, activeMode);
       setArtworks(assembled);
       try {
         safeSetItem('artellium_artworks', assembled);
@@ -1369,7 +1436,8 @@ export function StoreProvider({ children }) {
         safeSetItem('artellium_real_artworks', updatedReal);
       } catch (e) {}
 
-      const assembled = assembleCatalog(updatedReal, INITIAL_ARTWORKS, demoTransitionMode);
+      const activeMode = demoTransitionModeRef.current || demoTransitionMode || 'progressive';
+      const assembled = assembleCatalog(updatedReal, INITIAL_ARTWORKS, activeMode);
       setArtworks(assembled);
       try {
         safeSetItem('artellium_artworks', assembled);
@@ -1392,14 +1460,26 @@ export function StoreProvider({ children }) {
   // Demo Transition Suite Controls
   const purgeAllDemoArtworks = () => {
     setDemoTransitionMode('live_only');
+    demoTransitionModeRef.current = 'live_only';
     safeSetItem('artellium_demo_transition_mode', 'live_only');
-    setArtworks(realArtworks);
-    safeSetItem('artellium_artworks', realArtworks);
+
+    const sourcePool = (realArtworks && realArtworks.length > 0 ? realArtworks : INITIAL_ARTWORKS);
+    const cleanReal = sourcePool
+      .filter(a => a && a.id && !isMockOrDemoArtwork(a))
+      .map(a => ({ ...a, isDemo: false }));
+
+    setRealArtworks(cleanReal);
+    safeSetItem('artellium_real_artworks', cleanReal);
+
+    setArtworks(cleanReal);
+    safeSetItem('artellium_artworks', cleanReal);
+
     broadcastNotification('🧹 All demo artworks purged. Catalogue is now 100% genuine live artist inventory.');
   };
 
   const restoreDemoArtworks = () => {
     setDemoTransitionMode('progressive');
+    demoTransitionModeRef.current = 'progressive';
     safeSetItem('artellium_demo_transition_mode', 'progressive');
     const assembled = assembleCatalog(realArtworks, INITIAL_ARTWORKS, 'progressive');
     setArtworks(assembled);
@@ -1410,8 +1490,18 @@ export function StoreProvider({ children }) {
   const updateDemoTransitionMode = (mode) => {
     const validMode = (mode === 'live_only' || mode === 'hybrid' || mode === 'progressive') ? mode : 'progressive';
     setDemoTransitionMode(validMode);
+    demoTransitionModeRef.current = validMode;
     safeSetItem('artellium_demo_transition_mode', validMode);
-    const assembled = assembleCatalog(realArtworks, INITIAL_ARTWORKS, validMode);
+
+    const sourcePool = (realArtworks && realArtworks.length > 0 ? realArtworks : INITIAL_ARTWORKS);
+    const cleanReal = sourcePool
+      .filter(a => a && a.id && !isMockOrDemoArtwork(a))
+      .map(a => ({ ...a, isDemo: false }));
+
+    setRealArtworks(cleanReal);
+    safeSetItem('artellium_real_artworks', cleanReal);
+
+    const assembled = assembleCatalog(cleanReal, INITIAL_ARTWORKS, validMode);
     setArtworks(assembled);
     safeSetItem('artellium_artworks', assembled);
   };
@@ -2004,7 +2094,8 @@ export function StoreProvider({ children }) {
         return art;
       });
       safeSetItem('artellium_real_artworks', updatedReal);
-      const assembled = assembleCatalog(updatedReal, INITIAL_ARTWORKS, demoTransitionMode);
+      const activeMode = demoTransitionModeRef.current || demoTransitionMode || 'progressive';
+      const assembled = assembleCatalog(updatedReal, INITIAL_ARTWORKS, activeMode);
       setArtworks(assembled);
       safeSetItem('artellium_artworks', assembled);
       return updatedReal;
@@ -3131,6 +3222,13 @@ export function StoreProvider({ children }) {
     return `${currMeta.symbol || '₦'}${converted.toLocaleString()}`;
   };
 
+  const displayArtworks = useMemo(() => {
+    if (demoTransitionMode === 'live_only') {
+      return (artworks || []).filter(a => a && a.id && !isMockOrDemoArtwork(a));
+    }
+    return artworks || [];
+  }, [artworks, demoTransitionMode]);
+
   return (
     <StoreContext.Provider
       value={{
@@ -3152,7 +3250,9 @@ export function StoreProvider({ children }) {
         addSeller,
         updateSeller,
         deleteSeller,
-        artworks,
+        artworks: displayArtworks,
+        allArtworks: artworks,
+        rawArtworks: artworks,
         realArtworks,
         demoTransitionMode,
         setDemoTransitionMode: updateDemoTransitionMode,
@@ -3173,9 +3273,9 @@ export function StoreProvider({ children }) {
         getNewlyListedArtworks,
         getRecentlySoldArtworks,
         getLiveAuctionsArtworks,
-        realArtworksCount: (realArtworks || []).length,
-        demoArtworksCount: (artworks || []).filter(a => a.isDemo).length,
-        realSoldArtworksCount: (realArtworks || []).filter(a => a.status === 'sold').length,
+        realArtworksCount: (realArtworks || []).filter(a => a && !isMockOrDemoArtwork(a)).length,
+        demoArtworksCount: (displayArtworks || []).filter(a => a.isDemo).length,
+        realSoldArtworksCount: (realArtworks || []).filter(a => a.status === 'sold' && !isMockOrDemoArtwork(a)).length,
         demoVideosCount: (videos || []).filter(v => isDemoVideoItem(v)).length,
         realVideosCount: (videos || []).filter(v => !isDemoVideoItem(v)).length,
         addArtwork,
