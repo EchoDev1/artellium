@@ -84,6 +84,7 @@ import AdminPayoutGovernance from '@/components/AdminPayoutGovernance';
 import AdminImageDiagnostics from '@/components/AdminImageDiagnostics';
 import AdminDemoTransitionSuite from '@/components/AdminDemoTransitionSuite';
 import AdminVideoModeration from '@/components/AdminVideoModeration';
+import AdminDhlShippingManager from '@/components/AdminDhlShippingManager';
 import ArtworkPhotoUploader from '@/components/ArtworkPhotoUploader';
 import { 
   TRACKING_STAGES, 
@@ -647,6 +648,19 @@ export default function AdminDashboardPage() {
               </button>
 
               <button
+                type="button"
+                onClick={() => setActiveTab('dhl_shipping')}
+                className="bg-amber-50 hover:bg-amber-100 border border-amber-300 text-amber-900 font-bold text-xs px-3.5 py-2.5 rounded-xl transition shadow-sm flex items-center gap-2 cursor-pointer"
+                title="Manage DHL Delivery Prices & Country Rates"
+              >
+                <Truck className="w-4 h-4 text-amber-600" />
+                <span>DHL Delivery Prices</span>
+                <span className="text-[10px] bg-amber-200/80 px-1.5 py-0.5 rounded text-amber-900 font-mono font-bold uppercase">
+                  195+ Countries
+                </span>
+              </button>
+
+              <button
                 onClick={() => setIsAddArtModalOpen(true)}
                 className="bg-art-gold hover:brightness-110 text-art-black font-bold text-xs uppercase tracking-wider px-4 py-3 rounded-xl transition shadow flex items-center gap-2"
               >
@@ -853,6 +867,15 @@ export default function AdminDashboardPage() {
                 >
                   <Truck className="w-3 h-3 text-amber-500" />
                   <span>Delivery Tracking ({orders.filter(o => o.tracking).length})</span>
+                </button>
+                <button
+                  onClick={() => setActiveTab('dhl_shipping')}
+                  className={`px-2 py-1 rounded-lg text-[11px] font-bold transition flex items-center gap-1 ${
+                    activeTab === 'dhl_shipping' ? 'bg-amber-600 text-white shadow-sm ring-2 ring-amber-400' : 'bg-amber-50 text-amber-900 hover:bg-amber-100 border border-amber-300'
+                  }`}
+                >
+                  <Truck className="w-3 h-3 text-amber-600" />
+                  <span>DHL Shipping & Prices</span>
                 </button>
               </div>
             </div>
@@ -3378,6 +3401,11 @@ export default function AdminDashboardPage() {
               </form>
             </div>
           </div>
+        )}
+
+        {/* 3.6 DHL EXPRESS SHIPPING & DELIVERY PRICING MANAGER TAB */}
+        {activeTab === 'dhl_shipping' && (
+          <AdminDhlShippingManager />
         )}
 
         {/* 4. COMMISSIONS TAB */}

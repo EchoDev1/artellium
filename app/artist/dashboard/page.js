@@ -2010,10 +2010,10 @@ export default function ArtistDashboardPage() {
                                     Step {currentStep} of 6: {currentStageConfig.shortLabel}
                                   </span>
                                 </div>
-                                <p className="text-[10px] text-slate-500 mt-0.5">
-                                  Carrier: <strong className="text-slate-700">{tracking.carrier || 'Artellium Logistics'}</strong> • 
-                                  Tracking ID: <span className="font-mono text-slate-700 font-bold">{tracking.tracking_id || ord.id}</span>
-                                </p>
+                                  <p className="text-[10px] text-slate-500 mt-0.5">
+                                    Carrier: <strong className="text-slate-700">{tracking.carrier || 'DHL Express Fine Art'}</strong> • 
+                                    Air Waybill: <span className="font-mono text-slate-700 font-bold">{tracking.trackingNumber || tracking.tracking_id || ord.id}</span>
+                                  </p>
                               </div>
                             </div>
                             
