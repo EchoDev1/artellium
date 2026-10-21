@@ -1,39 +1,63 @@
 'use client';
 
-import React, { useEffect } from 'react';
-import Link from 'next/link';
+import React, { useEffect, useState } from 'react';
 import { Sparkles, RefreshCw, ShieldAlert, Home, ArrowRight } from 'lucide-react';
 
 export default function GlobalErrorPage({ error, reset }) {
-  const [isHealing, setIsHealing] = React.useState(false);
-
-  const [showAdminDiagnostics, setShowAdminDiagnostics] = React.useState(false);
+  const [isHealing, setIsHealing] = useState(false);
+  const [showAdminDiagnostics, setShowAdminDiagnostics] = useState(false);
 
   useEffect(() => {
     // Log error cleanly in console
     console.error('[Artellium System Sentinel caught error]:', error);
 
-    // Auto-heal chunk load errors (happens when browser cache has stale chunks from an update)
-    const isChunkError = 
-      error?.name === 'ChunkLoadError' ||
-      error?.message?.includes('Loading chunk') || 
-      error?.message?.includes('Loading CSS chunk');
+    if (typeof window === 'undefined') return;
 
-    if (isChunkError && typeof window !== 'undefined') {
-      const reloadKey = 'artellium_chunk_heal_lock';
-      const lastHeal = sessionStorage.getItem(reloadKey);
-      if (!lastHeal) {
-        sessionStorage.setItem(reloadKey, 'true');
-        window.location.reload();
+    // Detect if this is a transient network, chunk load, or post-deployment bundle mismatch
+    const errorMsg = String(error?.message || error?.name || error || '').toLowerCase();
+    const isTransient = 
+      errorMsg.includes('chunk') ||
+      errorMsg.includes('dynamically imported module') ||
+      errorMsg.includes('loading css chunk') ||
+      errorMsg.includes('load failed') ||
+      errorMsg.includes('failed to fetch') ||
+      errorMsg.includes('network') ||
+      errorMsg.includes('script error');
+
+    // Auto-heal lock in sessionStorage to prevent infinite reload loops
+    const reloadKey = 'artellium_sentinel_heal_lock';
+    const lastHeal = sessionStorage.getItem(reloadKey);
+    const now = Date.now();
+
+    // If transient or first occurrence within 20 seconds, silently self-heal immediately
+    if (!lastHeal || (now - parseInt(lastHeal, 10)) > 20000) {
+      sessionStorage.setItem(reloadKey, now.toString());
+      
+      // Try React boundary reset first
+      if (typeof reset === 'function') {
+        try {
+          reset();
+          return;
+        } catch (e) {
+          // If reset throws, fall through to hard reload
+        }
       }
+
+      // Hard reload to fetch the newly deployed bundle chunks cleanly
+      setTimeout(() => {
+        window.location.reload();
+      }, 150);
     }
-  }, [error]);
+  }, [error, reset]);
 
   const handleSelfHeal = () => {
     setIsHealing(true);
     try {
-      // Clear any corrupted transient temporary session keys
-      sessionStorage.clear();
+      if (typeof window !== 'undefined') {
+        // Clear transient navigation locks
+        sessionStorage.removeItem('artellium_sentinel_heal_lock');
+        sessionStorage.removeItem('artellium_chunk_heal_lock');
+      }
     } catch (e) {}
 
     // First try React error boundary reset
@@ -41,20 +65,30 @@ export default function GlobalErrorPage({ error, reset }) {
       try {
         reset();
       } catch (e) {
-        console.warn('React boundary reset encountered issue, falling back to reload');
+        console.warn('React boundary reset encountered issue, falling back to clean reload');
       }
     }
 
-    // Hard reload to guarantee clean bundle fetch
+    // Hard reload with cache buster to guarantee fresh production bundle
     setTimeout(() => {
       if (typeof window !== 'undefined') {
-        window.location.reload();
+        window.location.href = window.location.pathname + '?_heal=' + Date.now();
       }
-    }, 200);
+    }, 250);
+  };
+
+  const handleReturnHome = (e) => {
+    e.preventDefault();
+    if (typeof window !== 'undefined') {
+      try {
+        sessionStorage.removeItem('artellium_sentinel_heal_lock');
+      } catch (e) {}
+      window.location.href = '/';
+    }
   };
 
   return (
-    <div className="min-h-[80vh] bg-[#07080A] py-16 px-4 sm:px-6 lg:px-8 flex items-center justify-center relative overflow-hidden">
+    <div className="min-h-[85vh] bg-[#07080A] py-16 px-4 sm:px-6 lg:px-8 flex items-center justify-center relative overflow-hidden">
       {/* Ambient background glow */}
       <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-art-gold/10 blur-[130px] pointer-events-none" />
       <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-red-900/10 blur-[130px] pointer-events-none" />
@@ -93,7 +127,7 @@ export default function GlobalErrorPage({ error, reset }) {
             </p>
           </div>
 
-          {/* Technical Details: Only shown if clicked or in development */}
+          {/* Technical Details: Only shown if clicked */}
           {error?.message && (
             <div className="space-y-2">
               <button
@@ -124,13 +158,14 @@ export default function GlobalErrorPage({ error, reset }) {
               <span>{isHealing ? 'Healing View...' : 'Self-Heal & Recover View'}</span>
             </button>
 
-            <Link
+            <a
               href="/"
-              className="py-3.5 px-6 rounded-xl bg-white/5 hover:bg-white/10 text-white font-bold transition flex items-center justify-center gap-2 border border-white/10"
+              onClick={handleReturnHome}
+              className="py-3.5 px-6 rounded-xl bg-white/5 hover:bg-white/10 text-white font-bold transition flex items-center justify-center gap-2 border border-white/10 cursor-pointer"
             >
               <Home className="w-4 h-4" />
               <span>Return Home</span>
-            </Link>
+            </a>
           </div>
 
           <div className="pt-2 border-t border-white/10 text-[10px] text-slate-500 font-mono">

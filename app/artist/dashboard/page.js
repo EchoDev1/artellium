@@ -2010,7 +2010,7 @@ export default function ArtistDashboardPage() {
                             <span className="text-[10px] text-slate-400 font-mono uppercase block">Payout Status</span>
                             <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-800">
                               <CheckCircle2 className="w-3.5 h-3.5" />
-                              <span>{artistPayoutPercentage}% Net Disbursed</span>
+                              <span>Studio Settlement Disbursed</span>
                             </span>
                           </div>
                         </div>

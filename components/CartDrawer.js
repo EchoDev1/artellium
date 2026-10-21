@@ -6,7 +6,7 @@ import { X, Trash2, ShoppingBag, ArrowRight, ShieldCheck, Plus, Minus } from 'lu
 
 export default function CartDrawer() {
   const {
-    cart,
+    cart = [],
     isCartOpen,
     setIsCartOpen,
     removeFromCart,

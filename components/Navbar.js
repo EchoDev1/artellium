@@ -49,7 +49,7 @@ export default function Navbar() {
     showCurrencySelector: true
   };
 
-  const cartItemsCount = cart.reduce((count, item) => count + item.quantity, 0);
+  const cartItemsCount = (cart || []).reduce((count, item) => count + (item?.quantity || 1), 0);
   const searchCategories = [
     { value: 'All', label: 'All Categories', slug: '' },
     { value: 'Paintings', label: 'Paintings', slug: 'paintings' },
