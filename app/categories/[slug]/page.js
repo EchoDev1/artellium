@@ -19,8 +19,7 @@ import {
   Bookmark, 
   Sparkles, 
   Search, 
-  SlidersHorizontal, 
-  ArrowLeft,
+  SlidersHorizontal,
   Flame,
   Award,
   TrendingUp,
@@ -259,15 +258,7 @@ export default function CategoryPage() {
         <div className="absolute bottom-0 left-1/4 w-80 h-80 bg-black/40 blur-2xl pointer-events-none" />
 
         <div className="max-w-7xl mx-auto space-y-6 relative z-10">
-          <div className="flex items-center gap-3">
-            <Link
-              href="/explore"
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-black/40 hover:bg-art-gold hover:text-art-black text-slate-300 text-xs font-semibold border border-white/10 transition"
-            >
-              <ArrowLeft className="w-3.5 h-3.5" />
-              <span>All Services & Art</span>
-            </Link>
-            <span className="text-slate-500">/</span>
+          <div className="flex items-center gap-2">
             <span className="text-xs text-art-gold font-mono uppercase tracking-wider">Online Art Marketplace</span>
           </div>
 

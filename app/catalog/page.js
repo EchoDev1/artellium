@@ -171,13 +171,6 @@ export default function ProvenanceCatalogHistoryPage() {
               <ShieldCheck className="w-3.5 h-3.5 text-[#D4AF37]" />
               Non-Commercial Educational & Curatorial Ledger
             </span>
-            <Link
-              href="/"
-              className="inline-flex items-center gap-1 text-xs font-mono text-[#D4AF37] hover:text-white transition underline"
-            >
-              <ArrowLeft className="w-3.5 h-3.5" />
-              <span>Return to Marketplace</span>
-            </Link>
           </div>
         </div>
       </div>

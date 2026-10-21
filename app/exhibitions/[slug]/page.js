@@ -8,8 +8,7 @@ import {
   Eye, 
   Calendar, 
   MapPin, 
-  Globe, 
-  ArrowLeft, 
+  Globe,
   ArrowRight, 
   Sparkles, 
   ShieldCheck, 
@@ -107,16 +106,8 @@ export default function ExhibitionMiniPage() {
 
         <div className="absolute inset-0 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col justify-between py-8">
           
-          {/* Top Breadcrumb & Share */}
-          <div className="flex items-center justify-between">
-            <Link
-              href="/exhibitions"
-              className="px-4 py-2 rounded-xl bg-black/60 backdrop-blur-md text-slate-300 hover:text-white border border-white/10 text-xs font-bold transition flex items-center gap-2"
-            >
-              <ArrowLeft className="w-4 h-4" />
-              <span>All Exhibitions</span>
-            </Link>
-
+          {/* Top Share Action */}
+          <div className="flex items-center justify-end">
             <div className="flex items-center gap-2">
               <button
                 onClick={() => {

@@ -27,8 +27,7 @@ import {
   Check, 
   Calendar, 
   DollarSign, 
-  Layers, 
-  ArrowLeft, 
+  Layers,
   Shield, 
   AlertCircle, 
   MessageCircle,
@@ -199,29 +198,16 @@ export default function MasterArtistProfilePage() {
 
   return (
     <div className="min-h-screen bg-[#07080A] text-slate-100 font-sans pb-24">
-      {/* Top Breadcrumb & Navigation Bar */}
-      <div className="border-b border-white/10 bg-black/60 backdrop-blur-md sticky top-0 z-30">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex items-center justify-between text-xs">
-          <div className="flex items-center gap-2">
-            <Link 
-              href="/explore" 
-              className="text-slate-400 hover:text-white flex items-center gap-1 transition"
-            >
-              <ArrowLeft className="w-3.5 h-3.5" />
-              <span>Back to Explore All</span>
-            </Link>
-            <span className="text-slate-600">/</span>
-            <span className="text-art-gold font-serif truncate max-w-[200px] sm:max-w-none">{name}</span>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <button
-              onClick={handleShare}
-              className="px-3 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white border border-white/10 transition flex items-center gap-1.5 cursor-pointer"
-            >
-              {copiedLink ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Share2 className="w-3.5 h-3.5" />}
-              <span>{copiedLink ? 'Link Copied!' : 'Share Profile'}</span>
-            </button>
+      {/* Top Utility Actions Bar */}
+      <div className="border-b border-white/5 bg-black/40 backdrop-blur-md">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2.5 flex items-center justify-end text-xs gap-2">
+          <button
+            onClick={handleShare}
+            className="px-3 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white border border-white/10 transition flex items-center gap-1.5 cursor-pointer"
+          >
+            {copiedLink ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Share2 className="w-3.5 h-3.5" />}
+            <span>{copiedLink ? 'Link Copied!' : 'Share Profile'}</span>
+          </button>
 
             {isMyOwnProfile && (
               <Link
@@ -244,7 +230,6 @@ export default function MasterArtistProfilePage() {
             )}
           </div>
         </div>
-      </div>
 
       {/* Main Artist Dossier Hero Section */}
       <div className="relative border-b border-white/10 bg-gradient-to-b from-[#14120B] via-[#0A0B0E] to-[#07080A]">

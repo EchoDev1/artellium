@@ -230,11 +230,11 @@ export default function AuctionCard({ artwork }) {
 
         <Link
           href={`/artwork/${artwork.id || artwork.artworkId}`}
-          className="block relative h-64 sm:h-72 w-full rounded-2xl overflow-hidden bg-[#07090D] border border-white/10 cursor-pointer group/lot flex items-center justify-center p-2"
+          className="block relative aspect-[4/3] sm:h-72 w-full rounded-2xl overflow-hidden bg-[#07090D] border border-white/10 cursor-pointer group/lot flex items-center justify-center"
         >
           {/* Ambient blur */}
           <div 
-            className="absolute inset-0 bg-cover bg-center blur-2xl opacity-20 scale-125 pointer-events-none"
+            className="absolute inset-0 bg-cover bg-center blur-2xl opacity-25 scale-125 pointer-events-none"
             style={{ backgroundImage: `url(${artwork.image || DEFAULT_FALLBACK_IMAGE})` }}
           />
 
@@ -244,7 +244,7 @@ export default function AuctionCard({ artwork }) {
             onError={(e) => {
               e.currentTarget.src = DEFAULT_FALLBACK_IMAGE;
             }}
-            className="relative z-10 max-h-full max-w-full object-contain rounded-xl shadow-lg group-hover:scale-105 group-hover/lot:scale-105 transition duration-700"
+            className="relative z-10 w-full h-full object-contain rounded-xl shadow-lg group-hover:scale-105 group-hover/lot:scale-105 transition duration-700"
           />
 
           {/* Reserve Met Status Pill */}
