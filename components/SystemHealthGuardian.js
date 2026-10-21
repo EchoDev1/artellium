@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React, { useEffect } from 'react';
 
@@ -16,13 +16,19 @@ export default function SystemHealthGuardian() {
     // 1. Global Error Sentinel
     const errorHandler = (event) => {
       const msg = event?.message || '';
-      // Ignore common benign third-party/extension errors
+      // Ignore common benign third-party/extension errors and hydration warnings
       if (
         msg.includes('ResizeObserver') ||
         msg.includes('translate.google') ||
         msg.includes('chrome-extension://') ||
         msg.includes('moz-extension://') ||
-        msg.includes('safari-extension://')
+        msg.includes('safari-extension://') ||
+        msg.includes('Hydration') ||
+        msg.includes('hydration') ||
+        msg.includes('did not match') ||
+        msg.includes('Minified React error #418') ||
+        msg.includes('Minified React error #423') ||
+        msg.includes('Minified React error #425')
       ) {
         event.preventDefault();
         return;
@@ -35,7 +41,10 @@ export default function SystemHealthGuardian() {
       if (
         String(reason).includes('ResizeObserver') ||
         String(reason).includes('translate') ||
-        String(reason).includes('extension')
+        String(reason).includes('extension') ||
+        String(reason).includes('hydration') ||
+        String(reason).includes('Hydration') ||
+        String(reason).includes('did not match')
       ) {
         event.preventDefault();
         return;

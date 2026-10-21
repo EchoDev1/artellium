@@ -207,7 +207,7 @@ export default function AuctionCard({ artwork }) {
   const isHighest = bidsFeed[0]?.bidder?.includes('You') || bidsFeed[0]?.bidder?.includes(currentUser?.name || 'Folake');
 
   return (
-    <div className="group relative rounded-3xl overflow-hidden bg-[#0A0D14] border border-art-gold/30 shadow-2xl flex flex-col md:flex-row gap-6 p-6 hover:border-art-gold transition duration-300">
+    <div suppressHydrationWarning className="group relative rounded-3xl overflow-hidden bg-[#0A0D14] border border-art-gold/30 shadow-2xl flex flex-col md:flex-row gap-6 p-6 hover:border-art-gold transition duration-300">
       
       {/* Artwork Image Container (Clickable and Clean) */}
       <div className="relative md:w-5/12 flex flex-col gap-2 shrink-0">
@@ -217,7 +217,7 @@ export default function AuctionCard({ artwork }) {
             <Flame className="w-3 h-3 fill-current" />
             <span>LIVE AUCTION</span>
           </span>
-          <span className="bg-black/80 backdrop-blur-md text-art-gold font-mono font-bold text-[10px] px-2.5 py-0.5 rounded-full border border-art-gold/40">
+          <span suppressHydrationWarning className="bg-black/80 backdrop-blur-md text-art-gold font-mono font-bold text-[10px] px-2.5 py-0.5 rounded-full border border-art-gold/40">
             {lotNumber}
           </span>
           {isPriorityArtist(artwork) && (
@@ -270,7 +270,7 @@ export default function AuctionCard({ artwork }) {
         {/* Header Title & Provenance */}
         <div>
           <div className="flex items-center justify-between mb-1 border-b border-white/10 pb-2">
-            <span className="text-xs text-art-gold font-mono font-bold uppercase tracking-wider">
+            <span suppressHydrationWarning className="text-xs text-art-gold font-mono font-bold uppercase tracking-wider">
               {lotNumber} • {artwork.country || 'Nigeria 🇳🇬'}
             </span>
             <div className="flex items-center gap-1 text-slate-400 text-xs">
@@ -433,7 +433,7 @@ export default function AuctionCard({ artwork }) {
             <div className="flex items-center justify-between border-b border-white/10 pb-3">
               <div className="flex items-center gap-2 text-art-gold font-serif font-bold text-lg">
                 <Gavel className="w-5 h-5 text-red-500" />
-                <span>Live Auction Bid · {lotNumber}</span>
+                <span suppressHydrationWarning>Live Auction Bid · {lotNumber}</span>
               </div>
               <button
                 onClick={() => setBiddingOpen(false)}
@@ -528,7 +528,7 @@ export default function AuctionCard({ artwork }) {
                 <span className="text-[10px] font-mono font-bold text-art-gold uppercase tracking-widest block">
                   PRO-FORMA ACQUISITION INVOICE
                 </span>
-                <h3 className="font-serif text-lg font-bold text-white">
+                <h3 suppressHydrationWarning className="font-serif text-lg font-bold text-white">
                   {artwork.title} · {lotNumber}
                 </h3>
               </div>

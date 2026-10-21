@@ -43,61 +43,15 @@ export function StoreProvider({ children }) {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [usersList, setUsersList] = useState(INITIAL_USERS || []);
   const [sellers, setSellers] = useState(INITIAL_SELLERS || []);
-  const [demoTransitionMode, setDemoTransitionMode] = useState(() => {
-    if (typeof window !== 'undefined') {
-      try {
-        const saved = localStorage.getItem('artellium_demo_transition_mode');
-        if (saved === 'live_only' || saved === 'hybrid' || saved === 'progressive') return saved;
-      } catch (e) {}
-    }
-    return 'progressive';
-  });
+  const [demoTransitionMode, setDemoTransitionMode] = useState('progressive');
 
   const demoTransitionModeRef = useRef(demoTransitionMode);
   useEffect(() => {
     demoTransitionModeRef.current = demoTransitionMode;
   }, [demoTransitionMode]);
 
-  const [realArtworks, setRealArtworks] = useState(() => {
-    if (typeof window !== 'undefined') {
-      try {
-        const saved = localStorage.getItem('artellium_real_artworks');
-        if (saved) {
-          const parsed = JSON.parse(saved);
-          if (Array.isArray(parsed) && parsed.length > 0) {
-            return parsed.filter(a => a && a.id && a.isDemo === false);
-          }
-        }
-      } catch (e) {}
-    }
-    return INITIAL_ARTWORKS.filter(a => a.isDemo === false);
-  });
-
-  const [artworks, setArtworks] = useState(() => {
-    if (typeof window !== 'undefined') {
-      try {
-        const savedMode = localStorage.getItem('artellium_demo_transition_mode');
-        const savedReal = localStorage.getItem('artellium_real_artworks');
-        const savedArts = localStorage.getItem('artellium_artworks');
-
-        if (savedMode === 'live_only') {
-          if (savedReal) {
-            const parsedReal = JSON.parse(savedReal);
-            if (Array.isArray(parsedReal) && parsedReal.length > 0) {
-              return parsedReal.filter(a => a && a.id && a.isDemo === false);
-            }
-          }
-          return INITIAL_ARTWORKS.filter(a => a.isDemo === false);
-        }
-
-        if (savedArts) {
-          const parsed = JSON.parse(savedArts);
-          if (Array.isArray(parsed) && parsed.length > 0) return parsed;
-        }
-      } catch (e) {}
-    }
-    return INITIAL_ARTWORKS;
-  });
+  const [realArtworks, setRealArtworks] = useState(() => INITIAL_ARTWORKS.filter(a => a.isDemo === false));
+  const [artworks, setArtworks] = useState(INITIAL_ARTWORKS);
   const [orders, setOrders] = useState(INITIAL_ORDERS || []);
   const [payments, setPayments] = useState(INITIAL_PAYMENTS || []);
   const [commissions, setCommissions] = useState(INITIAL_COMMISSIONS || []);
@@ -140,13 +94,7 @@ export function StoreProvider({ children }) {
   const [notifications, setNotifications] = useState([]);
   const [artworkQuestions, setArtworkQuestions] = useState([]);
   const [collectorOffers, setCollectorOffers] = useState([]);
-  const [artistPayoutPercentage, setArtistPayoutPercentage] = useState(() => {
-    if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem('artellium_artist_payout_percentage');
-      if (saved && !isNaN(Number(saved))) return Number(saved);
-    }
-    return 85;
-  });
+  const [artistPayoutPercentage, setArtistPayoutPercentage] = useState(85);
 
   const updateArtistPayoutPercentage = (newPercentage) => {
     const val = Math.max(1, Math.min(99, Number(newPercentage) || 85));
@@ -170,29 +118,11 @@ export function StoreProvider({ children }) {
   const [panAfricanCurrencies, setPanAfricanCurrencies] = useState(PAN_AFRICAN_CURRENCIES || {});
 
   // Daily USD Exchange Rate (Admin Fixed / Volatility Shield)
-  const [usdExchangeRate, setUsdExchangeRate] = useState(() => {
-    if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem('artellium_usd_exchange_rate');
-      if (saved && !isNaN(Number(saved)) && Number(saved) > 0) return Number(saved);
-    }
-    return 1480;
-  });
-
-  const [usdRateLastUpdated, setUsdRateLastUpdated] = useState(() => {
-    if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem('artellium_usd_rate_updated');
-      if (saved) return saved;
-    }
-    return new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-  });
+  const [usdExchangeRate, setUsdExchangeRate] = useState(1480);
+  const [usdRateLastUpdated, setUsdRateLastUpdated] = useState('Oct 21, 2026');
 
   // Demo Video Removal / Live Mode State
-  const [hideDemoVideos, setHideDemoVideos] = useState(() => {
-    if (typeof window !== 'undefined') {
-      return localStorage.getItem('artellium_hide_demo_videos') === 'true';
-    }
-    return false;
-  });
+  const [hideDemoVideos, setHideDemoVideos] = useState(false);
 
   // Auction Bidders & Patron Lead Directory (for Admin and Notification Broadcasts)
   const [auctionBidders, setAuctionBidders] = useState([]);
@@ -655,6 +585,27 @@ export function StoreProvider({ children }) {
       } else {
         setIsLoggedIn(false);
         setCurrentUser(null);
+      }
+
+      // Safe client-side hydration for currency and exchange rate settings
+      const savedRate = localStorage.getItem('artellium_usd_exchange_rate');
+      if (savedRate && !isNaN(Number(savedRate)) && Number(savedRate) > 0) {
+        setUsdExchangeRate(Number(savedRate));
+      }
+
+      const savedRateUpdated = localStorage.getItem('artellium_usd_rate_updated');
+      if (savedRateUpdated) {
+        setUsdRateLastUpdated(savedRateUpdated);
+      }
+
+      const savedHideDemo = localStorage.getItem('artellium_hide_demo_videos');
+      if (savedHideDemo !== null) {
+        setHideDemoVideos(savedHideDemo === 'true');
+      }
+
+      const savedPayout = localStorage.getItem('artellium_artist_payout_percentage');
+      if (savedPayout && !isNaN(Number(savedPayout))) {
+        setArtistPayoutPercentage(Number(savedPayout));
       }
     } catch (e) {
       console.warn('LocalStorage load notice:', e);

@@ -111,7 +111,7 @@ export default function HomePage() {
         const auctionsList = getLiveAuctions(sec.maxItems || 6);
         if (auctionsList.length === 0) return null;
         return (
-          <section key={sec.id} className="relative rounded-2xl sm:rounded-3xl bg-white border-2 border-art-gold/30 shadow-[0_8px_30px_rgba(0,0,0,0.06)] p-5 sm:p-8 space-y-6 overflow-hidden">
+          <section key={sec.id} suppressHydrationWarning className="relative rounded-2xl sm:rounded-3xl bg-white border-2 border-art-gold/30 shadow-[0_8px_30px_rgba(0,0,0,0.06)] p-5 sm:p-8 space-y-6 overflow-hidden">
             <div className="absolute top-0 inset-x-8 h-[2px] bg-gradient-to-r from-transparent via-art-gold/50 to-transparent" />
             
             {/* Gold Luxury Heading Banner */}
@@ -143,7 +143,7 @@ export default function HomePage() {
               </Link>
             </div>
 
-            <div className="grid grid-cols-1 gap-6">
+            <div suppressHydrationWarning className="grid grid-cols-1 gap-6">
               {auctionsList.map((art) => (
                 <AuctionCard key={art.id} artwork={art} />
               ))}
@@ -155,7 +155,7 @@ export default function HomePage() {
       case 'newly_listed': {
         const newlyListed = getNewlyListed(sec.maxItems || 12);
         return (
-          <section key={sec.id} id="curated-marketplace" className="relative rounded-2xl sm:rounded-3xl bg-white border-2 border-art-gold/30 shadow-[0_8px_30px_rgba(0,0,0,0.06)] p-5 sm:p-8 space-y-6 scroll-mt-24 overflow-hidden">
+          <section key={sec.id} id="curated-marketplace" suppressHydrationWarning className="relative rounded-2xl sm:rounded-3xl bg-white border-2 border-art-gold/30 shadow-[0_8px_30px_rgba(0,0,0,0.06)] p-5 sm:p-8 space-y-6 scroll-mt-24 overflow-hidden">
             <div className="absolute top-0 inset-x-8 h-[2px] bg-gradient-to-r from-transparent via-art-gold/50 to-transparent" />
 
             {/* Gold Luxury Heading Banner */}
@@ -315,7 +315,7 @@ export default function HomePage() {
         const recentlySold = getRecentlySold(sec.maxItems || 3);
         if (recentlySold.length === 0) return null;
         return (
-          <section key={sec.id} className="relative rounded-2xl sm:rounded-3xl bg-white border-2 border-art-gold/30 shadow-[0_8px_30px_rgba(0,0,0,0.06)] p-5 sm:p-8 space-y-6 overflow-hidden">
+          <section key={sec.id} suppressHydrationWarning className="relative rounded-2xl sm:rounded-3xl bg-white border-2 border-art-gold/30 shadow-[0_8px_30px_rgba(0,0,0,0.06)] p-5 sm:p-8 space-y-6 overflow-hidden">
             <div className="absolute top-0 inset-x-8 h-[2px] bg-gradient-to-r from-transparent via-art-gold/50 to-transparent" />
 
             {/* Gold Luxury Heading Banner */}
@@ -360,7 +360,7 @@ export default function HomePage() {
         const sortedEx = sortExhibitionsByPriority(exhibitions, sellers, usersList);
         const exList = sortedEx.slice(0, sec.maxItems || 6);
         return (
-          <section key={sec.id} className="relative rounded-2xl sm:rounded-3xl bg-white border-2 border-art-gold/30 shadow-[0_8px_30px_rgba(0,0,0,0.06)] p-5 sm:p-8 space-y-6 overflow-hidden">
+          <section key={sec.id} suppressHydrationWarning className="relative rounded-2xl sm:rounded-3xl bg-white border-2 border-art-gold/30 shadow-[0_8px_30px_rgba(0,0,0,0.06)] p-5 sm:p-8 space-y-6 overflow-hidden">
             <div className="absolute top-0 inset-x-8 h-[2px] bg-gradient-to-r from-transparent via-art-gold/50 to-transparent" />
 
             {/* Gold Luxury Heading Banner */}
