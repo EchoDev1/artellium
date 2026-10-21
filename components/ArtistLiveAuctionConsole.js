@@ -306,7 +306,7 @@ export default function ArtistLiveAuctionConsole({ artistName }) {
                       </div>
 
                       <div className="p-3 rounded-xl bg-white/5 border border-white/10 space-y-1">
-                        <span className="text-[10px] text-slate-400 uppercase font-semibold block">Settlement Estimate ({artistPayoutPercentage}%)</span>
+                        <span className="text-[10px] text-slate-400 uppercase font-semibold block">Direct Settlement Estimate</span>
                         <p className="font-serif text-base font-bold text-emerald-400">
                           {formatPrice(currentBid * (artistPayoutPercentage / 100))}
                         </p>

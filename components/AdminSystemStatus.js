@@ -137,7 +137,7 @@ export default function AdminSystemStatus({ currentUser }) {
       metrics: 'Instant Direct Settlement',
       latency: '34ms',
       uptime: '99.99%',
-      details: `Corporate settlement account linked. ${artistPayoutPercentage}% artist net disbursement engine verified and active.`
+      details: `Corporate settlement account linked. Artist direct net disbursement engine verified and active.`
     },
     {
       id: 'auction_ws',
@@ -470,7 +470,7 @@ export default function AdminSystemStatus({ currentUser }) {
 
               <div>
                 <span className="text-slate-400 text-[10px] block">Studio Payout Escrow:</span>
-                <span className="text-slate-700 text-[11px]">{artistPayoutPercentage}% Sovereign Settlement</span>
+                <span className="text-slate-700 text-[11px]">Direct Sovereign Studio Settlement</span>
               </div>
 
               <div>

@@ -243,7 +243,7 @@ export default function ArtistPanAfricanSuite({ artistName = 'Kofi Mensah' }) {
 
           <div className="flex items-center gap-2 text-xs font-mono font-bold text-slate-600 bg-slate-50 p-3 rounded-2xl border border-slate-200 shrink-0">
             <ShieldCheck className="w-4 h-4 text-emerald-600" />
-            <span>{artistPayoutPercentage}% Net Split · Direct Settlement</span>
+            <span>Direct Studio Sales Settlement</span>
           </div>
         </div>
 
@@ -254,8 +254,7 @@ export default function ArtistPanAfricanSuite({ artistName = 'Kofi Mensah' }) {
             { id: 'videos', label: '🎬 Video Storytelling', count: myVideos.length },
             { id: 'verification', label: '🏅 Master KYC Dossier', count: myVerif ? 'Approved' : 'Pending' },
             { id: 'curator_review', label: '✨ Curatorial Submissions', count: 'Active' },
-            { id: 'provenance_signing', label: '📜 Provenance & COAs', count: myLedgerBlocks.length },
-            { id: 'payouts', label: '🏦 Pan-African Payouts', count: payoutForm.currency }
+            { id: 'provenance_signing', label: '📜 Provenance & COAs', count: myLedgerBlocks.length }
           ].map(t => (
             <button
               key={t.id}
@@ -682,8 +681,8 @@ export default function ArtistPanAfricanSuite({ artistName = 'Kofi Mensah' }) {
                       <h4 className="font-serif font-bold text-slate-900 text-sm mt-1">{block.artworkTitle}</h4>
                     </div>
                     <div className="text-right">
-                      <span className="text-[10px] text-slate-400 uppercase font-mono block">Settlement Payout ({artistPayoutPercentage}%)</span>
-                      <span className="font-serif text-base font-bold text-emerald-600">{formatCurrency(Math.round(block.settlementPrice * (artistPayoutPercentage / 100)))}</span>
+                      <span className="text-[10px] text-slate-400 uppercase font-mono block">Direct Studio Settlement</span>
+                      <span className="font-serif text-base font-bold text-emerald-600">{formatCurrency(block.settlementPrice)}</span>
                     </div>
                   </div>
 
@@ -707,102 +706,7 @@ export default function ArtistPanAfricanSuite({ artistName = 'Kofi Mensah' }) {
           </div>
         )}
 
-        {/* 6. TAB: PAN-AFRICAN PAYOUT SETUP */}
-        {activeTab === 'payouts' && (
-          <div className="space-y-6 animate-fade-in">
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-              <div className="lg:col-span-7 p-6 bg-slate-50 rounded-2xl border border-slate-200 space-y-4 text-xs">
-                <div className="space-y-1">
-                  <h3 className="font-serif text-base font-bold text-slate-900 flex items-center gap-1.5">
-                    <Building className="w-4 h-4 text-art-gold" />
-                    <span>Pan-African Settlement Payout Routing</span>
-                  </h3>
-                  <p className="text-slate-500 text-[11px]">
-                    Select your preferred regional payout channel for {artistPayoutPercentage}% net settlement on sold artworks.
-                  </p>
-                </div>
-
-                <form onSubmit={handleSavePayouts} className="space-y-4">
-                  <div>
-                    <label className="block text-slate-700 font-bold mb-1">Payout Channel Type *</label>
-                    <select
-                      value={payoutForm.payoutType}
-                      onChange={e => {
-                        const t = e.target.value;
-                        setPayoutForm({
-                          ...payoutForm,
-                          payoutType: t,
-                          bankOrProvider: t === 'nigeria_bank' ? 'Wema Bank PLC' : t === 'ghana_momo' ? 'MTN Mobile Money Ghana' : t === 'sa_eft' ? 'Standard Bank SA' : 'Safaricom M-Pesa',
-                          currency: t === 'nigeria_bank' ? 'NGN' : t === 'ghana_momo' ? 'GHS' : t === 'sa_eft' ? 'ZAR' : 'KES'
-                        });
-                      }}
-                      className="w-full p-2.5 bg-white border border-slate-300 rounded-xl"
-                    >
-                      <option value="nigeria_bank">🇳🇬 Nigerian Commercial Bank (NGN - Instant Wema Rail)</option>
-                      <option value="ghana_momo">🇬🇭 Ghana Mobile Money (GHS - MTN / Vodafone / Telecel)</option>
-                      <option value="sa_eft">🇿🇦 South Africa Electronic Funds Transfer (ZAR - EFT)</option>
-                      <option value="kenya_mpesa">🇰🇪 Kenya Mobile Money (KES - Safaricom M-Pesa)</option>
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="block text-slate-700 font-bold mb-1">Account Holder / Studio Name *</label>
-                    <input
-                      type="text"
-                      required
-                      value={payoutForm.accountName}
-                      onChange={e => setPayoutForm({ ...payoutForm, accountName: e.target.value })}
-                      className="w-full p-2.5 bg-white border border-slate-300 rounded-xl"
-                    />
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <label className="block text-slate-700 font-bold mb-1">Bank / Telco Provider *</label>
-                      <input
-                        type="text"
-                        required
-                        value={payoutForm.bankOrProvider}
-                        onChange={e => setPayoutForm({ ...payoutForm, bankOrProvider: e.target.value })}
-                        className="w-full p-2.5 bg-white border border-slate-300 rounded-xl"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-slate-700 font-bold mb-1">Account / Phone Number *</label>
-                      <input
-                        type="text"
-                        required
-                        value={payoutForm.accountNumber}
-                        onChange={e => setPayoutForm({ ...payoutForm, accountNumber: e.target.value })}
-                        className="w-full p-2.5 bg-white border border-slate-300 rounded-xl font-mono"
-                      />
-                    </div>
-                  </div>
-
-                  <button
-                    type="submit"
-                    className="w-full py-3 rounded-xl bg-art-gold hover:brightness-110 text-art-black font-bold uppercase tracking-wider text-xs shadow-md transition cursor-pointer"
-                  >
-                    Save Pan-African Payout Profile
-                  </button>
-                </form>
-              </div>
-
-              <div className="lg:col-span-5 p-6 bg-slate-900 text-white rounded-2xl border border-slate-800 space-y-4 text-xs">
-                <h4 className="font-serif text-sm font-bold text-art-gold flex items-center gap-1.5">
-                  <ShieldCheck className="w-4 h-4 text-emerald-400" />
-                  <span>Settlement SLA & Liquidity Guarantee</span>
-                </h4>
-                <ul className="space-y-2 text-slate-300 text-[11px] leading-relaxed">
-                  <li>• <strong>Nigeria:</strong> Automated instant credit via WEMA Corporate API within 2 hours of delivery sign-off.</li>
-                  <li>• <strong>Ghana MoMo:</strong> Direct MTN/Vodafone automated mobile wallet transfer in GHS.</li>
-                  <li>• <strong>South Africa & Kenya:</strong> Same-day local currency settlement via EFT / M-Pesa.</li>
-                  <li>• <strong>Fiduciary Protection:</strong> Funds held in tier-1 bank custody until patron delivery sign-off.</li>
-                </ul>
-              </div>
-            </div>
-          </div>
-        )}
+        
 
       </div>
     </div>

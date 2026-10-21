@@ -36,14 +36,6 @@ import { getCategoryFallback, isValidImageSource, DEFAULT_FALLBACK_IMAGE } from 
 import { normalizeCategory, isCategoryMatch } from '@/lib/category-utils';
 import { isPriorityArtist, sortArtworksByPriority } from '@/lib/priority-utils';
 import { TRACKING_STAGES, createInitialTracking, getStageConfig } from '@/lib/tracking-utils';
-import { 
-  INITIAL_SHIPPING_SETTINGS, 
-  WORLD_COUNTRIES, 
-  SHIPPING_ZONES, 
-  calculateDhlShippingRate, 
-  generateDhlAirWaybill, 
-  findCountry 
-} from '@/lib/dhl-shipping';
 const StoreContext = createContext();
 
 export function StoreProvider({ children }) {
@@ -233,35 +225,6 @@ export function StoreProvider({ children }) {
   });
 
   const [priorityBannerPlacements, setPriorityBannerPlacements] = useState([]);
-
-  // DHL Express Delivery & Global Shipping Configuration (Admin Managed)
-  const [shippingSettings, setShippingSettings] = useState(() => {
-    if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem('artellium_shipping_settings');
-      if (saved) {
-        try {
-          const parsed = JSON.parse(saved);
-          return { ...INITIAL_SHIPPING_SETTINGS, ...parsed };
-        } catch (e) {}
-      }
-    }
-    return INITIAL_SHIPPING_SETTINGS;
-  });
-
-  const updateShippingSettings = (newSettings) => {
-    setShippingSettings(prev => {
-      const updated = typeof newSettings === 'function' ? newSettings(prev) : { ...prev, ...newSettings };
-      safeSetItem('artellium_shipping_settings', updated);
-      return updated;
-    });
-    broadcastNotification('🚚 DHL Shipping & Delivery Pricing configurations successfully updated!');
-  };
-
-  const getShippingQuote = (countryCodeOrName, customCartTotal = null, customItemCount = null) => {
-    const total = customCartTotal !== null ? customCartTotal : (cartTotal || 0);
-    const count = customItemCount !== null ? customItemCount : (cart?.length || 1);
-    return calculateDhlShippingRate(countryCodeOrName, total, count, shippingSettings);
-  };
 
   // Helper to reliably detect whether an artwork is dummy/mock data
   const isMockOrDemoArtwork = (a) => {
@@ -823,12 +786,11 @@ export function StoreProvider({ children }) {
       safeSetItem('artellium_footer_config', footerConfig);
       safeSetItem('artellium_priority_pricing', priorityBannerPricing);
       safeSetItem('artellium_priority_placements', priorityBannerPlacements);
-      safeSetItem('artellium_shipping_settings', shippingSettings);
       safeSetItem('artellium_login_state', { isLoggedIn, user: currentUser });
     } catch (e) {
       console.error('Storage write error:', e);
     }
-  }, [artworks, realArtworks, demoTransitionMode, orders, payments, commissions, sellers, usersList, cart, transactions, wishlist, followedArtists, artworkQuestions, notifications, collectorOffers, artistSignatures, headerConfig, heroConfig, homePageConfig, footerConfig, priorityBannerPricing, priorityBannerPlacements, shippingSettings, isLoggedIn, currentUser]);
+  }, [artworks, realArtworks, demoTransitionMode, orders, payments, commissions, sellers, usersList, cart, transactions, wishlist, followedArtists, artworkQuestions, notifications, collectorOffers, artistSignatures, headerConfig, heroConfig, homePageConfig, footerConfig, priorityBannerPricing, priorityBannerPlacements, isLoggedIn, currentUser]);
 
   // Cart Functions
   const addToCart = (artwork) => {
@@ -871,14 +833,7 @@ export function StoreProvider({ children }) {
     buyerPhone,
     shippingAddress,
     shippingCity,
-    shippingState,
-    shippingPostalCode,
     shippingCountry,
-    shippingCountryCode,
-    shippingCost = 0,
-    shippingDeliveryNotes = '',
-    shippingCarrier = 'DHL Express Fine Art',
-    shippingEstimatedDays = '3-5 Business Days',
     totalAmount,
     currency = 'NGN',
     paymentMethod = 'paystack',
@@ -888,53 +843,24 @@ export function StoreProvider({ children }) {
     const paymentId = `pay-${Date.now()}`;
     const paymentReference = `${paymentMethod.toUpperCase()}_${Math.random().toString(36).substring(2, 10).toUpperCase()}`;
 
-    // Generate authentic DHL Air Waybill
-    const dhlAwb = generateDhlAirWaybill();
-    const effectiveTrackingNumber = dhlAwb.waybillNumber;
-    const effectiveCarrier = shippingCarrier || 'DHL Express Fine Art';
-    const parsedShippingCost = parseFloat(shippingCost) || 0;
-    const parsedTotalAmount = parseFloat(totalAmount) || (cartTotal + parsedShippingCost);
-
-    // 1. Create Order with Direct Wema Bank Settlement status & DHL Shipping Data
+    // 1. Create Order with Direct Wema Bank Settlement status
     const newOrder = {
       id: orderId,
       buyer_id: buyerId || currentUser?.id || 'user-buyer-1',
       buyer_name: buyerName || currentUser?.name || 'Dr. Evelyn Carter',
       buyer_email: buyerEmail || currentUser?.email || 'evelyn@artellium.com',
       buyer_phone: buyerPhone || '+234 803 123 4567',
-      shipping_details: {
-        address: shippingAddress || 'Fine Art Vault / Collector Residence',
-        city: shippingCity || 'Lagos',
-        state: shippingState || '',
-        postalCode: shippingPostalCode || '',
-        country: shippingCountry || 'Nigeria',
-        countryCode: shippingCountryCode || 'NG',
-        deliveryNotes: shippingDeliveryNotes || '',
-        carrier: effectiveCarrier,
-        carrierService: 'DHL Express Fine Art Worldwide (Insured Air Freight)',
-        shippingCost: parsedShippingCost,
-        estimatedDays: shippingEstimatedDays || '3-5 Business Days',
-        waybillNumber: effectiveTrackingNumber,
-        trackingUrl: dhlAwb.trackingUrl
-      },
-      artwork_subtotal: items.reduce((sum, item) => sum + (parseFloat(item.price) || 0), 0),
-      shipping_cost: parsedShippingCost,
-      total_amount: parsedTotalAmount,
+      total_amount: parseFloat(totalAmount),
       currency,
       status: 'paid', // paid -> completed
       settlement_bank: 'Wema Bank PLC',
-      tracking: {
-        ...createInitialTracking({
-          carrier: effectiveCarrier,
-          origin: items[0]?.city ? `${items[0].city} Atelier, ${items[0].country}` : 'Lagos Atelier Central Hub, Nigeria (Artellium HQ)',
-          destination: `${shippingAddress ? shippingAddress + ', ' : ''}${shippingCity ? shippingCity + ', ' : ''}${shippingCountry || 'Collector Residence / Vault'}`,
-          currentStage: 'payment_confirmed',
-          estimatedDays: shippingCountry && shippingCountry.toLowerCase().includes('nigeria') ? 2 : 5
-        }),
-        trackingNumber: effectiveTrackingNumber,
-        carrier: effectiveCarrier,
-        trackingUrl: dhlAwb.trackingUrl
-      },
+      tracking: createInitialTracking({
+        carrier: 'DHL Express Fine Art',
+        origin: items[0]?.city ? `${items[0].city} Atelier, ${items[0].country}` : 'Lagos Atelier, Nigeria',
+        destination: `${shippingCity ? shippingCity + ', ' : ''}${shippingCountry || 'Collector Residence / Vault'}`,
+        currentStage: 'payment_confirmed',
+        estimatedDays: 7
+      }),
       items: items.map(item => ({
         id: item.id,
         title: item.title,
@@ -963,13 +889,12 @@ export function StoreProvider({ children }) {
       created_at: new Date().toISOString()
     };
 
-    // 3. Create Commission Calculations (Dynamic Platform Fee vs Artist Net Payout)
+    // 3. Create Commission Calculations (5% Artellium Official Commission & 100% Artist Asking Price Payout)
     const newCommissions = items.map(item => {
       const gross = parseFloat(item.price);
-      const payoutPct = artistPayoutPercentage || 85;
-      const platformFeeRate = (100 - payoutPct) / 100;
-      const platformFeeAmount = Math.round(gross * platformFeeRate);
-      const sellerNetPayout = Math.round(gross * (payoutPct / 100));
+      const sellerNetPayout = item.artistPrice ? parseFloat(item.artistPrice) : Math.round(gross / 1.05);
+      const platformFeeAmount = gross - sellerNetPayout;
+      const platformFeeRate = 0.05;
 
       return {
         id: `comm-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
@@ -1257,6 +1182,13 @@ export function StoreProvider({ children }) {
       ? newArt.image 
       : getCategoryFallback(newArt.category);
 
+    // 5% Artellium official commission automatically added on upload
+    const rawArtistPrice = parseFloat(newArt.artistPrice || newArt.price || 1000000);
+    const platformCommission = Math.round(rawArtistPrice * 0.05);
+    const publicPrice = (newArt.artistPrice && newArt.price && Number(newArt.price) > rawArtistPrice)
+      ? parseFloat(newArt.price)
+      : (rawArtistPrice + platformCommission);
+
     const isPriority = Boolean(
       currentUser?.subscription_tier === 'premium' ||
       currentUser?.subscriptionTier === 'premium' ||
@@ -1282,6 +1214,9 @@ export function StoreProvider({ children }) {
 
     const created = {
       ...newArt,
+      artistPrice: rawArtistPrice,
+      commission: platformCommission,
+      price: publicPrice,
       id: newArt.id || `art-live-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
       image: validatedImage,
       additionalImages: Array.isArray(newArt.additionalImages) ? newArt.additionalImages : [],
@@ -1316,6 +1251,31 @@ export function StoreProvider({ children }) {
 
       return updatedReal;
     });
+
+    // Alert collectors following this artist of new uploads, auctions, or exhibitions
+    const artArtistName = created.artistName;
+    const artArtistId = created.artistId;
+    if ((followedArtists || []).some(f => f === artArtistName || f === artArtistId)) {
+      const alertType = isAuction ? 'Auction Alert' : isExhibition ? 'Exhibition Alert' : 'New Artwork Alert';
+      const notifMsg = isAuction 
+        ? `🔥 Live Auction Alert: ${artArtistName} just listed "${created.title}" on the auction floor!`
+        : isExhibition 
+        ? `🏛️ Exhibition Alert: ${artArtistName} just opened showcase piece "${created.title}"!`
+        : `🎨 New Artwork Alert: ${artArtistName} just published a new masterpiece "${created.title}"!`;
+
+      setNotifications(prev => [
+        {
+          id: `notif-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+          title: alertType,
+          message: notifMsg,
+          artworkId: created.id,
+          artistName: artArtistName,
+          timestamp: new Date().toISOString(),
+          read: false
+        },
+        ...(prev || [])
+      ]);
+    }
 
     const dbPayload = {
       id: created.id,
@@ -3537,16 +3497,7 @@ export function StoreProvider({ children }) {
         addDirectPriorityBannerPlacement,
         // WEMA Bank Payment Settings
         paymentSettings,
-        updatePaymentSettings,
-        // DHL Express Shipping & Admin Delivery Pricing
-        shippingSettings,
-        updateShippingSettings,
-        getShippingQuote,
-        calculateDhlShippingRate,
-        WORLD_COUNTRIES,
-        SHIPPING_ZONES,
-        generateDhlAirWaybill,
-        findCountry
+        updatePaymentSettings
       }}
     >
       {children}

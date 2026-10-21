@@ -40,6 +40,18 @@ import ArtworkCard from '@/components/ArtworkCard';
 import VerificationBadge from '@/components/VerificationBadge';
 import { DEFAULT_FALLBACK_IMAGE, getCategoryFallback } from '@/lib/image-utils';
 import { isPriorityArtist } from '@/lib/priority-utils';
+const getCountryFlag = (c) => {
+  if (!c) return '🌍';
+  const map = {
+    'Nigeria': '🇳🇬', 'Ghana': '🇬🇭', 'Kenya': '🇰🇪', 'South Africa': '🇿🇦',
+    'Egypt': '🇪🇬', 'Morocco': '🇲🇦', 'Senegal': '🇸🇳', 'Ethiopia': '🇪🇹',
+    'Uganda': '🇺🇬', 'Rwanda': '🇷🇼', 'Tanzania': '🇹🇿', 'Ivory Coast': '🇨🇮',
+    'Cameroon': '🇨🇲', 'Mali': '🇲🇱', 'Zimbabwe': '🇿🇼', 'Benin': '🇧🇯',
+    'DR Congo': '🇨🇩', 'Angola': '🇦🇴', 'Zambia': '🇿🇲', 'Namibia': '🇳🇦'
+  };
+  return map[c] || '🌍';
+};
+
 
 export default function MasterArtistProfilePage() {
   const router = useRouter();
@@ -109,12 +121,12 @@ export default function MasterArtistProfilePage() {
   const bio = userMatch?.bio || sellerMatch?.bio || `${name} is an internationally recognized African Master Visual Artist whose atelier practice champions authentic cultural heritage, classical African iconography, and museum-grade contemporary aesthetics.`;
   const country = userMatch?.country || sellerMatch?.country || firstArt?.country || 'Nigeria';
   const city = userMatch?.city || sellerMatch?.city || firstArt?.city || 'Lagos';
-  const countryFlag = userMatch?.countryFlag || sellerMatch?.country_flag || firstArt?.countryFlag || '🇳🇬';
+  const countryFlag = getCountryFlag(country);
   const avatar = userMatch?.avatar_url || sellerMatch?.avatar_url || firstArt?.artistAvatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=600';
   const guildLineage = userMatch?.guildLineage || sellerMatch?.guildLineage || 'Sovereign Guild of African Master Artisans';
   const primaryMediums = userMatch?.primaryMediums || sellerMatch?.primaryMediums || firstArt?.medium || 'Oil, Acrylic, 24K Gold Leaf & Natural Ochres on Linen';
   const exhibitionsHistory = userMatch?.exhibitionsHistory || sellerMatch?.exhibitionsHistory || 'Venice Biennale African Pavilion, Dakar Biennale (Dak\'Art), Lagos National Museum';
-  const experienceYears = userMatch?.experienceYears || sellerMatch?.experienceYears || '15+ Years Atelier Practice';
+  const experienceYears = userMatch?.experienceYears || sellerMatch?.experienceYears || 'Master Visual Artist Atelier';
   const verificationBadge = sellerMatch?.verification_badge || userMatch?.verificationBadge || firstArt?.verificationBadge || 'gold';
   const isPriority = Boolean(sellerMatch?.tier === 'Premium' || userMatch?.subscriptionTier === 'premium' || firstArt?.artistType === 'Premium' || isPriorityArtist({ artistName: name, ...userMatch }));
 
@@ -285,11 +297,7 @@ export default function MasterArtistProfilePage() {
                     <MapPin className="w-3.5 h-3.5 text-art-gold" />
                     <span>{city}, {country}</span>
                   </span>
-                  <span>·</span>
-                  <span className="flex items-center gap-1 text-slate-300">
-                    <Award className="w-3.5 h-3.5 text-art-gold" />
-                    <span>{experienceYears}</span>
-                  </span>
+
                   <span>·</span>
                   <span className="text-emerald-400 font-bold">
                     {artistArtworks.length} Documented Artworks
@@ -300,36 +308,23 @@ export default function MasterArtistProfilePage() {
 
             {/* Right: Actions (Follow & Curatorial Inquire) */}
             <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto">
-              {/* Follow Artist Button */}
-              <button
-                onClick={handleFollowToggle}
-                className={`flex-1 sm:flex-initial px-5 py-3 rounded-2xl font-bold text-xs uppercase tracking-wider transition shadow-lg flex items-center justify-center gap-2 cursor-pointer ${
-                  isFollowing
-                    ? 'bg-emerald-500/20 hover:bg-red-500/20 text-emerald-300 hover:text-red-300 border border-emerald-500/40 hover:border-red-500/40'
-                    : 'bg-gradient-to-r from-art-gold via-amber-500 to-art-gold-dark hover:brightness-110 text-art-black shadow-gold-glow'
-                }`}
-              >
-                {isFollowing ? (
-                  <>
-                    <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-                    <span>Following Master</span>
-                  </>
-                ) : (
-                  <>
-                    <UserPlus className="w-4 h-4" />
-                    <span>Follow Artist</span>
-                  </>
-                )}
-              </button>
+              {/* Sovereign Country Origin & Flag Badge */}
+              <div className="flex-1 sm:flex-initial px-5 py-3 rounded-2xl bg-black/60 border-2 border-art-gold/50 shadow-gold-glow flex items-center justify-center gap-2.5">
+                <span className="text-2xl drop-shadow">{countryFlag || '🌍'}</span>
+                <div className="text-left">
+                  <span className="text-[10px] text-art-gold font-mono uppercase tracking-wider block font-bold">Country of Origin</span>
+                  <span className="font-serif text-sm font-bold text-white">{country}</span>
+                </div>
+              </div>
 
-              {/* Curatorial Inquire via Artellium Concierge */}
-              <button
-                onClick={() => setInquiryModalOpen(true)}
-                className="flex-1 sm:flex-initial px-4 py-3 rounded-2xl bg-white/10 hover:bg-white/20 text-white font-bold text-xs transition border border-white/20 flex items-center justify-center gap-2 cursor-pointer"
+              {/* Curatorial Inquire via Artellium Platform Administration */}
+              <Link
+                href={`/contact?subject=Collector%20Inquiry%20regarding%20Master%20Artist%20${encodeURIComponent(name)}&type=curatorial_inquiry`}
+                className="flex-1 sm:flex-initial px-5 py-3 rounded-2xl bg-gradient-to-r from-art-gold via-[#9E7720] to-art-gold-dark hover:brightness-110 text-white font-bold text-xs uppercase tracking-wider transition shadow-gold-glow flex items-center justify-center gap-2"
               >
-                <MessageCircle className="w-4 h-4 text-art-gold" />
-                <span>Inquire on Atelier Works</span>
-              </button>
+                <ShieldCheck className="w-4 h-4" />
+                <span>Inquire with Administration</span>
+              </Link>
             </div>
 
           </div>
@@ -688,85 +683,7 @@ export default function MasterArtistProfilePage() {
 
       </div>
 
-      {/* Direct Inquire Modal */}
-      {inquiryModalOpen && (
-        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in">
-          <div className="bg-slate-900 border border-art-gold/40 rounded-3xl p-6 sm:p-8 max-w-lg w-full space-y-4 shadow-2xl relative">
-            <button
-              onClick={() => setInquiryModalOpen(false)}
-              className="absolute top-4 right-4 text-slate-400 hover:text-white"
-            >
-              ✕
-            </button>
-
-            <div className="space-y-1">
-              <span className="text-[10px] font-mono text-art-gold uppercase tracking-wider font-bold">
-                CONFIDENTIAL CURATORIAL INQUIRY
-              </span>
-              <h3 className="font-serif text-xl font-bold text-white">
-                Inquire on {name}&apos;s Atelier
-              </h3>
-              <p className="text-xs text-slate-400 leading-relaxed">
-                Your message is securely transmitted to the artist and Artellium Curatorial Concierge. Artist contact details remain shielded to protect your escrow guarantee.
-              </p>
-            </div>
-
-            {inquirySent ? (
-              <div className="p-6 bg-emerald-500/20 border border-emerald-500/40 rounded-2xl text-center space-y-2">
-                <CheckCircle2 className="w-10 h-10 text-emerald-400 mx-auto" />
-                <h4 className="font-serif font-bold text-white text-base">Inquiry Transmitted!</h4>
-                <p className="text-xs text-slate-300">
-                  Your inquiry has been delivered. You will receive an alert once the artist or curatorial concierge replies.
-                </p>
-              </div>
-            ) : (
-              <form onSubmit={handleSendInquiry} className="space-y-4">
-                <div>
-                  <label className="block text-xs font-bold text-slate-300 mb-1">
-                    Your Inquiring Collector Moniker / Email
-                  </label>
-                  <input
-                    type="text"
-                    disabled
-                    value={currentUser?.name ? `${currentUser.name} (${currentUser.email})` : 'Guest Patron (Sign in recommended)'}
-                    className="w-full bg-black/40 border border-white/10 rounded-xl p-3 text-xs text-slate-400"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-bold text-slate-300 mb-1">
-                    Question or Private Offer Note
-                  </label>
-                  <textarea
-                    rows={4}
-                    required
-                    placeholder="Ask about artwork provenance, framing, custom sizing, or private acquisition..."
-                    value={inquiryText}
-                    onChange={(e) => setInquiryText(e.target.value)}
-                    className="w-full bg-slate-950 border border-slate-700 rounded-xl p-3 text-xs text-white focus:outline-none focus:border-art-gold leading-relaxed"
-                  />
-                </div>
-
-                <div className="flex justify-end gap-3 pt-2">
-                  <button
-                    type="button"
-                    onClick={() => setInquiryModalOpen(false)}
-                    className="px-4 py-2.5 bg-white/10 hover:bg-white/20 text-white rounded-xl text-xs font-bold transition"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="submit"
-                    className="px-6 py-2.5 bg-art-gold hover:brightness-110 text-art-black rounded-xl text-xs font-bold uppercase tracking-wider transition shadow-gold-glow"
-                  >
-                    Transmit Inquiry
-                  </button>
-                </div>
-              </form>
-            )}
-          </div>
-        </div>
-      )}
+      
 
     </div>
   );

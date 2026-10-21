@@ -64,7 +64,7 @@ export default function AdminLiveAuctionOversight() {
     const winningBid = art.auction?.currentBid || art.price;
     const winningBidder = art.auction?.highestBidder || 'Verified Continental Collector';
 
-    if (!confirm(`Sovereign Hammer Down for "${art.title}" at ${formatPrice(winningBid)}? This will finalize the auction and dispatch the ${artistPayoutPercentage}% WEMA settlement to ${art.artistName}.`)) {
+    if (!confirm(`Sovereign Hammer Down for "${art.title}" at ${formatPrice(winningBid)}? This will finalize the auction and dispatch the direct WEMA settlement to ${art.artistName}.`)) {
       return;
     }
 
@@ -89,7 +89,7 @@ export default function AdminLiveAuctionOversight() {
       type: 'Live Arena Auction Settlement'
     });
 
-    showToast(`🔨 Gavel Hammered! Lot "${art.title}" settled. ${artistPayoutPercentage}% net split (₦${(winningBid * (artistPayoutPercentage / 100)).toLocaleString()}) queued for WEMA Bank disbursement.`);
+    showToast(`🔨 Gavel Hammered! Lot "${art.title}" settled. direct net studio settlement (₦${(winningBid * (artistPayoutPercentage / 100)).toLocaleString()}) queued for WEMA Bank disbursement.`);
   };
 
   // Anti-Sniping Timer Extension
@@ -315,7 +315,7 @@ export default function AdminLiveAuctionOversight() {
                           className="px-4 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 text-white font-bold uppercase tracking-wider text-[11px] transition shadow flex items-center gap-1.5 cursor-pointer"
                         >
                           <Gavel className="w-3.5 h-3.5 text-art-gold" />
-                          <span>Sovereign Hammer Down (Settle & Payout {artistPayoutPercentage}%)</span>
+                          <span>Sovereign Hammer Down (Settle & Payout)</span>
                         </button>
                       </div>
                     </div>

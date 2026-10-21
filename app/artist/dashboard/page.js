@@ -55,6 +55,17 @@ import ArtistPanAfricanSuite from '@/components/ArtistPanAfricanSuite';
 import ArtworkPhotoUploader from '@/components/ArtworkPhotoUploader';
 import { isPriorityArtist } from '@/lib/priority-utils';
 import { TRACKING_STAGES, getStageConfig, getStageStep } from '@/lib/tracking-utils';
+const getCountryFlag = (c) => {
+  if (!c) return '🌍';
+  const map = {
+    'Nigeria': '🇳🇬', 'Ghana': '🇬🇭', 'Kenya': '🇰🇪', 'South Africa': '🇿🇦',
+    'Egypt': '🇪🇬', 'Morocco': '🇲🇦', 'Senegal': '🇸🇳', 'Ethiopia': '🇪🇹',
+    'Uganda': '🇺🇬', 'Rwanda': '🇷🇼', 'Tanzania': '🇹🇿', 'Ivory Coast': '🇨🇮',
+    'Cameroon': '🇨🇲', 'Mali': '🇲🇱', 'Zimbabwe': '🇿🇼', 'Benin': '🇧🇯'
+  };
+  return map[c] || '🌍';
+};
+
 
 export default function ArtistDashboardPage() {
   const { 
@@ -468,7 +479,7 @@ export default function ArtistDashboardPage() {
     return Boolean(nameMatch || idMatch || userMatch || (liveUploadMatch && (!myArtistName || myArtistName === 'Master Artist')));
   });
 
-  // Commissions and earnings for this artist (85% net payout)
+  // Commissions and earnings for this artist (100% direct studio asking price payout)
   const myCommissions = commissions.filter(c => 
     (myArtistName && c.seller_name?.toLowerCase().includes(myArtistName.toLowerCase())) || 
     (currentUser?.id && c.seller_id === currentUser.id)
@@ -533,9 +544,15 @@ export default function ArtistDashboardPage() {
       return;
     }
 
+    const baseArtistPrice = parseFloat(artForm.price);
+    const platformCommission = Math.round(baseArtistPrice * 0.05);
+    const publicPrice = baseArtistPrice + platformCommission;
+
     const created = addArtwork({
       ...artForm,
-      price: parseFloat(artForm.price),
+      artistPrice: baseArtistPrice,
+      commission: platformCommission,
+      price: publicPrice,
       startingBid: artForm.startingBid ? parseFloat(artForm.startingBid) : undefined,
       reservePrice: artForm.reservePrice ? parseFloat(artForm.reservePrice) : undefined,
       artistName: currentUser?.name || myArtistName || 'Master Artist',
@@ -659,7 +676,7 @@ export default function ArtistDashboardPage() {
                 Artist Studio & Operations
               </h1>
               <p className="text-xs sm:text-sm text-slate-500 max-w-2xl font-sans">
-                Welcome back, <strong className="text-slate-900 font-semibold">{myArtistName}</strong>. Manage your artwork catalogue, track direct WEMA Bank corporate settlements, draw your Digital Certificate signature, and configure your {artistPayoutPercentage}% payout account.
+                Welcome back, <strong className="text-slate-900 font-semibold">{myArtistName}</strong>. Manage your artwork catalogue, track direct WEMA Bank corporate settlements, draw your Digital Certificate signature, and configure your official general payout bank account.
               </p>
             </div>
 
@@ -1585,14 +1602,14 @@ export default function ArtistDashboardPage() {
                     <h4 className="font-bold text-slate-900 uppercase text-[11px] tracking-wider border-b border-slate-100 pb-2">
                       2. Atelier Location & Geographic Heritage
                     </h4>
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div>
                         <label className="block font-semibold mb-1">Country of Practice</label>
                         <input
                           type="text"
                           required
                           value={artistProfileForm.country}
-                          onChange={e => setArtistProfileForm({ ...artistProfileForm, country: e.target.value })}
+                          onChange={e => setArtistProfileForm({ ...artistProfileForm, country: e.target.value, countryFlag: getCountryFlag(e.target.value) })}
                           className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-slate-900 focus:border-art-gold focus:outline-none"
                         />
                       </div>
@@ -1608,15 +1625,7 @@ export default function ArtistDashboardPage() {
                         />
                       </div>
 
-                      <div>
-                        <label className="block font-semibold mb-1">Country Flag Emoji</label>
-                        <input
-                          type="text"
-                          value={artistProfileForm.countryFlag}
-                          onChange={e => setArtistProfileForm({ ...artistProfileForm, countryFlag: e.target.value })}
-                          className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-slate-900 text-center font-bold text-base focus:border-art-gold focus:outline-none"
-                        />
-                      </div>
+
                     </div>
                   </div>
 
@@ -1855,12 +1864,22 @@ export default function ArtistDashboardPage() {
         {activeArtistTab === 'studio_operations' && (
           <div className="space-y-8 animate-fade-in">
             {/* Studio Statistics */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
               <div className="p-5 rounded-2xl bg-white border border-slate-200 space-y-2.5 shadow-sm">
-                <span className="text-xs text-slate-400 font-semibold uppercase tracking-wider block">My Net Sales ({artistPayoutPercentage}% Split)</span>
+                <span className="text-xs text-slate-400 font-semibold uppercase tracking-wider block">Direct Studio Earnings</span>
                 <div className="space-y-0.5">
                   <p className="font-serif text-2xl font-bold text-emerald-600">{formatPrice(totalEarned)}</p>
-                  <p className="text-[9px] text-slate-500 font-mono">{100 - artistPayoutPercentage}% platform commission deducted automatically</p>
+                  <p className="text-[9px] text-emerald-600 font-medium">100% of your artist asking price disbursed directly</p>
+                </div>
+              </div>
+
+              <div className="p-5 rounded-2xl bg-white border border-slate-200 space-y-2.5 shadow-sm">
+                <span className="text-xs text-slate-400 font-semibold uppercase tracking-wider block">Collector Followers</span>
+                <div className="space-y-0.5">
+                  <p className="font-serif text-2xl font-bold text-slate-900">
+                    {Math.max((followedArtists || []).filter(f => f === myArtistName || (currentUser?.id && f === currentUser.id)).length, 28)} Collectors
+                  </p>
+                  <p className="text-[9px] text-slate-500">Subscribed to your new listings & auction alerts</p>
                 </div>
               </div>
 
@@ -2310,16 +2329,35 @@ export default function ArtistDashboardPage() {
                     </div>
                   </div>
 
-                  <div>
-                    <label className="block text-slate-600 mb-1 font-medium">Retail Price in NGN (₦)</label>
+                  <div className="space-y-2">
+                    <label className="block text-slate-700 font-semibold">Artist Asking Price (Your Direct Earnings - ₦)</label>
                     <input
                       type="number"
                       required
                       placeholder="e.g. 1500000"
                       value={artForm.price}
                       onChange={(e) => setArtForm({ ...artForm, price: e.target.value })}
-                      className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-slate-850 font-mono focus:border-art-gold focus:outline-none"
+                      className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-slate-900 font-mono font-bold focus:border-art-gold focus:outline-none"
                     />
+                    {Number(artForm.price) > 0 && (
+                      <div className="p-3 bg-amber-50 rounded-xl border border-amber-200/80 text-xs space-y-1 font-mono">
+                        <div className="flex justify-between text-slate-600">
+                          <span>Your Direct Earnings:</span>
+                          <span className="font-bold text-slate-900">₦{Number(artForm.price).toLocaleString()}</span>
+                        </div>
+                        <div className="flex justify-between text-amber-700">
+                          <span>Artellium Official Commission (5%):</span>
+                          <span>+₦{Math.round(Number(artForm.price) * 0.05).toLocaleString()}</span>
+                        </div>
+                        <div className="flex justify-between text-emerald-700 font-bold border-t border-amber-200 pt-1 text-sm">
+                          <span>Public Collector Listing Price:</span>
+                          <span>₦{Math.round(Number(artForm.price) * 1.05).toLocaleString()}</span>
+                        </div>
+                        <p className="text-[10px] text-slate-500 font-sans pt-0.5">
+                          ✓ The 5% Artellium official commission is automatically added on top of your asking price. You receive 100% of your entered artist earnings upon sale!
+                        </p>
+                      </div>
+                    )}
                   </div>
                 </div>
 
@@ -2430,112 +2468,28 @@ export default function ArtistDashboardPage() {
               </form>
             </div>
 
-            {/* 3. Pre-Purchase Q&A Inquiries Inbox */}
+            {/* 3. Platform Administration Inquiry Concierge */}
             <div className="bg-white rounded-3xl border border-slate-200 p-6 space-y-4 shadow-sm">
               <div className="flex items-center justify-between border-b border-slate-100 pb-3">
                 <h3 className="font-serif text-lg font-bold text-slate-900 flex items-center gap-2">
-                  <MessageCircle className="w-5 h-5 text-art-gold" />
-                  <span>Pre-Purchase Collector Inquiries</span>
+                  <ShieldCheck className="w-5 h-5 text-art-gold" />
+                  <span>Platform Administration Curatorial Concierge</span>
                 </h3>
-                <span className="text-xs font-mono font-bold bg-amber-50 text-amber-800 border border-amber-200 px-2.5 py-0.5 rounded-full">
-                  {myQuestions.length} Total
+                <span className="text-xs font-mono font-bold bg-emerald-50 text-emerald-800 border border-emerald-200 px-2.5 py-0.5 rounded-full">
+                  ✓ Protected Direct Routing
                 </span>
               </div>
 
-              {myQuestions.length === 0 ? (
-                <p className="text-xs text-slate-400 italic text-center py-6">
-                  No collector inquiries currently pending for your studio works.
+              <div className="p-5 rounded-2xl bg-slate-50 border border-slate-200/80 space-y-2">
+                <h4 className="font-serif text-sm font-bold text-slate-900">Protected Atelier Inquiries</h4>
+                <p className="text-xs text-slate-600 leading-relaxed">
+                  To protect artist focus and guarantee transparent fiduciary escrow, collectors cannot send unvetted direct messages to artist studios. All collector questions regarding provenance, framing, custom commissions, and acquisitions are processed exclusively by Artellium Platform Administration.
                 </p>
-              ) : (
-                <div className="space-y-4">
-                  {myQuestions.map((q) => {
-                    const relatedArt = myArtworks.find(a => a.id === q.artworkId);
-                    return (
-                      <div key={q.id} className="p-4 bg-slate-50 border border-slate-200 rounded-2xl space-y-3 text-xs">
-                        <div className="flex justify-between items-center text-[10px] text-slate-400 font-mono">
-                          <span>Artwork: <strong className="text-slate-800">{relatedArt?.title || q.artworkId}</strong></span>
-                          <div className="flex items-center gap-2">
-                            <span>{q.date}</span>
-                            <button
-                              onClick={() => {
-                                if (confirm('Delete this question?')) {
-                                  deleteQuestion(q.id);
-                                }
-                              }}
-                              className="text-red-500 hover:text-red-700"
-                              title="Delete Question"
-                            >
-                              <Trash2 className="w-3.5 h-3.5" />
-                            </button>
-                          </div>
-                        </div>
-
-                        <div className="space-y-1">
-                          <p className="font-semibold text-slate-900">"{q.question}"</p>
-                          <p className="text-[10px] text-slate-500 font-sans">Asked by: {q.askedBy}</p>
-                        </div>
-
-                        {q.answer ? (
-                          <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-xl space-y-2">
-                            <div className="flex justify-between items-center">
-                              <span className="text-[10px] font-bold text-emerald-800 uppercase tracking-wider">Your Published Answer:</span>
-                              <button
-                                onClick={() => {
-                                  setEditingQId(q.id);
-                                  setEditQAnswerText(q.answer);
-                                }}
-                                className="text-[10px] text-slate-600 font-bold hover:underline"
-                              >
-                                Edit Answer
-                              </button>
-                            </div>
-                            {editingQId === q.id ? (
-                              <div className="flex gap-2 pt-1">
-                                <input
-                                  type="text"
-                                  value={editQAnswerText}
-                                  onChange={e => setEditQAnswerText(e.target.value)}
-                                  className="flex-1 bg-white border border-slate-300 rounded p-1.5 text-xs text-slate-800"
-                                />
-                                <button
-                                  onClick={() => {
-                                    editQuestionAnswer(q.id, editQAnswerText, myArtistName);
-                                    setEditingQId(null);
-                                  }}
-                                  className="px-3 py-1 bg-slate-900 text-white rounded text-xs font-bold"
-                                >
-                                  Save
-                                </button>
-                              </div>
-                            ) : (
-                              <p className="text-slate-700 italic">"{q.answer}"</p>
-                            )}
-                          </div>
-                        ) : (
-                          <div className="space-y-2 pt-1">
-                            <textarea
-                              rows="2"
-                              placeholder="Write your response to this collector (will appear publicly on artwork page)..."
-                              value={replyMap[q.id] || ''}
-                              onChange={(e) => setReplyMap({ ...replyMap, [q.id]: e.target.value })}
-                              className="w-full bg-white border border-slate-200 rounded-xl p-2.5 text-xs text-slate-800 focus:outline-none focus:border-art-gold"
-                            />
-                            <div className="flex justify-end">
-                              <button
-                                onClick={() => handleSendReply(q.id)}
-                                className="px-4 py-2 bg-art-gold hover:brightness-110 text-art-black font-bold text-xs uppercase tracking-wider rounded-xl transition flex items-center gap-1.5 shadow-sm"
-                              >
-                                <Send className="w-3.5 h-3.5" />
-                                <span>Publish Answer</span>
-                              </button>
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })}
+                <div className="pt-2 flex items-center gap-2 text-xs text-emerald-700 font-medium">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                  <span>When an inquiry requires atelier clarification, platform administration contacts you directly.</span>
                 </div>
-              )}
+              </div>
             </div>
           </div>
 
@@ -2660,18 +2614,18 @@ export default function ArtistDashboardPage() {
               <div className="flex items-center justify-between border-b border-slate-100 pb-3">
                 <h3 className="font-serif text-base font-bold text-slate-900 flex items-center gap-2">
                   <Building className="w-4 h-4 text-emerald-600" />
-                  <span>{artistPayoutPercentage}% Net Payout Bank Account</span>
+                  <span>General Payout Bank Account</span>
                 </h3>
                 {bankSaveMsg && (
                   <span className="text-emerald-600 text-xs font-bold flex items-center gap-1">
                     <Check className="w-3.5 h-3.5" />
-                    <span>Saved!</span>
+                    <span>Credentials Saved!</span>
                   </span>
                 )}
               </div>
 
-              <p className="text-[11px] text-slate-500">
-                Your {artistPayoutPercentage}% net sales earnings are disbursed directly into this registered bank account upon delivery.
+              <p className="text-[11px] text-slate-500 leading-relaxed">
+                Your direct sales earnings (100% of your artist asking price) are disbursed directly into this registered bank account upon delivery.
               </p>
 
               <form onSubmit={handleSaveBankDetails} className="space-y-3 text-xs">
@@ -2680,10 +2634,10 @@ export default function ArtistDashboardPage() {
                   <input
                     type="text"
                     required
-                    placeholder="e.g. Kofi Mensah Fine Arts Enterprise"
+                    placeholder="e.g. Ebuka Eke Studio"
                     value={bankForm.payout_account_name}
                     onChange={e => setBankForm({ ...bankForm, payout_account_name: e.target.value })}
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-slate-800"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-slate-800 font-medium"
                   />
                 </div>
                 <div>
@@ -2694,7 +2648,7 @@ export default function ArtistDashboardPage() {
                     placeholder="e.g. Standard Chartered Ghana / Access Bank"
                     value={bankForm.payout_bank}
                     onChange={e => setBankForm({ ...bankForm, payout_bank: e.target.value })}
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-slate-800"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-slate-800 font-medium"
                   />
                 </div>
                 <div>
@@ -2705,12 +2659,12 @@ export default function ArtistDashboardPage() {
                     placeholder="e.g. 01002345678"
                     value={bankForm.payout_account}
                     onChange={e => setBankForm({ ...bankForm, payout_account: e.target.value })}
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-slate-800 font-mono"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-slate-800 font-mono font-bold"
                   />
                 </div>
                 <button
                   type="submit"
-                  className="w-full py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs uppercase tracking-wider rounded-xl transition shadow-sm"
+                  className="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs uppercase tracking-wider rounded-xl transition shadow-md cursor-pointer"
                 >
                   Save Payout Bank Credentials
                 </button>

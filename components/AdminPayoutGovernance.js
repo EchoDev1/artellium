@@ -99,7 +99,7 @@ export default function AdminPayoutGovernance() {
               <span className="text-xs text-slate-400 font-mono">Net Artist Payout</span>
             </div>
             <span className="text-[10px] text-art-gold font-mono block mt-0.5">
-              ({100 - artistPayoutPercentage}% Platform Retained)
+              (Official 5% Artellium Commission Model)
             </span>
           </div>
         </div>

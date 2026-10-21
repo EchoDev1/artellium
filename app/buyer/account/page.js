@@ -490,9 +490,7 @@ export default function BuyerAccountPage() {
 
                         <div className="text-right font-mono">
                           <span className="text-base font-bold text-slate-900">{formatPrice(ord.total_amount)}</span>
-                          <span className="block text-[10px] text-slate-500">
-                            {ord.shipping_cost ? `Includes ${formatPrice(ord.shipping_cost)} DHL Insured Freight` : '100% Authenticity Guaranteed'}
-                          </span>
+                          <span className="block text-[10px] text-slate-500">100% Authenticity Guaranteed</span>
                         </div>
                       </div>
 
@@ -582,15 +580,6 @@ export default function BuyerAccountPage() {
                                       <Copy className="w-3 h-3" />
                                       <span>{copiedTracking === trk.trackingNumber ? 'Copied!' : 'Copy'}</span>
                                     </button>
-                                    <a
-                                      href={trk.trackingUrl || `https://www.dhl.com/en/express/tracking.html?AWB=${(trk.trackingNumber || '').replace(/[^0-9]/g, '')}`}
-                                      target="_blank"
-                                      rel="noopener noreferrer"
-                                      className="inline-flex items-center gap-1 text-[10px] text-amber-800 hover:text-amber-950 font-bold px-2 py-0.5 rounded bg-amber-100/70 border border-amber-300 transition"
-                                    >
-                                      <ExternalLink className="w-3 h-3 text-amber-600" />
-                                      <span>Track via DHL Express</span>
-                                    </a>
                                   </div>
                                 </div>
                               </div>
@@ -648,12 +637,8 @@ export default function BuyerAccountPage() {
                               <div className="flex items-center gap-2">
                                 <Navigation className="w-4 h-4 text-emerald-600 shrink-0" />
                                 <div className="min-w-0">
-                                  <span className="text-[10px] text-slate-400 uppercase block font-mono">
-                                    Destination {ord.shipping_details?.country ? `(${ord.shipping_details.country})` : ''}
-                                  </span>
-                                  <span className="font-semibold text-slate-800 truncate block">
-                                    {ord.shipping_details?.address ? `${ord.shipping_details.address}, ${ord.shipping_details.city}, ${ord.shipping_details.country}` : trk.destination}
-                                  </span>
+                                  <span className="text-[10px] text-slate-400 uppercase block font-mono">Destination</span>
+                                  <span className="font-semibold text-slate-800 truncate block">{trk.destination}</span>
                                 </div>
                               </div>
                               <div className="flex items-center gap-2 sm:border-l sm:border-slate-200 sm:pl-3">
