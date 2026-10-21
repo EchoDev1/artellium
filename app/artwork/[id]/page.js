@@ -261,33 +261,35 @@ export default function ArtworkDetailPage() {
                   </div>
                 </Link>
 
-                <button
-                  type="button"
-                  onClick={() => toggleFollowArtist(artwork.artistId || artwork.artistName, {
-                    name: artwork.artistName,
-                    avatar: artwork.artistAvatar,
-                    country: artwork.country,
-                    city: artwork.city,
-                    countryFlag: artwork.countryFlag
-                  })}
-                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer ${
-                    (isFollowingArtist && isFollowingArtist(artwork.artistId || artwork.artistName))
-                      ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 hover:bg-emerald-500/30'
-                      : 'bg-art-gold/20 text-art-gold border border-art-gold/40 hover:bg-art-gold hover:text-black'
-                  }`}
-                >
-                  {(isFollowingArtist && isFollowingArtist(artwork.artistId || artwork.artistName)) ? (
-                    <>
-                      <UserCheck className="w-3.5 h-3.5 text-emerald-400" />
-                      <span>Following Master</span>
-                    </>
-                  ) : (
-                    <>
-                      <UserPlus className="w-3.5 h-3.5" />
-                      <span>Follow Artist</span>
-                    </>
-                  )}
-                </button>
+                {!(currentUser?.role === 'artist' || currentUser?.isArtist) && (
+                  <button
+                    type="button"
+                    onClick={() => toggleFollowArtist(artwork.artistId || artwork.artistName, {
+                      name: artwork.artistName,
+                      avatar: artwork.artistAvatar,
+                      country: artwork.country,
+                      city: artwork.city,
+                      countryFlag: artwork.countryFlag
+                    })}
+                    className={`px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer ${
+                      (isFollowingArtist && isFollowingArtist(artwork.artistId || artwork.artistName))
+                        ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 hover:bg-emerald-500/30'
+                        : 'bg-art-gold/20 text-art-gold border border-art-gold/40 hover:bg-art-gold hover:text-black'
+                    }`}
+                  >
+                    {(isFollowingArtist && isFollowingArtist(artwork.artistId || artwork.artistName)) ? (
+                      <>
+                        <UserCheck className="w-3.5 h-3.5 text-emerald-400" />
+                        <span>Following Master</span>
+                      </>
+                    ) : (
+                      <>
+                        <UserPlus className="w-3.5 h-3.5" />
+                        <span>Follow Artist</span>
+                      </>
+                    )}
+                  </button>
+                )}
               </div>
             </div>
 

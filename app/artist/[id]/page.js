@@ -10,7 +10,6 @@ import {
   ShieldCheck, 
   CheckCircle2, 
   UserCheck, 
-  UserPlus, 
   MapPin, 
   Award, 
   ExternalLink, 
@@ -62,8 +61,6 @@ export default function MasterArtistProfilePage() {
     sellers = [], 
     usersList = [], 
     artworks = [], 
-    toggleFollowArtist, 
-    isFollowingArtist,
     followedArtists = [],
     askArtworkQuestion
   } = useStore();
@@ -140,20 +137,6 @@ export default function MasterArtistProfilePage() {
   const payoutBank = userMatch?.payout_bank || sellerMatch?.payout_bank || 'WEMA Bank PLC';
   const payoutAccount = userMatch?.payout_account || sellerMatch?.payout_account || '0123456789';
   const payoutAccountName = userMatch?.payout_account_name || sellerMatch?.payout_account_name || `${name} Studio`;
-
-  // Follow State & Logic
-  const artistLookupKey = userMatch?.id || sellerMatch?.id || name;
-  const isFollowing = isFollowingArtist(artistLookupKey) || isFollowingArtist(name);
-  
-  const handleFollowToggle = () => {
-    toggleFollowArtist(artistLookupKey, {
-      name,
-      avatar,
-      country,
-      city,
-      countryFlag
-    });
-  };
 
   // Check if current user is this artist
   const isMyOwnProfile = Boolean(
@@ -575,29 +558,6 @@ export default function MasterArtistProfilePage() {
                   </span>
                 </div>
               </div>
-            </div>
-
-            {/* Quick Collector Follow Card */}
-            <div className="p-6 bg-gradient-to-br from-black via-slate-900 to-[#120F08] rounded-3xl border border-art-gold/40 text-center space-y-3">
-              <div className="w-12 h-12 rounded-full bg-art-gold/15 border border-art-gold mx-auto flex items-center justify-center text-art-gold">
-                <UserPlus className="w-5 h-5" />
-              </div>
-              <h5 className="font-serif font-bold text-white text-base">
-                Follow {name}
-              </h5>
-              <p className="text-xs text-slate-400 leading-relaxed">
-                Receive private curatorial notifications when new works, auction lots, or museum showcases are published from this atelier.
-              </p>
-              <button
-                onClick={handleFollowToggle}
-                className={`w-full py-2.5 rounded-xl font-bold text-xs uppercase tracking-wider transition ${
-                  isFollowing
-                    ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 hover:bg-emerald-500/30'
-                    : 'bg-art-gold hover:brightness-110 text-art-black shadow-gold-glow'
-                }`}
-              >
-                {isFollowing ? '✓ Following This Artist' : '+ Follow Artist'}
-              </button>
             </div>
           </div>
 
