@@ -99,6 +99,7 @@ export default function ArtistDashboardPage() {
     videos = [],
     submitArtistVideo,
     subscribeArtist,
+    followedArtists = [],
     usersList = []
   } = useStore();
 
@@ -198,8 +199,6 @@ export default function ArtistDashboardPage() {
   useEffect(() => {
     if (currentUser && currentUser.role === 'buyer') {
       router.push('/buyer/account');
-    } else if (currentUser && currentUser.role === 'admin') {
-      router.push('/admin/dashboard');
     }
   }, [currentUser, router]);
 
@@ -234,7 +233,7 @@ export default function ArtistDashboardPage() {
 
   // Digital Signature State & Drawing Canvas
   const myArtistName = currentUser?.name ? currentUser.name.split(' (')[0] : '';
-  const mySignatureData = (currentUser?.name && artistSignatures[currentUser.name]) || { style: 'Heritage Calligraphy', signed: false, drawn: null };
+  const mySignatureData = (currentUser?.name && artistSignatures && artistSignatures[currentUser.name]) || { style: 'Heritage Calligraphy', signed: false, drawn: null };
   const [sigMode, setSigMode] = useState('draw'); // 'draw' or 'font'
   const [sigStyle, setSigStyle] = useState(mySignatureData.style || 'Heritage Calligraphy');
   const [drawnSigUrl, setDrawnSigUrl] = useState(mySignatureData.drawn || null);
@@ -428,42 +427,25 @@ export default function ArtistDashboardPage() {
     setTimeout(() => setSigSaveMsg(false), 3500);
   };
 
-  if (!currentUser || currentUser.role !== 'artist') {
+  // Only restrict pure buyer accounts who have no artist privileges
+  if (currentUser && currentUser.role === 'buyer') {
     return (
       <div className="min-h-screen bg-[#07080A] flex items-center justify-center p-4 font-sans text-xs">
         <div className="max-w-md w-full p-8 rounded-3xl bg-[#0c0f17] border border-art-gold/30 text-center space-y-4 shadow-2xl">
           <div className="w-14 h-14 rounded-2xl bg-art-gold/10 border border-art-gold/30 flex items-center justify-center mx-auto">
             <Palette className="w-7 h-7 text-art-gold" />
           </div>
-          <h2 className="font-serif text-lg font-bold text-white">Artist Atelier Restricted</h2>
+          <h2 className="font-serif text-lg font-bold text-white">Collector Account Active</h2>
           <p className="text-slate-400 leading-relaxed text-xs">
-            The Artist Studio Console is strictly accessible to verified Master Artists.
+            You are currently signed in with a Collector account. To manage artworks, switch to an Artist profile or return to your Collector Portal.
           </p>
           <div className="pt-2 flex items-center justify-center gap-3">
-            {currentUser?.role === 'admin' && (
-              <Link
-                href="/admin/dashboard"
-                className="py-2.5 px-4 bg-amber-500 text-black font-bold rounded-xl hover:brightness-110 transition"
-              >
-                Go to Admin Center
-              </Link>
-            )}
-            {currentUser?.role === 'buyer' && (
-              <Link
-                href="/buyer/account"
-                className="py-2.5 px-4 bg-emerald-500 text-white font-bold rounded-xl hover:brightness-110 transition"
-              >
-                Go to Collector Portal
-              </Link>
-            )}
-            {!currentUser && (
-              <Link
-                href="/login"
-                className="py-2.5 px-5 bg-gradient-to-r from-art-gold to-amber-500 text-art-black font-bold rounded-xl hover:brightness-110 transition uppercase tracking-wider"
-              >
-                Sign In to Account
-              </Link>
-            )}
+            <Link
+              href="/buyer/account"
+              className="py-2.5 px-4 bg-emerald-500 text-white font-bold rounded-xl hover:brightness-110 transition"
+            >
+              Go to Collector Portal
+            </Link>
           </div>
         </div>
       </div>
@@ -490,9 +472,10 @@ export default function ArtistDashboardPage() {
   const disbursedPayouts = myCommissions.filter(c => c.payout_status === 'disbursed').reduce((sum, c) => sum + (c.seller_net_payout || 0), 0);
 
   // Orders containing this artist's artworks
-  const myOrders = orders.filter(o => 
-    o.items?.some(i => (myArtistName && i.artistName?.toLowerCase().includes(myArtistName.toLowerCase())) || (currentUser?.id && i.artistId === currentUser.id))
-  );
+  const myOrders = (orders || []).filter(o => {
+    const rawItems = Array.isArray(o?.items) ? o.items : (typeof o?.items === 'string' ? (() => { try { return JSON.parse(o.items); } catch(e) { return []; } })() : []);
+    return rawItems.some(i => (myArtistName && i?.artistName?.toLowerCase().includes(myArtistName.toLowerCase())) || (currentUser?.id && i?.artistId === currentUser.id));
+  });
 
   // Questions relating to this artist's artworks
   const myQuestions = (artworkQuestions || []).filter(q => myArtworks.some(a => a.id === q.artworkId));
@@ -1308,7 +1291,7 @@ export default function ArtistDashboardPage() {
                     <div className="w-24 h-24 rounded-2xl overflow-hidden border-2 border-art-gold p-0.5 bg-slate-800 shadow-gold-glow">
                       {currentUser?.avatar_url || mySellerProfile?.avatar_url ? (
                         <img
-                          src={currentUser.avatar_url || mySellerProfile?.avatar_url}
+                          src={currentUser?.avatar_url || mySellerProfile?.avatar_url}
                           alt={artistProfileForm.name}
                           className="w-full h-full object-cover rounded-[14px]"
                         />
@@ -1970,7 +1953,8 @@ export default function ArtistDashboardPage() {
               ) : (
                 <div className="space-y-4">
                   {myOrders.map(ord => {
-                    const firstItem = ord.items?.[0];
+                    const orderItems = Array.isArray(ord?.items) ? ord.items : (typeof ord?.items === 'string' ? (() => { try { return JSON.parse(ord.items); } catch(e) { return []; } })() : []);
+                    const firstItem = orderItems[0];
                     const tracking = ord.tracking || {
                       stage: ord.status === 'delivered' ? 'delivered' : 'payment_confirmed',
                       carrier: 'Artellium Insured Courier',

@@ -231,13 +231,13 @@ export default function AdminImageDiagnostics() {
         </div>
       </div>
 
-      {/* Storage Breakdown and Sentinel Controls */}
+      {/* Storage Breakdown and Diagnostics Controls */}
       <div className="p-5 bg-white rounded-3xl border border-slate-200 shadow-sm space-y-4">
         <div className="flex items-center justify-between border-b border-slate-100 pb-3">
           <div className="flex items-center gap-2">
             <HardDrive className="w-4 h-4 text-art-gold" />
             <h4 className="font-serif font-bold text-slate-900 text-sm">
-              Zero-Quota Storage Sentinel & Table Footprint
+              Zero-Quota Storage Monitor & Table Footprint
             </h4>
           </div>
           <button
