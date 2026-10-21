@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { useStore } from '@/context/store-context';
+import { getArtistBriefHistory } from '@/lib/mock-data';
 import { 
   Video, 
   Play, 
@@ -84,8 +85,11 @@ export default function ArtistVoicesPage() {
                   <Film className="w-5 h-5" />
                 </div>
                 <div>
-                  <h3 className="font-serif text-lg font-bold text-white">{selectedVideo.artistName}</h3>
-                  <p className="text-xs text-art-gold font-medium">{selectedVideo.artistTitle} · {selectedVideo.country}</p>
+                  <span className="text-[10px] text-art-gold font-mono uppercase tracking-widest block font-bold">
+                    Master Artist
+                  </span>
+                  <h3 className="font-serif text-lg sm:text-2xl font-bold text-white">{selectedVideo.artistName}</h3>
+                  <p className="text-xs text-slate-400 font-medium">{selectedVideo.artistTitle} · {selectedVideo.country}</p>
                 </div>
               </div>
               <button
@@ -119,9 +123,9 @@ export default function ArtistVoicesPage() {
                 <div className="w-full h-full flex flex-col items-center justify-center p-8 text-center space-y-4 bg-gradient-to-b from-[#151B26] to-[#0A0D14]">
                   <Film className="w-16 h-16 text-art-gold animate-pulse" />
                   <div className="max-w-md space-y-2">
-                    <h4 className="font-serif text-xl font-bold text-white">Studio Documentary Session</h4>
+                    <h4 className="font-serif text-xl font-bold text-white">{selectedVideo.artistName}</h4>
                     <p className="text-xs text-slate-400 leading-relaxed font-sans">
-                      &ldquo;{selectedVideo.quote}&rdquo;
+                      {selectedVideo.history || getArtistBriefHistory(selectedVideo.artistName, selectedVideo.country)}
                     </p>
                   </div>
                   <span className="px-4 py-1.5 rounded-full bg-art-gold/15 text-art-gold font-mono text-xs font-bold border border-art-gold/30">
@@ -131,14 +135,22 @@ export default function ArtistVoicesPage() {
               )}
             </div>
 
-            {/* Video Footer Info */}
-            <div className="p-5 sm:p-6 bg-[#090C12] border-t border-white/10 space-y-2">
-              <span className="text-[11px] font-mono uppercase text-slate-400 block font-bold">
-                Featured Artwork In Focus: <strong className="text-white">{selectedVideo.artworkTitle}</strong>
+            {/* Video Footer Info: Brief History of the Artist */}
+            <div className="p-5 sm:p-6 bg-[#090C12] border-t border-white/10 space-y-3">
+              <span className="text-[11px] font-mono uppercase text-art-gold block font-bold tracking-widest">
+                ✦ Brief History of the Artist ✦
               </span>
-              <p className="text-xs text-slate-300 font-serif italic leading-relaxed">
-                &ldquo;{selectedVideo.quote}&rdquo;
+              <p className="text-xs sm:text-sm text-slate-200 font-sans leading-relaxed">
+                {selectedVideo.history || getArtistBriefHistory(selectedVideo.artistName, selectedVideo.country)}
               </p>
+              <div className="flex items-center justify-end pt-2 border-t border-white/10">
+                <button
+                  onClick={() => setSelectedVideo(null)}
+                  className="px-5 py-2.5 rounded-xl bg-art-gold/20 hover:bg-art-gold text-art-gold hover:text-black border border-art-gold/40 text-xs font-bold uppercase tracking-wider transition cursor-pointer"
+                >
+                  Close
+                </button>
+              </div>
             </div>
           </div>
         </div>

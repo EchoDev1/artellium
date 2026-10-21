@@ -171,18 +171,28 @@ export default function ArtworkDetailPage() {
             </div>
           )}
 
-          <div onClick={() => setIsImageLightboxOpen(true)} title="Click to view full, complete artwork image" className="relative aspect-[4/3] rounded-3xl overflow-hidden glass-card-gold border border-art-gold/40 shadow-2xl bg-black cursor-zoom-in group/canvas">
+          <div 
+            onClick={() => setIsImageLightboxOpen(true)} 
+            title="Click to zoom into full, complete artwork image" 
+            className="relative min-h-[440px] sm:min-h-[540px] md:min-h-[620px] w-full rounded-3xl overflow-hidden glass-card-gold border border-art-gold/40 shadow-2xl bg-[#07090D] cursor-zoom-in group/canvas flex items-center justify-center p-3 sm:p-6"
+          >
+            {/* Ambient Background Glow for museum depth */}
+            <div 
+              className="absolute inset-0 bg-cover bg-center blur-3xl opacity-25 scale-125 pointer-events-none"
+              style={{ backgroundImage: `url(${activeDisplayImage})` }}
+            />
+            {/* Full Complete Uncropped Artwork Image */}
             <img
               src={activeDisplayImage}
               alt={artwork.title}
               onError={(e) => {
                 e.currentTarget.src = DEFAULT_FALLBACK_IMAGE;
               }}
-              className="w-full h-full object-cover group-hover/canvas:scale-[1.02] transition duration-500"
+              className="relative z-10 max-h-[560px] max-w-full object-contain rounded-2xl shadow-2xl group-hover/canvas:scale-[1.02] transition duration-500"
             />
-            <div className="absolute bottom-4 right-4 bg-black/80 backdrop-blur-md px-3 py-1.5 rounded-xl border border-white/20 text-white text-xs font-mono flex items-center gap-1.5 shadow-lg group-hover/canvas:bg-art-gold group-hover/canvas:text-black transition">
+            <div className="absolute bottom-4 right-4 z-20 bg-black/80 backdrop-blur-md px-3 py-1.5 rounded-xl border border-white/20 text-white text-xs font-mono flex items-center gap-1.5 shadow-lg group-hover/canvas:bg-art-gold group-hover/canvas:text-black transition">
               <ZoomIn className="w-3.5 h-3.5" />
-              <span>View Full Image</span>
+              <span>Zoom Full Image</span>
             </div>
           </div>
 

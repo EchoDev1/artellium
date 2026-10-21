@@ -26,7 +26,22 @@ export default function CustodianModal() {
         return;
       }
 
-      // Smooth trigger 2 seconds after page load for guaranteed seamless rendering
+      // Track platform entry time across navigation (1 minute = 60,000 ms)
+      const ONE_MINUTE_MS = 60 * 1000;
+      let entryTimeStr = typeof window !== 'undefined' ? sessionStorage.getItem('artellium_platform_entry_time') : null;
+      let entryTime = entryTimeStr ? parseInt(entryTimeStr, 10) : NaN;
+
+      if (isNaN(entryTime)) {
+        entryTime = Date.now();
+        try {
+          sessionStorage.setItem('artellium_platform_entry_time', entryTime.toString());
+        } catch (e) {}
+      }
+
+      const elapsed = Date.now() - entryTime;
+      const delay = Math.max(1000, ONE_MINUTE_MS - elapsed);
+
+      // Trigger recognition popup strictly after a minute of staying on the platform
       const timer = setTimeout(() => {
         setIsOpen(true);
         try {
@@ -35,7 +50,7 @@ export default function CustodianModal() {
           localStorage.setItem('artellium_custodian_shown', 'true');
           sessionStorage.setItem('artellium_custodian_shown', 'true');
         } catch (e) {}
-      }, 2000);
+      }, delay);
 
       return () => clearTimeout(timer);
     } catch (e) {

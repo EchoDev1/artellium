@@ -195,14 +195,18 @@ export default function JumiaFlashSales() {
               </div>
 
               {/* Artwork Thumbnail (Clickable) */}
-              <Link href={`/artwork/${it.artworkId || it.id}`} className="block relative aspect-[4/3] rounded-xl overflow-hidden bg-black cursor-pointer group/thumb">
+              <Link href={`/artwork/${it.artworkId || it.id}`} className="block relative h-48 sm:h-52 rounded-xl overflow-hidden bg-[#07090D] cursor-pointer group/thumb flex items-center justify-center p-2">
+                <div 
+                  className="absolute inset-0 bg-cover bg-center blur-2xl opacity-20 scale-125 pointer-events-none"
+                  style={{ backgroundImage: `url(${it.image})` }}
+                />
                 <img
                   src={it.image}
                   alt={it.title}
-                  className="w-full h-full object-cover group-hover:scale-105 group-hover/thumb:scale-105 transition duration-500"
+                  className="relative z-10 max-h-full max-w-full object-contain rounded-lg group-hover:scale-105 group-hover/thumb:scale-105 transition duration-500"
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent pointer-events-none" />
-                <span className="absolute bottom-2 left-2 text-[10px] text-slate-300 font-sans font-medium line-clamp-1 pointer-events-none">
+                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent pointer-events-none z-10" />
+                <span className="absolute bottom-2 left-2 text-[10px] text-slate-300 font-sans font-medium line-clamp-1 pointer-events-none z-20">
                   {it.artist}
                 </span>
               </Link>

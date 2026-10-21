@@ -84,22 +84,32 @@ export default function ArtworkCard({ artwork }) {
         </button>
       </div>
 
-      {/* Clickable Image Container (Clean Canvas with zero overlay obscuring artwork) */}
-      <Link href={`/artwork/${artwork.id}`} className="block relative aspect-[4/3] w-full overflow-hidden bg-art-black cursor-pointer group/img">
+      {/* Clickable Image Container: Generously sized to show 100% full complete artwork without cropping */}
+      <Link 
+        href={`/artwork/${artwork.id}`} 
+        className="block relative h-72 sm:h-80 md:h-96 w-full overflow-hidden bg-[#07090D] cursor-pointer group/img flex items-center justify-center p-2.5"
+      >
+        {/* Ambient subtle blur to give museum-grade depth to custom-sized canvases */}
+        <div 
+          className="absolute inset-0 bg-cover bg-center blur-2xl opacity-20 scale-125 pointer-events-none"
+          style={{ backgroundImage: `url(${artwork.image || fallbackImg})` }}
+        />
+
+        {/* Full complete artwork image - never cut in half */}
         <img
           src={artwork.image || fallbackImg}
           alt={artwork.title}
           onError={(e) => {
             e.currentTarget.src = fallbackImg;
           }}
-          className="w-full h-full object-cover group-hover:scale-105 group-hover/img:scale-105 transition duration-500"
+          className="relative z-10 max-h-full max-w-full object-contain rounded-lg shadow-xl group-hover:scale-[1.03] group-hover/img:scale-[1.03] transition-transform duration-500 ease-out"
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-art-black via-transparent to-transparent opacity-60 pointer-events-none" />
+        <div className="absolute inset-0 bg-gradient-to-t from-[#07090D]/50 via-transparent to-transparent pointer-events-none z-10" />
 
         {/* Quick View Button */}
         <button
           onClick={(e) => { e.preventDefault(); e.stopPropagation(); setQuickViewOpen(true); }}
-          className="absolute bottom-3 right-3 p-2 bg-art-black/80 hover:bg-art-gold hover:text-art-black text-white rounded-xl backdrop-blur-md transition shadow-lg opacity-0 group-hover:opacity-100 transform translate-y-2 group-hover:translate-y-0 z-10"
+          className="absolute bottom-3 right-3 p-2 bg-art-black/85 hover:bg-art-gold hover:text-art-black text-white rounded-xl backdrop-blur-md transition shadow-lg opacity-0 group-hover:opacity-100 transform translate-y-2 group-hover:translate-y-0 z-20 cursor-pointer"
           title="Quick View Details"
         >
           <Eye className="w-4 h-4" />
@@ -191,11 +201,16 @@ export default function ArtworkCard({ artwork }) {
       {quickViewOpen && (
         <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-xl flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
           <div className="relative w-full max-w-3xl bg-art-black-card border border-art-gold/40 rounded-2xl shadow-2xl flex flex-col md:flex-row my-auto max-h-[92vh] overflow-y-auto pb-6 md:pb-0">
-            <div className="md:w-1/2 aspect-square md:aspect-auto bg-black overflow-hidden relative shrink-0 min-h-[220px]">
+            <div className="md:w-1/2 min-h-[320px] md:min-h-[440px] bg-[#07090D] overflow-hidden relative shrink-0 flex items-center justify-center p-4">
+              <div 
+                className="absolute inset-0 bg-cover bg-center blur-2xl opacity-20 scale-125 pointer-events-none"
+                style={{ backgroundImage: `url(${artwork.image || fallbackImg})` }}
+              />
               <img
-                src={artwork.image}
+                src={artwork.image || fallbackImg}
                 alt={artwork.title}
-                className="w-full h-full object-cover"
+                onError={(e) => { e.currentTarget.src = fallbackImg; }}
+                className="relative z-10 max-h-full max-w-full object-contain rounded-xl shadow-2xl"
               />
             </div>
 

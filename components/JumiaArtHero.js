@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import Link from 'next/link';
 import { useStore } from '@/context/store-context';
+import { getArtistBriefHistory } from '@/lib/mock-data';
 import { 
   Palette, 
   Box, 
@@ -609,16 +610,22 @@ export default function JumiaArtHero() {
       {activeCinemaVideo && (
         <div className="fixed inset-0 z-50 bg-black/90 backdrop-blur-xl flex items-center justify-center p-3 sm:p-6 animate-fade-in">
           <div className="relative w-full max-w-4xl bg-[#0B0E14] border border-art-gold/50 rounded-3xl overflow-hidden shadow-2xl my-auto max-h-[95vh] flex flex-col">
-            {/* Modal Header: Only Artist Name Up */}
-            <div className="flex items-center justify-between px-5 py-4 bg-[#080A0E] border-b border-art-gold/20 shrink-0">
+            {/* Modal Header: Artist's Name on Top of the Video */}
+            <div className="flex items-center justify-between px-5 sm:px-6 py-4 bg-[#080A0E] border-b border-art-gold/20 shrink-0">
               <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-xl bg-art-gold/20 border border-art-gold/40 flex items-center justify-center text-art-gold font-bold">
-                  <Film className="w-4 h-4" />
+                <div className="w-10 h-10 rounded-xl bg-art-gold/20 border border-art-gold/40 flex items-center justify-center text-art-gold font-bold shrink-0">
+                  <Film className="w-5 h-5" />
                 </div>
                 <div>
-                  <h3 className="font-serif text-base sm:text-xl font-bold text-white tracking-wide">
+                  <span className="text-[10px] text-art-gold font-mono uppercase tracking-widest block font-bold">
+                    Master Artist
+                  </span>
+                  <h3 className="font-serif text-lg sm:text-2xl font-bold text-white tracking-wide">
                     {activeCinemaVideo.artistName}
                   </h3>
+                  <p className="text-xs text-slate-400 font-sans">
+                    {activeCinemaVideo.artistTitle} {activeCinemaVideo.country ? `· ${activeCinemaVideo.country}` : ''}
+                  </p>
                 </div>
               </div>
 
@@ -659,26 +666,21 @@ export default function JumiaArtHero() {
               )}
             </div>
 
-            {/* Modal Footer: Brief of the Artist Down */}
-            <div className="p-4 sm:p-5 bg-[#080A0E] border-t border-art-gold/20 space-y-3">
-              <p className="text-xs sm:text-sm text-slate-200 font-sans leading-relaxed">
-                {activeCinemaVideo.quote || activeCinemaVideo.artistTitle || `${activeCinemaVideo.artistName} is an internationally recognized African visual master celebrating cultural expression and archival heritage.`}
-              </p>
+            {/* Modal Footer: Brief History of the Artist (No quote writeup, No View Artwork button) */}
+            <div className="p-5 sm:p-6 bg-[#080A0E] border-t border-art-gold/20 space-y-3">
+              <div className="space-y-1.5">
+                <span className="text-[11px] font-mono uppercase text-art-gold font-bold tracking-widest block">
+                  ✦ Brief History of the Artist ✦
+                </span>
+                <p className="text-xs sm:text-sm text-slate-200 font-sans leading-relaxed">
+                  {activeCinemaVideo.history || getArtistBriefHistory(activeCinemaVideo.artistName, activeCinemaVideo.country)}
+                </p>
+              </div>
 
               <div className="flex items-center justify-end gap-2 pt-2 border-t border-white/10">
-                {activeCinemaVideo.artworkId && (
-                  <Link
-                    href={`/artwork/${activeCinemaVideo.artworkId}`}
-                    onClick={() => setActiveCinemaVideo(null)}
-                    className="px-4 py-2 rounded-xl bg-art-gold hover:brightness-110 text-art-black font-bold text-xs uppercase tracking-wider transition shadow-gold-glow flex items-center gap-1.5"
-                  >
-                    <span>View Artwork</span>
-                    <ArrowRight className="w-3.5 h-3.5" />
-                  </Link>
-                )}
                 <button
                   onClick={() => setActiveCinemaVideo(null)}
-                  className="px-4 py-2 rounded-xl bg-white/10 hover:bg-white/15 text-slate-300 text-xs font-semibold cursor-pointer"
+                  className="px-5 py-2.5 rounded-xl bg-art-gold/20 hover:bg-art-gold text-art-gold hover:text-black border border-art-gold/40 text-xs font-bold uppercase tracking-wider transition cursor-pointer"
                 >
                   Close
                 </button>

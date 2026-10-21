@@ -3,7 +3,8 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { useStore } from '@/context/store-context';
-import { Play, Video, Plus, Trash2, X, Sparkles, UserCheck, ShieldCheck, ArrowRight } from 'lucide-react';
+import { getArtistBriefHistory } from '@/lib/mock-data';
+import { Play, Video, Plus, Trash2, X, Sparkles, UserCheck, ShieldCheck, ArrowRight, Film } from 'lucide-react';
 
 export default function ArtistVideoModal() {
   const { videos, activeVideos, addVideo, deleteVideo, currentUser } = useStore();
@@ -170,15 +171,20 @@ export default function ArtistVideoModal() {
       {selectedVideo && (
         <div className="fixed inset-0 z-50 bg-black/90 backdrop-blur-xl flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
           <div className="relative w-full max-w-4xl bg-art-black-card border border-art-gold/40 rounded-2xl overflow-hidden shadow-2xl my-auto max-h-[92vh] flex flex-col">
-            {/* Modal Header */}
-            <div className="flex items-center justify-between px-5 sm:px-6 py-4 bg-art-black border-b border-white/10 shrink-0">
+            {/* Modal Header: Artist's Name on Top of the Video */}
+            <div className="flex items-center justify-between px-5 sm:px-6 py-4 bg-[#090C12] border-b border-art-gold/30 shrink-0">
               <div className="flex items-center gap-3">
-                <Sparkles className="w-5 h-5 text-art-gold" />
+                <div className="w-10 h-10 rounded-xl bg-art-gold/20 border border-art-gold/40 flex items-center justify-center text-art-gold font-bold shrink-0">
+                  <Film className="w-5 h-5" />
+                </div>
                 <div>
-                  <h3 className="font-serif text-base sm:text-lg font-bold text-white line-clamp-1">
-                    {selectedVideo.artistName} — {selectedVideo.artworkTitle}
+                  <span className="text-[10px] text-art-gold font-mono uppercase tracking-widest block font-bold">
+                    Master Artist
+                  </span>
+                  <h3 className="font-serif text-lg sm:text-2xl font-bold text-white tracking-wide">
+                    {selectedVideo.artistName}
                   </h3>
-                  <p className="text-xs text-art-gold font-medium">
+                  <p className="text-xs text-slate-400 font-medium">
                     {selectedVideo.artistTitle} ({selectedVideo.country})
                   </p>
                 </div>
@@ -186,7 +192,7 @@ export default function ArtistVideoModal() {
 
               <button
                 onClick={() => setSelectedVideo(null)}
-                className="p-2 text-slate-400 hover:text-white rounded-lg hover:bg-white/10 transition shrink-0"
+                className="p-2 text-slate-400 hover:text-white rounded-lg hover:bg-white/10 transition shrink-0 cursor-pointer"
               >
                 <X className="w-6 h-6" />
               </button>
@@ -213,18 +219,36 @@ export default function ArtistVideoModal() {
                 />
               ) : (
                 <div className="w-full h-full flex flex-col items-center justify-center bg-zinc-900 p-8 text-center">
-                  <Play className="w-16 h-16 text-art-gold mb-4 animate-bounce" />
+                  <Film className="w-16 h-16 text-art-gold mb-4 animate-bounce" />
                   <p className="text-white font-serif text-xl font-bold mb-2">
                     Playing: {selectedVideo.artistName} Video Feature
                   </p>
                   <p className="text-slate-400 text-sm max-w-md italic mb-4">
-                    "{selectedVideo.quote}"
+                    {selectedVideo.history || getArtistBriefHistory(selectedVideo.artistName, selectedVideo.country)}
                   </p>
                   <p className="text-xs text-art-gold font-mono">
                     Video Source: {selectedVideo.videoUrl}
                   </p>
                 </div>
               )}
+            </div>
+
+            {/* Modal Footer: Brief History of the Artist (No quote writeup, No View Artwork button) */}
+            <div className="p-5 sm:p-6 bg-[#090C12] border-t border-white/10 space-y-3">
+              <span className="text-[11px] font-mono uppercase text-art-gold block font-bold tracking-widest">
+                ✦ Brief History of the Artist ✦
+              </span>
+              <p className="text-xs sm:text-sm text-slate-200 font-sans leading-relaxed">
+                {selectedVideo.history || getArtistBriefHistory(selectedVideo.artistName, selectedVideo.country)}
+              </p>
+              <div className="flex items-center justify-end pt-2 border-t border-white/10">
+                <button
+                  onClick={() => setSelectedVideo(null)}
+                  className="px-5 py-2.5 rounded-xl bg-art-gold/20 hover:bg-art-gold text-art-gold hover:text-black border border-art-gold/40 text-xs font-bold uppercase tracking-wider transition cursor-pointer"
+                >
+                  Close
+                </button>
+              </div>
             </div>
           </div>
         </div>
