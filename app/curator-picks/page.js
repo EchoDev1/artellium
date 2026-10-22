@@ -43,7 +43,7 @@ export default function CuratorPicksPage() {
       curatorName: 'Dr. Nana Osei',
       curatorRole: 'Director of Contemporary African Art, Accra Art Trust',
       rating: 4.9,
-      image: 'https://images.unsplash.com/photo-1579783902614-a3fb3927b675?auto=format&fit=crop&q=80&w=1000',
+      image: 'https://images.unsplash.com/photo-1579783902614-a3fb3927b675?auto=format&fit=crop&q=95&w=2400',
       curatorCritique: 'Kofi Mensah has achieved an uncommon equilibrium between ancient Akan metaphysical heritage and monumental contemporary abstraction. The 24K gold leaf is not decorative; it operates as an active spiritual conduit.',
       exhibitionHall: 'West African Modernism Pavilion'
     },
@@ -58,7 +58,7 @@ export default function CuratorPicksPage() {
       curatorName: 'Prof. Folake Adeleke',
       curatorRole: 'Senior Fellow in African Metallurgy, Royal Heritage Foundation',
       rating: 5.0,
-      image: 'https://images.unsplash.com/photo-1544717305-2782549b5136?auto=format&fit=crop&q=80&w=1000',
+      image: 'https://images.unsplash.com/photo-1544717305-2782549b5136?auto=format&fit=crop&q=95&w=2400',
       curatorCritique: 'Diallo’s bronze bust resurrects the immortal gravitas of 16th-century Benin foundry artistry while challenging classical patriarchal forms. A seminal acquisition for institutional archives.',
       exhibitionHall: 'Imperial Bronzes & Metallurgical Heritage'
     },
@@ -73,7 +73,7 @@ export default function CuratorPicksPage() {
       curatorName: 'Moussa Traoré',
       curatorRole: 'Chief Curator, Bamako Biennial of Photography',
       rating: 4.8,
-      image: 'https://images.unsplash.com/photo-1518998053901-5348d3961a04?auto=format&fit=crop&q=80&w=1000',
+      image: 'https://images.unsplash.com/photo-1518998053901-5348d3961a04?auto=format&fit=crop&q=95&w=2400',
       curatorCritique: 'Diabaté translates the expansive, unforgiving silence of the Sahel into an intimate psychological landscape. The chromogenic depth is flawless.',
       exhibitionHall: 'North African Saharan Perspectives'
     },
@@ -88,7 +88,7 @@ export default function CuratorPicksPage() {
       curatorName: 'Dr. Babatunde Lawal',
       curatorRole: 'Emeritus Curator of African Sacred Arts',
       rating: 4.9,
-      image: 'https://images.unsplash.com/photo-1561214115-f2f134cc4912?auto=format&fit=crop&q=80&w=1000',
+      image: 'https://images.unsplash.com/photo-1561214115-f2f134cc4912?auto=format&fit=crop&q=95&w=2400',
       curatorCritique: 'Chief Ogundele breathes ancestral vitality into seasoned Iroko. The minimalist chiseled planes and brass inlays provide a profound dialogue between the sacred realm and fine sculpture.',
       exhibitionHall: 'Sacred Yoruba Ceremonial Sculpture'
     }

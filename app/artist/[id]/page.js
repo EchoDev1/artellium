@@ -118,7 +118,7 @@ export default function MasterArtistProfilePage() {
   const country = userMatch?.country || sellerMatch?.country || firstArt?.country || 'Nigeria';
   const city = userMatch?.city || sellerMatch?.city || firstArt?.city || 'Lagos';
   const countryFlag = getCountryFlag(country);
-  const avatar = userMatch?.avatar_url || sellerMatch?.avatar_url || firstArt?.artistAvatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=600';
+  const avatar = userMatch?.avatar_url || sellerMatch?.avatar_url || firstArt?.artistAvatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=95&w=2400';
   const guildLineage = userMatch?.guildLineage || sellerMatch?.guildLineage || 'Sovereign Guild of African Master Artisans';
   const primaryMediums = userMatch?.primaryMediums || sellerMatch?.primaryMediums || firstArt?.medium || 'Oil, Acrylic, 24K Gold Leaf & Natural Ochres on Linen';
   const exhibitionsHistory = userMatch?.exhibitionsHistory || sellerMatch?.exhibitionsHistory || 'Venice Biennale African Pavilion, Dakar Biennale (Dak\'Art), Lagos National Museum';

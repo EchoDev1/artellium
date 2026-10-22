@@ -2,6 +2,8 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
+import { useStore } from '@/context/store-context';
+import { INITIAL_CONTACT_CONFIG } from '@/lib/mock-data';
 import { 
   Mail, 
   Phone, 
@@ -13,10 +15,15 @@ import {
   Building2,
   Globe,
   HelpCircle,
-  ShieldCheck
+  ShieldCheck,
+  Headphones,
+  ShieldAlert
 } from 'lucide-react';
 
 export default function ContactPage() {
+  const { contactConfig } = useStore();
+  const cfg = contactConfig || INITIAL_CONTACT_CONFIG;
+
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -38,59 +45,8 @@ export default function ContactPage() {
     }, 600);
   };
 
-  const offices = [
-    {
-      city: 'Lagos Office & Gallery',
-      country: 'Nigeria 🇳🇬',
-      address: '14 Queen Amina Way, Victoria Island, Lagos',
-      phone: '+234 1 888 2783',
-      hours: 'Mon – Fri: 9:00 AM – 6:00 PM WAT'
-    },
-    {
-      city: 'Accra Curatorial Hub',
-      country: 'Ghana 🇬🇭',
-      address: '7 Kwame Nkrumah Avenue, Airport Residential, Accra',
-      phone: '+233 30 299 4410',
-      hours: 'Mon – Fri: 9:00 AM – 6:00 PM GMT'
-    },
-    {
-      city: 'Johannesburg Regional Bureau',
-      country: 'South Africa 🇿🇦',
-      address: '42 Jan Smuts Avenue, Rosebank, Johannesburg',
-      phone: '+27 11 447 9002',
-      hours: 'Mon – Fri: 9:00 AM – 5:30 PM SAST'
-    },
-    {
-      city: 'London Representative Office',
-      country: 'United Kingdom 🇬🇧',
-      address: '28 Old Bond Street, Mayfair, London W1S 4DR',
-      phone: '+44 20 7946 0880',
-      hours: 'Mon – Fri: 9:00 AM – 5:00 PM GMT'
-    }
-  ];
-
-  const contactChannels = [
-    {
-      title: 'Customer Support & Orders',
-      email: 'support@artellium.com',
-      desc: 'Assistance with orders, delivery tracking, payments, and website help.'
-    },
-    {
-      title: 'Art Acquisitions & Private Sales',
-      email: 'sales@artellium.com',
-      desc: 'Private viewings, bespoke acquisitions, and corporate collections.'
-    },
-    {
-      title: 'Artist Consignments & Roster',
-      email: 'artists@artellium.com',
-      desc: 'Artist applications, portfolio reviews, and gallery representation.'
-    },
-    {
-      title: 'Press & Media Relations',
-      email: 'press@artellium.com',
-      desc: 'Media inquiries, press kits, interview requests, and event partnerships.'
-    }
-  ];
+  const offices = cfg.offices || INITIAL_CONTACT_CONFIG.offices;
+  const contactChannels = cfg.contactChannels || INITIAL_CONTACT_CONFIG.contactChannels;
 
   return (
     <main className="min-h-screen bg-[#07080A] text-slate-300 pb-24 font-sans">
@@ -98,15 +54,27 @@ export default function ContactPage() {
       {/* Top Breadcrumb & Page Header */}
       <section className="relative overflow-hidden border-b border-white/10 bg-[#0B0D13] pt-12 pb-14 px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto space-y-4">
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-art-gold/15 text-art-gold text-[10px] font-bold tracking-widest uppercase border border-art-gold/30">
+            <Headphones className="w-3.5 h-3.5 text-art-gold" />
+            <span>{cfg.headerBadge || 'DIRECT PAN-AFRICAN & GLOBAL LIAISON'}</span>
+          </div>
+
           <div className="space-y-2 max-w-3xl">
             <h1 className="font-serif text-3xl sm:text-4xl lg:text-5xl font-bold text-white tracking-wide">
-              Contact Artellium
+              {cfg.headerTitle || 'Contact Artellium Concierge'}
             </h1>
             <p className="text-sm sm:text-base text-slate-400 leading-relaxed font-sans">
-              Have questions about an artwork, need help with an order, or interested in partnering with us? Reach out through any of our channels below.
+              {cfg.headerSubtitle || 'Connect directly with our curatorial leadership, regional offices, and 24/7 sovereign acquisition concierge.'}
             </p>
           </div>
 
+          {/* Sticky Emergency / Escrow Hotline Bar */}
+          {cfg.emergencyBannerText && (
+            <div className="p-3.5 rounded-xl bg-gradient-to-r from-amber-950/80 via-[#2A1D05] to-amber-950/80 border border-art-gold/50 text-amber-200 text-xs font-bold flex items-center gap-2.5 shadow-md">
+              <ShieldAlert className="w-4 h-4 text-art-gold shrink-0 animate-pulse" />
+              <span>{cfg.emergencyBannerText}</span>
+            </div>
+          )}
         </div>
       </section>
 
@@ -117,7 +85,7 @@ export default function ContactPage() {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
           {contactChannels.map((channel, idx) => (
             <div
-              key={idx}
+              key={channel.id || idx}
               className="rounded-2xl bg-[#0D1017] border border-white/10 p-6 space-y-3 shadow-lg flex flex-col justify-between hover:border-art-gold/40 transition"
             >
               <div className="space-y-2">
@@ -148,10 +116,10 @@ export default function ContactPage() {
             <div className="space-y-1 border-b border-white/10 pb-4">
               <h2 className="font-serif text-2xl font-bold text-white flex items-center gap-2">
                 <MessageSquare className="w-5 h-5 text-art-gold" />
-                <span>Send Us a Message</span>
+                <span>{cfg.formTitle || 'Send Us a Message'}</span>
               </h2>
               <p className="text-xs text-slate-400">
-                Fill in the form below and our team will get back to you within 24 hours.
+                {cfg.formSubtitle || 'Fill in the form below and our team will get back to you within 24 hours.'}
               </p>
             </div>
 
@@ -185,19 +153,18 @@ export default function ContactPage() {
                     <input
                       type="text"
                       required
-                      placeholder="John Doe"
+                      placeholder="e.g. Amina Bello"
                       value={formData.name}
                       onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                       className="w-full bg-[#08090D] border border-white/15 rounded-xl p-3 text-white placeholder-slate-500 focus:outline-none focus:border-art-gold transition"
                     />
                   </div>
-
                   <div>
                     <label className="block text-slate-300 mb-1 font-medium">Email Address *</label>
                     <input
                       type="email"
                       required
-                      placeholder="john@example.com"
+                      placeholder="e.g. amina@example.com"
                       value={formData.email}
                       onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                       className="w-full bg-[#08090D] border border-white/15 rounded-xl p-3 text-white placeholder-slate-500 focus:outline-none focus:border-art-gold transition"
@@ -210,13 +177,12 @@ export default function ContactPage() {
                     <label className="block text-slate-300 mb-1 font-medium">Phone Number (Optional)</label>
                     <input
                       type="tel"
-                      placeholder="+234 800 000 0000"
+                      placeholder="e.g. +234 801 234 5678"
                       value={formData.phone}
                       onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                      className="w-full bg-[#08090D] border border-white/15 rounded-xl p-3 text-white placeholder-slate-500 focus:outline-none focus:border-art-gold transition"
+                      className="w-full bg-[#08090D] border border-white/15 rounded-xl p-3 text-white placeholder-slate-500 focus:outline-none focus:border-art-gold transition font-mono"
                     />
                   </div>
-
                   <div>
                     <label className="block text-slate-300 mb-1 font-medium">Inquiry Type</label>
                     <select
@@ -225,10 +191,13 @@ export default function ContactPage() {
                       className="w-full bg-[#08090D] border border-white/15 rounded-xl p-3 text-white focus:outline-none focus:border-art-gold transition cursor-pointer"
                     >
                       <option value="general">General Inquiry</option>
-                      <option value="buying">Buying Art / Private Acquisition</option>
-                      <option value="selling">Selling / Consigning Artwork</option>
-                      <option value="orders">Order & Delivery Assistance</option>
-                      <option value="press">Press & Partnerships</option>
+                      <option value="orders">Artwork Order / Delivery</option>
+                      <option value="acquisitions">Private Art Acquisition</option>
+                      <option value="consignments">Artist Consignment / Listing</option>
+                      <option value="auctions">Live Auctions & Bidding</option>
+                      <option value="exhibitions">Virtual & Physical Exhibitions</option>
+                      <option value="press">Press & Media</option>
+                      <option value="partnership">Corporate / Institutional Partnership</option>
                     </select>
                   </div>
                 </div>
@@ -293,7 +262,7 @@ export default function ContactPage() {
 
               <div className="space-y-5">
                 {offices.map((office, idx) => (
-                  <div key={idx} className="space-y-1.5 text-xs">
+                  <div key={office.id || idx} className="space-y-1.5 text-xs">
                     <div className="flex items-center justify-between">
                       <span className="font-bold text-white font-serif text-sm">
                         {office.city}

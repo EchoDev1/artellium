@@ -72,7 +72,7 @@ export default function FlashDealsPage() {
       discountPercent: 25,
       availableUnits: 1,
       claimedPercent: 75,
-      image: 'https://images.unsplash.com/photo-1561214115-f2f134cc4912?auto=format&fit=crop&q=80&w=1000',
+      image: 'https://images.unsplash.com/photo-1561214115-f2f134cc4912?auto=format&fit=crop&q=95&w=2400',
       description: 'Sacred Yoruba ceremonial carving with hand-hammered brass inlay, offering exceptional presence and cultural lineage.'
     },
     {
@@ -87,7 +87,7 @@ export default function FlashDealsPage() {
       discountPercent: 20,
       availableUnits: 2,
       claimedPercent: 60,
-      image: 'https://images.unsplash.com/photo-1579783900882-c0d3dad7b119?auto=format&fit=crop&q=80&w=1000',
+      image: 'https://images.unsplash.com/photo-1579783900882-c0d3dad7b119?auto=format&fit=crop&q=95&w=2400',
       description: 'Atmospheric North African portraiture exploring light and Berber heritage with authentic 22K gold dust accents.'
     },
     {
@@ -102,7 +102,7 @@ export default function FlashDealsPage() {
       discountPercent: 25,
       availableUnits: 3,
       claimedPercent: 70,
-      image: 'https://images.unsplash.com/photo-1541701494587-cb58502866ab?auto=format&fit=crop&q=80&w=1000',
+      image: 'https://images.unsplash.com/photo-1541701494587-cb58502866ab?auto=format&fit=crop&q=95&w=2400',
       description: 'Intricate Uli-inspired geometric expressions utilizing organic riverbed minerals and raw linen.'
     },
     {
@@ -117,7 +117,7 @@ export default function FlashDealsPage() {
       discountPercent: 20,
       availableUnits: 1,
       claimedPercent: 85,
-      image: 'https://images.unsplash.com/photo-1518998053901-5348d3961a04?auto=format&fit=crop&q=80&w=1000',
+      image: 'https://images.unsplash.com/photo-1518998053901-5348d3961a04?auto=format&fit=crop&q=95&w=2400',
       description: 'Dramatic desert composition capturing Tuareg nomadic life with master-grade archival preservation.'
     },
     {
@@ -132,7 +132,7 @@ export default function FlashDealsPage() {
       discountPercent: 23,
       availableUnits: 1,
       claimedPercent: 90,
-      image: 'https://images.unsplash.com/photo-1579783902614-a3fb3927b675?auto=format&fit=crop&q=80&w=1000',
+      image: 'https://images.unsplash.com/photo-1579783902614-a3fb3927b675?auto=format&fit=crop&q=95&w=2400',
       description: '24K gold leaf masterwork exploring West African royal lineage, exhibited at international biennales.'
     },
     {
@@ -147,7 +147,7 @@ export default function FlashDealsPage() {
       discountPercent: 25,
       availableUnits: 2,
       claimedPercent: 65,
-      image: 'https://images.unsplash.com/photo-1544717305-2782549b5136?auto=format&fit=crop&q=80&w=1000',
+      image: 'https://images.unsplash.com/photo-1544717305-2782549b5136?auto=format&fit=crop&q=95&w=2400',
       description: 'Traditional lost-wax bronze casting representing imperial court heraldry with certified provenance.'
     }
   ];

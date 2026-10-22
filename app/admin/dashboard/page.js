@@ -84,6 +84,9 @@ import AdminPayoutGovernance from '@/components/AdminPayoutGovernance';
 import AdminImageDiagnostics from '@/components/AdminImageDiagnostics';
 import AdminDemoTransitionSuite from '@/components/AdminDemoTransitionSuite';
 import AdminVideoModeration from '@/components/AdminVideoModeration';
+import AdminAboutCms from '@/components/AdminAboutCms';
+import AdminPoliciesCms from '@/components/AdminPoliciesCms';
+import AdminContactCms from '@/components/AdminContactCms';
 import ArtworkPhotoUploader from '@/components/ArtworkPhotoUploader';
 import { 
   TRACKING_STAGES, 
@@ -250,7 +253,7 @@ export default function AdminDashboardPage() {
     shipsTo: ['Africa', 'Europe', 'North America'],
     verificationBadge: 'gold',
     studioNotes: '',
-    image: 'https://images.unsplash.com/photo-1579783902614-a3fb3927b675?auto=format&fit=crop&q=80&w=1000',
+    image: 'https://images.unsplash.com/photo-1579783902614-a3fb3927b675?auto=format&fit=crop&q=95&w=2400',
     status: 'available'
   });
 

@@ -43,7 +43,7 @@ export default function Under1MPage() {
       dimensions: '80 × 60 cm',
       price: 465000, // ₦465K
       country: 'Nigeria 🇳🇬',
-      image: 'https://images.unsplash.com/photo-1541701494587-cb58502866ab?auto=format&fit=crop&q=80&w=1000',
+      image: 'https://images.unsplash.com/photo-1541701494587-cb58502866ab?auto=format&fit=crop&q=95&w=2400',
       description: 'Intricate Uli-inspired geometric expressions utilizing organic riverbed minerals on stretched linen.'
     },
     {
@@ -55,7 +55,7 @@ export default function Under1MPage() {
       dimensions: '120 × 90 cm',
       price: 950000, // ₦950K
       country: 'South Africa 🇿🇦',
-      image: 'https://images.unsplash.com/photo-1541701494587-cb58502866ab?auto=format&fit=crop&q=80&w=1000',
+      image: 'https://images.unsplash.com/photo-1541701494587-cb58502866ab?auto=format&fit=crop&q=95&w=2400',
       description: 'Rich earth pigments harvested from Kwazulu-Natal rendered into sweeping savannah landscapes.'
     },
     {
@@ -67,7 +67,7 @@ export default function Under1MPage() {
       dimensions: '75 × 75 cm',
       price: 680000, // ₦680K
       country: 'Nigeria 🇳🇬',
-      image: 'https://images.unsplash.com/photo-1579783900882-c0d3dad7b119?auto=format&fit=crop&q=80&w=1000',
+      image: 'https://images.unsplash.com/photo-1579783900882-c0d3dad7b119?auto=format&fit=crop&q=95&w=2400',
       description: 'Dynamic urban color palette celebrating the hustle and expressive energy of Lagos market squares.'
     },
     {
@@ -79,7 +79,7 @@ export default function Under1MPage() {
       dimensions: '60 × 40 cm',
       price: 285000, // ₦285K
       country: 'Rwanda 🇷🇼',
-      image: 'https://images.unsplash.com/photo-1518998053901-5348d3961a04?auto=format&fit=crop&q=80&w=1000',
+      image: 'https://images.unsplash.com/photo-1518998053901-5348d3961a04?auto=format&fit=crop&q=95&w=2400',
       description: 'Atmospheric early morning mist rising over the hills of Kigali, hand-printed on museum cotton rag.'
     },
     {
@@ -91,7 +91,7 @@ export default function Under1MPage() {
       dimensions: '45 × 30 × 30 cm',
       price: 520000, // ₦520K
       country: 'Nigeria 🇳🇬',
-      image: 'https://images.unsplash.com/photo-1561214115-f2f134cc4912?auto=format&fit=crop&q=80&w=1000',
+      image: 'https://images.unsplash.com/photo-1561214115-f2f134cc4912?auto=format&fit=crop&q=95&w=2400',
       description: 'Functional high-fire stoneware inspired by ancient Nok ceramic traditions with natural indigo tint.'
     },
     {
@@ -103,7 +103,7 @@ export default function Under1MPage() {
       dimensions: '140 × 90 cm',
       price: 340000, // ₦340K
       country: 'Nigeria 🇳🇬',
-      image: 'https://images.unsplash.com/photo-1579783902614-a3fb3927b675?auto=format&fit=crop&q=80&w=1000',
+      image: 'https://images.unsplash.com/photo-1579783902614-a3fb3927b675?auto=format&fit=crop&q=95&w=2400',
       description: 'Traditional resist-dyed textile artwork bearing ancestral Yoruba proverbs and botanical motifs.'
     }
   ];

@@ -227,7 +227,7 @@ export default function ProvenanceLedgerPage() {
       status: 'Vault Verified & Transferred',
       hologramType: '24K Gold Emissary Hologram',
       curatorNotes: 'Sealed with royal Akan master insignia under WEMA fiduciary protocol.',
-      image: 'https://images.unsplash.com/photo-1579783902614-a3fb3927b675?auto=format&fit=crop&q=80&w=600'
+      image: 'https://images.unsplash.com/photo-1579783902614-a3fb3927b675?auto=format&fit=crop&q=95&w=2400'
     },
     {
       id: 'PL-2026-77319',
@@ -246,7 +246,7 @@ export default function ProvenanceLedgerPage() {
       status: 'Vault Verified & Transferred',
       hologramType: 'Imperial Bronze Seal',
       curatorNotes: 'Guild of Benin foundry certification included with physical QR stamp.',
-      image: 'https://images.unsplash.com/photo-1544717305-2782549b5136?auto=format&fit=crop&q=80&w=600'
+      image: 'https://images.unsplash.com/photo-1544717305-2782549b5136?auto=format&fit=crop&q=95&w=2400'
     },
     {
       id: 'PL-2026-66204',
@@ -265,7 +265,7 @@ export default function ProvenanceLedgerPage() {
       status: 'Vault Verified & Transferred',
       hologramType: 'Pan-African Curatorial Hologram',
       curatorNotes: 'Archival accession verified by the Pan-African Curatorial Board.',
-      image: 'https://images.unsplash.com/photo-1561214115-f2f134cc4912?auto=format&fit=crop&q=80&w=600'
+      image: 'https://images.unsplash.com/photo-1561214115-f2f134cc4912?auto=format&fit=crop&q=95&w=2400'
     },
     {
       id: 'PL-2026-55112',
@@ -284,7 +284,7 @@ export default function ProvenanceLedgerPage() {
       status: 'Vault Verified & Transferred',
       hologramType: 'Sovereign Diamond Stamp',
       curatorNotes: 'Atlas Mountain mineral pigment authenticity certified.',
-      image: 'https://images.unsplash.com/photo-1579783900882-c0d3dad7b119?auto=format&fit=crop&q=80&w=600'
+      image: 'https://images.unsplash.com/photo-1579783900882-c0d3dad7b119?auto=format&fit=crop&q=95&w=2400'
     }
   ];
 

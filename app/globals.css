@@ -33,6 +33,20 @@ body {
   background: #B58A2A;
 }
 
+/* Fine-Art High-Fidelity Image Rendering */
+img {
+  image-rendering: -webkit-optimize-contrast;
+  image-rendering: high-quality;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Crisp & Vibrant Fine Art Gallery Rendering */
+.artwork-vibrant,
+.art-card-img {
+  filter: contrast(1.05) saturate(1.08) brightness(1.02);
+}
+
 /* Glassmorphism Styles */
 .glass-panel {
   background: rgba(15, 17, 23, 0.75);

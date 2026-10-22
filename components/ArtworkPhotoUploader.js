@@ -56,11 +56,11 @@ export default function ArtworkPhotoUploader({
     setErrorMessage('');
 
     try {
-      // Auto-compress and resize image client-side to prevent storage overflows
+      // High-Fidelity Studio Master Image Processing (Up to 2800px Ultra-HD at 96% Quality)
       const result = await compressAndOptimizeImage(file, {
-        maxWidth: 1600,
-        maxHeight: 1600,
-        quality: 0.85
+        maxWidth: 2800,
+        maxHeight: 2800,
+        quality: 0.96
       });
 
       onMainImageChange(result.dataUrl);
@@ -94,9 +94,9 @@ export default function ArtworkPhotoUploader({
 
     try {
       const result = await compressAndOptimizeImage(file, {
-        maxWidth: 1200,
-        maxHeight: 1200,
-        quality: 0.82
+        maxWidth: 2400,
+        maxHeight: 2400,
+        quality: 0.95
       });
 
       const updated = [...(additionalImages || []), result.dataUrl];
@@ -146,8 +146,9 @@ export default function ArtworkPhotoUploader({
             Artwork Photography & Studio Proof Suite
           </h4>
         </div>
-        <span className="text-[11px] font-mono text-slate-500">
-          Zero-Error Client Auto-Compression Active
+        <span className="text-[11px] font-mono text-emerald-600 font-bold flex items-center gap-1">
+          <Sparkles className="w-3 h-3 text-art-gold" />
+          <span>Studio Master Ultra-HD Fidelity Active (2800px / 96% Quality)</span>
         </span>
       </div>
 

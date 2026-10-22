@@ -50,7 +50,7 @@ export default function VerifiedMastersPage() {
         title: 'The Ancestral Horizon',
         medium: 'Oil & Gold Leaf on Canvas',
         price: 1850000,
-        image: 'https://images.unsplash.com/photo-1579783902614-a3fb3927b675?auto=format&fit=crop&q=80&w=1000'
+        image: 'https://images.unsplash.com/photo-1579783902614-a3fb3927b675?auto=format&fit=crop&q=95&w=2400'
       }
     },
     {
@@ -70,7 +70,7 @@ export default function VerifiedMastersPage() {
         title: 'Warrior of the Bronze Empire',
         medium: 'Cast Bronze & Ebony Wood Base',
         price: 3200000,
-        image: 'https://images.unsplash.com/photo-1544717305-2782549b5136?auto=format&fit=crop&q=80&w=1000'
+        image: 'https://images.unsplash.com/photo-1544717305-2782549b5136?auto=format&fit=crop&q=95&w=2400'
       }
     },
     {
@@ -90,7 +90,7 @@ export default function VerifiedMastersPage() {
         title: 'Spirit of the Mask',
         medium: 'Carved Iroko Wood & Brass Inlay',
         price: 1450000,
-        image: 'https://images.unsplash.com/photo-1561214115-f2f134cc4912?auto=format&fit=crop&q=80&w=1000'
+        image: 'https://images.unsplash.com/photo-1561214115-f2f134cc4912?auto=format&fit=crop&q=95&w=2400'
       }
     },
     {
@@ -110,7 +110,7 @@ export default function VerifiedMastersPage() {
         title: 'Children of the Sun',
         medium: 'Acrylic & Gold Dust on Canvas',
         price: 1680000,
-        image: 'https://images.unsplash.com/photo-1579783900882-c0d3dad7b119?auto=format&fit=crop&q=80&w=1000'
+        image: 'https://images.unsplash.com/photo-1579783900882-c0d3dad7b119?auto=format&fit=crop&q=95&w=2400'
       }
     }
   ];

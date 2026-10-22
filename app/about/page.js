@@ -2,6 +2,8 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useStore } from '@/context/store-context';
+import { INITIAL_ABOUT_CONFIG } from '@/lib/mock-data';
 import { 
   Sparkles, 
   Award, 
@@ -26,6 +28,8 @@ import {
 
 export default function AboutPage() {
   const [activeHash, setActiveHash] = useState('goal');
+  const { aboutConfig } = useStore();
+  const cfg = aboutConfig || INITIAL_ABOUT_CONFIG;
 
   // Handle hash scrolling on mount or URL change
   useEffect(() => {
@@ -48,12 +52,12 @@ export default function AboutPage() {
   }, []);
 
   const navItems = [
-    { id: 'goal', label: 'Artellium Goal', icon: Target },
-    { id: 'who-we-are', label: 'Who We Are', icon: Users },
-    { id: 'services', label: 'Our Services', icon: ShoppingBag },
-    { id: 'vision', label: 'Our Vision', icon: Eye },
-    { id: 'mission', label: 'Our Mission', icon: Compass },
-    { id: 'core-values', label: 'Our Core Values', icon: Lightbulb },
+    { id: 'goal', label: cfg.goalTitle || 'Artellium Goal', icon: Target },
+    { id: 'who-we-are', label: cfg.whoWeAreTitle || 'Who We Are', icon: Users },
+    { id: 'services', label: cfg.servicesTitle || 'Our Services', icon: ShoppingBag },
+    { id: 'vision', label: cfg.visionTitle || 'Our Vision', icon: Eye },
+    { id: 'mission', label: cfg.missionTitle || 'Our Mission', icon: Compass },
+    { id: 'core-values', label: cfg.coreValuesTitle || 'Our Core Values', icon: Lightbulb },
   ];
 
   return (
@@ -70,20 +74,20 @@ export default function AboutPage() {
           <div className="max-w-4xl space-y-4">
             <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-art-gold/15 text-art-gold text-[10px] font-bold tracking-widest uppercase border border-art-gold/30">
               <Sparkles className="w-3.5 h-3.5" />
-              <span>PAN-AFRICAN DIGITAL ART MARKETPLACE & CREATIVE ENTERPRISE</span>
+              <span>{cfg.badge || 'PAN-AFRICAN DIGITAL ART MARKETPLACE & CREATIVE ENTERPRISE'}</span>
             </div>
             
             <h1 className="font-serif text-3xl sm:text-5xl lg:text-6xl font-black text-white tracking-wide leading-tight">
-              Where Art Meets <span className="text-gradient-gold">Culture, Commerce & Innovation.</span>
+              {cfg.title || 'Where Art Meets Culture, Commerce & Innovation.'}
             </h1>
 
             {/* Signature Quote */}
             <div className="p-5 sm:p-6 rounded-2xl bg-black/60 border border-art-gold/40 shadow-gold-glow backdrop-blur-md space-y-2">
               <p className="font-serif text-base sm:text-xl text-amber-200 italic leading-relaxed">
-                “At Artellium, we believe that every artwork tells a story, every artist has a voice and a face”.
+                {cfg.creed || '“At Artellium, we believe that every artwork tells a story, every artist has a voice and a face”.'}
               </p>
               <span className="text-[11px] text-art-gold font-mono font-bold tracking-wider uppercase block">
-                — The Artellium Creed
+                {cfg.creedAuthor || '— The Artellium Creed'}
               </span>
             </div>
           </div>
@@ -138,58 +142,50 @@ export default function AboutPage() {
               </div>
               <div>
                 <span className="text-[10px] font-mono font-bold text-art-gold uppercase tracking-widest block">
-                  STRATEGIC MANDATE
+                  {cfg.goalBadge || 'STRATEGIC MANDATE'}
                 </span>
                 <h2 className="font-serif text-2xl sm:text-4xl font-bold text-white">
-                  Artellium Goal
+                  {cfg.goalTitle || 'Artellium Goal'}
                 </h2>
               </div>
             </div>
 
             <span className="px-3.5 py-1 rounded-full bg-art-gold/10 text-art-gold border border-art-gold/30 text-xs font-bold uppercase tracking-wider shrink-0">
-              Creative Enterprise
+              {cfg.goalTag || 'Creative Enterprise'}
             </span>
           </div>
 
           <div className="space-y-4 text-sm sm:text-base text-slate-300 leading-relaxed max-w-4xl">
             <blockquote className="p-4 rounded-xl bg-black/40 border-l-4 border-art-gold text-amber-100 font-serif italic text-base sm:text-lg">
-              “At Artellium, we believe that every artwork tells a story, every artist has a voice and a face”.
+              {cfg.goalQuote || cfg.creed || '“At Artellium, we believe that every artwork tells a story, every artist has a voice and a face”.'}
             </blockquote>
 
             <p>
-              Artellium is a digital art marketplace and creative enterprise dedicated to transforming the way art is discovered, appreciated, traded and preserved. We provide an innovative platform where artists, collectors, investors and art enthusiasts connect through technology to buy, sell, celebrate creativity and cultural heritage.
+              {cfg.goalParagraph1 || 'Artellium is a digital art marketplace and creative enterprise dedicated to transforming the way art is discovered, appreciated, traded and preserved. We provide an innovative platform where artists, collectors, investors and art enthusiasts connect through technology to buy, sell, celebrate creativity and cultural heritage.'}
             </p>
 
             <p>
-              Artellium serves as a comprehensive ecosystem for the buying and selling of artworks and crafts, online and physical exhibitions, art auctions, artist promotion, creative storytelling, and the preservation of artistic history. By combining digital innovation with traditional artistic values, Artellium creates opportunities for artists to gain global visibility while making authentic works accessible to collectors and audiences worldwide.
+              {cfg.goalParagraph2 || 'Artellium serves as a comprehensive ecosystem for the buying and selling of artworks and crafts, online and physical exhibitions, art auctions, artist promotion, creative storytelling, and the preservation of artistic history. By combining digital innovation with traditional artistic values, Artellium creates opportunities for artists to gain global visibility while making authentic works accessible to collectors and audiences worldwide.'}
             </p>
           </div>
 
           {/* Ecosystem Highlights */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 pt-4 border-t border-white/10 text-xs">
-            <div className="p-4 rounded-2xl bg-black/40 border border-white/5 space-y-1.5">
-              <Sparkles className="w-4 h-4 text-art-gold" />
-              <span className="font-bold text-white block">Art & Crafts Marketplace</span>
-              <p className="text-[11px] text-slate-400">Authentic buying & selling of original masterworks.</p>
-            </div>
-
-            <div className="p-4 rounded-2xl bg-black/40 border border-white/5 space-y-1.5">
-              <Eye className="w-4 h-4 text-emerald-400" />
-              <span className="font-bold text-white block">Hybrid Exhibitions</span>
-              <p className="text-[11px] text-slate-400">3D WebGL virtual halls and physical museum showcases.</p>
-            </div>
-
-            <div className="p-4 rounded-2xl bg-black/40 border border-white/5 space-y-1.5">
-              <Flame className="w-4 h-4 text-red-400" />
-              <span className="font-bold text-white block">Live Arena Auctions</span>
-              <p className="text-[11px] text-slate-400">Real-time competitive bidding and instant settlement.</p>
-            </div>
-
-            <div className="p-4 rounded-2xl bg-black/40 border border-white/5 space-y-1.5">
-              <BookOpen className="w-4 h-4 text-cyan-400" />
-              <span className="font-bold text-white block">History Preservation</span>
-              <p className="text-[11px] text-slate-400">Immutable provenance records and digital certificates.</p>
-            </div>
+            {(cfg.ecosystemHighlights || [
+              { title: 'Art & Crafts Marketplace', desc: 'Authentic buying & selling of original masterworks.', icon: 'Sparkles' },
+              { title: 'Hybrid Exhibitions', desc: '3D WebGL virtual halls and physical museum showcases.', icon: 'Eye' },
+              { title: 'Live Arena Auctions', desc: 'Real-time competitive bidding and instant settlement.', icon: 'Flame' },
+              { title: 'History Preservation', desc: 'Immutable provenance records and digital certificates.', icon: 'BookOpen' }
+            ]).map((eco, idx) => (
+              <div key={eco.id || idx} className="p-4 rounded-2xl bg-black/40 border border-white/5 space-y-1.5">
+                {idx === 0 && <Sparkles className="w-4 h-4 text-art-gold" />}
+                {idx === 1 && <Eye className="w-4 h-4 text-emerald-400" />}
+                {idx === 2 && <Flame className="w-4 h-4 text-red-400" />}
+                {idx >= 3 && <BookOpen className="w-4 h-4 text-cyan-400" />}
+                <span className="font-bold text-white block">{eco.title}</span>
+                <p className="text-[11px] text-slate-400">{eco.desc}</p>
+              </div>
+            ))}
           </div>
         </section>
 
@@ -211,22 +207,22 @@ export default function AboutPage() {
               </div>
               <div>
                 <span className="text-[10px] font-mono font-bold text-blue-400 uppercase tracking-widest block">
-                  IDENTITY & COMMITMENT
+                  {cfg.whoWeAreBadge || 'IDENTITY & COMMITMENT'}
                 </span>
                 <h2 className="font-serif text-2xl sm:text-4xl font-bold text-white">
-                  Who We Are
+                  {cfg.whoWeAreTitle || 'Who We Are'}
                 </h2>
               </div>
             </div>
 
             <span className="px-3.5 py-1 rounded-full bg-blue-500/10 text-blue-300 border border-blue-500/30 text-xs font-bold uppercase tracking-wider shrink-0">
-              Artellium Limited
+              {cfg.whoWeAreTag || 'Artellium Limited'}
             </span>
           </div>
 
           <div className="space-y-4 text-sm sm:text-base text-slate-300 leading-relaxed max-w-4xl">
             <p className="font-medium text-white text-base sm:text-lg">
-              Artellium Limited is more than an online art marketplace. It is a creative hub where art meets commerce, education, culture and technology.
+              {cfg.whoWeAreLead || 'Artellium Limited is more than an online art marketplace. It is a creative hub where art meets commerce, education, culture and technology.'}
             </p>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-2">
@@ -234,10 +230,10 @@ export default function AboutPage() {
               <div className="p-6 rounded-2xl bg-black/40 border border-white/10 space-y-3">
                 <div className="flex items-center gap-2 text-art-gold font-bold text-sm">
                   <Award className="w-4 h-4" />
-                  <span>For Emerging & Established Artists</span>
+                  <span>{cfg.forArtistsTitle || 'For Emerging & Established Artists'}</span>
                 </div>
                 <p className="text-xs sm:text-sm text-slate-400 leading-relaxed">
-                  We are committed to creating sustainable opportunities for emerging and established artists by providing a secure and transparent platform that enables them to showcase their works, build their brands, engage audiences and generate income.
+                  {cfg.forArtistsText || 'We are committed to creating sustainable opportunities for emerging and established artists by providing a secure and transparent platform that enables them to showcase their works, build their brands, engage audiences and generate income.'}
                 </p>
               </div>
 
@@ -245,10 +241,10 @@ export default function AboutPage() {
               <div className="p-6 rounded-2xl bg-black/40 border border-white/10 space-y-3">
                 <div className="flex items-center gap-2 text-emerald-400 font-bold text-sm">
                   <ShieldCheck className="w-4 h-4" />
-                  <span>For Collectors & Discerning Buyers</span>
+                  <span>{cfg.forCollectorsTitle || 'For Collectors & Discerning Buyers'}</span>
                 </div>
                 <p className="text-xs sm:text-sm text-slate-400 leading-relaxed">
-                  For collectors and buyers, we provide access to carefully curated original artworks, authentic crafts, limited editions, collectibles and exclusive pieces from diverse artistic traditions and contemporary Creators.
+                  {cfg.forCollectorsText || 'For collectors and buyers, we provide access to carefully curated original artworks, authentic crafts, limited editions, collectibles and exclusive pieces from diverse artistic traditions and contemporary Creators.'}
                 </p>
               </div>
             </div>
@@ -273,23 +269,23 @@ export default function AboutPage() {
               </div>
               <div>
                 <span className="text-[10px] font-mono font-bold text-art-gold uppercase tracking-widest block">
-                  DIGITAL COMMERCE & DISCOVERY
+                  {cfg.servicesBadge || 'DIGITAL COMMERCE & DISCOVERY'}
                 </span>
                 <h2 className="font-serif text-2xl sm:text-4xl font-bold text-white">
-                  Our Services
+                  {cfg.servicesTitle || 'Our Services'}
                 </h2>
               </div>
             </div>
 
             <span className="px-3.5 py-1 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 text-xs font-bold uppercase tracking-wider shrink-0">
-              Online Art Marketplace
+              {cfg.servicesTag || 'Online Art Marketplace'}
             </span>
           </div>
 
           <div className="space-y-3 max-w-4xl">
-            <h3 className="font-serif text-xl font-bold text-white">Online Art Marketplace</h3>
+            <h3 className="font-serif text-xl font-bold text-white">{cfg.servicesTag || 'Online Art Marketplace'}</h3>
             <p className="text-sm sm:text-base text-slate-300 leading-relaxed">
-              Artellium provides a secure digital marketplace where collectors and buyers can discover and purchase:
+              {cfg.servicesSubtitle || 'Artellium provides a secure digital marketplace where collectors and buyers can discover and purchase authentic African masterworks, sculpture, prints, and traditional craft.'}
             </p>
           </div>
 
@@ -321,7 +317,7 @@ export default function AboutPage() {
             ))}
           </div>
 
-          {/* Service Pillar 2: Art Exhibitions & SDGs Sustainability */}
+          {/* Service Pillar 2: Art Exhibitions */}
           <div className="pt-8 border-t border-white/10 space-y-6">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-white/10 pb-4">
               <div className="flex items-center gap-3">
@@ -333,26 +329,22 @@ export default function AboutPage() {
                     SUSTAINABLE CURATION & GLOBAL REACH
                   </span>
                   <h3 className="font-serif text-xl sm:text-2xl font-bold text-white">
-                    Art Exhibitions
+                    {cfg.exhibitionsTitle || 'Art Exhibitions'}
                   </h3>
                 </div>
               </div>
 
               <span className="px-3.5 py-1 rounded-full bg-emerald-500/10 text-emerald-300 border border-emerald-500/30 text-xs font-bold uppercase tracking-wider shrink-0">
-                SDGs Dialogues for Sustainable Living
+                {cfg.exhibitionsBadge || 'SDGs Dialogues for Sustainable Living'}
               </span>
             </div>
 
             <div className="space-y-3 max-w-4xl">
               <p className="text-sm sm:text-base text-slate-300 leading-relaxed font-medium">
-                We curate exhibitions that showcase artistic excellence while connecting creators with wider audiences through various SDGs discussions for a sustainable living.
-              </p>
-              <p className="text-xs sm:text-sm text-art-gold font-mono font-bold uppercase tracking-wider">
-                Our exhibitions include:
+                {cfg.exhibitionsLead || 'We curate exhibitions that showcase artistic excellence while connecting creators with wider audiences through various SDGs discussions for a sustainable living.'}
               </p>
             </div>
 
-            {/* The 4 Exhibition Types */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 pt-1">
               {[
                 {
@@ -425,19 +417,19 @@ export default function AboutPage() {
                     COMPETITIVE BIDDING & MASTERPIECE ACQUISITIONS
                   </span>
                   <h3 className="font-serif text-xl sm:text-2xl font-bold text-white">
-                    Online Auction House
+                    {cfg.auctionsTitle || 'Online Auction House'}
                   </h3>
                 </div>
               </div>
 
               <span className="px-3.5 py-1 rounded-full bg-red-500/10 text-red-300 border border-red-500/30 text-xs font-bold uppercase tracking-wider shrink-0">
-                Live, Upcoming & Past Auctions
+                {cfg.auctionsBadge || 'Live, Upcoming & Past Auctions'}
               </span>
             </div>
 
             <div className="space-y-3 max-w-4xl">
               <p className="text-sm sm:text-base text-slate-300 leading-relaxed font-medium">
-                Our Online Auction House provides authenticated collectors, museum trusts, and international patrons with transparent real-time bidding for high-value African masterworks, lost-wax bronze castings, and limited museum editions.
+                {cfg.auctionsLead || 'Our Online Auction House provides authenticated collectors, museum trusts, and international patrons with transparent real-time bidding for high-value African masterworks, lost-wax bronze castings, and limited museum editions.'}
               </p>
             </div>
 
@@ -520,24 +512,24 @@ export default function AboutPage() {
                 </div>
                 <div>
                   <span className="text-[10px] font-mono font-bold text-art-gold uppercase tracking-widest block">
-                    FUTURE ASPIRATION
+                    {cfg.visionBadge || 'FUTURE ASPIRATION'}
                   </span>
                   <h2 className="font-serif text-2xl sm:text-3xl font-bold text-white">
-                    Our Vision
+                    {cfg.visionTitle || 'Our Vision'}
                   </h2>
                 </div>
               </div>
 
               <div className="p-6 rounded-2xl bg-black/50 border border-art-gold/30 space-y-3">
                 <p className="font-serif text-lg sm:text-xl font-bold text-white leading-relaxed">
-                  “To become Africa’s leading digital art marketplace and one of the world’s most trusted platforms for promoting creativity, preserving artistic heritage and connecting artists with global audiences.”
+                  {cfg.visionStatement || '“To become Africa’s leading digital art marketplace and one of the world’s most trusted platforms for promoting creativity, preserving artistic heritage and connecting artists with global audiences.”'}
                 </p>
               </div>
             </div>
 
             <div className="flex items-center gap-2 text-xs text-art-gold font-semibold pt-2">
               <CheckCircle2 className="w-4 h-4 shrink-0" />
-              <span>Pan-African Leadership · Global Reach · Trust Infrastructure</span>
+              <span>{cfg.visionPillars || 'Pan-African Leadership · Global Reach · Trust Infrastructure'}</span>
             </div>
           </section>
 
@@ -557,24 +549,24 @@ export default function AboutPage() {
                 </div>
                 <div>
                   <span className="text-[10px] font-mono font-bold text-emerald-400 uppercase tracking-widest block">
-                    CORE MANDATE
+                    {cfg.missionBadge || 'CORE MANDATE'}
                   </span>
                   <h2 className="font-serif text-2xl sm:text-3xl font-bold text-white">
-                    Our Mission
+                    {cfg.missionTitle || 'Our Mission'}
                   </h2>
                 </div>
               </div>
 
               <div className="p-6 rounded-2xl bg-black/50 border border-emerald-500/30 space-y-3">
                 <p className="font-serif text-lg sm:text-xl font-bold text-white leading-relaxed">
-                  “To expand access to art through innovative digital solutions, professional exhibitions, transparent marketplaces, educational initiatives and histories appreciation across generations.”
+                  {cfg.missionStatement || '“To expand access to art through innovative digital solutions, professional exhibitions, transparent marketplaces, educational initiatives and histories appreciation across generations.”'}
                 </p>
               </div>
             </div>
 
             <div className="flex items-center gap-2 text-xs text-emerald-400 font-semibold pt-2">
               <CheckCircle2 className="w-4 h-4 shrink-0" />
-              <span>Digital Access · Education & Preservation · Generational Legacy</span>
+              <span>{cfg.missionPillars || 'Digital Access · Education & Preservation · Generational Legacy'}</span>
             </div>
           </section>
 
@@ -598,60 +590,39 @@ export default function AboutPage() {
               </div>
               <div>
                 <span className="text-[10px] font-mono font-bold text-art-gold uppercase tracking-widest block">
-                  FOUNDATIONAL PILLARS
+                  {cfg.coreValuesBadge || 'FOUNDATIONAL PILLARS'}
                 </span>
                 <h2 className="font-serif text-2xl sm:text-4xl font-bold text-white">
-                  Our Core Values
+                  {cfg.coreValuesTitle || 'Our Core Values'}
                 </h2>
               </div>
             </div>
 
             <span className="text-xs text-slate-400 font-mono">
-              The Guiding Principles of Artellium
+              {cfg.coreValuesSubtitle || 'The Guiding Principles of Artellium'}
             </span>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            
-            {/* Value 1: Creativity */}
-            <div className="p-6 rounded-2xl bg-black/40 border border-art-gold/30 hover:border-art-gold transition space-y-3 group">
-              <div className="w-10 h-10 rounded-xl bg-art-gold/10 border border-art-gold/30 flex items-center justify-center text-art-gold group-hover:scale-110 transition">
-                <Sparkles className="w-5 h-5" />
+            {(cfg.coreValues || [
+              { title: 'Creativity', desc: 'We celebrate originality, imagination and artistic excellence.', icon: 'Sparkles' },
+              { title: 'Integrity', desc: 'We uphold transparency, authenticity, fairness and professionalism in every transaction.', icon: 'ShieldCheck' },
+              { title: 'Collaboration', desc: 'We build lasting relationships between artists, institutions, collectors, communities and creative industries.', icon: 'HeartHandshake' }
+            ]).map((val, idx) => (
+              <div key={val.id || idx} className="p-6 rounded-2xl bg-black/40 border border-art-gold/30 hover:border-art-gold transition space-y-3 group">
+                <div className="w-10 h-10 rounded-xl bg-art-gold/10 border border-art-gold/30 flex items-center justify-center text-art-gold group-hover:scale-110 transition">
+                  {idx === 0 && <Sparkles className="w-5 h-5" />}
+                  {idx === 1 && <ShieldCheck className="w-5 h-5" />}
+                  {idx >= 2 && <HeartHandshake className="w-5 h-5" />}
+                </div>
+                <h3 className="font-serif text-xl font-bold text-white">
+                  {val.title}
+                </h3>
+                <p className="text-xs sm:text-sm text-slate-400 leading-relaxed">
+                  {val.desc}
+                </p>
               </div>
-              <h3 className="font-serif text-xl font-bold text-white">
-                Creativity
-              </h3>
-              <p className="text-xs sm:text-sm text-slate-400 leading-relaxed">
-                We celebrate originality, imagination and artistic excellence.
-              </p>
-            </div>
-
-            {/* Value 2: Integrity */}
-            <div className="p-6 rounded-2xl bg-black/40 border border-emerald-500/30 hover:border-emerald-400 transition space-y-3 group">
-              <div className="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-400 group-hover:scale-110 transition">
-                <ShieldCheck className="w-5 h-5" />
-              </div>
-              <h3 className="font-serif text-xl font-bold text-white">
-                Integrity
-              </h3>
-              <p className="text-xs sm:text-sm text-slate-400 leading-relaxed">
-                We uphold transparency, authenticity, fairness and professionalism in every transaction.
-              </p>
-            </div>
-
-            {/* Value 3: Collaboration */}
-            <div className="p-6 rounded-2xl bg-black/40 border border-blue-500/30 hover:border-blue-400 transition space-y-3 group">
-              <div className="w-10 h-10 rounded-xl bg-blue-500/10 border border-blue-500/30 flex items-center justify-center text-blue-400 group-hover:scale-110 transition">
-                <HeartHandshake className="w-5 h-5" />
-              </div>
-              <h3 className="font-serif text-xl font-bold text-white">
-                Collaboration
-              </h3>
-              <p className="text-xs sm:text-sm text-slate-400 leading-relaxed">
-                We build lasting relationships between artists, institutions, collectors, communities and creative industries.
-              </p>
-            </div>
-
+            ))}
           </div>
         </section>
 
@@ -661,15 +632,15 @@ export default function AboutPage() {
         <section className="p-8 sm:p-12 rounded-3xl bg-gradient-to-r from-[#181105] via-[#0D0F15] to-[#181105] border border-art-gold/40 text-center space-y-6 shadow-2xl">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-art-gold/10 text-art-gold text-xs font-bold uppercase tracking-wider border border-art-gold/30">
             <Sparkles className="w-3.5 h-3.5" />
-            <span>JOIN THE ARTELLIUM MOVEMENT</span>
+            <span>{cfg.ctaBadge || 'JOIN THE ARTELLIUM MOVEMENT'}</span>
           </div>
 
           <h2 className="font-serif text-3xl sm:text-4xl font-bold text-white max-w-xl mx-auto">
-            Experience African Artistic Excellence
+            {cfg.ctaTitle || 'Experience African Artistic Excellence'}
           </h2>
           
           <p className="text-sm text-slate-400 max-w-lg mx-auto">
-            Discover curated masterworks, participate in live auction arena broadcasts, or partner with us to empower creators across the globe.
+            {cfg.ctaSubtitle || 'Discover curated masterworks, participate in live auction arena broadcasts, or partner with us to empower creators across the globe.'}
           </p>
 
           <div className="flex flex-wrap items-center justify-center gap-4 pt-2">

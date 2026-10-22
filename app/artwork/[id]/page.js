@@ -162,14 +162,18 @@ export default function ArtworkDetailPage() {
             </div>
           )}
 
-          <div onClick={() => setIsImageLightboxOpen(true)} title="Click to view full, complete artwork image" className="relative aspect-[4/3] rounded-3xl overflow-hidden glass-card-gold border border-art-gold/40 shadow-2xl bg-black cursor-zoom-in group/canvas">
+          <div 
+            onClick={() => setIsImageLightboxOpen(true)} 
+            title="Click to view full, complete artwork image" 
+            className="relative w-full rounded-3xl overflow-hidden glass-card-gold border border-art-gold/40 shadow-2xl bg-[#080B11] cursor-zoom-in group/canvas"
+          >
             <img
               src={activeDisplayImage}
               alt={artwork.title}
               onError={(e) => {
                 e.currentTarget.src = DEFAULT_FALLBACK_IMAGE;
               }}
-              className="w-full h-full object-cover group-hover/canvas:scale-[1.02] transition duration-500"
+              className="w-full h-auto block object-contain mx-auto artwork-vibrant group-hover/canvas:scale-[1.01] transition duration-500"
             />
             <div className="absolute bottom-4 right-4 bg-black/80 backdrop-blur-md px-3 py-1.5 rounded-xl border border-white/20 text-white text-xs font-mono flex items-center gap-1.5 shadow-lg group-hover/canvas:bg-art-gold group-hover/canvas:text-black transition">
               <ZoomIn className="w-3.5 h-3.5" />

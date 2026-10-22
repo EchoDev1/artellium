@@ -14,6 +14,9 @@ import {
   INITIAL_HERO_CONFIG,
   INITIAL_HOMEPAGE_CONFIG,
   INITIAL_FOOTER_CONFIG,
+  INITIAL_ABOUT_CONFIG,
+  INITIAL_POLICIES_CONFIG,
+  INITIAL_CONTACT_CONFIG,
   INITIAL_FLASH_DEALS,
   INITIAL_ROYAL_HEIRLOOMS,
   INITIAL_ROYAL_INQUIRIES,
@@ -132,6 +135,9 @@ export function StoreProvider({ children }) {
   const [heroConfig, setHeroConfig] = useState(INITIAL_HERO_CONFIG);
   const [homePageConfig, setHomePageConfig] = useState(INITIAL_HOMEPAGE_CONFIG);
   const [footerConfig, setFooterConfig] = useState(INITIAL_FOOTER_CONFIG);
+  const [aboutConfig, setAboutConfig] = useState(INITIAL_ABOUT_CONFIG);
+  const [policiesConfig, setPoliciesConfig] = useState(INITIAL_POLICIES_CONFIG);
+  const [contactConfig, setContactConfig] = useState(INITIAL_CONTACT_CONFIG);
 
   // WEMA Bank Gateway & Corporate Account Settings
   const [paymentSettings, setPaymentSettings] = useState({
@@ -503,7 +509,7 @@ export function StoreProvider({ children }) {
               const existing = parsed.sections.find(s => s.id === initSec.id || s.type === initSec.type);
               return existing ? { ...initSec, ...existing, isVisible: existing.isVisible !== false } : initSec;
             });
-            setHomePageConfig({ ...INITIAL_HOMEPAGE_CONFIG, ...parsed, sections: mergedSections });
+            setHomePageConfig({ ...INITIAL_HOMEPAGE_CONFIG, ...parsed, sections: mergedSections.filter(s => s.type !== "subscriptions" && s.id !== "sec-subscriptions") });
           } else {
             setHomePageConfig(INITIAL_HOMEPAGE_CONFIG);
           }
@@ -514,6 +520,18 @@ export function StoreProvider({ children }) {
         setHomePageConfig(INITIAL_HOMEPAGE_CONFIG);
       }
 
+      const savedAbout = localStorage.getItem('artellium_about_config');
+      if (savedAbout) {
+        try { setAboutConfig(JSON.parse(savedAbout)); } catch (e) {}
+      }
+      const savedPolicies = localStorage.getItem('artellium_policies_config');
+      if (savedPolicies) {
+        try { setPoliciesConfig(JSON.parse(savedPolicies)); } catch (e) {}
+      }
+      const savedContact = localStorage.getItem('artellium_contact_config');
+      if (savedContact) {
+        try { setContactConfig(JSON.parse(savedContact)); } catch (e) {}
+      }
       const savedFooter = localStorage.getItem('artellium_footer_config');
       if (savedFooter) {
         try {
@@ -735,13 +753,16 @@ export function StoreProvider({ children }) {
       safeSetItem('artellium_hero_config', heroConfig);
       safeSetItem('artellium_home_config', homePageConfig);
       safeSetItem('artellium_footer_config', footerConfig);
+      safeSetItem('artellium_about_config', aboutConfig);
+      safeSetItem('artellium_policies_config', policiesConfig);
+      safeSetItem('artellium_contact_config', contactConfig);
       safeSetItem('artellium_priority_pricing', priorityBannerPricing);
       safeSetItem('artellium_priority_placements', priorityBannerPlacements);
       safeSetItem('artellium_login_state', { isLoggedIn, user: currentUser });
     } catch (e) {
       console.error('Storage write error:', e);
     }
-  }, [artworks, realArtworks, demoTransitionMode, orders, payments, commissions, sellers, usersList, cart, transactions, wishlist, followedArtists, artworkQuestions, notifications, collectorOffers, artistSignatures, headerConfig, heroConfig, homePageConfig, footerConfig, priorityBannerPricing, priorityBannerPlacements, isLoggedIn, currentUser]);
+  }, [artworks, realArtworks, demoTransitionMode, orders, payments, commissions, sellers, usersList, cart, transactions, wishlist, followedArtists, artworkQuestions, notifications, collectorOffers, artistSignatures, headerConfig, heroConfig, homePageConfig, footerConfig, aboutConfig, policiesConfig, contactConfig, priorityBannerPricing, priorityBannerPlacements, isLoggedIn, currentUser]);
 
   // Cart Functions
   const addToCart = (artwork) => {
@@ -2978,6 +2999,119 @@ export function StoreProvider({ children }) {
       ...prev,
       socialLinks: (prev.socialLinks || []).filter(s => s.id !== socialId)
     }));
+  };
+
+
+  // ==========================================
+  // ABOUT US CONFIG ACTIONS (CMS)
+  // ==========================================
+  const updateAboutConfig = (updatedFields) => {
+    setAboutConfig(prev => ({ ...prev, ...updatedFields }));
+  };
+
+  const resetAboutConfig = () => {
+    setAboutConfig(INITIAL_ABOUT_CONFIG);
+  };
+
+  // ==========================================
+  // POLICIES CONFIG ACTIONS (CMS)
+  // ==========================================
+  const updatePoliciesConfig = (updatedFields) => {
+    setPoliciesConfig(prev => ({ ...prev, ...updatedFields }));
+  };
+
+  const updatePolicySection = (sectionId, updatedFields) => {
+    setPoliciesConfig(prev => ({
+      ...prev,
+      sections: (prev.sections || []).map(s => s.id === sectionId ? { ...s, ...updatedFields } : s)
+    }));
+  };
+
+  const addPolicySection = (newSection) => {
+    const created = {
+      ...newSection,
+      id: newSection.id || 'policy-' + Date.now(),
+      details: newSection.details || []
+    };
+    setPoliciesConfig(prev => ({
+      ...prev,
+      sections: [...(prev.sections || []), created]
+    }));
+    return created;
+  };
+
+  const deletePolicySection = (sectionId) => {
+    setPoliciesConfig(prev => ({
+      ...prev,
+      sections: (prev.sections || []).filter(s => s.id !== sectionId)
+    }));
+  };
+
+  const resetPoliciesConfig = () => {
+    setPoliciesConfig(INITIAL_POLICIES_CONFIG);
+  };
+
+  // ==========================================
+  // CONTACT US CONFIG ACTIONS (CMS)
+  // ==========================================
+  const updateContactConfig = (updatedFields) => {
+    setContactConfig(prev => ({ ...prev, ...updatedFields }));
+  };
+
+  const updateOffice = (officeId, updatedFields) => {
+    setContactConfig(prev => ({
+      ...prev,
+      offices: (prev.offices || []).map(o => o.id === officeId ? { ...o, ...updatedFields } : o)
+    }));
+  };
+
+  const addOffice = (newOffice) => {
+    const created = {
+      ...newOffice,
+      id: newOffice.id || 'office-' + Date.now()
+    };
+    setContactConfig(prev => ({
+      ...prev,
+      offices: [...(prev.offices || []), created]
+    }));
+    return created;
+  };
+
+  const deleteOffice = (officeId) => {
+    setContactConfig(prev => ({
+      ...prev,
+      offices: (prev.offices || []).filter(o => o.id !== officeId)
+    }));
+  };
+
+  const updateContactChannel = (channelId, updatedFields) => {
+    setContactConfig(prev => ({
+      ...prev,
+      contactChannels: (prev.contactChannels || []).map(c => c.id === channelId ? { ...c, ...updatedFields } : c)
+    }));
+  };
+
+  const addContactChannel = (newChannel) => {
+    const created = {
+      ...newChannel,
+      id: newChannel.id || 'channel-' + Date.now()
+    };
+    setContactConfig(prev => ({
+      ...prev,
+      contactChannels: [...(prev.contactChannels || []), created]
+    }));
+    return created;
+  };
+
+  const deleteContactChannel = (channelId) => {
+    setContactConfig(prev => ({
+      ...prev,
+      contactChannels: (prev.contactChannels || []).filter(c => c.id !== channelId)
+    }));
+  };
+
+  const resetContactConfig = () => {
+    setContactConfig(INITIAL_CONTACT_CONFIG);
   };
 
   const resetFooterConfig = () => {

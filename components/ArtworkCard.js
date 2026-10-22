@@ -24,51 +24,51 @@ export default function ArtworkCard({ artwork }) {
   const fallbackImg = getCategoryFallback(artwork.category) || DEFAULT_FALLBACK_IMAGE;
 
   return (
-    <div className="group relative rounded-2xl overflow-hidden glass-card hover:border-art-gold/60 transition duration-300 transform hover:-translate-y-1.5 shadow-xl flex flex-col justify-between">
-      {/* Top Badge Strip (Above painting, not on painting) */}
-      <div className="px-3.5 pt-2.5 pb-2 flex items-center justify-between gap-1.5 z-10 bg-[#0B0D14]/95 border-b border-white/5">
-        <div className="flex flex-wrap items-center gap-1.5">
+    <div className="group relative rounded-2xl overflow-hidden glass-card hover:border-art-gold/60 transition duration-300 transform hover:-translate-y-1.5 shadow-xl flex flex-col h-full bg-[#0B0D14]">
+      {/* Top Badge Strip (Locked height - NO wrapping, NO overlapping on artwork) */}
+      <div className="h-10 px-3 flex items-center justify-between gap-1.5 bg-[#0B0D14] border-b border-white/5 shrink-0 z-10">
+        <div className="flex items-center gap-1.5 overflow-hidden whitespace-nowrap">
           {!artwork.isDemo && (
-            <span className="bg-gradient-to-r from-art-gold to-art-gold-dark text-white text-[9.5px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1 shadow-gold-glow">
-              <Sparkles className="w-3 h-3 text-white" />
+            <span className="bg-gradient-to-r from-art-gold to-art-gold-dark text-white text-[9px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1 shadow-gold-glow shrink-0">
+              <Sparkles className="w-2.5 h-2.5 text-white" />
               <span>DIRECT ARTIST UPLOAD</span>
             </span>
           )}
 
           {isPriorityArtist(artwork) ? (
-            <span className="bg-gradient-to-r from-amber-500 via-art-gold to-yellow-500 text-black font-black text-[9.5px] px-2 py-0.5 rounded-full flex items-center gap-1 shadow-[0_0_12px_rgba(212,175,55,0.6)] border border-amber-300">
-              <Crown className="w-3 h-3 text-black fill-current" />
+            <span className="bg-gradient-to-r from-amber-500 via-art-gold to-yellow-500 text-black font-black text-[9px] px-2 py-0.5 rounded-full flex items-center gap-1 shadow-[0_0_12px_rgba(212,175,55,0.6)] border border-amber-300 shrink-0">
+              <Crown className="w-2.5 h-2.5 text-black fill-current" />
               <span>PRIORITY ARTIST</span>
             </span>
           ) : (
             artwork.artistType === 'Premium' && (
-              <span className="badge-gold text-[9.5px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1 shadow-gold-glow">
-                <Sparkles className="w-3 h-3 text-art-gold" />
+              <span className="badge-gold text-[9px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1 shadow-gold-glow shrink-0">
+                <Sparkles className="w-2.5 h-2.5 text-art-gold" />
                 <span>PREMIUM ARTIST</span>
               </span>
             )
           )}
 
           {artwork.isNewlyListed && (
-            <span className="badge-emerald text-[9.5px] font-bold px-2 py-0.5 rounded-full">
+            <span className="badge-emerald text-[9px] font-bold px-2 py-0.5 rounded-full shrink-0">
               NEW LISTING
             </span>
           )}
 
           {artwork.status === 'sold' && (
-            <span className="badge-crimson text-[9.5px] font-bold px-2.5 py-0.5 rounded-full">
-              RECENTLY SOLD
+            <span className="badge-crimson text-[9px] font-bold px-2 py-0.5 rounded-full shrink-0">
+              SOLD
             </span>
           )}
 
           {artwork.status === 'auction' && (
-            <span className="bg-red-600 text-white font-bold text-[9.5px] px-2 py-0.5 rounded-full animate-pulse">
+            <span className="bg-red-600 text-white font-bold text-[9px] px-2 py-0.5 rounded-full animate-pulse shadow-md shrink-0">
               🔥 LIVE AUCTION
             </span>
           )}
 
           {artwork.status === 'exhibition' && (
-            <span className="bg-emerald-700 text-white font-bold text-[9.5px] px-2 py-0.5 rounded-full">
+            <span className="bg-emerald-700 text-white font-bold text-[9px] px-2 py-0.5 rounded-full shadow-md shrink-0">
               🏛️ EXHIBITION
             </span>
           )}
@@ -77,50 +77,44 @@ export default function ArtworkCard({ artwork }) {
         {/* Wishlist Heart Button */}
         <button
           onClick={(e) => { e.preventDefault(); e.stopPropagation(); isWishlisted ? removeFromWishlist(artwork.id) : addToWishlist(artwork.id); }}
-          className="p-1.5 hover:bg-white/10 text-white rounded-lg transition shrink-0"
+          className="p-1 hover:bg-white/10 text-white rounded-lg transition shrink-0"
           title={isWishlisted ? 'Remove from Wishlist' : 'Save to Wishlist'}
         >
           <Heart className={`w-4 h-4 ${isWishlisted ? 'fill-red-500 text-red-500' : 'text-slate-400 hover:text-white'}`} />
         </button>
       </div>
 
-      {/* Clickable Image Container: Expanded Big-Frame Canvas to let paintings fill the image section in their fullness */}
+      {/* Uniform Image Container: Exactly same dimensions on every card */}
       <Link 
         href={`/artwork/${artwork.id}`} 
-        className="block relative aspect-[4/5] sm:aspect-[4/5] min-h-[340px] sm:min-h-[400px] w-full overflow-hidden bg-[#080B11] cursor-pointer group/img flex items-center justify-center"
+        className="relative w-full h-64 sm:h-72 overflow-hidden bg-[#07090E] group/img shrink-0 flex items-center justify-center cursor-pointer border-b border-white/5"
       >
-        {/* Ambient subtle blur of the artwork itself to fill the photo section background seamlessly */}
-        <div 
-          className="absolute inset-0 bg-cover bg-center blur-2xl opacity-30 scale-125 pointer-events-none"
-          style={{ backgroundImage: `url(${artwork.image || fallbackImg})` }}
-        />
-
-        {/* Full complete artwork image filling the larger photo section without cropping any portion */}
         <img
           src={artwork.image || fallbackImg}
           alt={artwork.title}
+          loading="eager"
+          decoding="async"
           onError={(e) => {
             e.currentTarget.src = fallbackImg;
           }}
-          className="relative z-10 w-full h-full object-contain group-hover:scale-[1.03] group-hover/img:scale-[1.03] transition-transform duration-500 ease-out"
+          className="relative z-10 w-full h-full object-fill art-card-img contrast-[1.05] saturate-[1.08] brightness-[1.02] group-hover:scale-105 group-hover/img:scale-105 transition-transform duration-500 ease-out"
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-[#07090D]/50 via-transparent to-transparent pointer-events-none z-10" />
 
         {/* Quick View Button */}
         <button
           onClick={(e) => { e.preventDefault(); e.stopPropagation(); setQuickViewOpen(true); }}
-          className="absolute bottom-3 right-3 p-2 bg-art-black/85 hover:bg-art-gold hover:text-art-black text-white rounded-xl backdrop-blur-md transition shadow-lg opacity-0 group-hover:opacity-100 transform translate-y-2 group-hover:translate-y-0 z-20 cursor-pointer"
+          className="absolute bottom-2.5 right-2.5 p-2 bg-art-black/85 hover:bg-art-gold hover:text-art-black text-white rounded-xl backdrop-blur-md transition shadow-lg opacity-0 group-hover:opacity-100 transform translate-y-1 group-hover:translate-y-0 z-20 cursor-pointer"
           title="Quick View Details"
         >
           <Eye className="w-4 h-4" />
         </button>
       </Link>
 
-      {/* Compact Streamlined Card Content: Reduced write-up to prioritize maximum image space */}
-      <div className="p-3.5 flex flex-col justify-between gap-2.5 bg-[#0B0D14]">
+      {/* Streamlined Card Content: Uniform height, no over-size */}
+      <div className="p-3.5 flex flex-col flex-1 justify-between gap-2.5 bg-[#0B0D14]">
         <div className="space-y-1.5">
           {/* Category & Rating Row */}
-          <div className="flex items-center justify-between text-[11px] text-slate-400">
+          <div className="h-4 flex items-center justify-between text-[11px] text-slate-400">
             <span className="font-mono uppercase tracking-wider text-[10px] text-slate-400">{artwork.category}</span>
             <div className="flex items-center gap-1 text-art-gold font-semibold text-[11px]">
               <Star className="w-3 h-3 fill-current" />
@@ -129,14 +123,14 @@ export default function ArtworkCard({ artwork }) {
           </div>
 
           {/* Masterwork Title */}
-          <Link href={`/artwork/${artwork.id}`} className="block">
+          <Link href={`/artwork/${artwork.id}`} className="block h-5 sm:h-6 overflow-hidden">
             <h3 className="font-serif text-sm sm:text-base font-bold text-white hover:text-art-gold transition line-clamp-1 leading-snug">
               {artwork.title}
             </h3>
           </Link>
 
           {/* Artist & Verification Badge Compact Inline Row */}
-          <div className="flex items-center justify-between gap-2 pt-0.5">
+          <div className="h-5 flex items-center justify-between gap-2 pt-0.5">
             <Link 
               href={`/artist/${artwork.artistId || encodeURIComponent(artwork.artistName)}`}
               className="flex items-center gap-1.5 group/artist hover:opacity-90 transition min-w-0"
@@ -157,8 +151,8 @@ export default function ArtworkCard({ artwork }) {
           </div>
         </div>
 
-        {/* Price & Action Row */}
-        <div className="pt-2.5 border-t border-white/10 flex items-center justify-between gap-2">
+        {/* Price & Action Row (Locked height for uniform card bottoms) */}
+        <div className="pt-2.5 border-t border-white/10 h-11 flex items-center justify-between gap-2">
           <div>
             <span className="text-[9px] text-slate-400 block uppercase font-mono font-medium leading-none mb-0.5">Price</span>
             <span className="font-serif text-sm sm:text-base font-bold text-white group-hover:text-art-gold transition">
@@ -170,30 +164,32 @@ export default function ArtworkCard({ artwork }) {
             </span>
           </div>
 
-          {artwork.status === 'available' && (
-            <button
-              onClick={() => addToCart(artwork)}
-              className="bg-art-gold hover:brightness-110 text-white font-bold text-[11px] sm:text-xs px-3 py-1.5 sm:py-2 rounded-xl transition shadow-gold-glow flex items-center gap-1.5 cursor-pointer shrink-0"
-            >
-              <ShoppingBag className="w-3.5 h-3.5" />
-              <span>Add to Cart</span>
-            </button>
-          )}
+          <div className="flex items-center gap-1.5">
+            {artwork.status === 'available' && (
+              <button
+                onClick={() => addToCart(artwork)}
+                className="h-8 sm:h-8.5 bg-art-gold hover:brightness-110 text-white font-bold text-[11px] sm:text-xs px-3 rounded-xl transition shadow-gold-glow flex items-center gap-1.5 cursor-pointer shrink-0"
+              >
+                <ShoppingBag className="w-3.5 h-3.5" />
+                <span>Add to Cart</span>
+              </button>
+            )}
 
-          {artwork.status === 'auction' && (
-            <Link
-              href="/auctions"
-              className="bg-art-red hover:bg-red-700 text-white font-bold text-[11px] sm:text-xs px-3 py-1.5 sm:py-2 rounded-xl transition shadow-crimson-glow flex items-center gap-1 shrink-0"
-            >
-              <span>Place Bid</span>
-            </Link>
-          )}
+            {artwork.status === 'auction' && (
+              <Link
+                href="/auctions"
+                className="h-8 sm:h-8.5 bg-art-red hover:bg-red-700 text-white font-bold text-[11px] sm:text-xs px-3 rounded-xl transition shadow-crimson-glow flex items-center gap-1 shrink-0"
+              >
+                <span>Place Bid</span>
+              </Link>
+            )}
 
-          {artwork.status === 'sold' && (
-            <span className="text-[10px] font-bold text-red-400 bg-red-950/40 px-2 py-0.5 rounded-lg border border-red-800/30 shrink-0">
-              Sold
-            </span>
-          )}
+            {artwork.status === 'sold' && (
+              <span className="h-8 sm:h-8.5 inline-flex items-center text-[10px] font-bold text-red-400 bg-red-950/40 px-2.5 rounded-lg border border-red-800/30 shrink-0">
+                Sold
+              </span>
+            )}
+          </div>
         </div>
       </div>
 

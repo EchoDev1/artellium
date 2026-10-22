@@ -147,7 +147,7 @@ export default function ArtistDashboardPage() {
     setArtistVideoForm(prev => ({
       ...prev,
       videoUrl: objectUrl,
-      thumbnail: prev.thumbnail || 'https://images.unsplash.com/photo-1579783902614-a3fb3927b675?auto=format&fit=crop&q=80&w=600'
+      thumbnail: prev.thumbnail || 'https://images.unsplash.com/photo-1579783902614-a3fb3927b675?auto=format&fit=crop&q=95&w=2400'
     }));
   };
 

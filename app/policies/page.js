@@ -2,6 +2,8 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useStore } from '@/context/store-context';
+import { INITIAL_POLICIES_CONFIG } from '@/lib/mock-data';
 import { 
   ShieldCheck, 
   Lock, 
@@ -20,9 +22,21 @@ import {
   HelpCircle
 } from 'lucide-react';
 
+const ICON_MAP = {
+  provenance: Award,
+  'wema-banking': Lock,
+  consignment: Award,
+  refunds: RotateCcw,
+  privacy: Shield,
+  'seller-conduct': FileText
+};
+
 export default function PoliciesPage() {
   const [activeSection, setActiveSection] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
+  const { policiesConfig } = useStore();
+  const cfg = policiesConfig || INITIAL_POLICIES_CONFIG;
+  const sections = cfg.sections || INITIAL_POLICIES_CONFIG.sections || [];
 
   // Handle hash scrolling on mount or change
   useEffect(() => {
@@ -37,155 +51,14 @@ export default function PoliciesPage() {
     }
   }, []);
 
-  const policySections = [
-    {
-      id: 'provenance',
-      title: 'Terms of Provenance & Authenticity',
-      shortTitle: 'Provenance & Authenticity',
-      icon: Award,
-      badge: 'IMMUTABLE GUARANTEE',
-      badgeColor: 'bg-art-gold/15 text-art-gold border-art-gold/30',
-      summary: 'Every masterpiece listed on ARTELLIUM is backed by verifiable physical and digital certificates of authenticity.',
-      details: [
-        {
-          heading: '1. Curatorial & Studio Verification',
-          content: 'Every artwork on ARTELLIUM undergoes verification by accredited regional African curators and master ateliers. Physical works are inspected for medium accuracy, structural integrity, and verified studio origin before being approved for marketplace listing or live auction.'
-        },
-        {
-          heading: '2. Dual Certificate of Authenticity (CoA)',
-          content: 'Upon acquisition, each collector receives both a high-security physical Certificate of Authenticity—hand-signed with archival ink by the master creator and platform curator—and an immutable digital provenance certificate cryptographically bound to the artwork ID.'
-        },
-        {
-          heading: '3. Historical Ledger Registration',
-          content: 'All transacted masterworks are permanently cataloged in the Artellium Historical Provenance Ledger, establishing an unbreakable chain of custody that protects long-term collector value and museum resale legitimacy.'
-        }
-      ]
-    },
-    {
-      id: 'wema-banking',
-      title: 'WEMA Bank Secured Settlement & Direct Banking Policy',
-      shortTitle: 'WEMA Bank Settlement',
-      icon: Lock,
-      badge: '100% CAPITAL SECURITY',
-      badgeColor: 'bg-emerald-950/60 text-emerald-400 border-emerald-800/60',
-      summary: 'Collector acquisition funds are processed and settled directly into the Artellium Global Marketplace Corporate Account with Wema Bank PLC.',
-      details: [
-        {
-          heading: '1. Corporate Banking & Fiduciary Structure',
-          content: 'All marketplace transactions, buyouts, and live auction lot settlements are routed directly to Artellium Global Marketplace Ltd corporate accounts held at Wema Bank PLC (Account No: 0123456789, Sort Code: 035150103, AlatPay Gateway by Wema). All funds are protected under Nigerian banking and international commercial trade regulations.'
-        },
-        {
-          heading: '2. Instant Payment Verification & Direct Inflow',
-          content: 'Direct bank transfers, AlatPay merchant payments, and verified card checkouts are verified in real time. Upon settlement confirmation, the acquiring collector is immediately issued an official corporate payment voucher alongside the permanent Digital Certificate of Authenticity (COA).'
-        },
-        {
-          heading: '3. Transparent Commission Structure & Artist Net Disbursement',
-          content: 'Under our curatorial charter, creator net earnings are disbursed directly into the master artist verified local or international bank account under verified fiduciary settlement protocol, while the platform commission covers curation, archival provenance cataloging, and digital certificate custody.'
-        }
-      ]
-    },
-    {
-      id: 'consignment',
-      title: 'Authenticity Guarantee & Consignment Policy',
-      shortTitle: 'Authenticity & Consignment',
-      icon: Award,
-      badge: 'MUSEUM-GRADE ASSURANCE',
-      badgeColor: 'bg-art-gold/15 text-art-gold border-art-gold/30',
-      summary: 'Verified consignment terms, studio physical inspections, and certified collector ownership transfer.',
-      details: [
-        {
-          heading: '1. Master Studio Consignment Protocol',
-          content: 'All original oil canvases, bronze castings, terracotta sculptures, and mixed media works listed on Artellium are consigned directly by verified African master artists or accredited artist estates under binding consignment covenants.'
-        },
-        {
-          heading: '2. Curatorial Inspection & Condition Reporting',
-          content: 'Prior to marketplace accreditation, every consignment is evaluated for archival conservation quality, medium purity, and physical stability by regional curatorial partners across the continent.'
-        },
-        {
-          heading: '3. Digital & Physical Ownership Transfer',
-          content: 'Once payment is confirmed through our Wema Bank corporate gateway, full legal and artistic title is irrevocably transferred to the collector, accompanied by physical and digital certificates of authenticity.'
-        }
-      ]
-    },
-    {
-      id: 'refunds',
-      title: 'Refunds & Dispute Resolution Policy',
-      shortTitle: 'Refunds & Disputes',
-      icon: RotateCcw,
-      badge: 'COLLECTOR PROTECTION',
-      badgeColor: 'bg-red-950/60 text-red-400 border-red-800/60',
-      summary: 'Clear, fair refund protocols for material discrepancies or unverified authenticity claims.',
-      details: [
-        {
-          heading: '1. Eligibility for Full Refund',
-          content: 'A collector is entitled to a 100% refund if: (a) the physical dimensions, medium, or signature materially differ from the catalog listing; or (b) an accredited curatorial panel challenges the authenticity of the piece.'
-        },
-        {
-          heading: '2. Dispute Filing Procedure',
-          content: 'To initiate an inspection dispute, the collector must notify Artellium Curatorial Support within 7 calendar days of receipt via support@artellium.com, submitting high-resolution photographs of the seals and artwork condition.'
-        },
-        {
-          heading: '3. Resolution & Direct Bank Refund',
-          content: 'Upon dispute approval, Artellium initiates a complete 100% direct bank refund to the collector account from our WEMA Bank corporate settlement ledger.'
-        }
-      ]
-    },
-    {
-      id: 'privacy',
-      title: 'Privacy Policy & Data Protection',
-      shortTitle: 'Privacy & Security',
-      icon: Shield,
-      badge: 'COLLECTOR CONFIDENTIALITY',
-      badgeColor: 'bg-cyan-950/60 text-cyan-400 border-cyan-800/60',
-      summary: 'Strict confidentiality of high-net-worth collector identities, bidding privacy, and bank-grade data encryption.',
-      details: [
-        {
-          heading: '1. Collector Anonymity & Bourse Discretion',
-          content: 'We honor the tradition of fine art discretion. Private buyout offers and auction bids may be submitted under anonymous collector pseudonyms. Your legal identity and residential delivery address are strictly concealed from third parties and competing bidders.'
-        },
-        {
-          heading: '2. Payment Tokenization & PCI Compliance',
-          content: 'Artellium never stores raw credit card numbers, CVVs, or online banking passwords on our servers. All financial transactions are tokenized with 256-bit SSL encryption through PCI-DSS Level 1 certified processors.'
-        },
-        {
-          heading: '3. Zero Data Monetization',
-          content: 'We will never sell, rent, or lease collector or artist data to external marketing brokers. Information collected is used solely for order fulfillment, provenance verification, certificate issuance, and compliance with anti-money laundering (AML) fine art regulations.'
-        }
-      ]
-    },
-    {
-      id: 'seller-conduct',
-      title: 'Artist & Seller Code of Conduct',
-      shortTitle: 'Seller Governance',
-      icon: FileText,
-      badge: 'ETHICAL MARKETPLACE',
-      badgeColor: 'bg-purple-950/60 text-purple-400 border-purple-800/60',
-      summary: 'Standards of excellence, intellectual property protection, and authenticity obligations for verified creators.',
-      details: [
-        {
-          heading: '1. Originality & Authorship Guarantee',
-          content: 'Sellers must be the direct creators or legally authorized estate representatives of the artworks listed. The upload of plagiarized work, unauthorized AI copies disguised as physical paintings, or forged heritage antiquities results in immediate lifetime ban and legal referral.'
-        },
-        {
-          heading: '2. Listing Accuracy & Studio Timelines',
-          content: 'Artists are required to maintain accurate inventory status, ship sold works within 3 business days of sale confirmation, and use only Artellium-approved conservation materials for crate packaging.'
-        },
-        {
-          heading: '3. Fair Pricing & Commission Compliance',
-          content: 'Artworks listed on Artellium must reflect fair global gallery pricing. Off-platform transaction circumvention intended to bypass verified settlement protection or platform commission is strictly prohibited.'
-        }
-      ]
-    }
-  ];
-
-  const filteredSections = policySections.filter(section => {
+  const filteredSections = sections.filter(section => {
     if (activeSection !== 'all' && section.id !== activeSection) return false;
     if (!searchQuery) return true;
     const q = searchQuery.toLowerCase();
     return (
-      section.title.toLowerCase().includes(q) ||
-      section.summary.toLowerCase().includes(q) ||
-      section.details.some(d => d.heading.toLowerCase().includes(q) || d.content.toLowerCase().includes(q))
+      (section.title && section.title.toLowerCase().includes(q)) ||
+      (section.summary && section.summary.toLowerCase().includes(q)) ||
+      (section.details && section.details.some(d => (d.heading && d.heading.toLowerCase().includes(q)) || (d.content && d.content.toLowerCase().includes(q))))
     );
   });
 
@@ -202,13 +75,13 @@ export default function PoliciesPage() {
             <div className="space-y-3 max-w-3xl">
               <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-art-gold/15 text-art-gold text-[10px] font-bold tracking-widest uppercase border border-art-gold/30">
                 <ShieldCheck className="w-3.5 h-3.5 text-art-gold" />
-                <span>ARTELLIUM TRUST & LEGAL ARCHITECTURE</span>
+                <span>{cfg.headerBadge || 'ARTELLIUM TRUST & LEGAL ARCHITECTURE'}</span>
               </div>
               <h1 className="font-serif text-3xl sm:text-4xl lg:text-5xl font-black text-white tracking-wide">
-                Policies & Collector Guarantees
+                {cfg.headerTitle || 'Policies & Collector Guarantees'}
               </h1>
               <p className="text-sm sm:text-base text-slate-400 leading-relaxed">
-                Protecting African artistic heritage, ensuring immutable provenance, and safeguarding every fine art transaction with WEMA Bank secured corporate settlement.
+                {cfg.headerSubtitle || 'Protecting African artistic heritage, ensuring immutable provenance, and safeguarding every fine art transaction with WEMA Bank secured corporate settlement.'}
               </p>
             </div>
 
@@ -243,11 +116,11 @@ export default function PoliciesPage() {
                 : 'bg-white/5 hover:bg-white/10 text-slate-300 border border-white/10'
             }`}
           >
-            All Policies (6)
+            All Policies ({sections.length})
           </button>
 
-          {policySections.map((sec) => {
-            const Icon = sec.icon;
+          {sections.map((sec) => {
+            const Icon = ICON_MAP[sec.id] || ShieldCheck;
             const isSelected = activeSection === sec.id;
             return (
               <button
@@ -264,7 +137,7 @@ export default function PoliciesPage() {
                 }`}
               >
                 <Icon className="w-3.5 h-3.5" />
-                <span>{sec.shortTitle}</span>
+                <span>{sec.shortTitle || sec.title}</span>
               </button>
             );
           })}
@@ -273,7 +146,7 @@ export default function PoliciesPage() {
         {/* Policy Grid / Articles */}
         <div className="space-y-12">
           {filteredSections.map((sec) => {
-            const Icon = sec.icon;
+            const Icon = ICON_MAP[sec.id] || ShieldCheck;
             return (
               <article
                 key={sec.id}
@@ -290,8 +163,8 @@ export default function PoliciesPage() {
                     </div>
                     <div>
                       <div className="flex items-center gap-2 mb-1">
-                        <span className={`px-2.5 py-0.5 rounded-full text-[9px] font-mono font-bold tracking-widest uppercase border ${sec.badgeColor}`}>
-                          {sec.badge}
+                        <span className={`px-2.5 py-0.5 rounded-full text-[9px] font-mono font-bold tracking-widest uppercase border ${sec.badgeColor || 'bg-art-gold/15 text-art-gold border-art-gold/30'}`}>
+                          {sec.badge || 'OFFICIAL COVENANT'}
                         </span>
                       </div>
                       <h2 className="font-serif text-xl sm:text-2xl font-bold text-white tracking-wide">
@@ -300,99 +173,78 @@ export default function PoliciesPage() {
                     </div>
                   </div>
 
-                  <a
-                    href={`#${sec.id}`}
-                    className="text-xs text-slate-500 hover:text-art-gold font-mono flex items-center gap-1 transition"
-                  >
-                    <span>#{sec.id}</span>
-                  </a>
+                  <span className="text-xs text-slate-400 font-mono self-start sm:self-auto">
+                    SECTION PROTOCOL #{sec.id.toUpperCase()}
+                  </span>
                 </div>
 
-                {/* Summary Highlight Box */}
-                <div className="p-4 sm:p-5 rounded-2xl bg-art-gold/5 border border-art-gold/20 flex items-start gap-3">
-                  <Sparkles className="w-5 h-5 text-art-gold shrink-0 mt-0.5" />
-                  <p className="text-xs sm:text-sm text-slate-200 leading-relaxed font-serif italic">
-                    "{sec.summary}"
-                  </p>
-                </div>
+                {/* Summary Box */}
+                {sec.summary && (
+                  <div className="p-4 sm:p-5 rounded-2xl bg-black/40 border border-art-gold/20 text-amber-100/90 text-xs sm:text-sm leading-relaxed font-sans">
+                    <strong className="text-art-gold font-mono uppercase tracking-wider block mb-1">
+                      Policy Executive Summary:
+                    </strong>
+                    {sec.summary}
+                  </div>
+                )}
 
-                {/* Detailed Clauses */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                  {sec.details.map((detail, idx) => (
+                {/* Numbered Detailed Clauses */}
+                <div className="space-y-6">
+                  {(sec.details || []).map((detail, idx) => (
                     <div
-                      key={idx}
-                      className="p-5 rounded-2xl bg-black/40 border border-white/5 space-y-2.5 hover:border-art-gold/30 transition flex flex-col justify-between"
+                      key={detail.id || idx}
+                      className="p-5 sm:p-6 rounded-2xl bg-black/30 border border-white/5 hover:border-art-gold/30 transition space-y-2 group"
                     >
-                      <h3 className="font-serif text-sm font-bold text-white flex items-center gap-2">
-                        <span className="w-1.5 h-1.5 rounded-full bg-art-gold" />
+                      <h3 className="font-serif font-bold text-base sm:text-lg text-white group-hover:text-art-gold transition flex items-center gap-2">
+                        <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
                         <span>{detail.heading}</span>
                       </h3>
-                      <p className="text-xs text-slate-400 leading-relaxed">
+                      <p className="text-xs sm:text-sm text-slate-300 leading-relaxed pl-6">
                         {detail.content}
                       </p>
                     </div>
                   ))}
                 </div>
 
-                {/* Footer Assurance Tag */}
-                <div className="flex items-center justify-between pt-4 border-t border-white/5 text-[11px] text-slate-500">
-                  <span className="flex items-center gap-1.5">
-                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
-                    <span>Enforced across all African regional hubs & international consignments.</span>
-                  </span>
-                  <span className="font-mono text-[10px] text-slate-600">Last Revised: 2026</span>
+                {/* Section Footer Verification Link */}
+                <div className="pt-4 border-t border-white/10 flex flex-wrap items-center justify-between gap-4 text-xs">
+                  <div className="flex items-center gap-2 text-slate-400">
+                    <ShieldCheck className="w-4 h-4 text-emerald-400" />
+                    <span>Backed by WEMA Bank Fiduciary Architecture & Legal Provenance Register</span>
+                  </div>
+
+                  <Link
+                    href="/contact"
+                    className="text-art-gold hover:underline font-bold flex items-center gap-1"
+                  >
+                    <span>Request Legal Dossier / Escrow Inquiry</span>
+                    <ChevronRight className="w-3.5 h-3.5" />
+                  </Link>
                 </div>
               </article>
             );
           })}
-
-          {filteredSections.length === 0 && (
-            <div className="text-center py-20 bg-white/5 rounded-3xl border border-white/10 p-8 space-y-4">
-              <AlertCircle className="w-10 h-10 text-art-gold mx-auto" />
-              <h3 className="font-serif text-lg font-bold text-white">No Matching Policy Clauses Found</h3>
-              <p className="text-xs text-slate-400 max-w-md mx-auto">
-                No policy items matched "{searchQuery}". Try searching for terms like "settlement", "freight", "refund", or "provenance".
-              </p>
-              <button
-                onClick={() => { setSearchQuery(''); setActiveSection('all'); }}
-                className="px-4 py-2 bg-art-gold text-art-black text-xs font-bold uppercase rounded-xl"
-              >
-                Clear Search Filter
-              </button>
-            </div>
-          )}
         </div>
 
-        {/* Curatorial & Legal Inquiries Help Box */}
-        <section className="mt-16 rounded-3xl bg-gradient-to-r from-[#120d04] via-[#090b10] to-[#07080A] border border-art-gold/30 p-8 sm:p-12 text-center space-y-6 relative overflow-hidden">
-          <div className="max-w-2xl mx-auto space-y-3 relative z-10">
-            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-art-gold/15 text-art-gold font-mono text-[10px] font-bold uppercase tracking-widest border border-art-gold/30">
-              <Mail className="w-3.5 h-3.5" />
-              <span>LEGAL & CURATORIAL LIAISON</span>
-            </span>
-            <h3 className="font-serif text-2xl sm:text-3xl font-bold text-white">
-              Have Specific Provenance or Settlement Questions?
-            </h3>
-            <p className="text-xs sm:text-sm text-slate-400 leading-relaxed">
-              Our Curatorial Governance Board is available to assist collectors, institutional galleries, and master ateliers with customized consignment agreements, consular export permits, and private vault arrangements.
-            </p>
-            <div className="pt-4 flex flex-wrap items-center justify-center gap-3">
-              <a
-                href="mailto:legal@artellium.com"
-                className="px-5 py-2.5 rounded-xl bg-art-gold hover:brightness-110 text-art-black font-bold text-xs uppercase tracking-wider transition shadow-gold-glow flex items-center gap-2"
-              >
-                <Mail className="w-4 h-4" />
-                <span>Contact Legal Board</span>
-              </a>
-              <Link
-                href="/explore"
-                className="px-5 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-white font-bold text-xs uppercase tracking-wider transition border border-white/10"
-              >
-                <span>Browse Marketplace</span>
-              </Link>
-            </div>
+        {/* Bottom Trust Contact Banner */}
+        <div className="mt-16 p-8 rounded-3xl bg-gradient-to-r from-[#140F05] via-[#0C0E14] to-[#140F05] border border-art-gold/30 text-center space-y-4">
+          <div className="w-12 h-12 rounded-2xl bg-art-gold/15 border border-art-gold/30 flex items-center justify-center text-art-gold mx-auto shadow-gold-glow">
+            <Mail className="w-6 h-6" />
           </div>
-        </section>
+          <h3 className="font-serif text-2xl font-bold text-white">Have Questions Regarding Our Policies?</h3>
+          <p className="text-xs sm:text-sm text-slate-400 max-w-md mx-auto">
+            Our legal compliance team and curatorial ombudsman are available for private consultations and bespoke acquisition agreements.
+          </p>
+          <div className="pt-2">
+            <Link
+              href="/contact"
+              className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-art-gold hover:brightness-110 text-art-black text-xs font-bold uppercase tracking-wider transition shadow-gold-glow"
+            >
+              <span>Contact Legal & Escrow Bureau</span>
+              <ChevronRight className="w-4 h-4" />
+            </Link>
+          </div>
+        </div>
 
       </div>
     </main>

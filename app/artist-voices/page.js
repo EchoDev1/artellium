@@ -322,7 +322,7 @@ export default function ArtistVoicesPage() {
               {/* Thumbnail Container */}
               <div className="relative aspect-video w-full overflow-hidden bg-black">
                 <img
-                  src={vid.thumbnail || 'https://images.unsplash.com/photo-1579783902614-a3fb3927b675?auto=format&fit=crop&q=80&w=600'}
+                  src={vid.thumbnail || 'https://images.unsplash.com/photo-1579783902614-a3fb3927b675?auto=format&fit=crop&q=95&w=2400'}
                   alt={vid.artistName}
                   className="w-full h-full object-cover group-hover:scale-105 transition duration-500 opacity-80 group-hover:opacity-100"
                 />

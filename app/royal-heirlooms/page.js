@@ -47,7 +47,7 @@ export default function RoyalHeirloomsPage() {
       valuation: 14500000, // ₦14.5M
       provenanceHash: 'ROYAL-BEN-IDIA-88942-CERT',
       status: 'Available for Private Treaty',
-      image: 'https://images.unsplash.com/photo-1544717305-2782549b5136?auto=format&fit=crop&q=80&w=1000',
+      image: 'https://images.unsplash.com/photo-1544717305-2782549b5136?auto=format&fit=crop&q=95&w=2400',
       description: 'An extraordinary royal commemorative masterpiece created by direct descendants of the court casters of Benin, incorporating ritualistic lost-wax metallurgy, coral bead detailing, and 24K leaf.',
       authenticity: 'Certified by Pan-African Royal Heritage Registry · Dual Physical Hologram Sealed'
     },
@@ -63,7 +63,7 @@ export default function RoyalHeirloomsPage() {
       valuation: 18200000, // ₦18.2M
       provenanceHash: 'ROYAL-ASH-GOLD-99120-CERT',
       status: 'Vault Custody Reserved',
-      image: 'https://images.unsplash.com/photo-1579783902614-a3fb3927b675?auto=format&fit=crop&q=80&w=1000',
+      image: 'https://images.unsplash.com/photo-1579783902614-a3fb3927b675?auto=format&fit=crop&q=95&w=2400',
       description: 'Sacred ceremonial gold repoussé honoring the Golden Stool (Sika Dwa Kofi), featuring hand-chiseled solar glyphs, consecrated royal crests, and immutable provenance.',
       authenticity: 'Kumasi Cultural Centre Certified · Vault Physical Ledger Verified'
     },
@@ -79,7 +79,7 @@ export default function RoyalHeirloomsPage() {
       valuation: 9800000, // ₦9.8M
       provenanceHash: 'ROYAL-OYO-THRONE-77215-CERT',
       status: 'Available for Private Treaty',
-      image: 'https://images.unsplash.com/photo-1561214115-f2f134cc4912?auto=format&fit=crop&q=80&w=1000',
+      image: 'https://images.unsplash.com/photo-1561214115-f2f134cc4912?auto=format&fit=crop&q=95&w=2400',
       description: 'An awe-inspiring royal ceremonial seat laden with multi-chromatic micro-beading depicting sacred chameleons, royal leopards, and ancestral crowns.',
       authenticity: 'Archival Provenance Ledger #77215 · Physical Certificate Included'
     },
@@ -95,7 +95,7 @@ export default function RoyalHeirloomsPage() {
       valuation: 12000000, // ₦12.0M
       provenanceHash: 'ROYAL-IFE-OONI-66431-CERT',
       status: 'Available for Private Treaty',
-      image: 'https://images.unsplash.com/photo-1579783900882-c0d3dad7b119?auto=format&fit=crop&q=80&w=1000',
+      image: 'https://images.unsplash.com/photo-1579783900882-c0d3dad7b119?auto=format&fit=crop&q=95&w=2400',
       description: 'Classical striated facial contours with royal diadem crown, sculpted in accordance with ancient Ife spiritual geometry and certified physical lineage documentation.',
       authenticity: 'Ife Heritage Council Approved · Immutable Ledger Certificate'
     }

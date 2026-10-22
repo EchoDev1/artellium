@@ -166,7 +166,7 @@ export default function Navbar() {
               <Search className="w-4 h-4 text-art-gold absolute left-3.5 pointer-events-none" />
               <input
                 type="text"
-                placeholder={t('searchPlaceholder', 'Search painters, bronze sculptors, artwork titles...')}
+                placeholder={t('searchPlaceholder', hConfig.searchPlaceholder || 'Search painters, bronze sculptors, artwork titles...')}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="w-full bg-transparent pl-10 pr-24 py-2 text-sm text-white placeholder-slate-400 focus:outline-none"
