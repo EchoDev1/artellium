@@ -67,7 +67,7 @@ export default function Under1MPage() {
       dimensions: '75 × 75 cm',
       price: 680000, // ₦680K
       country: 'Nigeria 🇳🇬',
-      image: 'https://images.unsplash.com/photo-1579783900882-c0d3dad7b119?auto=format&fit=crop&q=95&w=2400',
+      image: 'https://images.unsplash.com/photo-1579783902614-a3fb3927b675?auto=format&fit=crop&q=95&w=2400&dpr=2',
       description: 'Dynamic urban color palette celebrating the hustle and expressive energy of Lagos market squares.'
     },
     {

@@ -284,7 +284,7 @@ export default function ProvenanceLedgerPage() {
       status: 'Vault Verified & Transferred',
       hologramType: 'Sovereign Diamond Stamp',
       curatorNotes: 'Atlas Mountain mineral pigment authenticity certified.',
-      image: 'https://images.unsplash.com/photo-1579783900882-c0d3dad7b119?auto=format&fit=crop&q=95&w=2400'
+      image: 'https://images.unsplash.com/photo-1579783902614-a3fb3927b675?auto=format&fit=crop&q=95&w=2400&dpr=2'
     }
   ];
 

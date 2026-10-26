@@ -87,7 +87,7 @@ export default function FlashDealsPage() {
       discountPercent: 20,
       availableUnits: 2,
       claimedPercent: 60,
-      image: 'https://images.unsplash.com/photo-1579783900882-c0d3dad7b119?auto=format&fit=crop&q=95&w=2400',
+      image: 'https://images.unsplash.com/photo-1579783902614-a3fb3927b675?auto=format&fit=crop&q=95&w=2400&dpr=2',
       description: 'Atmospheric North African portraiture exploring light and Berber heritage with authentic 22K gold dust accents.'
     },
     {

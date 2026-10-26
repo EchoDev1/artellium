@@ -122,7 +122,7 @@ export default function JumiaArtHero() {
       city: artworks[0]?.city || 'Lagos',
       artworkTitle: artworks[0]?.title || 'The Golden Crown of Benin (Echo of Eternity)',
       videoUrl: '/videos/artist-savannah.mp4',
-      thumbnail: artworks[0]?.image || 'https://images.unsplash.com/photo-1579783900882-c0d3dad7b119?auto=format&fit=crop&q=80&w=1200',
+      thumbnail: artworks[0]?.image || 'https://images.unsplash.com/photo-1579783902614-a3fb3927b675?auto=format&fit=crop&q=95&w=2400&dpr=2',
       quote: 'The future of African art is sovereign, verified, and uncompromised.',
       duration: '1:45',
       priceNGN: artworks[0]?.price || 2800000,

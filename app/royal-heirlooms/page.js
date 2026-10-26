@@ -95,7 +95,7 @@ export default function RoyalHeirloomsPage() {
       valuation: 12000000, // ₦12.0M
       provenanceHash: 'ROYAL-IFE-OONI-66431-CERT',
       status: 'Available for Private Treaty',
-      image: 'https://images.unsplash.com/photo-1579783900882-c0d3dad7b119?auto=format&fit=crop&q=95&w=2400',
+      image: 'https://images.unsplash.com/photo-1579783902614-a3fb3927b675?auto=format&fit=crop&q=95&w=2400&dpr=2',
       description: 'Classical striated facial contours with royal diadem crown, sculpted in accordance with ancient Ife spiritual geometry and certified physical lineage documentation.',
       authenticity: 'Ife Heritage Council Approved · Immutable Ledger Certificate'
     }

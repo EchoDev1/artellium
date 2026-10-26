@@ -35,6 +35,7 @@ import {
   disburseDbCommission 
 } from '@/lib/db';
 import { safeSetItem } from '@/lib/safe-storage';
+import { INITIAL_REAL_ARTWORKS } from '@/lib/real-artworks-seed';
 import { getCategoryFallback, isValidImageSource, DEFAULT_FALLBACK_IMAGE } from '@/lib/image-utils';
 import { normalizeCategory, isCategoryMatch } from '@/lib/category-utils';
 import { isPriorityArtist, sortArtworksByPriority } from '@/lib/priority-utils';
@@ -54,8 +55,8 @@ export function StoreProvider({ children }) {
     demoTransitionModeRef.current = demoTransitionMode;
   }, [demoTransitionMode]);
 
-  const [realArtworks, setRealArtworks] = useState(() => INITIAL_ARTWORKS.filter(a => a.isDemo === false));
-  const [artworks, setArtworks] = useState(INITIAL_ARTWORKS);
+  const [realArtworks, setRealArtworks] = useState(() => INITIAL_REAL_ARTWORKS || []);
+  const [artworks, setArtworks] = useState(() => [...(INITIAL_REAL_ARTWORKS || []), ...INITIAL_ARTWORKS]);
   const [orders, setOrders] = useState(INITIAL_ORDERS || []);
   const [payments, setPayments] = useState(INITIAL_PAYMENTS || []);
   const [commissions, setCommissions] = useState(INITIAL_COMMISSIONS || []);
@@ -250,30 +251,36 @@ export function StoreProvider({ children }) {
       const activeMode = (savedMode === 'live_only' || savedMode === 'hybrid' || savedMode === 'progressive') ? savedMode : 'progressive';
       setDemoTransitionMode(activeMode);
 
-      // Load Real Artist Artworks
-      let loadedReal = [];
+      // Load Real Artist Artworks (Seeded with genuine artist uploads, immune to fair-lady corruption)
+      let loadedReal = [...INITIAL_REAL_ARTWORKS];
       const savedReal = localStorage.getItem('artellium_real_artworks');
       if (savedReal) {
         try {
           const parsedReal = JSON.parse(savedReal);
-          if (Array.isArray(parsedReal)) {
-            loadedReal = parsedReal.map(a => ({
-              ...a,
-              isDemo: false,
-              image: (a.image && isValidImageSource(a.image)) ? a.image : getCategoryFallback(a.category),
-              additionalImages: Array.isArray(a.additionalImages) ? a.additionalImages : []
-            }));
+          if (Array.isArray(parsedReal) && parsedReal.length > 0) {
+            const map = new Map();
+            loadedReal.forEach(a => map.set(a.id, a));
+            parsedReal.forEach(a => {
+              if (a && a.id && a.id !== 'art-echo-101') {
+                const existing = map.get(a.id);
+                const isCorrupted = typeof a.image === 'string' && a.image.includes('photo-1579783900882-c0d3dad7b119');
+                if (existing) {
+                  map.set(a.id, {
+                    ...a,
+                    isDemo: false,
+                    image: isCorrupted ? existing.image : (a.image || existing.image)
+                  });
+                } else if (!isCorrupted) {
+                  map.set(a.id, { ...a, isDemo: false });
+                }
+              }
+            });
+            loadedReal = Array.from(map.values())
+              .filter(a => a.id !== 'art-echo-101' && !a.image?.includes('photo-1579783900882-c0d3dad7b119'))
+              .sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
           }
         } catch (e) {}
       }
-
-      // Harvest real artworks from INITIAL_ARTWORKS (such as Ebuka Eke Echo)
-      const defaultRealArtworks = INITIAL_ARTWORKS.filter(a => a.isDemo === false);
-      defaultRealArtworks.forEach(defArt => {
-        if (!loadedReal.some(r => r.id === defArt.id || r.artistName?.toLowerCase() === defArt.artistName?.toLowerCase())) {
-          loadedReal.push(defArt);
-        }
-      });
 
       // Also harvest any real artworks from artellium_artworks that were previously saved
       const savedArtworks = localStorage.getItem('artellium_artworks');
@@ -698,12 +705,29 @@ export function StoreProvider({ children }) {
 
           if (dbReal.length > 0) {
             setRealArtworks((prevReal) => {
-              const mergedReal = [...prevReal];
-              dbReal.forEach(dbA => {
-                if (!mergedReal.some(r => r.id === dbA.id)) {
-                  mergedReal.push(dbA);
+              const map = new Map();
+              INITIAL_REAL_ARTWORKS.forEach(initA => map.set(initA.id, initA));
+              prevReal.forEach(r => {
+                if (r && r.id && r.id !== 'art-echo-101' && !r.image?.includes('photo-1579783900882-c0d3dad7b119')) {
+                  map.set(r.id, r);
                 }
               });
+              dbReal.forEach(dbA => {
+                if (dbA && dbA.id && dbA.id !== 'art-echo-101') {
+                  const existing = map.get(dbA.id) || {};
+                  const isCorrupted = typeof dbA.image === 'string' && dbA.image.includes('photo-1579783900882-c0d3dad7b119');
+                  map.set(dbA.id, {
+                    ...existing,
+                    ...dbA,
+                    isDemo: false,
+                    image: (!isCorrupted && dbA.image) ? dbA.image : (existing.image || dbA.image)
+                  });
+                }
+              });
+              const mergedReal = Array.from(map.values())
+                .filter(a => a.id !== 'art-echo-101' && !a.image?.includes('photo-1579783900882-c0d3dad7b119'))
+                .sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
+
               safeSetItem('artellium_real_artworks', mergedReal);
 
               setArtworks(() => {

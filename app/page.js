@@ -62,7 +62,7 @@ export default function HomePage() {
     // Real artist-added artworks ALWAYS come first at the very top of Newly Listed!
     const realWorks = filteredArtworks.filter(art => (art.isDemo === false || !art.isDemo) && art.status !== 'sold');
     const otherWorks = filteredArtworks.filter(art => art.isDemo === true && art.status !== 'sold');
-    const combined = [...sortArtworksByPriority(realWorks, { sellers, users: usersList }), ...sortArtworksByPriority(otherWorks, { sellers, users: usersList })];
+    const combined = [...sortArtworksByPriority(realWorks, { sellers, users: usersList, secondarySort: 'newest' }), ...sortArtworksByPriority(otherWorks, { sellers, users: usersList, secondarySort: 'newest' })];
     return combined.slice(0, limit);
   };
 
