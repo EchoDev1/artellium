@@ -191,6 +191,16 @@ export default function AdminDashboardPage() {
     updateSocialLink,
     deleteSocialLink,
     resetFooterConfig,
+    aboutConfig,
+    updateAboutConfig,
+    addAboutSection,
+    updateAboutSection,
+    deleteAboutSection,
+    policiesConfig,
+    updatePoliciesConfig,
+    updatePolicySection,
+    addPolicySection,
+    deletePolicySection,
     priorityBannerPricing,
     updatePriorityBannerPricing,
     priorityBannerPlacements = [],
@@ -413,7 +423,33 @@ export default function AdminDashboardPage() {
   const [isAddFooterLinkModalOpen, setIsAddFooterLinkModalOpen] = useState(false);
   const [activeColIdForLink, setActiveColIdForLink] = useState(null);
   const [editingFooterLink, setEditingFooterLink] = useState(null);
-  const [footerLinkForm, setFooterLinkForm] = useState({ label: '', href: '', highlight: 'none', isVisible: true });
+  const [footerLinkForm, setFooterLinkForm] = useState({ 
+    label: '', 
+    href: '', 
+    highlight: 'none', 
+    isVisible: true,
+    linkType: 'preset_policy',
+    presetTarget: 'provenance',
+    writeupTitle: '',
+    writeupBadge: 'OFFICIAL COVENANT',
+    writeupSummary: '',
+    writeupContent: ''
+  });
+
+  // Footer Link Write-Up Editor Modal State
+  const [isEditWriteupModalOpen, setIsEditWriteupModalOpen] = useState(false);
+  const [activeLinkForWriteup, setActiveLinkForWriteup] = useState(null);
+  const [activeColForWriteup, setActiveColForWriteup] = useState(null);
+  const [writeupForm, setWriteupForm] = useState({
+    type: 'custom',
+    targetSectionId: '',
+    title: '',
+    badge: '',
+    summary: '',
+    content: '',
+    details: []
+  });
+  const [writeupSaveSuccess, setWriteupSaveSuccess] = useState(false);
 
   const [isAddSocialModalOpen, setIsAddSocialModalOpen] = useState(false);
   const [editingSocial, setEditingSocial] = useState(null);
@@ -617,6 +653,247 @@ export default function AdminDashboardPage() {
 
     return matchesSearch && matchesBadge;
   });
+
+  // Helper to determine write-up badge in Footer CMS
+  const getLinkWriteupBadge = (link) => {
+    if (link.writeup) {
+      return (
+        <span className="px-1.5 py-0.5 rounded bg-art-gold/15 text-art-gold text-[9px] font-mono font-bold border border-art-gold/30">
+          Custom Write-Up
+        </span>
+      );
+    }
+    if (link.href?.includes('/policies#')) {
+      const secId = link.href.split('#')[1];
+      return (
+        <span className="px-1.5 py-0.5 rounded bg-blue-50 text-blue-800 text-[9px] font-mono font-bold border border-blue-200">
+          Policy #{secId}
+        </span>
+      );
+    }
+    if (link.href?.includes('/about#')) {
+      const secId = link.href.split('#')[1];
+      return (
+        <span className="px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-800 text-[9px] font-mono font-bold border border-emerald-200">
+          About #{secId}
+        </span>
+      );
+    }
+    return null;
+  };
+
+  // Open Write-Up Editor for any link
+  const openWriteupEditorForLink = (colId, link) => {
+    setActiveColForWriteup(colId);
+    setActiveLinkForWriteup(link);
+    setWriteupSaveSuccess(false);
+
+    if (link.writeup) {
+      setWriteupForm({
+        type: 'custom',
+        targetSectionId: '',
+        title: link.writeup.title || link.label,
+        badge: link.writeup.badge || 'OFFICIAL WRITE-UP',
+        summary: link.writeup.summary || '',
+        content: link.writeup.content || '',
+        details: link.writeup.details || []
+      });
+      setIsEditWriteupModalOpen(true);
+      return;
+    }
+
+    // Check if link is a Policy
+    if (link.href?.includes('/policies#')) {
+      const secId = link.href.split('#')[1];
+      const sec = (policiesConfig?.sections || INITIAL_POLICIES_CONFIG.sections || []).find(s => s.id === secId);
+      if (sec) {
+        setWriteupForm({
+          type: 'policy',
+          targetSectionId: sec.id,
+          title: sec.title || link.label,
+          badge: sec.badge || 'IMMUTABLE GUARANTEE',
+          summary: sec.summary || '',
+          content: '',
+          details: sec.details || []
+        });
+        setIsEditWriteupModalOpen(true);
+        return;
+      }
+    }
+
+    // Check if link is an About section
+    if (link.href?.includes('/about#')) {
+      const secId = link.href.split('#')[1];
+      const aCfg = aboutConfig || INITIAL_ABOUT_CONFIG;
+      if (secId === 'goal') {
+        setWriteupForm({
+          type: 'about_goal',
+          targetSectionId: 'goal',
+          title: aCfg.goalTitle || 'Artellium Goal',
+          badge: aCfg.goalBadge || 'STRATEGIC MANDATE',
+          summary: aCfg.goalQuote || aCfg.creed || '',
+          content: [aCfg.goalParagraph1, aCfg.goalParagraph2].filter(Boolean).join('\n\n'),
+          details: []
+        });
+        setIsEditWriteupModalOpen(true);
+        return;
+      }
+      if (secId === 'who-we-are') {
+        setWriteupForm({
+          type: 'about_who_we_are',
+          targetSectionId: 'who-we-are',
+          title: aCfg.whoWeAreTitle || 'Who We Are',
+          badge: aCfg.whoWeAreBadge || 'IDENTITY & COMMITMENT',
+          summary: aCfg.whoWeAreLead || '',
+          content: [aCfg.forArtistsText, aCfg.forCollectorsText].filter(Boolean).join('\n\n'),
+          details: []
+        });
+        setIsEditWriteupModalOpen(true);
+        return;
+      }
+      if (secId === 'vision') {
+        setWriteupForm({
+          type: 'about_vision',
+          targetSectionId: 'vision',
+          title: aCfg.visionTitle || 'Our Vision',
+          badge: aCfg.visionBadge || 'FUTURE ASPIRATION',
+          summary: aCfg.visionStatement || '',
+          content: aCfg.visionPillars || '',
+          details: []
+        });
+        setIsEditWriteupModalOpen(true);
+        return;
+      }
+      if (secId === 'mission') {
+        setWriteupForm({
+          type: 'about_mission',
+          targetSectionId: 'mission',
+          title: aCfg.missionTitle || 'Our Mission',
+          badge: aCfg.missionBadge || 'CORE MANDATE',
+          summary: aCfg.missionStatement || '',
+          content: aCfg.missionPillars || '',
+          details: []
+        });
+        setIsEditWriteupModalOpen(true);
+        return;
+      }
+      if (secId === 'core-values') {
+        setWriteupForm({
+          type: 'about_core_values',
+          targetSectionId: 'core-values',
+          title: aCfg.coreValuesTitle || 'Our Core Values',
+          badge: 'GUIDING PRINCIPLES',
+          summary: aCfg.coreValuesSubtitle || 'The Guiding Principles of Artellium',
+          content: '',
+          details: (aCfg.coreValues || []).map((v, i) => ({ id: v.id || `val-${i}`, heading: v.title, content: v.desc }))
+        });
+        setIsEditWriteupModalOpen(true);
+        return;
+      }
+      // Check custom about section
+      const customSec = (aCfg.customSections || []).find(cs => cs.id === secId);
+      if (customSec) {
+        setWriteupForm({
+          type: 'about_custom',
+          targetSectionId: customSec.id,
+          title: customSec.title || link.label,
+          badge: customSec.badge || 'ABOUT ARTELLIUM',
+          summary: customSec.summary || '',
+          content: customSec.content || '',
+          details: customSec.details || []
+        });
+        setIsEditWriteupModalOpen(true);
+        return;
+      }
+    }
+
+    // Default: Custom write-up on link
+    setWriteupForm({
+      type: 'custom',
+      targetSectionId: '',
+      title: link.label,
+      badge: 'OFFICIAL COVENANT',
+      summary: '',
+      content: '',
+      details: []
+    });
+    setIsEditWriteupModalOpen(true);
+  };
+
+  const handleSaveWriteupModal = (e) => {
+    e.preventDefault();
+    if (writeupForm.type === 'policy') {
+      updatePolicySection(writeupForm.targetSectionId, {
+        title: writeupForm.title,
+        badge: writeupForm.badge,
+        summary: writeupForm.summary,
+        details: writeupForm.details
+      });
+    } else if (writeupForm.type === 'about_goal') {
+      const parts = writeupForm.content.split('\n\n');
+      updateAboutConfig({
+        goalTitle: writeupForm.title,
+        goalBadge: writeupForm.badge,
+        goalQuote: writeupForm.summary,
+        goalParagraph1: parts[0] || writeupForm.content,
+        goalParagraph2: parts[1] || ''
+      });
+    } else if (writeupForm.type === 'about_who_we_are') {
+      const parts = writeupForm.content.split('\n\n');
+      updateAboutConfig({
+        whoWeAreTitle: writeupForm.title,
+        whoWeAreBadge: writeupForm.badge,
+        whoWeAreLead: writeupForm.summary,
+        forArtistsText: parts[0] || writeupForm.content,
+        forCollectorsText: parts[1] || ''
+      });
+    } else if (writeupForm.type === 'about_vision') {
+      updateAboutConfig({
+        visionTitle: writeupForm.title,
+        visionBadge: writeupForm.badge,
+        visionStatement: writeupForm.summary,
+        visionPillars: writeupForm.content
+      });
+    } else if (writeupForm.type === 'about_mission') {
+      updateAboutConfig({
+        missionTitle: writeupForm.title,
+        missionBadge: writeupForm.badge,
+        missionStatement: writeupForm.summary,
+        missionPillars: writeupForm.content
+      });
+    } else if (writeupForm.type === 'about_core_values') {
+      updateAboutConfig({
+        coreValuesTitle: writeupForm.title,
+        coreValuesSubtitle: writeupForm.summary,
+        coreValues: (writeupForm.details || []).map(d => ({ title: d.heading, desc: d.content }))
+      });
+    } else if (writeupForm.type === 'about_custom') {
+      updateAboutSection(writeupForm.targetSectionId, {
+        title: writeupForm.title,
+        badge: writeupForm.badge,
+        summary: writeupForm.summary,
+        content: writeupForm.content,
+        details: writeupForm.details
+      });
+    } else {
+      // Save writeup directly on the footer link
+      updateFooterLink(activeColForWriteup, activeLinkForWriteup.id, {
+        ...activeLinkForWriteup,
+        writeup: {
+          title: writeupForm.title,
+          badge: writeupForm.badge,
+          summary: writeupForm.summary,
+          content: writeupForm.content,
+          details: writeupForm.details
+        }
+      });
+    }
+    setWriteupSaveSuccess(true);
+    setTimeout(() => {
+      setWriteupSaveSuccess(false);
+      setIsEditWriteupModalOpen(false);
+    }, 1200);
+  };
 
   return (
     <div className="bg-slate-50 text-slate-800 min-h-screen pb-16 font-sans">
@@ -2592,40 +2869,64 @@ export default function AdminDashboardPage() {
                       </div>
 
                       {/* Links in this column */}
-                      <ul className="space-y-1.5">
+                      <ul className="space-y-2">
                         {(col.links || []).map((link) => (
-                          <li key={link.id} className="flex items-center justify-between bg-white p-2 rounded-xl border border-slate-200">
-                            <div>
-                              <span className="font-medium text-slate-800 block">{link.label}</span>
-                              <span className="text-[10px] text-slate-400 font-mono">{link.href}</span>
-                            </div>
-                            <div className="flex items-center gap-1">
-                              <button
-                                onClick={() => {
-                                  setActiveColIdForLink(col.id);
-                                  setEditingFooterLink(link);
-                                  setFooterLinkForm({
-                                    label: link.label,
-                                    href: link.href,
-                                    highlight: link.highlight || 'none',
-                                    isVisible: link.isVisible !== false
-                                  });
-                                  setIsAddFooterLinkModalOpen(true);
-                                }}
-                                className="p-1 text-slate-600 hover:text-slate-900"
-                              >
-                                <Edit className="w-3 h-3" />
-                              </button>
-                              <button
-                                onClick={() => {
-                                  if (confirm(`Delete link "${link.label}"?`)) {
-                                    deleteFooterLink(col.id, link.id);
-                                  }
-                                }}
-                                className="p-1 text-red-500 hover:text-red-700"
-                              >
-                                <Trash2 className="w-3 h-3" />
-                              </button>
+                          <li key={link.id} className="bg-white p-2.5 rounded-xl border border-slate-200 space-y-1.5 shadow-sm">
+                            <div className="flex items-start justify-between gap-2">
+                              <div>
+                                <div className="flex items-center gap-1.5 flex-wrap">
+                                  <span className="font-bold text-slate-900 text-xs">{link.label}</span>
+                                  {getLinkWriteupBadge(link)}
+                                </div>
+                                <span className="text-[10px] text-slate-400 font-mono block mt-0.5">{link.href || 'Direct Write-Up'}</span>
+                              </div>
+                              <div className="flex items-center gap-1 shrink-0">
+                                <button
+                                  type="button"
+                                  onClick={() => openWriteupEditorForLink(col.id, link)}
+                                  className="px-2 py-1 rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300 font-bold text-[10px] flex items-center gap-1 transition"
+                                  title="Access and edit write-up content"
+                                >
+                                  <FileText className="w-3 h-3 text-art-gold" />
+                                  <span>Write-Up</span>
+                                </button>
+                                <button
+                                  onClick={() => {
+                                    setActiveColIdForLink(col.id);
+                                    setEditingFooterLink(link);
+                                    setFooterLinkForm({
+                                      label: link.label,
+                                      href: link.href,
+                                      highlight: link.highlight || 'none',
+                                      isVisible: link.isVisible !== false,
+                                      linkType: link.href?.includes('/policies#') ? 'preset_policy' :
+                                                link.href?.includes('/about#') ? 'preset_about' :
+                                                link.writeup ? 'custom_writeup' : 'custom_url',
+                                      presetTarget: link.href?.split('#')[1] || '',
+                                      writeupTitle: link.writeup?.title || link.label,
+                                      writeupBadge: link.writeup?.badge || 'OFFICIAL COVENANT',
+                                      writeupSummary: link.writeup?.summary || '',
+                                      writeupContent: link.writeup?.content || ''
+                                    });
+                                    setIsAddFooterLinkModalOpen(true);
+                                  }}
+                                  className="p-1 text-slate-600 hover:text-slate-900"
+                                  title="Edit link title & destination"
+                                >
+                                  <Edit className="w-3 h-3" />
+                                </button>
+                                <button
+                                  onClick={() => {
+                                    if (confirm(`Delete link "${link.label}"?`)) {
+                                      deleteFooterLink(col.id, link.id);
+                                    }
+                                  }}
+                                  className="p-1 text-red-500 hover:text-red-700"
+                                  title="Delete link"
+                                >
+                                  <Trash2 className="w-3 h-3" />
+                                </button>
+                              </div>
                             </div>
                           </li>
                         ))}
@@ -5881,10 +6182,10 @@ export default function AdminDashboardPage() {
         {/* 7. Footer Column Link Modal */}
         {isAddFooterLinkModalOpen && (
           <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-            <div className="bg-white rounded-3xl p-6 sm:p-8 max-w-md w-full shadow-2xl border border-slate-200 text-xs animate-scale-in space-y-4">
+            <div className="bg-white rounded-3xl p-6 sm:p-8 max-w-lg w-full shadow-2xl border border-slate-200 text-xs animate-scale-in space-y-4 max-h-[90vh] overflow-y-auto">
               <div className="flex justify-between items-center border-b border-slate-100 pb-3">
                 <h3 className="font-serif text-lg font-bold text-slate-900">
-                  {editingFooterLink ? 'Edit Footer Link' : 'Add Footer Link'}
+                  {editingFooterLink ? 'Edit Footer Link & Destination' : 'Add Footer Link & Write-Up'}
                 </h3>
                 <button onClick={() => setIsAddFooterLinkModalOpen(false)} className="text-slate-400 hover:text-slate-600">
                   <X className="w-5 h-5" />
@@ -5894,38 +6195,194 @@ export default function AdminDashboardPage() {
               <form
                 onSubmit={(e) => {
                   e.preventDefault();
+                  const slug = (footerLinkForm.label || 'link').toLowerCase().trim().replace(/[^a-z0-9]+/g, '-');
+                  let finalHref = footerLinkForm.href;
+                  let finalWriteup = null;
+
+                  if (footerLinkForm.linkType === 'preset_policy') {
+                    finalHref = `/policies#${footerLinkForm.presetTarget || 'provenance'}`;
+                  } else if (footerLinkForm.linkType === 'preset_about') {
+                    finalHref = `/about#${footerLinkForm.presetTarget || 'goal'}`;
+                  } else if (footerLinkForm.linkType === 'new_policy') {
+                    finalHref = `/policies#${slug}`;
+                    addPolicySection({
+                      id: slug,
+                      title: footerLinkForm.writeupTitle || footerLinkForm.label,
+                      badge: footerLinkForm.writeupBadge || 'OFFICIAL COVENANT',
+                      summary: footerLinkForm.writeupSummary || '',
+                      details: [
+                        {
+                          id: `${slug}-1`,
+                          heading: `1. Platform Covenant on ${footerLinkForm.label}`,
+                          content: footerLinkForm.writeupContent || 'Official provisions and guarantees formulated by Artellium Executive Directorate.'
+                        }
+                      ]
+                    });
+                  } else if (footerLinkForm.linkType === 'new_about') {
+                    finalHref = `/about#${slug}`;
+                    addAboutSection({
+                      id: slug,
+                      title: footerLinkForm.writeupTitle || footerLinkForm.label,
+                      badge: footerLinkForm.writeupBadge || 'ABOUT ARTELLIUM',
+                      summary: footerLinkForm.writeupSummary || '',
+                      content: footerLinkForm.writeupContent || ''
+                    });
+                  } else if (footerLinkForm.linkType === 'custom_writeup') {
+                    finalHref = `#${slug}`;
+                    finalWriteup = {
+                      title: footerLinkForm.writeupTitle || footerLinkForm.label,
+                      badge: footerLinkForm.writeupBadge || 'OFFICIAL COVENANT',
+                      summary: footerLinkForm.writeupSummary || '',
+                      content: footerLinkForm.writeupContent || ''
+                    };
+                  }
+
+                  const payload = {
+                    label: footerLinkForm.label,
+                    href: finalHref,
+                    highlight: footerLinkForm.highlight || 'none',
+                    isVisible: footerLinkForm.isVisible !== false,
+                    ...(finalWriteup ? { writeup: finalWriteup } : {})
+                  };
+
                   if (editingFooterLink) {
-                    updateFooterLink(activeColIdForLink, editingFooterLink.id, footerLinkForm);
+                    updateFooterLink(activeColIdForLink, editingFooterLink.id, payload);
                   } else {
-                    addFooterLink(activeColIdForLink, footerLinkForm);
+                    addFooterLink(activeColIdForLink, payload);
                   }
                   setIsAddFooterLinkModalOpen(false);
                 }}
-                className="space-y-3"
+                className="space-y-4"
               >
                 <div>
-                  <label className="block text-slate-600 mb-1 font-medium">Link Text Label</label>
+                  <label className="block text-slate-700 mb-1 font-bold">Link Text Label</label>
                   <input
                     type="text"
                     required
                     value={footerLinkForm.label}
                     onChange={(e) => setFooterLinkForm({ ...footerLinkForm, label: e.target.value })}
-                    placeholder="e.g. Terms of Fiduciary Custody"
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-slate-900"
+                    placeholder="e.g. Terms of Provenance & Authenticity"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-slate-900 font-semibold"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-slate-600 mb-1 font-medium">Route URL / Link Href</label>
-                  <input
-                    type="text"
-                    required
-                    value={footerLinkForm.href}
-                    onChange={(e) => setFooterLinkForm({ ...footerLinkForm, href: e.target.value })}
-                    placeholder="e.g. /terms or #"
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-slate-900 font-mono"
-                  />
+                  <label className="block text-slate-700 mb-1 font-bold">Write-Up Attachment & Target</label>
+                  <select
+                    value={footerLinkForm.linkType}
+                    onChange={(e) => setFooterLinkForm({ ...footerLinkForm, linkType: e.target.value })}
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-slate-900 cursor-pointer"
+                  >
+                    <option value="preset_policy">Attach to Existing Policy Covenant (Policies Page)</option>
+                    <option value="preset_about">Attach to Existing About Us Section (About Page)</option>
+                    <option value="new_policy">✨ Create New Policy Section & Write-Up (Published to /policies)</option>
+                    <option value="new_about">✨ Create New About Section & Write-Up (Published to /about)</option>
+                    <option value="custom_writeup">📄 Create Direct Standalone Article Write-Up</option>
+                    <option value="custom_url">🔗 Custom URL / Route</option>
+                  </select>
                 </div>
+
+                {footerLinkForm.linkType === 'preset_policy' && (
+                  <div>
+                    <label className="block text-slate-600 mb-1 font-medium">Select Policy Section</label>
+                    <select
+                      value={footerLinkForm.presetTarget}
+                      onChange={(e) => setFooterLinkForm({ ...footerLinkForm, presetTarget: e.target.value })}
+                      className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-slate-900 cursor-pointer font-mono"
+                    >
+                      {(policiesConfig?.sections || INITIAL_POLICIES_CONFIG.sections || []).map((sec) => (
+                        <option key={sec.id} value={sec.id}>
+                          {sec.title} (#{sec.id})
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+
+                {footerLinkForm.linkType === 'preset_about' && (
+                  <div>
+                    <label className="block text-slate-600 mb-1 font-medium">Select About Us Section</label>
+                    <select
+                      value={footerLinkForm.presetTarget}
+                      onChange={(e) => setFooterLinkForm({ ...footerLinkForm, presetTarget: e.target.value })}
+                      className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-slate-900 cursor-pointer font-mono"
+                    >
+                      <option value="goal">Artellium Goal (#goal)</option>
+                      <option value="who-we-are">Who We Are (#who-we-are)</option>
+                      <option value="services">Our Services (#services)</option>
+                      <option value="vision">Our Vision (#vision)</option>
+                      <option value="mission">Our Mission (#mission)</option>
+                      <option value="core-values">Our Core Values (#core-values)</option>
+                      {(aboutConfig?.customSections || []).map((cs) => (
+                        <option key={cs.id} value={cs.id}>
+                          {cs.title} (#{cs.id})
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+
+                {(footerLinkForm.linkType === 'new_policy' || footerLinkForm.linkType === 'new_about' || footerLinkForm.linkType === 'custom_writeup') && (
+                  <div className="p-3.5 bg-amber-50/70 border border-amber-200/80 rounded-2xl space-y-3">
+                    <span className="text-[10px] font-mono font-bold text-amber-900 uppercase tracking-widest block">
+                      New Write-Up Content
+                    </span>
+                    <div>
+                      <label className="block text-slate-600 mb-1 font-medium">Write-Up Title</label>
+                      <input
+                        type="text"
+                        value={footerLinkForm.writeupTitle}
+                        onChange={(e) => setFooterLinkForm({ ...footerLinkForm, writeupTitle: e.target.value })}
+                        placeholder={footerLinkForm.label || 'e.g. Royal Lineage Provenance'}
+                        className="w-full bg-white border border-slate-200 rounded-xl p-2 text-slate-900 font-bold"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-slate-600 mb-1 font-medium">Category Badge / Tag</label>
+                      <input
+                        type="text"
+                        value={footerLinkForm.writeupBadge}
+                        onChange={(e) => setFooterLinkForm({ ...footerLinkForm, writeupBadge: e.target.value })}
+                        placeholder="OFFICIAL COVENANT"
+                        className="w-full bg-white border border-slate-200 rounded-xl p-2 text-slate-900 font-mono text-[10px]"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-slate-600 mb-1 font-medium">Summary / Creed Statement</label>
+                      <textarea
+                        rows={2}
+                        value={footerLinkForm.writeupSummary}
+                        onChange={(e) => setFooterLinkForm({ ...footerLinkForm, writeupSummary: e.target.value })}
+                        placeholder="Key executive statement or core covenant..."
+                        className="w-full bg-white border border-slate-200 rounded-xl p-2 text-slate-900"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-slate-600 mb-1 font-medium">Full Write-Up Body / Clause Text</label>
+                      <textarea
+                        rows={4}
+                        value={footerLinkForm.writeupContent}
+                        onChange={(e) => setFooterLinkForm({ ...footerLinkForm, writeupContent: e.target.value })}
+                        placeholder="Enter the full write-up details, regulatory rules, or historical monograph..."
+                        className="w-full bg-white border border-slate-200 rounded-xl p-2 text-slate-900 font-sans leading-relaxed"
+                      />
+                    </div>
+                  </div>
+                )}
+
+                {footerLinkForm.linkType === 'custom_url' && (
+                  <div>
+                    <label className="block text-slate-600 mb-1 font-medium">Route URL / Link Href</label>
+                    <input
+                      type="text"
+                      required
+                      value={footerLinkForm.href}
+                      onChange={(e) => setFooterLinkForm({ ...footerLinkForm, href: e.target.value })}
+                      placeholder="e.g. /policies or https://..."
+                      className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-slate-900 font-mono"
+                    />
+                  </div>
+                )}
 
                 <div>
                   <label className="block text-slate-600 mb-1 font-medium">Highlight Accent</label>
@@ -5936,8 +6393,8 @@ export default function AdminDashboardPage() {
                   >
                     <option value="none">Standard Link</option>
                     <option value="red">Red (Live Auctions)</option>
-                    <option value="emerald">Emerald (Virtual Rooms)</option>
-                    <option value="amber">Amber / Gold (Admin / Subscriptions)</option>
+                    <option value="emerald">Emerald (Virtual Rooms & Guarantees)</option>
+                    <option value="amber">Amber / Gold (Highlighted Monograph)</option>
                   </select>
                 </div>
 
@@ -5951,10 +6408,199 @@ export default function AdminDashboardPage() {
                   </button>
                   <button
                     type="submit"
-                    className="px-5 py-2 bg-art-gold hover:brightness-110 text-art-black font-bold uppercase rounded-xl"
+                    className="px-5 py-2 bg-art-gold hover:brightness-110 text-art-black font-bold uppercase rounded-xl shadow-gold-glow"
                   >
-                    {editingFooterLink ? 'Save Changes' : 'Add Link'}
+                    {editingFooterLink ? 'Save Changes' : 'Add Link & Write-Up'}
                   </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
+
+        {/* 7B. Comprehensive Link Write-Up Editor Modal */}
+        {isEditWriteupModalOpen && (
+          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-fade-in">
+            <div className="bg-white rounded-3xl p-6 sm:p-8 max-w-2xl w-full shadow-2xl border border-slate-200 text-xs animate-scale-in space-y-5 max-h-[90vh] overflow-y-auto">
+              <div className="flex justify-between items-start border-b border-slate-100 pb-4">
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2">
+                    <span className="p-1 rounded bg-art-gold/15 text-art-gold text-[9px] font-mono font-bold uppercase tracking-wider border border-art-gold/30">
+                      {writeupForm.type === 'policy' ? '📜 Official Policy Covenant' : 
+                       writeupForm.type.startsWith('about') ? '📖 About Us Monograph' : 
+                       '✨ Direct Platform Write-Up'}
+                    </span>
+                    <span className="text-slate-400 font-mono text-[10px]">
+                      {activeLinkForWriteup?.label} ({activeLinkForWriteup?.href})
+                    </span>
+                  </div>
+                  <h3 className="font-serif text-xl sm:text-2xl font-bold text-slate-900">
+                    Edit Write-Up: {writeupForm.title}
+                  </h3>
+                </div>
+                <button 
+                  type="button"
+                  onClick={() => setIsEditWriteupModalOpen(false)} 
+                  className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-800 flex items-center justify-center transition shrink-0"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+
+              {writeupSaveSuccess && (
+                <div className="p-3 bg-emerald-50 border border-emerald-300 rounded-xl text-emerald-800 font-bold text-xs flex items-center gap-2 animate-fade-in">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                  <span>Write-up successfully updated and saved to platform ledger & storage!</span>
+                </div>
+              )}
+
+              <form onSubmit={handleSaveWriteupModal} className="space-y-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-slate-700 mb-1 font-bold">Write-Up Title</label>
+                    <input
+                      type="text"
+                      required
+                      value={writeupForm.title}
+                      onChange={(e) => setWriteupForm({ ...writeupForm, title: e.target.value })}
+                      className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-slate-900 font-serif font-bold text-sm"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-slate-700 mb-1 font-bold">Category Badge / Subhead</label>
+                    <input
+                      type="text"
+                      value={writeupForm.badge}
+                      onChange={(e) => setWriteupForm({ ...writeupForm, badge: e.target.value })}
+                      className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-slate-900 font-mono text-xs uppercase"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-slate-700 mb-1 font-bold">Summary / Creed / Opening Monograph</label>
+                  <textarea
+                    rows={3}
+                    value={writeupForm.summary}
+                    onChange={(e) => setWriteupForm({ ...writeupForm, summary: e.target.value })}
+                    placeholder="Enter the primary covenant statement, quote, or executive summary..."
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-slate-900 leading-relaxed font-serif"
+                  />
+                </div>
+
+                {/* For Policy / Detailed Clauses */}
+                {Array.isArray(writeupForm.details) && writeupForm.details.length > 0 && (
+                  <div className="space-y-3 pt-3 border-t border-slate-100">
+                    <div className="flex items-center justify-between">
+                      <span className="font-bold text-slate-800 text-xs flex items-center gap-1.5">
+                        <ShieldCheck className="w-4 h-4 text-emerald-600" />
+                        <span>Detailed Clauses & Sub-Provisions ({writeupForm.details.length})</span>
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const newClause = {
+                            id: `clause-${Date.now()}`,
+                            heading: `${writeupForm.details.length + 1}. Additional Protocol Clause`,
+                            content: 'New statutory covenant clause text for verified Artellium stakeholders.'
+                          };
+                          setWriteupForm({
+                            ...writeupForm,
+                            details: [...writeupForm.details, newClause]
+                          });
+                        }}
+                        className="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-[10px] rounded-lg flex items-center gap-1 transition"
+                      >
+                        <Plus className="w-3 h-3" />
+                        <span>Add Clause</span>
+                      </button>
+                    </div>
+
+                    <div className="space-y-3">
+                      {writeupForm.details.map((detail, idx) => (
+                        <div key={detail.id || idx} className="p-3.5 bg-slate-50 rounded-2xl border border-slate-200 space-y-2">
+                          <div className="flex items-center justify-between gap-2">
+                            <input
+                              type="text"
+                              value={detail.heading || ''}
+                              onChange={(e) => {
+                                const updated = [...writeupForm.details];
+                                updated[idx] = { ...updated[idx], heading: e.target.value };
+                                setWriteupForm({ ...writeupForm, details: updated });
+                              }}
+                              placeholder="Clause Heading (e.g. 1. Dual Certificate of Authenticity)"
+                              className="w-full bg-white border border-slate-200 rounded-lg p-1.5 font-bold text-slate-900 text-xs"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const updated = writeupForm.details.filter((_, i) => i !== idx);
+                                setWriteupForm({ ...writeupForm, details: updated });
+                              }}
+                              className="p-1 text-red-500 hover:text-red-700"
+                              title="Delete clause"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                          <textarea
+                            rows={3}
+                            value={detail.content || ''}
+                            onChange={(e) => {
+                              const updated = [...writeupForm.details];
+                              updated[idx] = { ...updated[idx], content: e.target.value };
+                              setWriteupForm({ ...writeupForm, details: updated });
+                            }}
+                            placeholder="Full clause legal or operational text..."
+                            className="w-full bg-white border border-slate-200 rounded-lg p-2 text-slate-700 text-xs leading-relaxed"
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* For Text Content */}
+                {(!writeupForm.details || writeupForm.details.length === 0 || writeupForm.content) && (
+                  <div>
+                    <label className="block text-slate-700 mb-1 font-bold">Write-Up Content / Body Paragraphs</label>
+                    <textarea
+                      rows={6}
+                      value={writeupForm.content}
+                      onChange={(e) => setWriteupForm({ ...writeupForm, content: e.target.value })}
+                      placeholder="Enter the full text, statements, guidelines, or pillars..."
+                      className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-slate-900 leading-relaxed font-sans text-xs"
+                    />
+                  </div>
+                )}
+
+                <div className="flex items-center justify-between pt-4 border-t border-slate-100">
+                  {activeLinkForWriteup?.href && activeLinkForWriteup.href !== '#' && (
+                    <Link
+                      href={activeLinkForWriteup.href}
+                      target="_blank"
+                      className="px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl flex items-center gap-1.5 text-xs transition"
+                    >
+                      <ExternalLink className="w-3.5 h-3.5" />
+                      <span>View Live Page</span>
+                    </Link>
+                  )}
+                  <div className="flex items-center gap-2 ml-auto">
+                    <button
+                      type="button"
+                      onClick={() => setIsEditWriteupModalOpen(false)}
+                      className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-bold"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      className="px-6 py-2.5 bg-art-gold hover:brightness-110 text-art-black font-bold uppercase rounded-xl shadow-gold-glow flex items-center gap-1.5"
+                    >
+                      <Save className="w-4 h-4" />
+                      <span>Save Write-Up</span>
+                    </button>
+                  </div>
                 </div>
               </form>
             </div>

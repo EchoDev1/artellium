@@ -3051,6 +3051,37 @@ export function StoreProvider({ children }) {
     setAboutConfig(prev => ({ ...prev, ...updatedFields }));
   };
 
+  const addAboutSection = (newSection) => {
+    const created = {
+      ...newSection,
+      id: newSection.id || 'about-' + Date.now(),
+      title: newSection.title || 'About Section',
+      badge: newSection.badge || 'ABOUT ARTELLIUM',
+      summary: newSection.summary || '',
+      content: newSection.content || '',
+      details: newSection.details || []
+    };
+    setAboutConfig(prev => ({
+      ...prev,
+      customSections: [...(prev.customSections || []), created]
+    }));
+    return created;
+  };
+
+  const updateAboutSection = (sectionId, updatedFields) => {
+    setAboutConfig(prev => ({
+      ...prev,
+      customSections: (prev.customSections || []).map(s => s.id === sectionId ? { ...s, ...updatedFields } : s)
+    }));
+  };
+
+  const deleteAboutSection = (sectionId) => {
+    setAboutConfig(prev => ({
+      ...prev,
+      customSections: (prev.customSections || []).filter(s => s.id !== sectionId)
+    }));
+  };
+
   const resetAboutConfig = () => {
     setAboutConfig(INITIAL_ABOUT_CONFIG);
   };
@@ -3616,6 +3647,30 @@ export function StoreProvider({ children }) {
         updateSocialLink,
         deleteSocialLink,
         resetFooterConfig,
+        // About Us CMS Suite
+        aboutConfig,
+        updateAboutConfig,
+        addAboutSection,
+        updateAboutSection,
+        deleteAboutSection,
+        resetAboutConfig,
+        // Policies CMS Suite
+        policiesConfig,
+        updatePoliciesConfig,
+        updatePolicySection,
+        addPolicySection,
+        deletePolicySection,
+        resetPoliciesConfig,
+        // Contact Us CMS Suite
+        contactConfig,
+        updateContactConfig,
+        updateOffice,
+        addOffice,
+        deleteOffice,
+        updateContactChannel,
+        addContactChannel,
+        deleteContactChannel,
+        resetContactConfig,
         // Priority Banner Management & Pricing
         priorityBannerPricing,
         updatePriorityBannerPricing,

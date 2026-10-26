@@ -18,11 +18,17 @@ import {
   Instagram, 
   Linkedin, 
   Youtube, 
-  Facebook 
+  Facebook,
+  X,
+  Printer,
+  CheckCircle2,
+  ShieldCheck,
+  FileText
 } from 'lucide-react';
 
 export default function Footer() {
   const { footerConfig, artworks = [], demoTransitionMode = 'progressive' } = useStore();
+  const [activeWriteupModal, setActiveWriteupModal] = useState(null);
   const isLiveOnly = demoTransitionMode === 'live_only';
 
   const cfg = footerConfig || {
@@ -461,7 +467,21 @@ export default function Footer() {
                 <ul className="space-y-2 text-xs">
                   {(col.links || []).filter(l => l.isVisible !== false).map((link) => (
                     <li key={link.id}>
-                      {link.href && link.href !== '#' ? (
+                      {link.writeup ? (
+                        <button
+                          type="button"
+                          onClick={() => setActiveWriteupModal(link)}
+                          className={`text-left transition cursor-pointer flex items-center gap-1.5 ${
+                            link.highlight === 'red' ? 'text-red-400 hover:text-red-300' :
+                            link.highlight === 'emerald' ? 'text-emerald-400 hover:text-emerald-300' :
+                            link.highlight === 'amber' ? 'text-amber-300 hover:text-white' :
+                            'hover:text-art-gold text-slate-400'
+                          }`}
+                        >
+                          <span>{link.label}</span>
+                          <FileText className="w-3 h-3 text-art-gold/70 shrink-0" />
+                        </button>
+                      ) : link.href && link.href !== '#' ? (
                         link.href.startsWith('mailto:') || link.href.startsWith('tel:') || link.href.startsWith('http') ? (
                           <a
                             href={link.href}
@@ -533,6 +553,97 @@ export default function Footer() {
         </div>
 
       </div>
+
+      {/* ========================================================================= */}
+      {/* 5. LUXURY WRITE-UP READER MODAL                                           */}
+      {/* ========================================================================= */}
+      {activeWriteupModal && activeWriteupModal.writeup && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fade-in">
+          <div className="bg-[#0B0E14] border border-art-gold/40 rounded-3xl max-w-2xl w-full max-h-[90vh] overflow-hidden flex flex-col shadow-[0_25px_60px_rgba(0,0,0,0.8)] text-slate-200">
+            {/* Modal Header */}
+            <div className="p-6 border-b border-white/10 flex items-start justify-between gap-4 bg-gradient-to-r from-[#171206] via-[#0E121A] to-[#0A0D14] relative">
+              <div className="absolute top-0 inset-x-8 h-[2px] bg-gradient-to-r from-transparent via-art-gold/50 to-transparent" />
+              <div className="space-y-1.5">
+                <div className="flex items-center gap-2">
+                  <span className="px-2 py-0.5 rounded bg-art-gold/15 text-art-gold border border-art-gold/30 text-[10px] font-mono font-bold uppercase tracking-wider">
+                    {activeWriteupModal.writeup.badge || 'OFFICIAL COVENANT'}
+                  </span>
+                  <span className="text-slate-500 text-[10px] font-mono">
+                    ARTELLIUM GOVERNANCE
+                  </span>
+                </div>
+                <h3 className="font-serif text-2xl font-bold text-white tracking-wide">
+                  {activeWriteupModal.writeup.title || activeWriteupModal.label}
+                </h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setActiveWriteupModal(null)}
+                className="w-8 h-8 rounded-full bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white flex items-center justify-center transition border border-white/10 shrink-0"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <div className="p-6 sm:p-8 overflow-y-auto space-y-6 text-xs sm:text-sm font-sans leading-relaxed text-slate-300">
+              {activeWriteupModal.writeup.summary && (
+                <blockquote className="p-4 rounded-2xl bg-black/40 border-l-4 border-art-gold text-amber-100 font-serif italic text-sm sm:text-base leading-relaxed">
+                  "{activeWriteupModal.writeup.summary}"
+                </blockquote>
+              )}
+
+              {activeWriteupModal.writeup.content && (
+                <div className="whitespace-pre-line space-y-3 text-slate-300 font-sans leading-relaxed">
+                  {activeWriteupModal.writeup.content}
+                </div>
+              )}
+
+              {(activeWriteupModal.writeup.details || []).length > 0 && (
+                <div className="space-y-4 pt-4 border-t border-white/10">
+                  <h4 className="font-serif font-bold text-white text-sm uppercase tracking-wider text-art-gold">
+                    Detailed Clauses & Provisions
+                  </h4>
+                  <div className="space-y-3">
+                    {activeWriteupModal.writeup.details.map((detail, idx) => (
+                      <div key={detail.id || idx} className="p-4 rounded-xl bg-white/[0.03] border border-white/10 space-y-1.5">
+                        {detail.heading && (
+                          <h5 className="font-bold text-white text-xs sm:text-sm flex items-center gap-2">
+                            <ShieldCheck className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                            <span>{detail.heading}</span>
+                          </h5>
+                        )}
+                        <p className="text-slate-400 text-xs leading-relaxed">
+                          {detail.content}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Modal Footer */}
+            <div className="p-4 sm:p-5 border-t border-white/10 bg-[#07090D] flex items-center justify-between text-xs">
+              <button
+                type="button"
+                onClick={() => window.print()}
+                className="px-4 py-2 rounded-xl bg-white/5 hover:bg-white/10 text-slate-300 border border-white/10 flex items-center gap-1.5 font-bold transition"
+              >
+                <Printer className="w-3.5 h-3.5" />
+                <span>Print Document</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setActiveWriteupModal(null)}
+                className="px-5 py-2 rounded-xl bg-art-gold hover:brightness-110 text-art-black font-bold uppercase tracking-wider shadow-gold-glow transition"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </footer>
   );
 }

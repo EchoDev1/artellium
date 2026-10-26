@@ -58,6 +58,7 @@ export default function AboutPage() {
     { id: 'vision', label: cfg.visionTitle || 'Our Vision', icon: Eye },
     { id: 'mission', label: cfg.missionTitle || 'Our Mission', icon: Compass },
     { id: 'core-values', label: cfg.coreValuesTitle || 'Our Core Values', icon: Lightbulb },
+    ...(cfg.customSections || []).map(cs => ({ id: cs.id, label: cs.title, icon: Sparkles }))
   ];
 
   return (
@@ -625,6 +626,66 @@ export default function AboutPage() {
             ))}
           </div>
         </section>
+
+        {/* CUSTOM ABOUT WRITE-UPS ADDED VIA CMS */}
+        {(cfg.customSections || []).map((sec) => (
+          <section
+            key={sec.id}
+            id={sec.id}
+            className={`scroll-mt-28 p-8 sm:p-12 rounded-3xl border transition-all duration-300 space-y-6 ${
+              activeHash === sec.id
+                ? 'bg-gradient-to-br from-[#181105] via-[#0E1118] to-[#0A0D14] border-art-gold/60 shadow-2xl ring-1 ring-art-gold/30'
+                : 'bg-[#0E1118] border-white/10'
+            }`}
+          >
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-white/10 pb-6">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-art-gold via-amber-600 to-art-gold-dark p-0.5 shadow-gold-glow shrink-0">
+                  <div className="w-full h-full bg-[#080A0E] rounded-[14px] flex items-center justify-center">
+                    <Sparkles className="w-6 h-6 text-art-gold" />
+                  </div>
+                </div>
+                <div>
+                  <span className="text-[10px] font-mono font-bold text-art-gold uppercase tracking-widest block">
+                    {sec.badge || 'ABOUT ARTELLIUM'}
+                  </span>
+                  <h2 className="font-serif text-2xl sm:text-4xl font-bold text-white">
+                    {sec.title}
+                  </h2>
+                </div>
+              </div>
+            </div>
+
+            {sec.summary && (
+              <blockquote className="p-4 rounded-xl bg-black/40 border-l-4 border-art-gold text-amber-100 font-serif italic text-base sm:text-lg">
+                "{sec.summary}"
+              </blockquote>
+            )}
+
+            {sec.content && (
+              <div className="text-sm sm:text-base text-slate-300 leading-relaxed font-sans whitespace-pre-line space-y-3">
+                {sec.content}
+              </div>
+            )}
+
+            {(sec.details || []).length > 0 && (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t border-white/10">
+                {(sec.details || []).map((det, dIdx) => (
+                  <div key={det.id || dIdx} className="p-4 rounded-2xl bg-black/30 border border-art-gold/20 space-y-2">
+                    {det.heading && (
+                      <h4 className="font-serif font-bold text-white text-base text-art-gold">
+                        {det.heading}
+                      </h4>
+                    )}
+                    <p className="text-xs sm:text-sm text-slate-300 leading-relaxed font-sans">
+                      {det.content}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            )}
+          </section>
+        ))}
 
         {/* ========================================================================= */}
         {/* BOTTOM CALL TO ACTION                                                     */}
