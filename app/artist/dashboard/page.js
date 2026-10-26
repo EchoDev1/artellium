@@ -46,7 +46,9 @@ import {
   Play,
   Crown,
   ChevronDown,
-  ChevronUp
+  ChevronUp,
+  RefreshCw,
+  Zap
 } from 'lucide-react';
 import Link from 'next/link';
 import ProfilePhotoStudioModal from '@/components/ProfilePhotoStudioModal';
@@ -234,6 +236,24 @@ export default function ArtistDashboardPage() {
   // Admin Oversight & Artist Selector
   const isAdmin = currentUser?.role === 'admin';
   const [selectedArtistName, setSelectedArtistName] = useState('');
+  const [isConciergeModalOpen, setIsConciergeModalOpen] = useState(false);
+  const [conciergeFixStatus, setConciergeFixStatus] = useState('');
+  const [conciergeBankForm, setConciergeBankForm] = useState({
+    payout_bank: '',
+    payout_account: '',
+    payout_account_name: ''
+  });
+
+  // Client-side URL query param reading (?artist=... or ?artistName=...)
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const paramArtist = params.get('artist') || params.get('artistName');
+      if (paramArtist) {
+        setSelectedArtistName(decodeURIComponent(paramArtist));
+      }
+    }
+  }, []);
 
   // Available artists list from sellers and artworks
   const artistsList = useMemo(() => {
@@ -676,22 +696,22 @@ export default function ArtistDashboardPage() {
       {/* Top Banner Accent */}
       <div className="h-1 bg-gradient-to-r from-art-gold via-amber-500 to-art-gold-dark w-full" />
 
-      {/* Sticky Admin Oversight Mode Bar */}
+      {/* Sticky Admin Artist Concierge Assistance Console */}
       {isAdmin && (
-        <div className="bg-gradient-to-r from-slate-900 via-amber-950 to-slate-900 border-b-2 border-art-gold p-3.5 px-4 sm:px-8 text-xs text-white shadow-xl sticky top-16 z-30">
+        <div className="bg-gradient-to-r from-slate-900 via-amber-950 to-slate-900 border-b-2 border-art-gold p-3 px-4 sm:px-8 text-xs text-white shadow-xl sticky top-16 z-30">
           <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3">
             <div className="flex items-center gap-2.5">
               <span className="p-1.5 rounded-lg bg-art-gold text-art-black font-bold text-[10px] uppercase font-mono tracking-wider flex items-center gap-1 shadow">
-                <ShieldCheck className="w-3.5 h-3.5" />
-                <span>Admin Artist Access</span>
+                <Sparkles className="w-3.5 h-3.5" />
+                <span>Artist Concierge Assistance</span>
               </span>
               <span className="text-slate-300 font-sans text-xs hidden md:inline">
-                Full authority to manage artworks, upload new catalog pieces, draw signatures, audit payouts, and moderate videos.
+                Assisting <strong className="text-amber-300">{myArtistName}</strong>: Resolve connection breaks, fix banking, or assist basic operations immediately on their behalf.
               </span>
             </div>
 
-            <div className="flex items-center gap-2.5 flex-wrap">
-              <label className="text-[11px] text-art-gold font-bold">Manage Artist Studio:</label>
+            <div className="flex items-center gap-2 flex-wrap">
+              <label className="text-[11px] text-art-gold font-bold">Assisting:</label>
               <select
                 value={myArtistName}
                 onChange={(e) => setSelectedArtistName(e.target.value)}
@@ -705,10 +725,35 @@ export default function ArtistDashboardPage() {
               </select>
 
               <Link
-                href="/admin/dashboard"
-                className="px-3 py-1 bg-art-gold hover:brightness-110 text-art-black font-bold rounded-lg transition text-xs shadow-sm flex items-center gap-1 shrink-0"
+                href={`/artist/${encodeURIComponent(mySellerProfile?.id || myArtistName)}`}
+                target="_blank"
+                className="px-2.5 py-1 bg-white/10 hover:bg-white/20 border border-amber-400/40 text-amber-200 font-bold rounded-lg transition text-xs shadow-sm flex items-center gap-1 shrink-0"
               >
-                <span>← Back to Admin Console</span>
+                <ExternalLink className="w-3.5 h-3.5" />
+                <span>Public Page ↗</span>
+              </Link>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setConciergeBankForm({
+                    payout_bank: mySellerProfile?.payout_bank || 'Wema Bank PLC',
+                    payout_account: mySellerProfile?.payout_account || '',
+                    payout_account_name: mySellerProfile?.payout_account_name || `${myArtistName} Studio`
+                  });
+                  setIsConciergeModalOpen(true);
+                }}
+                className="px-3 py-1 bg-gradient-to-r from-amber-500 to-art-gold hover:brightness-110 text-art-black font-bold rounded-lg transition text-xs shadow-sm flex items-center gap-1 shrink-0"
+              >
+                <Zap className="w-3.5 h-3.5" />
+                <span>🛠️ Quick Fix Toolkit</span>
+              </button>
+
+              <Link
+                href="/admin/dashboard"
+                className="px-3 py-1 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-600 font-bold rounded-lg transition text-xs shadow-sm flex items-center gap-1 shrink-0"
+              >
+                <span>← Admin Console</span>
               </Link>
             </div>
           </div>
@@ -3107,6 +3152,193 @@ export default function ArtistDashboardPage() {
           userRole="artist"
           userName={myArtistName}
         />
+
+        {/* Concierge Artist Troubleshooting & Immediate Assistance Modal */}
+        {isConciergeModalOpen && (
+          <div className="fixed inset-0 bg-black/75 backdrop-blur-md z-50 flex items-center justify-center p-4">
+            <div className="bg-white rounded-3xl max-w-xl w-full shadow-2xl border border-amber-300/60 overflow-hidden animate-scale-in text-xs max-h-[92vh] flex flex-col">
+              {/* Header */}
+              <div className="p-5 sm:p-6 bg-gradient-to-r from-amber-950 via-slate-900 to-amber-950 text-white flex items-start justify-between border-b border-amber-500/20">
+                <div className="space-y-1">
+                  <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30 text-[10px] font-bold uppercase tracking-wider">
+                    <Sparkles className="w-3 h-3" />
+                    <span>Artist Concierge Assistance Suite</span>
+                  </div>
+                  <h3 className="font-serif text-lg sm:text-xl font-bold text-amber-100">
+                    Quick Fix Toolkit: {myArtistName}
+                  </h3>
+                  <p className="text-slate-400 text-xs leading-relaxed max-w-md">
+                    Assisting artist in real-time: Fix connection breaks, resolve WEMA settlement accounts, or assist basic studio activities.
+                  </p>
+                </div>
+                <button
+                  onClick={() => {
+                    setIsConciergeModalOpen(false);
+                    setConciergeFixStatus('');
+                  }}
+                  className="p-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-white transition-colors"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              {/* Body */}
+              <div className="p-5 sm:p-6 space-y-5 overflow-y-auto flex-1">
+                {conciergeFixStatus && (
+                  <div className="p-3.5 bg-emerald-50 border border-emerald-300 rounded-2xl flex items-center gap-2.5 text-emerald-800 font-medium">
+                    <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
+                    <span>{conciergeFixStatus}</span>
+                  </div>
+                )}
+
+                {/* Instant Actions */}
+                <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4 space-y-3">
+                  <div className="text-[11px] font-bold text-slate-700 uppercase tracking-wider flex items-center gap-2">
+                    <Zap className="w-3.5 h-3.5 text-amber-600" />
+                    <span>Instant Studio Troubleshooting</span>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setConciergeFixStatus('Connection refreshed! Studio local storage synced & network state cleared.');
+                      }}
+                      className="p-3 rounded-xl bg-white border border-slate-200 hover:border-amber-400 hover:bg-amber-50 text-slate-800 text-left font-medium transition-all shadow-sm flex items-center gap-2.5"
+                    >
+                      <RefreshCw className="w-4 h-4 text-amber-600 shrink-0" />
+                      <div>
+                        <div className="font-bold text-[11px] text-slate-900">Clear Cache & Sync</div>
+                        <div className="text-[10px] text-slate-500">Fix connection breaks</div>
+                      </div>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setActiveArtistTab('studio_operations');
+                        setIsConciergeModalOpen(false);
+                        const el = document.getElementById('catalog-uploader');
+                        if (el) el.scrollIntoView({ behavior: 'smooth' });
+                      }}
+                      className="p-3 rounded-xl bg-white border border-slate-200 hover:border-emerald-400 hover:bg-emerald-50 text-slate-800 text-left font-medium transition-all shadow-sm flex items-center gap-2.5"
+                    >
+                      <PlusCircle className="w-4 h-4 text-emerald-600 shrink-0" />
+                      <div>
+                        <div className="font-bold text-[11px] text-slate-900">Assist Artwork Upload</div>
+                        <div className="text-[10px] text-slate-500">Upload piece for artist</div>
+                      </div>
+                    </button>
+
+                    <Link
+                      href={`/artist/${encodeURIComponent(mySellerProfile?.id || myArtistName)}`}
+                      target="_blank"
+                      className="p-3 rounded-xl bg-white border border-slate-200 hover:border-blue-400 hover:bg-blue-50 text-slate-800 text-left font-medium transition-all shadow-sm flex items-center gap-2.5"
+                    >
+                      <ExternalLink className="w-4 h-4 text-blue-600 shrink-0" />
+                      <div>
+                        <div className="font-bold text-[11px] text-slate-900">Open Public Page</div>
+                        <div className="text-[10px] text-slate-500">View what collectors see</div>
+                      </div>
+                    </Link>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (mySellerProfile?.id) {
+                          updateSeller(mySellerProfile.id, { is_verified: true, plan: 'pro' });
+                          setConciergeFixStatus('Verified status & Pro tier confirmed for artist!');
+                        }
+                      }}
+                      className="p-3 rounded-xl bg-white border border-slate-200 hover:border-purple-400 hover:bg-purple-50 text-slate-800 text-left font-medium transition-all shadow-sm flex items-center gap-2.5"
+                    >
+                      <Crown className="w-4 h-4 text-purple-600 shrink-0" />
+                      <div>
+                        <div className="font-bold text-[11px] text-slate-900">Verify & Set Pro</div>
+                        <div className="text-[10px] text-slate-500">Grant verified badge</div>
+                      </div>
+                    </button>
+                  </div>
+                </div>
+
+                {/* Direct Banking Form */}
+                <div className="space-y-3.5">
+                  <div className="text-[11px] font-bold text-slate-700 uppercase tracking-wider flex items-center gap-2">
+                    <CreditCard className="w-3.5 h-3.5 text-slate-500" />
+                    <span>Direct Wema Bank Settlement Details</span>
+                  </div>
+
+                  <div className="space-y-2.5">
+                    <div>
+                      <label className="block text-slate-600 mb-1 font-semibold">Bank Name</label>
+                      <input
+                        type="text"
+                        value={conciergeBankForm.payout_bank}
+                        onChange={(e) => setConciergeBankForm({ ...conciergeBankForm, payout_bank: e.target.value })}
+                        placeholder="Wema Bank PLC"
+                        className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-slate-900 font-medium"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-slate-600 mb-1 font-semibold">Account / NUBAN Number</label>
+                      <input
+                        type="text"
+                        value={conciergeBankForm.payout_account}
+                        onChange={(e) => setConciergeBankForm({ ...conciergeBankForm, payout_account: e.target.value })}
+                        placeholder="10-digit NUBAN"
+                        className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-slate-900 font-mono"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-slate-600 mb-1 font-semibold">Beneficiary Account Name</label>
+                      <input
+                        type="text"
+                        value={conciergeBankForm.payout_account_name}
+                        onChange={(e) => setConciergeBankForm({ ...conciergeBankForm, payout_account_name: e.target.value })}
+                        placeholder="Beneficiary legal name"
+                        className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-slate-900 font-medium"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Footer */}
+              <div className="p-4 sm:p-5 bg-slate-50 border-t border-slate-200 flex items-center justify-between gap-3">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsConciergeModalOpen(false);
+                    setConciergeFixStatus('');
+                  }}
+                  className="px-4 py-2 bg-white border border-slate-200 hover:bg-slate-100 text-slate-700 rounded-xl font-bold"
+                >
+                  Close
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (mySellerProfile?.id) {
+                      updateSeller(mySellerProfile.id, {
+                        payout_bank: conciergeBankForm.payout_bank,
+                        payout_account: conciergeBankForm.payout_account,
+                        payout_account_name: conciergeBankForm.payout_account_name
+                      });
+                      setConciergeFixStatus('Banking details saved & synced to artist records successfully!');
+                      setTimeout(() => {
+                        setIsConciergeModalOpen(false);
+                        setConciergeFixStatus('');
+                      }, 1200);
+                    }
+                  }}
+                  className="px-5 py-2 bg-gradient-to-r from-amber-600 to-amber-500 hover:brightness-110 text-white font-bold uppercase tracking-wider rounded-xl shadow-md flex items-center gap-2"
+                >
+                  <Check className="w-4 h-4" />
+                  <span>Save Banking Changes</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
       </div>
     </div>

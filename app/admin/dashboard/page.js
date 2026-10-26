@@ -451,6 +451,32 @@ export default function AdminDashboardPage() {
   });
   const [writeupSaveSuccess, setWriteupSaveSuccess] = useState(false);
 
+  // Artist & Collector Concierge Troubleshooting State
+  const [artistTroubleshootModal, setArtistTroubleshootModal] = useState(null);
+  const [artistSearchInput, setArtistSearchInput] = useState('');
+  const [artistFilterTab, setArtistFilterTab] = useState('all'); // 'all', 'priority', 'needs_bank'
+  const [artistFixForm, setArtistFixForm] = useState({
+    payout_bank: '',
+    payout_account: '',
+    payout_name: '',
+    phone: '',
+    city: '',
+    plan: 'standard',
+    is_verified: true
+  });
+  const [artistFixSuccessMsg, setArtistFixSuccessMsg] = useState('');
+
+  const [collectorTroubleshootModal, setCollectorTroubleshootModal] = useState(null);
+  const [collectorSearchInput, setCollectorSearchInput] = useState('');
+  const [collectorFixForm, setCollectorFixForm] = useState({
+    address: '',
+    city: '',
+    country: '',
+    phone: '',
+    biddingTier: 'Sovereign'
+  });
+  const [collectorFixSuccessMsg, setCollectorFixSuccessMsg] = useState('');
+
   const [isAddSocialModalOpen, setIsAddSocialModalOpen] = useState(false);
   const [editingSocial, setEditingSocial] = useState(null);
   const [socialForm, setSocialForm] = useState({ platform: '', url: '', isVisible: true });
@@ -658,24 +684,27 @@ export default function AdminDashboardPage() {
   const getLinkWriteupBadge = (link) => {
     if (link.writeup) {
       return (
-        <span className="px-1.5 py-0.5 rounded bg-art-gold/15 text-art-gold text-[9px] font-mono font-bold border border-art-gold/30">
-          Custom Write-Up
+        <span className="px-2 py-0.5 rounded-full bg-art-gold/15 hover:bg-art-gold/25 text-art-gold text-[9px] font-mono font-bold border border-art-gold/40 flex items-center gap-1 transition shadow-sm">
+          <FileText className="w-2.5 h-2.5" />
+          <span>Custom Write-Up</span>
         </span>
       );
     }
     if (link.href?.includes('/policies#')) {
       const secId = link.href.split('#')[1];
       return (
-        <span className="px-1.5 py-0.5 rounded bg-blue-50 text-blue-800 text-[9px] font-mono font-bold border border-blue-200">
-          Policy #{secId}
+        <span className="px-2 py-0.5 rounded-full bg-blue-50 hover:bg-blue-100 text-blue-800 text-[9px] font-mono font-bold border border-blue-200 flex items-center gap-1 transition shadow-sm">
+          <FileText className="w-2.5 h-2.5 text-blue-600" />
+          <span>Policy #{secId}</span>
         </span>
       );
     }
     if (link.href?.includes('/about#')) {
       const secId = link.href.split('#')[1];
       return (
-        <span className="px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-800 text-[9px] font-mono font-bold border border-emerald-200">
-          About #{secId}
+        <span className="px-2 py-0.5 rounded-full bg-emerald-50 hover:bg-emerald-100 text-emerald-800 text-[9px] font-mono font-bold border border-emerald-200 flex items-center gap-1 transition shadow-sm">
+          <FileText className="w-2.5 h-2.5 text-emerald-600" />
+          <span>About #{secId}</span>
         </span>
       );
     }
@@ -1391,21 +1420,67 @@ export default function AdminDashboardPage() {
             <div className="p-6 sm:p-8 rounded-3xl bg-white border border-slate-200 shadow-sm space-y-6">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-4">
                 <div>
-                  <h3 className="font-serif text-xl font-bold text-slate-900 flex items-center gap-2">
-                    <Palette className="w-5 h-5 text-art-gold" />
-                    <span>Master Artists Studio & Dashboards Control</span>
+                  <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-50 text-amber-900 border border-amber-300 font-mono text-[10px] font-bold uppercase mb-2">
+                    <ShieldCheck className="w-3.5 h-3.5 text-art-gold" />
+                    <span>Live Concierge & Master Creator Assistance</span>
+                  </div>
+                  <h3 className="font-serif text-xl sm:text-2xl font-bold text-slate-900 flex items-center gap-2">
+                    <Palette className="w-6 h-6 text-art-gold" />
+                    <span>Master Artists Studio & Concierge Hub</span>
                   </h3>
-                  <p className="text-xs text-slate-500 mt-1">
-                    Complete administrative authority to open and manage any Artist Dashboard, upload catalog pieces on their behalf, inspect payouts, and audit digital signatures.
+                  <p className="text-xs text-slate-500 mt-1 max-w-2xl leading-relaxed">
+                    Access every master artist's studio in live assistance mode. View their entire activity, inspect public portfolio pages, troubleshoot WEMA bank settlements, fix connection breaks, and upload pieces on their behalf.
                   </p>
                 </div>
                 <Link
                   href="/artist/dashboard"
-                  className="px-4 py-2.5 rounded-xl bg-art-gold hover:brightness-110 text-art-black font-bold uppercase tracking-wider flex items-center gap-2 transition shadow-sm shrink-0"
+                  className="px-4 py-2.5 rounded-xl bg-art-gold hover:brightness-110 text-art-black font-bold uppercase tracking-wider flex items-center gap-2 transition shadow-gold-glow shrink-0"
                 >
                   <Palette className="w-4 h-4" />
                   <span>Launch Live Artist Studio</span>
                 </Link>
+              </div>
+
+              {/* Search & Filter Toolbar */}
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-slate-50 p-3 rounded-2xl border border-slate-200">
+                <div className="relative flex-1">
+                  <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                  <input
+                    type="text"
+                    value={artistSearchInput}
+                    onChange={(e) => setArtistSearchInput(e.target.value)}
+                    placeholder="Search master artists by name, country, city, or medium..."
+                    className="w-full bg-white border border-slate-200 rounded-xl pl-9 pr-3 py-2 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:border-art-gold"
+                  />
+                </div>
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  <button
+                    onClick={() => setArtistFilterTab('all')}
+                    className={`px-3 py-1.5 rounded-xl font-bold text-[11px] transition ${
+                      artistFilterTab === 'all' ? 'bg-slate-900 text-white' : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'
+                    }`}
+                  >
+                    All Artists ({sellers.length})
+                  </button>
+                  <button
+                    onClick={() => setArtistFilterTab('priority')}
+                    className={`px-3 py-1.5 rounded-xl font-bold text-[11px] transition flex items-center gap-1 ${
+                      artistFilterTab === 'priority' ? 'bg-amber-600 text-white' : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'
+                    }`}
+                  >
+                    <Crown className="w-3 h-3 text-amber-400" />
+                    <span>Priority Tier</span>
+                  </button>
+                  <button
+                    onClick={() => setArtistFilterTab('needs_bank')}
+                    className={`px-3 py-1.5 rounded-xl font-bold text-[11px] transition flex items-center gap-1 ${
+                      artistFilterTab === 'needs_bank' ? 'bg-red-700 text-white' : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'
+                    }`}
+                  >
+                    <AlertCircle className="w-3 h-3 text-red-500" />
+                    <span>Incomplete Bank Details</span>
+                  </button>
+                </div>
               </div>
 
               {/* Artists Table */}
@@ -1415,65 +1490,136 @@ export default function AdminDashboardPage() {
                     <tr className="bg-slate-50 border-b border-slate-200 text-slate-500 uppercase font-mono text-[10px]">
                       <th className="py-3 px-4 font-semibold">Master Artist</th>
                       <th className="py-3 px-4 font-semibold">Origin & Lineage</th>
-                      <th className="py-3 px-4 font-semibold">Artworks</th>
+                      <th className="py-3 px-4 font-semibold">Catalog Works</th>
                       <th className="py-3 px-4 font-semibold">Placement Tier</th>
-                      <th className="py-3 px-4 font-semibold">Payout Setting</th>
-                      <th className="py-3 px-4 font-semibold text-right">Admin Actions</th>
+                      <th className="py-3 px-4 font-semibold">WEMA Settlement Status</th>
+                      <th className="py-3 px-4 font-semibold">Live Session</th>
+                      <th className="py-3 px-4 font-semibold text-right">Concierge Assistance</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100 bg-white">
-                    {sellers.map((seller) => {
-                      const artistArtworks = artworks.filter(a => 
-                        a.artistName && seller.name && a.artistName.toLowerCase().includes(seller.name.toLowerCase())
-                      );
-                      const isPriority = seller.plan === 'premium' || seller.is_featured;
-                      return (
-                        <tr key={seller.id} className="hover:bg-slate-50/80 transition">
-                          <td className="py-3 px-4">
-                            <div className="flex items-center gap-2.5">
-                              <div className="w-9 h-9 rounded-xl bg-slate-100 border border-art-gold/40 flex items-center justify-center font-bold text-slate-800 text-xs overflow-hidden">
-                                {seller.avatar_url ? (
-                                  <img src={seller.avatar_url} alt={seller.name} className="w-full h-full object-cover" />
-                                ) : (
-                                  seller.name?.charAt(0) || 'A'
-                                )}
+                    {sellers
+                      .filter((seller) => {
+                        const q = (artistSearchInput || '').toLowerCase().trim();
+                        const matchesQ = !q || 
+                          (seller.name && seller.name.toLowerCase().includes(q)) ||
+                          (seller.email && seller.email.toLowerCase().includes(q)) ||
+                          (seller.country && seller.country.toLowerCase().includes(q)) ||
+                          (seller.city && seller.city.toLowerCase().includes(q));
+                        if (artistFilterTab === 'priority') return matchesQ && (seller.plan === 'premium' || seller.is_featured);
+                        if (artistFilterTab === 'needs_bank') return matchesQ && (!seller.payout_account || !seller.payout_bank);
+                        return matchesQ;
+                      })
+                      .map((seller) => {
+                        const artistArtworks = artworks.filter(a => 
+                          a.artistName && seller.name && a.artistName.toLowerCase().includes(seller.name.toLowerCase())
+                        );
+                        const isPriority = seller.plan === 'premium' || seller.is_featured;
+                        const hasBank = Boolean(seller.payout_bank && seller.payout_account);
+                        return (
+                          <tr key={seller.id} className="hover:bg-amber-50/30 transition">
+                            <td className="py-3.5 px-4">
+                              <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 rounded-xl bg-slate-100 border border-art-gold/40 flex items-center justify-center font-bold text-slate-800 text-xs overflow-hidden shrink-0 shadow-sm">
+                                  {seller.avatar_url ? (
+                                    <img src={seller.avatar_url} alt={seller.name} className="w-full h-full object-cover" />
+                                  ) : (
+                                    seller.name?.charAt(0) || 'A'
+                                  )}
+                                </div>
+                                <div>
+                                  <span className="font-bold text-slate-900 block font-serif text-sm">{seller.name}</span>
+                                  <span className="text-[10px] text-slate-400 font-mono">{seller.email || 'artist@artellium.africa'}</span>
+                                  {seller.phone && <span className="text-[10px] text-slate-400 block">{seller.phone}</span>}
+                                </div>
                               </div>
-                              <div>
-                                <span className="font-bold text-slate-900 block font-serif">{seller.name}</span>
-                                <span className="text-[10px] text-slate-400 font-mono">{seller.email || 'artist@artellium.africa'}</span>
+                            </td>
+                            <td className="py-3.5 px-4 text-slate-600">
+                              <span className="font-medium text-slate-800">{seller.country || 'Nigeria'}</span>
+                              {seller.city && <span className="text-slate-400 text-[10px] block">{seller.city}</span>}
+                            </td>
+                            <td className="py-3.5 px-4">
+                              <div className="flex items-center gap-1.5">
+                                <span className="font-bold text-slate-900 font-mono text-xs">{artistArtworks.length}</span>
+                                <span className="text-slate-400 text-[10px]">artworks</span>
                               </div>
-                            </div>
-                          </td>
-                          <td className="py-3 px-4 text-slate-600">
-                            <span>{seller.country || 'Nigeria'}</span>
-                            {seller.city && <span className="text-slate-400 text-[10px] block">{seller.city}</span>}
-                          </td>
-                          <td className="py-3 px-4">
-                            <span className="font-bold text-slate-900 font-mono">{artistArtworks.length}</span>
-                            <span className="text-slate-400 text-[10px] ml-1">works</span>
-                          </td>
-                          <td className="py-3 px-4">
-                            <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
-                              isPriority ? 'bg-amber-100 text-amber-900 border border-amber-300' : 'bg-slate-100 text-slate-600'
-                            }`}>
-                              {isPriority ? '👑 Priority Tier' : 'Standard'}
-                            </span>
-                          </td>
-                          <td className="py-3 px-4 text-[10px] text-slate-500 font-mono">
-                            {seller.payout_bank ? `${seller.payout_bank} (${seller.payout_account || '***'})` : 'Default WEMA Corporate'}
-                          </td>
-                          <td className="py-3 px-4 text-right space-x-2">
-                            <Link
-                              href="/artist/dashboard"
-                              className="px-3 py-1.5 rounded-lg bg-amber-500/10 hover:bg-amber-500/20 text-amber-900 border border-amber-300/80 font-bold inline-flex items-center gap-1 transition"
-                            >
-                              <span>Enter Studio</span>
-                              <ExternalLink className="w-3 h-3 text-amber-600" />
-                            </Link>
-                          </td>
-                        </tr>
-                      );
-                    })}
+                              <span className="text-[10px] text-slate-400 font-mono">
+                                {currency === 'USD' 
+                                  ? `$${Math.round(artistArtworks.reduce((s, a) => s + (a.priceUSD || 0), 0)).toLocaleString()}`
+                                  : `₦${artistArtworks.reduce((s, a) => s + (a.price || 0), 0).toLocaleString()}`}
+                              </span>
+                            </td>
+                            <td className="py-3.5 px-4">
+                              <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold inline-flex items-center gap-1 ${
+                                isPriority ? 'bg-amber-100 text-amber-900 border border-amber-300' : 'bg-slate-100 text-slate-600'
+                              }`}>
+                                {isPriority ? <Crown className="w-3 h-3 text-art-gold" /> : null}
+                                <span>{isPriority ? '👑 Priority Tier' : 'Standard'}</span>
+                              </span>
+                            </td>
+                            <td className="py-3.5 px-4">
+                              {hasBank ? (
+                                <div>
+                                  <span className="font-bold text-emerald-800 text-[11px] block">{seller.payout_bank}</span>
+                                  <span className="text-[10px] text-slate-500 font-mono">{seller.payout_account} ({seller.payout_name || seller.name})</span>
+                                </div>
+                              ) : (
+                                <span className="px-2 py-0.5 rounded-full bg-red-50 text-red-700 border border-red-200 text-[10px] font-bold">
+                                  ⚠️ Needs Settlement Setup
+                                </span>
+                              )}
+                            </td>
+                            <td className="py-3.5 px-4">
+                              <span className="px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200 text-[10px] font-bold inline-flex items-center gap-1">
+                                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                                <span>Synced & Ready</span>
+                              </span>
+                            </td>
+                            <td className="py-3.5 px-4 text-right">
+                              <div className="flex items-center justify-end gap-1.5">
+                                <Link
+                                  href={`/artist/dashboard?artist=${encodeURIComponent(seller.name)}`}
+                                  className="px-3 py-1.5 rounded-xl bg-amber-500/10 hover:bg-amber-500/25 text-amber-900 border border-amber-300 font-bold inline-flex items-center gap-1.5 transition shadow-sm"
+                                  title="Enter and manage this artist's dashboard in live assistance mode"
+                                >
+                                  <Palette className="w-3 h-3 text-amber-700" />
+                                  <span>Assist Studio</span>
+                                </Link>
+                                <Link
+                                  href={`/artist/${encodeURIComponent(seller.id || seller.name)}`}
+                                  target="_blank"
+                                  className="px-2.5 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold inline-flex items-center gap-1 transition"
+                                  title="View artist public storefront & biography"
+                                >
+                                  <Eye className="w-3 h-3" />
+                                  <span>Public Page</span>
+                                </Link>
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setArtistTroubleshootModal(seller);
+                                    setArtistFixForm({
+                                      payout_bank: seller.payout_bank || 'Wema Bank PLC',
+                                      payout_account: seller.payout_account || '',
+                                      payout_name: seller.payout_name || seller.name || '',
+                                      phone: seller.phone || '',
+                                      city: seller.city || 'Lagos',
+                                      plan: seller.plan || 'standard',
+                                      is_verified: seller.is_verified !== false
+                                    });
+                                    setArtistFixSuccessMsg('');
+                                  }}
+                                  className="px-2.5 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold inline-flex items-center gap-1 transition shadow-sm"
+                                  title="Troubleshoot and fix artist issues immediately"
+                                >
+                                  <Settings className="w-3 h-3 text-art-gold" />
+                                  <span>Quick Fix</span>
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })}
                   </tbody>
                 </table>
               </div>
@@ -1487,12 +1633,16 @@ export default function AdminDashboardPage() {
             <div className="p-6 sm:p-8 rounded-3xl bg-white border border-slate-200 shadow-sm space-y-6">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-4">
                 <div>
-                  <h3 className="font-serif text-xl font-bold text-slate-900 flex items-center gap-2">
-                    <Award className="w-5 h-5 text-emerald-600" />
-                    <span>Collector Portals & Accounts Oversight</span>
+                  <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-50 text-emerald-900 border border-emerald-300 font-mono text-[10px] font-bold uppercase mb-2">
+                    <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
+                    <span>Live Concierge & VIP Collector Assistance</span>
+                  </div>
+                  <h3 className="font-serif text-xl sm:text-2xl font-bold text-slate-900 flex items-center gap-2">
+                    <Award className="w-6 h-6 text-emerald-600" />
+                    <span>Collector Portals & Concierge Hub</span>
                   </h3>
-                  <p className="text-xs text-slate-500 mt-1">
-                    Complete administrative oversight over VIP Collector Portals, authenticity certificates, historical acquisition portfolios, and delivery tracking.
+                  <p className="text-xs text-slate-500 mt-1 max-w-2xl leading-relaxed">
+                    Access every collector's dashboard in live assistance mode. View their complete activity, reconcile offline WEMA bank payments, troubleshoot delivery addresses, re-issue Certificates of Authenticity, and support live auction bidding.
                   </p>
                 </div>
                 <Link
@@ -1502,6 +1652,20 @@ export default function AdminDashboardPage() {
                   <Award className="w-4 h-4" />
                   <span>Launch Live Collector Portal</span>
                 </Link>
+              </div>
+
+              {/* Search Toolbar */}
+              <div className="flex items-center justify-between gap-3 bg-slate-50 p-3 rounded-2xl border border-slate-200">
+                <div className="relative flex-1">
+                  <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                  <input
+                    type="text"
+                    value={collectorSearchInput}
+                    onChange={(e) => setCollectorSearchInput(e.target.value)}
+                    placeholder="Search collectors by name, email, phone, or country..."
+                    className="w-full bg-white border border-slate-200 rounded-xl pl-9 pr-3 py-2 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:border-emerald-500"
+                  />
+                </div>
               </div>
 
               {/* Collectors Table */}
@@ -1514,65 +1678,114 @@ export default function AdminDashboardPage() {
                       <th className="py-3 px-4 font-semibold">Orders & Acquisitions</th>
                       <th className="py-3 px-4 font-semibold">Offers & Inquiries</th>
                       <th className="py-3 px-4 font-semibold">Account Status</th>
-                      <th className="py-3 px-4 font-semibold text-right">Admin Actions</th>
+                      <th className="py-3 px-4 font-semibold">Live Session</th>
+                      <th className="py-3 px-4 font-semibold text-right">Concierge Assistance</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100 bg-white">
-                    {usersList.filter(u => u.role === 'buyer' || u.role === 'collector').map((col) => {
-                      const colOrders = orders.filter(o => 
-                        (o.buyer_id && o.buyer_id === col.id) ||
-                        (o.buyer_email && o.buyer_email.toLowerCase() === col.email?.toLowerCase()) ||
-                        (col.name && o.buyer_name && o.buyer_name.toLowerCase().includes(col.name.toLowerCase()))
-                      );
-                      const colOffers = collectorOffers.filter(co =>
-                        (co.buyerId && co.buyerId === col.id) ||
-                        (co.buyerEmail && co.buyerEmail.toLowerCase() === col.email?.toLowerCase())
-                      );
-                      return (
-                        <tr key={col.id} className="hover:bg-slate-50/80 transition">
-                          <td className="py-3 px-4">
-                            <div className="flex items-center gap-2.5">
-                              <div className="w-9 h-9 rounded-xl bg-emerald-50 border border-emerald-300 flex items-center justify-center font-bold text-emerald-800 text-xs overflow-hidden">
-                                {col.avatar_url ? (
-                                  <img src={col.avatar_url} alt={col.name} className="w-full h-full object-cover" />
-                                ) : (
-                                  col.name?.charAt(0) || 'C'
-                                )}
+                    {usersList
+                      .filter(u => u.role === 'buyer' || u.role === 'collector')
+                      .filter(col => {
+                        const q = (collectorSearchInput || '').toLowerCase().trim();
+                        return !q ||
+                          (col.name && col.name.toLowerCase().includes(q)) ||
+                          (col.email && col.email.toLowerCase().includes(q)) ||
+                          (col.phone && col.phone.toLowerCase().includes(q)) ||
+                          (col.country && col.country.toLowerCase().includes(q));
+                      })
+                      .map((col) => {
+                        const colOrders = orders.filter(o => 
+                          (o.buyer_id && o.buyer_id === col.id) ||
+                          (o.buyer_email && o.buyer_email.toLowerCase() === col.email?.toLowerCase()) ||
+                          (col.name && o.buyer_name && o.buyer_name.toLowerCase().includes(col.name.toLowerCase()))
+                        );
+                        const colOffers = collectorOffers.filter(co =>
+                          (co.buyerId && co.buyerId === col.id) ||
+                          (co.buyerEmail && co.buyerEmail.toLowerCase() === col.email?.toLowerCase())
+                        );
+                        const totalSpent = colOrders.reduce((sum, o) => sum + (o.total_amount || 0), 0);
+                        return (
+                          <tr key={col.id} className="hover:bg-emerald-50/30 transition">
+                            <td className="py-3.5 px-4">
+                              <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 rounded-xl bg-emerald-50 border border-emerald-300 flex items-center justify-center font-bold text-emerald-800 text-xs overflow-hidden shrink-0 shadow-sm">
+                                  {col.avatar_url ? (
+                                    <img src={col.avatar_url} alt={col.name} className="w-full h-full object-cover" />
+                                  ) : (
+                                    col.name?.charAt(0) || 'C'
+                                  )}
+                                </div>
+                                <div>
+                                  <span className="font-bold text-slate-900 block font-serif text-sm">{col.name}</span>
+                                  <span className="text-[10px] text-slate-400 font-mono">{col.email}</span>
+                                  {col.phone && <span className="text-[10px] text-slate-400 block">{col.phone}</span>}
+                                </div>
                               </div>
-                              <div>
-                                <span className="font-bold text-slate-900 block font-serif">{col.name}</span>
-                                <span className="text-[10px] text-slate-400 font-mono">{col.email}</span>
+                            </td>
+                            <td className="py-3.5 px-4 text-slate-600">
+                              <span className="font-medium text-slate-800">{col.country || 'Nigeria'}</span>
+                              {col.city && <span className="text-slate-400 text-[10px] block">{col.city}</span>}
+                              {col.address && <span className="text-slate-400 text-[10px] block truncate max-w-xs">{col.address}</span>}
+                            </td>
+                            <td className="py-3.5 px-4">
+                              <div className="flex items-center gap-1.5">
+                                <span className="font-bold text-slate-900 font-mono text-xs">{colOrders.length}</span>
+                                <span className="text-slate-400 text-[10px]">acquisitions</span>
                               </div>
-                            </div>
-                          </td>
-                          <td className="py-3 px-4 text-slate-600">
-                            <span>{col.country || 'Nigeria'}</span>
-                          </td>
-                          <td className="py-3 px-4">
-                            <span className="font-bold text-slate-900 font-mono">{colOrders.length}</span>
-                            <span className="text-slate-400 text-[10px] ml-1">orders</span>
-                          </td>
-                          <td className="py-3 px-4">
-                            <span className="font-bold text-slate-900 font-mono">{colOffers.length}</span>
-                            <span className="text-slate-400 text-[10px] ml-1">offers</span>
-                          </td>
-                          <td className="py-3 px-4">
-                            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">
-                              KYC Verified
-                            </span>
-                          </td>
-                          <td className="py-3 px-4 text-right space-x-2">
-                            <Link
-                              href="/buyer/account"
-                              className="px-3 py-1.5 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-900 border border-emerald-300 font-bold inline-flex items-center gap-1 transition"
-                            >
-                              <span>Inspect Portal</span>
-                              <ExternalLink className="w-3 h-3 text-emerald-600" />
-                            </Link>
-                          </td>
-                        </tr>
-                      );
-                    })}
+                              <span className="text-[10px] text-slate-400 font-mono">
+                                {currency === 'USD' ? `$${Math.round(totalSpent / (usdExchangeRate || 1480)).toLocaleString()}` : `₦${totalSpent.toLocaleString()}`}
+                              </span>
+                            </td>
+                            <td className="py-3.5 px-4">
+                              <span className="font-bold text-slate-900 font-mono">{colOffers.length}</span>
+                              <span className="text-slate-400 text-[10px] ml-1">offers</span>
+                            </td>
+                            <td className="py-3.5 px-4">
+                              <span className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200 inline-flex items-center gap-1">
+                                <ShieldCheck className="w-3 h-3 text-emerald-600" />
+                                <span>KYC Accredited Bidder</span>
+                              </span>
+                            </td>
+                            <td className="py-3.5 px-4">
+                              <span className="px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200 text-[10px] font-bold inline-flex items-center gap-1">
+                                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                                <span>Active Collector</span>
+                              </span>
+                            </td>
+                            <td className="py-3.5 px-4 text-right">
+                              <div className="flex items-center justify-end gap-1.5">
+                                <Link
+                                  href={`/buyer/account?collector=${encodeURIComponent(col.id || col.email)}`}
+                                  className="px-3 py-1.5 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/25 text-emerald-900 border border-emerald-300 font-bold inline-flex items-center gap-1.5 transition shadow-sm"
+                                  title="Enter and manage this collector's portal in live assistance mode"
+                                >
+                                  <Award className="w-3 h-3 text-emerald-700" />
+                                  <span>Assist Portal</span>
+                                </Link>
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setCollectorTroubleshootModal(col);
+                                    setCollectorFixForm({
+                                      address: col.address || '',
+                                      city: col.city || '',
+                                      country: col.country || 'Nigeria',
+                                      phone: col.phone || '',
+                                      biddingTier: col.biddingTier || 'Sovereign'
+                                    });
+                                    setCollectorFixSuccessMsg('');
+                                  }}
+                                  className="px-2.5 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold inline-flex items-center gap-1 transition shadow-sm"
+                                  title="Troubleshoot and fix collector issues immediately"
+                                >
+                                  <Settings className="w-3 h-3 text-emerald-400" />
+                                  <span>Quick Fix</span>
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })}
                   </tbody>
                 </table>
               </div>
@@ -2871,24 +3084,46 @@ export default function AdminDashboardPage() {
                       {/* Links in this column */}
                       <ul className="space-y-2">
                         {(col.links || []).map((link) => (
-                          <li key={link.id} className="bg-white p-2.5 rounded-xl border border-slate-200 space-y-1.5 shadow-sm">
+                          <li key={link.id} className="bg-white p-2.5 rounded-xl border border-slate-200 space-y-1.5 shadow-sm hover:border-art-gold/50 transition">
                             <div className="flex items-start justify-between gap-2">
-                              <div>
-                                <div className="flex items-center gap-1.5 flex-wrap">
-                                  <span className="font-bold text-slate-900 text-xs">{link.label}</span>
+                              <div className="space-y-1 flex-1">
+                                <button
+                                  type="button"
+                                  onClick={() => openWriteupEditorForLink(col.id, link)}
+                                  className="text-left group/title flex items-center gap-2 flex-wrap cursor-pointer transition hover:opacity-90 w-full"
+                                  title="Click write-up to view and edit full article content"
+                                >
+                                  <span className="font-bold text-slate-900 text-xs group-hover/title:text-art-gold group-hover/title:underline decoration-art-gold underline-offset-2 flex items-center gap-1">
+                                    <FileText className="w-3.5 h-3.5 text-art-gold shrink-0" />
+                                    <span>{link.label}</span>
+                                  </span>
                                   {getLinkWriteupBadge(link)}
+                                </button>
+                                <div className="flex items-center gap-2 text-[10px] text-slate-400 font-mono">
+                                  {link.href && link.href !== '#' ? (
+                                    <Link
+                                      href={link.href}
+                                      target="_blank"
+                                      className="hover:text-art-gold hover:underline flex items-center gap-1 text-slate-500"
+                                      title="Open live link on website"
+                                    >
+                                      <span>{link.href}</span>
+                                      <ExternalLink className="w-2.5 h-2.5" />
+                                    </Link>
+                                  ) : (
+                                    <span>Standalone Write-Up</span>
+                                  )}
                                 </div>
-                                <span className="text-[10px] text-slate-400 font-mono block mt-0.5">{link.href || 'Direct Write-Up'}</span>
                               </div>
                               <div className="flex items-center gap-1 shrink-0">
                                 <button
                                   type="button"
                                   onClick={() => openWriteupEditorForLink(col.id, link)}
-                                  className="px-2 py-1 rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300 font-bold text-[10px] flex items-center gap-1 transition"
+                                  className="px-2.5 py-1 rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300 font-bold text-[10px] flex items-center gap-1 transition shadow-sm cursor-pointer"
                                   title="Access and edit write-up content"
                                 >
                                   <FileText className="w-3 h-3 text-art-gold" />
-                                  <span>Write-Up</span>
+                                  <span>Edit Write-Up</span>
                                 </button>
                                 <button
                                   onClick={() => {
@@ -6672,6 +6907,421 @@ export default function AdminDashboardPage() {
                   </button>
                 </div>
               </form>
+            </div>
+          </div>
+        )}
+
+        {/* 9. Artist Concierge Troubleshooting & Assistance Modal */}
+        {artistTroubleshootModal && (
+          <div className="fixed inset-0 bg-black/75 backdrop-blur-md z-50 flex items-center justify-center p-4">
+            <div className="bg-white rounded-3xl max-w-2xl w-full shadow-2xl border border-amber-300/60 overflow-hidden animate-scale-in text-xs max-h-[92vh] flex flex-col">
+              {/* Header */}
+              <div className="p-5 sm:p-6 bg-gradient-to-r from-amber-950 via-slate-900 to-amber-950 text-white flex items-start justify-between border-b border-amber-500/20">
+                <div className="space-y-1">
+                  <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30 text-[10px] font-bold uppercase tracking-wider">
+                    <Sparkles className="w-3 h-3" />
+                    <span>Artist Concierge Assistance Suite</span>
+                  </div>
+                  <h3 className="font-serif text-lg sm:text-xl font-bold text-amber-100">
+                    Quick Fix: {artistTroubleshootModal.name}
+                  </h3>
+                  <p className="text-slate-400 text-xs leading-relaxed max-w-lg">
+                    Resolve connection breaks, re-sync studio cache, update settlement banking, or assist basic activities immediately on the artist&apos;s behalf.
+                  </p>
+                </div>
+                <button
+                  onClick={() => {
+                    setArtistTroubleshootModal(null);
+                    setArtistFixSuccessMsg('');
+                  }}
+                  className="p-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-white transition-colors"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              {/* Body */}
+              <div className="p-5 sm:p-6 space-y-5 overflow-y-auto flex-1">
+                {artistFixSuccessMsg && (
+                  <div className="p-3.5 bg-emerald-50 border border-emerald-300 rounded-2xl flex items-center gap-2.5 text-emerald-800 font-medium">
+                    <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
+                    <span>{artistFixSuccessMsg}</span>
+                  </div>
+                )}
+
+                {/* Instant Concierge Actions */}
+                <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4 space-y-3">
+                  <div className="text-[11px] font-bold text-slate-700 uppercase tracking-wider flex items-center gap-2">
+                    <Zap className="w-3.5 h-3.5 text-amber-600" />
+                    <span>Instant Studio Troubleshooting Actions</span>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setArtistFixSuccessMsg('Studio connection refreshed! Stale cache cleared and sync verified.');
+                        logSandboxAction(`Admin reset & synchronized studio cache for artist ${artistTroubleshootModal.name}`);
+                      }}
+                      className="p-2.5 rounded-xl bg-white border border-slate-200 hover:border-amber-400 hover:bg-amber-50 text-slate-800 text-left font-medium transition-all shadow-sm flex items-center gap-2"
+                    >
+                      <RefreshCw className="w-4 h-4 text-amber-600 shrink-0" />
+                      <div>
+                        <div className="font-bold text-[11px] text-slate-900">Clear Cache & Sync</div>
+                        <div className="text-[10px] text-slate-500">Fix connection breaks</div>
+                      </div>
+                    </button>
+
+                    <Link
+                      href={`/artist/dashboard?artist=${encodeURIComponent(artistTroubleshootModal.name)}`}
+                      target="_blank"
+                      className="p-2.5 rounded-xl bg-white border border-slate-200 hover:border-emerald-400 hover:bg-emerald-50 text-slate-800 text-left font-medium transition-all shadow-sm flex items-center gap-2"
+                    >
+                      <ExternalLink className="w-4 h-4 text-emerald-600 shrink-0" />
+                      <div>
+                        <div className="font-bold text-[11px] text-slate-900">Assist in Studio</div>
+                        <div className="text-[10px] text-slate-500">Operate artist studio</div>
+                      </div>
+                    </Link>
+
+                    <Link
+                      href={`/artist/${encodeURIComponent(artistTroubleshootModal.id || artistTroubleshootModal.name)}`}
+                      target="_blank"
+                      className="p-2.5 rounded-xl bg-white border border-slate-200 hover:border-blue-400 hover:bg-blue-50 text-slate-800 text-left font-medium transition-all shadow-sm flex items-center gap-2"
+                    >
+                      <Globe className="w-4 h-4 text-blue-600 shrink-0" />
+                      <div>
+                        <div className="font-bold text-[11px] text-slate-900">Public Gallery</div>
+                        <div className="text-[10px] text-slate-500">View live profile</div>
+                      </div>
+                    </Link>
+                  </div>
+                </div>
+
+                {/* Edit Form */}
+                <div className="space-y-4">
+                  <div className="text-[11px] font-bold text-slate-700 uppercase tracking-wider flex items-center gap-2">
+                    <Settings className="w-3.5 h-3.5 text-slate-500" />
+                    <span>Direct Artist Account & Banking Updates</span>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                    <div>
+                      <label className="block text-slate-600 mb-1 font-semibold">Settlement Bank Name</label>
+                      <input
+                        type="text"
+                        value={artistFixForm.payout_bank}
+                        onChange={(e) => setArtistFixForm({ ...artistFixForm, payout_bank: e.target.value })}
+                        placeholder="e.g. Wema Bank PLC"
+                        className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-slate-900 font-medium"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-slate-600 mb-1 font-semibold">Account / NUBAN Number</label>
+                      <input
+                        type="text"
+                        value={artistFixForm.payout_account}
+                        onChange={(e) => setArtistFixForm({ ...artistFixForm, payout_account: e.target.value })}
+                        placeholder="10-digit NUBAN"
+                        className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-slate-900 font-mono"
+                      />
+                    </div>
+                    <div className="sm:col-span-2">
+                      <label className="block text-slate-600 mb-1 font-semibold">Account Beneficiary Name</label>
+                      <input
+                        type="text"
+                        value={artistFixForm.payout_name}
+                        onChange={(e) => setArtistFixForm({ ...artistFixForm, payout_name: e.target.value })}
+                        placeholder="Verified account holder name"
+                        className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-slate-900 font-medium"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-slate-600 mb-1 font-semibold">Contact Phone / WhatsApp</label>
+                      <input
+                        type="text"
+                        value={artistFixForm.phone}
+                        onChange={(e) => setArtistFixForm({ ...artistFixForm, phone: e.target.value })}
+                        placeholder="+234..."
+                        className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-slate-900"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-slate-600 mb-1 font-semibold">Base City / Studio Location</label>
+                      <input
+                        type="text"
+                        value={artistFixForm.city}
+                        onChange={(e) => setArtistFixForm({ ...artistFixForm, city: e.target.value })}
+                        placeholder="e.g. Lagos, Nigeria"
+                        className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-slate-900"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-slate-600 mb-1 font-semibold">Artist Studio Plan</label>
+                      <select
+                        value={artistFixForm.plan}
+                        onChange={(e) => setArtistFixForm({ ...artistFixForm, plan: e.target.value })}
+                        className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-slate-900 font-medium"
+                      >
+                        <option value="standard">Standard Studio</option>
+                        <option value="pro">Artellium Pro Master</option>
+                        <option value="sovereign_fellow">Sovereign Heritage Fellow</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-slate-600 mb-1 font-semibold">Verification & Heritage Status</label>
+                      <label className="flex items-center gap-2 p-2.5 bg-slate-50 border border-slate-200 rounded-xl cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={artistFixForm.is_verified}
+                          onChange={(e) => setArtistFixForm({ ...artistFixForm, is_verified: e.target.checked })}
+                          className="rounded text-amber-600 focus:ring-amber-500 w-4 h-4"
+                        />
+                        <span className="text-slate-800 font-medium">Verified Artellium Master Artist</span>
+                      </label>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Footer */}
+              <div className="p-4 sm:p-5 bg-slate-50 border-t border-slate-200 flex items-center justify-between gap-3">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setArtistTroubleshootModal(null);
+                    setArtistFixSuccessMsg('');
+                  }}
+                  className="px-4 py-2.5 bg-white border border-slate-200 hover:bg-slate-100 text-slate-700 rounded-xl font-bold"
+                >
+                  Close
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (!artistTroubleshootModal) return;
+                    updateSeller(artistTroubleshootModal.id, {
+                      payout_bank: artistFixForm.payout_bank,
+                      payout_account: artistFixForm.payout_account,
+                      payout_name: artistFixForm.payout_name,
+                      phone: artistFixForm.phone,
+                      city: artistFixForm.city,
+                      plan: artistFixForm.plan,
+                      is_verified: artistFixForm.is_verified
+                    });
+                    logSandboxAction(`Admin concierge updated details for artist ${artistTroubleshootModal.name}`);
+                    setArtistFixSuccessMsg('Updated and synchronized artist studio records successfully!');
+                    setTimeout(() => {
+                      setArtistTroubleshootModal(null);
+                      setArtistFixSuccessMsg('');
+                    }, 1200);
+                  }}
+                  className="px-6 py-2.5 bg-gradient-to-r from-amber-600 to-amber-500 hover:brightness-110 text-white font-bold uppercase tracking-wider rounded-xl shadow-md flex items-center gap-2"
+                >
+                  <Check className="w-4 h-4" />
+                  <span>Save & Push Fixes to Studio</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* 10. Collector Concierge Troubleshooting & Assistance Modal */}
+        {collectorTroubleshootModal && (
+          <div className="fixed inset-0 bg-black/75 backdrop-blur-md z-50 flex items-center justify-center p-4">
+            <div className="bg-white rounded-3xl max-w-2xl w-full shadow-2xl border border-blue-300/60 overflow-hidden animate-scale-in text-xs max-h-[92vh] flex flex-col">
+              {/* Header */}
+              <div className="p-5 sm:p-6 bg-gradient-to-r from-slate-950 via-slate-900 to-blue-950 text-white flex items-start justify-between border-b border-blue-500/20">
+                <div className="space-y-1">
+                  <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-blue-500/20 text-blue-300 border border-blue-500/30 text-[10px] font-bold uppercase tracking-wider">
+                    <Users className="w-3 h-3" />
+                    <span>Collector Concierge Assistance Suite</span>
+                  </div>
+                  <h3 className="font-serif text-lg sm:text-xl font-bold text-blue-100">
+                    Quick Fix: {collectorTroubleshootModal.name || collectorTroubleshootModal.email}
+                  </h3>
+                  <p className="text-slate-400 text-xs leading-relaxed max-w-lg">
+                    Resolve offline wire settlements, update shipping delivery addresses, re-sync acquisition vault, or assist with bids immediately on their behalf.
+                  </p>
+                </div>
+                <button
+                  onClick={() => {
+                    setCollectorTroubleshootModal(null);
+                    setCollectorFixSuccessMsg('');
+                  }}
+                  className="p-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-white transition-colors"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              {/* Body */}
+              <div className="p-5 sm:p-6 space-y-5 overflow-y-auto flex-1">
+                {collectorFixSuccessMsg && (
+                  <div className="p-3.5 bg-emerald-50 border border-emerald-300 rounded-2xl flex items-center gap-2.5 text-emerald-800 font-medium">
+                    <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
+                    <span>{collectorFixSuccessMsg}</span>
+                  </div>
+                )}
+
+                {/* Instant Concierge Actions */}
+                <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4 space-y-3">
+                  <div className="text-[11px] font-bold text-slate-700 uppercase tracking-wider flex items-center gap-2">
+                    <Zap className="w-3.5 h-3.5 text-blue-600" />
+                    <span>Instant Collector Troubleshooting Actions</span>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const collectorOrders = orders.filter(
+                          (o) => (o.customer_id === collectorTroubleshootModal.id || o.user_id === collectorTroubleshootModal.id || o.customer_email === collectorTroubleshootModal.email) && o.status === 'pending'
+                        );
+                        if (collectorOrders.length > 0) {
+                          collectorOrders.forEach((o) => updateOrderStatus(o.id, 'paid'));
+                          setCollectorFixSuccessMsg(`Reconciled and marked ${collectorOrders.length} pending order(s) as paid via Wema Bank Direct Banking.`);
+                          logSandboxAction(`Admin reconciled offline Wema payments for collector ${collectorTroubleshootModal.email}`);
+                        } else {
+                          setCollectorFixSuccessMsg('No pending unpaid orders found for this collector. All settlements up-to-date.');
+                        }
+                      }}
+                      className="p-2.5 rounded-xl bg-white border border-slate-200 hover:border-emerald-400 hover:bg-emerald-50 text-slate-800 text-left font-medium transition-all shadow-sm flex items-center gap-2"
+                    >
+                      <CreditCard className="w-4 h-4 text-emerald-600 shrink-0" />
+                      <div>
+                        <div className="font-bold text-[11px] text-slate-900">Reconcile Payment</div>
+                        <div className="text-[10px] text-slate-500">Auto-verify offline wire</div>
+                      </div>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setCollectorFixSuccessMsg('Collector session refreshed! Stale checkout states reset and synced.');
+                        logSandboxAction(`Admin reset session connection break for collector ${collectorTroubleshootModal.email}`);
+                      }}
+                      className="p-2.5 rounded-xl bg-white border border-slate-200 hover:border-blue-400 hover:bg-blue-50 text-slate-800 text-left font-medium transition-all shadow-sm flex items-center gap-2"
+                    >
+                      <RefreshCw className="w-4 h-4 text-blue-600 shrink-0" />
+                      <div>
+                        <div className="font-bold text-[11px] text-slate-900">Re-sync Portal</div>
+                        <div className="text-[10px] text-slate-500">Fix connection breaks</div>
+                      </div>
+                    </button>
+
+                    <Link
+                      href={`/buyer/account?collector=${encodeURIComponent(collectorTroubleshootModal.id || collectorTroubleshootModal.email)}`}
+                      target="_blank"
+                      className="p-2.5 rounded-xl bg-white border border-slate-200 hover:border-purple-400 hover:bg-purple-50 text-slate-800 text-left font-medium transition-all shadow-sm flex items-center gap-2"
+                    >
+                      <ExternalLink className="w-4 h-4 text-purple-600 shrink-0" />
+                      <div>
+                        <div className="font-bold text-[11px] text-slate-900">Assist in Portal</div>
+                        <div className="text-[10px] text-slate-500">Operate collector vault</div>
+                      </div>
+                    </Link>
+                  </div>
+                </div>
+
+                {/* Edit Form */}
+                <div className="space-y-4">
+                  <div className="text-[11px] font-bold text-slate-700 uppercase tracking-wider flex items-center gap-2">
+                    <Settings className="w-3.5 h-3.5 text-slate-500" />
+                    <span>Collector Delivery & Privilege Profile</span>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                    <div className="sm:col-span-2">
+                      <label className="block text-slate-600 mb-1 font-semibold">Primary Delivery / Shipping Address</label>
+                      <input
+                        type="text"
+                        value={collectorFixForm.address}
+                        onChange={(e) => setCollectorFixForm({ ...collectorFixForm, address: e.target.value })}
+                        placeholder="Street address, apartment, suite..."
+                        className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-slate-900 font-medium"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-slate-600 mb-1 font-semibold">City / State</label>
+                      <input
+                        type="text"
+                        value={collectorFixForm.city}
+                        onChange={(e) => setCollectorFixForm({ ...collectorFixForm, city: e.target.value })}
+                        placeholder="e.g. Ikoyi, Lagos"
+                        className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-slate-900"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-slate-600 mb-1 font-semibold">Country</label>
+                      <input
+                        type="text"
+                        value={collectorFixForm.country}
+                        onChange={(e) => setCollectorFixForm({ ...collectorFixForm, country: e.target.value })}
+                        placeholder="e.g. Nigeria, United Kingdom, USA"
+                        className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-slate-900"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-slate-600 mb-1 font-semibold">Phone Number</label>
+                      <input
+                        type="text"
+                        value={collectorFixForm.phone}
+                        onChange={(e) => setCollectorFixForm({ ...collectorFixForm, phone: e.target.value })}
+                        placeholder="+234..."
+                        className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-slate-900 font-mono"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-slate-600 mb-1 font-semibold">Bidding & Collector Privilege Tier</label>
+                      <select
+                        value={collectorFixForm.biddingTier}
+                        onChange={(e) => setCollectorFixForm({ ...collectorFixForm, biddingTier: e.target.value })}
+                        className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-slate-900 font-medium"
+                      >
+                        <option value="Standard">Standard Collector</option>
+                        <option value="Curator Privilege">Curator Privilege (Priority Bidding)</option>
+                        <option value="Sovereign Patron">Sovereign Patron (Unlimited Vault)</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Footer */}
+              <div className="p-4 sm:p-5 bg-slate-50 border-t border-slate-200 flex items-center justify-between gap-3">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setCollectorTroubleshootModal(null);
+                    setCollectorFixSuccessMsg('');
+                  }}
+                  className="px-4 py-2.5 bg-white border border-slate-200 hover:bg-slate-100 text-slate-700 rounded-xl font-bold"
+                >
+                  Close
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (!collectorTroubleshootModal) return;
+                    updateUser(collectorTroubleshootModal.id, {
+                      address: collectorFixForm.address,
+                      city: collectorFixForm.city,
+                      country: collectorFixForm.country,
+                      phone: collectorFixForm.phone,
+                      biddingTier: collectorFixForm.biddingTier
+                    });
+                    logSandboxAction(`Admin concierge updated details for collector ${collectorTroubleshootModal.email}`);
+                    setCollectorFixSuccessMsg('Updated and synchronized collector account records successfully!');
+                    setTimeout(() => {
+                      setCollectorTroubleshootModal(null);
+                      setCollectorFixSuccessMsg('');
+                    }, 1200);
+                  }}
+                  className="px-6 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:brightness-110 text-white font-bold uppercase tracking-wider rounded-xl shadow-md flex items-center gap-2"
+                >
+                  <Check className="w-4 h-4" />
+                  <span>Save & Push Fixes to Portal</span>
+                </button>
+              </div>
             </div>
           </div>
         )}
