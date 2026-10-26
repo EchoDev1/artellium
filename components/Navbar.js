@@ -185,32 +185,16 @@ export default function Navbar() {
 
           {/* Right Action Icons & Directives */}
           <div className="flex items-center gap-2 sm:gap-3">
-            {/* Admin Direct Role Switcher Suite */}
+            {/* Admin Console Direct Link */}
             {currentUser?.role === 'admin' ? (
               <div className="hidden sm:flex items-center gap-1 bg-amber-950/40 p-1 rounded-xl border border-amber-500/30">
                 <Link
                   href="/admin/dashboard"
-                  className="flex items-center gap-1 text-[11px] font-bold text-amber-300 bg-amber-900/60 hover:bg-amber-850 px-2 py-1 rounded-lg transition"
-                  title="Admin Console"
+                  className="flex items-center gap-1.5 text-xs font-bold text-amber-300 bg-amber-900/60 hover:bg-amber-850 px-3 py-1.5 rounded-lg transition"
+                  title="Admin Executive Console"
                 >
                   <ShieldCheck className="w-3.5 h-3.5 text-art-gold" />
-                  <span>Admin</span>
-                </Link>
-                <Link
-                  href="/artist/dashboard"
-                  className="flex items-center gap-1 text-[11px] font-semibold text-amber-200 hover:text-white px-2 py-1 rounded-lg hover:bg-white/10 transition"
-                  title="Enter Artist Studio Console (Admin Mode)"
-                >
-                  <Palette className="w-3.5 h-3.5 text-art-gold" />
-                  <span>Artist Studio</span>
-                </Link>
-                <Link
-                  href="/buyer/account"
-                  className="flex items-center gap-1 text-[11px] font-semibold text-emerald-300 hover:text-white px-2 py-1 rounded-lg hover:bg-white/10 transition"
-                  title="Enter Collector Portal (Admin Mode)"
-                >
-                  <Award className="w-3.5 h-3.5 text-emerald-400" />
-                  <span>Collector Portal</span>
+                  <span>Admin Dashboard</span>
                 </Link>
               </div>
             ) : (

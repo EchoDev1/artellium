@@ -444,41 +444,17 @@ export default function UserAccountMenu() {
                 )}
 
                 {currentUser.role === 'admin' && (
-                  <div className="space-y-2">
-                    <Link
-                      href="/admin/dashboard"
-                      onClick={() => setIsOpen(false)}
-                      className="w-full p-2.5 rounded-xl bg-gradient-to-r from-amber-950/70 to-art-gold/15 border border-art-gold/40 hover:border-art-gold text-art-gold hover:text-white flex items-center justify-between text-xs font-semibold transition group shadow-sm"
-                    >
-                      <div className="flex items-center gap-2">
-                        <ShieldCheck className="w-4 h-4 text-art-gold group-hover:scale-110 transition" />
-                        <span>Admin Executive Center</span>
-                      </div>
-                      <ArrowRight className="w-3.5 h-3.5 text-art-gold" />
-                    </Link>
-                    <Link
-                      href="/artist/dashboard"
-                      onClick={() => setIsOpen(false)}
-                      className="w-full p-2.5 rounded-xl bg-amber-950/40 hover:bg-amber-900/40 border border-amber-600/30 hover:border-amber-500 text-amber-200 hover:text-white flex items-center justify-between text-xs font-medium transition group"
-                    >
-                      <div className="flex items-center gap-2">
-                        <Palette className="w-4 h-4 text-art-gold group-hover:scale-110 transition" />
-                        <span>Artist Studio (Admin Access)</span>
-                      </div>
-                      <ArrowRight className="w-3.5 h-3.5 text-amber-400" />
-                    </Link>
-                    <Link
-                      href="/buyer/account"
-                      onClick={() => setIsOpen(false)}
-                      className="w-full p-2.5 rounded-xl bg-emerald-950/40 hover:bg-emerald-900/40 border border-emerald-600/30 hover:border-emerald-500 text-emerald-200 hover:text-white flex items-center justify-between text-xs font-medium transition group"
-                    >
-                      <div className="flex items-center gap-2">
-                        <UserCheck className="w-4 h-4 text-emerald-400 group-hover:scale-110 transition" />
-                        <span>Collector Portal (Admin Access)</span>
-                      </div>
-                      <ArrowRight className="w-3.5 h-3.5 text-emerald-400" />
-                    </Link>
-                  </div>
+                  <Link
+                    href="/admin/dashboard"
+                    onClick={() => setIsOpen(false)}
+                    className="w-full p-2.5 rounded-xl bg-gradient-to-r from-amber-950/70 to-art-gold/15 border border-art-gold/40 hover:border-art-gold text-art-gold hover:text-white flex items-center justify-between text-xs font-semibold transition group shadow-sm"
+                  >
+                    <div className="flex items-center gap-2">
+                      <ShieldCheck className="w-4 h-4 text-art-gold group-hover:scale-110 transition" />
+                      <span>Admin Executive Center</span>
+                    </div>
+                    <ArrowRight className="w-3.5 h-3.5 text-art-gold" />
+                  </Link>
                 )}
               </div>
 
