@@ -66,7 +66,8 @@ import {
   Upload,
   Leaf,
   Flame,
-  Camera
+  Camera,
+  Save
 } from 'lucide-react';
 import Link from 'next/link';
 import VerificationBadge from '@/components/VerificationBadge';
@@ -686,13 +687,24 @@ export default function AdminDashboardPage() {
     return null;
   };
 
-  // Open Write-Up Editor for any link
+  // Open Write-Up Editor for any link (100% Clickable, Accessible & Pre-Populated)
   const openWriteupEditorForLink = (colId, link) => {
     setActiveColForWriteup(colId);
     setActiveLinkForWriteup(link);
     setWriteupSaveSuccess(false);
 
-    if (link.writeup) {
+    // Auto-heal legacy or malformed links like "we are built" to "/about#vision"
+    let linkHref = link?.href || '';
+    if (linkHref.includes('we are built') || linkHref.includes('we%20are%20built') || linkHref.includes('/admin/we')) {
+      linkHref = '/about#vision';
+      updateFooterLink(colId, link.id, { ...link, href: '/about#vision' });
+    }
+
+    const labelLower = (link?.label || '').toLowerCase();
+    const hrefLower = linkHref.toLowerCase();
+
+    // 1. Existing Custom Writeup attached directly to the link
+    if (link.writeup && Object.keys(link.writeup).length > 0) {
       setWriteupForm({
         type: 'custom',
         targetSectionId: '',
@@ -700,141 +712,172 @@ export default function AdminDashboardPage() {
         badge: link.writeup.badge || 'OFFICIAL WRITE-UP',
         summary: link.writeup.summary || '',
         content: link.writeup.content || '',
-        details: link.writeup.details || []
+        details: Array.isArray(link.writeup.details) ? link.writeup.details : []
       });
       setIsEditWriteupModalOpen(true);
       return;
     }
 
-    // Check if link is a Policy
-    if (link.href?.includes('/policies#')) {
-      const secId = link.href.split('#')[1];
-      const sec = (policiesConfig?.sections || INITIAL_POLICIES_CONFIG.sections || []).find(s => s.id === secId);
-      if (sec) {
-        setWriteupForm({
-          type: 'policy',
-          targetSectionId: sec.id,
-          title: sec.title || link.label,
-          badge: sec.badge || 'IMMUTABLE GUARANTEE',
-          summary: sec.summary || '',
-          content: '',
-          details: sec.details || []
-        });
-        setIsEditWriteupModalOpen(true);
-        return;
+    // 2. Check if link maps to Policies (by href hash or label keyword)
+    const policySections = policiesConfig?.sections || INITIAL_POLICIES_CONFIG.sections || [];
+    let matchedPolicy = null;
+
+    if (hrefLower.includes('/policies#')) {
+      const secId = hrefLower.split('#')[1];
+      matchedPolicy = policySections.find(s => s.id === secId);
+    }
+    if (!matchedPolicy) {
+      if (labelLower.includes('provenance') || hrefLower.includes('provenance')) {
+        matchedPolicy = policySections.find(s => s.id === 'provenance');
+      } else if (labelLower.includes('wema') || hrefLower.includes('wema')) {
+        matchedPolicy = policySections.find(s => s.id === 'wema-banking');
+      } else if (labelLower.includes('consignment') || hrefLower.includes('consignment')) {
+        matchedPolicy = policySections.find(s => s.id === 'consignment');
+      } else if (labelLower.includes('refund') || hrefLower.includes('refund')) {
+        matchedPolicy = policySections.find(s => s.id === 'refunds');
+      } else if (labelLower.includes('privacy') || hrefLower.includes('privacy')) {
+        matchedPolicy = policySections.find(s => s.id === 'privacy');
+      } else if (labelLower.includes('conduct') || hrefLower.includes('seller-conduct')) {
+        matchedPolicy = policySections.find(s => s.id === 'seller-conduct');
       }
     }
 
-    // Check if link is an About section
-    if (link.href?.includes('/about#')) {
-      const secId = link.href.split('#')[1];
-      const aCfg = aboutConfig || INITIAL_ABOUT_CONFIG;
-      if (secId === 'goal') {
-        setWriteupForm({
-          type: 'about_goal',
-          targetSectionId: 'goal',
-          title: aCfg.goalTitle || 'Artellium Goal',
-          badge: aCfg.goalBadge || 'STRATEGIC MANDATE',
-          summary: aCfg.goalQuote || aCfg.creed || '',
-          content: [aCfg.goalParagraph1, aCfg.goalParagraph2].filter(Boolean).join('\n\n'),
-          details: []
-        });
-        setIsEditWriteupModalOpen(true);
-        return;
-      }
-      if (secId === 'who-we-are') {
-        setWriteupForm({
-          type: 'about_who_we_are',
-          targetSectionId: 'who-we-are',
-          title: aCfg.whoWeAreTitle || 'Who We Are',
-          badge: aCfg.whoWeAreBadge || 'IDENTITY & COMMITMENT',
-          summary: aCfg.whoWeAreLead || '',
-          content: [aCfg.forArtistsText, aCfg.forCollectorsText].filter(Boolean).join('\n\n'),
-          details: []
-        });
-        setIsEditWriteupModalOpen(true);
-        return;
-      }
-      if (secId === 'vision') {
-        setWriteupForm({
-          type: 'about_vision',
-          targetSectionId: 'vision',
-          title: aCfg.visionTitle || 'Our Vision',
-          badge: aCfg.visionBadge || 'FUTURE ASPIRATION',
-          summary: aCfg.visionStatement || '',
-          content: aCfg.visionPillars || '',
-          details: []
-        });
-        setIsEditWriteupModalOpen(true);
-        return;
-      }
-      if (secId === 'mission') {
-        setWriteupForm({
-          type: 'about_mission',
-          targetSectionId: 'mission',
-          title: aCfg.missionTitle || 'Our Mission',
-          badge: aCfg.missionBadge || 'CORE MANDATE',
-          summary: aCfg.missionStatement || '',
-          content: aCfg.missionPillars || '',
-          details: []
-        });
-        setIsEditWriteupModalOpen(true);
-        return;
-      }
-      if (secId === 'core-values') {
-        setWriteupForm({
-          type: 'about_core_values',
-          targetSectionId: 'core-values',
-          title: aCfg.coreValuesTitle || 'Our Core Values',
-          badge: 'GUIDING PRINCIPLES',
-          summary: aCfg.coreValuesSubtitle || 'The Guiding Principles of Artellium',
-          content: '',
-          details: (aCfg.coreValues || []).map((v, i) => ({ id: v.id || `val-${i}`, heading: v.title, content: v.desc }))
-        });
-        setIsEditWriteupModalOpen(true);
-        return;
-      }
-      // Check custom about section
-      const customSec = (aCfg.customSections || []).find(cs => cs.id === secId);
-      if (customSec) {
-        setWriteupForm({
-          type: 'about_custom',
-          targetSectionId: customSec.id,
-          title: customSec.title || link.label,
-          badge: customSec.badge || 'ABOUT ARTELLIUM',
-          summary: customSec.summary || '',
-          content: customSec.content || '',
-          details: customSec.details || []
-        });
-        setIsEditWriteupModalOpen(true);
-        return;
-      }
+    if (matchedPolicy) {
+      setWriteupForm({
+        type: 'policy',
+        targetSectionId: matchedPolicy.id,
+        title: matchedPolicy.title || link.label,
+        badge: matchedPolicy.badge || 'IMMUTABLE GUARANTEE',
+        summary: matchedPolicy.summary || '',
+        content: matchedPolicy.content || '',
+        details: Array.isArray(matchedPolicy.details) ? matchedPolicy.details : []
+      });
+      setIsEditWriteupModalOpen(true);
+      return;
     }
 
-    // Default: Custom write-up on link
+    // 3. Check if link maps to About Us (by href hash or label keyword)
+    const aCfg = aboutConfig || INITIAL_ABOUT_CONFIG;
+
+    if (labelLower.includes('goal') || hrefLower.includes('#goal')) {
+      setWriteupForm({
+        type: 'about_goal',
+        targetSectionId: 'goal',
+        title: aCfg.goalTitle || 'Artellium Goal',
+        badge: aCfg.goalBadge || 'STRATEGIC MANDATE',
+        summary: aCfg.goalQuote || aCfg.creed || '',
+        content: [aCfg.goalParagraph1, aCfg.goalParagraph2].filter(Boolean).join('\n\n') || 'Empowering African creative royalty across the continent and global diaspora.',
+        details: []
+      });
+      setIsEditWriteupModalOpen(true);
+      return;
+    }
+
+    if (labelLower.includes('who we are') || hrefLower.includes('#who-we-are')) {
+      setWriteupForm({
+        type: 'about_who_we_are',
+        targetSectionId: 'who-we-are',
+        title: aCfg.whoWeAreTitle || 'Who We Are',
+        badge: aCfg.whoWeAreBadge || 'IDENTITY & COMMITMENT',
+        summary: aCfg.whoWeAreLead || '',
+        content: [aCfg.forArtistsText, aCfg.forCollectorsText].filter(Boolean).join('\n\n') || 'Dedicated premier fine art ecosystem bridging African art with collectors worldwide.',
+        details: []
+      });
+      setIsEditWriteupModalOpen(true);
+      return;
+    }
+
+    if (labelLower.includes('vision') || hrefLower.includes('#vision') || hrefLower.includes('built')) {
+      setWriteupForm({
+        type: 'about_vision',
+        targetSectionId: 'vision',
+        title: aCfg.visionTitle || 'Our Vision',
+        badge: aCfg.visionBadge || 'FUTURE ASPIRATION',
+        summary: aCfg.visionStatement || 'To establish African fine art as an immutable, globally traded asset class rooted in cultural provenance.',
+        content: aCfg.visionPillars || 'Universal Provenance · Artist Equity · Fiduciary Escrow',
+        details: []
+      });
+      setIsEditWriteupModalOpen(true);
+      return;
+    }
+
+    if (labelLower.includes('mission') || hrefLower.includes('#mission')) {
+      setWriteupForm({
+        type: 'about_mission',
+        targetSectionId: 'mission',
+        title: aCfg.missionTitle || 'Our Mission',
+        badge: aCfg.missionBadge || 'CORE MANDATE',
+        summary: aCfg.missionStatement || 'Direct economic empowerment of contemporary and heritage African artists.',
+        content: aCfg.missionPillars || 'Zero Intermediary Exploitation · Instant Corporate Settlements · Museum-Grade Curation',
+        details: []
+      });
+      setIsEditWriteupModalOpen(true);
+      return;
+    }
+
+    if (labelLower.includes('core values') || hrefLower.includes('#core-values')) {
+      setWriteupForm({
+        type: 'about_core_values',
+        targetSectionId: 'core-values',
+        title: aCfg.coreValuesTitle || 'Our Core Values',
+        badge: 'GUIDING PRINCIPLES',
+        summary: aCfg.coreValuesSubtitle || 'The Guiding Principles of Artellium',
+        content: '',
+        details: (aCfg.coreValues || []).map((v, i) => ({ id: v.id || `val-${i}`, heading: v.title, content: v.desc }))
+      });
+      setIsEditWriteupModalOpen(true);
+      return;
+    }
+
+    // Check custom about section
+    const customSec = (aCfg.customSections || []).find(cs => hrefLower.includes(cs.id) || labelLower.includes((cs.title || '').toLowerCase()));
+    if (customSec) {
+      setWriteupForm({
+        type: 'about_custom',
+        targetSectionId: customSec.id,
+        title: customSec.title || link.label,
+        badge: customSec.badge || 'ABOUT ARTELLIUM',
+        summary: customSec.summary || '',
+        content: customSec.content || '',
+        details: customSec.details || []
+      });
+      setIsEditWriteupModalOpen(true);
+      return;
+    }
+
+    // 4. Default: Fully-editable standalone custom write-up
     setWriteupForm({
       type: 'custom',
       targetSectionId: '',
-      title: link.label,
+      title: link.label || 'Official Platform Monograph',
       badge: 'OFFICIAL COVENANT',
-      summary: '',
-      content: '',
-      details: []
+      summary: 'Verified curatorial statement and statutory terms established by Artellium Executive Administration.',
+      content: 'This official covenant defines the binding standards, fiduciary obligations, and cultural protocols governing this link.',
+      details: [
+        {
+          id: `clause-${Date.now()}-1`,
+          heading: '1. Primary Operating Protocol',
+          content: 'Artellium platform administration maintains direct oversight and fiduciary backing for all transactions.'
+        }
+      ]
     });
     setIsEditWriteupModalOpen(true);
   };
 
   const handleSaveWriteupModal = (e) => {
-    e.preventDefault();
+    if (e) e.preventDefault();
+    if (!activeLinkForWriteup) return;
+
     if (writeupForm.type === 'policy') {
       updatePolicySection(writeupForm.targetSectionId, {
         title: writeupForm.title,
         badge: writeupForm.badge,
         summary: writeupForm.summary,
+        content: writeupForm.content,
         details: writeupForm.details
       });
     } else if (writeupForm.type === 'about_goal') {
-      const parts = writeupForm.content.split('\n\n');
+      const parts = (writeupForm.content || '').split('\n\n');
       updateAboutConfig({
         goalTitle: writeupForm.title,
         goalBadge: writeupForm.badge,
@@ -843,7 +886,7 @@ export default function AdminDashboardPage() {
         goalParagraph2: parts[1] || ''
       });
     } else if (writeupForm.type === 'about_who_we_are') {
-      const parts = writeupForm.content.split('\n\n');
+      const parts = (writeupForm.content || '').split('\n\n');
       updateAboutConfig({
         whoWeAreTitle: writeupForm.title,
         whoWeAreBadge: writeupForm.badge,
@@ -858,6 +901,13 @@ export default function AdminDashboardPage() {
         visionStatement: writeupForm.summary,
         visionPillars: writeupForm.content
       });
+      // Ensure target link points directly to /about#vision
+      if (activeColForWriteup && activeLinkForWriteup) {
+        updateFooterLink(activeColForWriteup, activeLinkForWriteup.id, {
+          ...activeLinkForWriteup,
+          href: '/about#vision'
+        });
+      }
     } else if (writeupForm.type === 'about_mission') {
       updateAboutConfig({
         missionTitle: writeupForm.title,
@@ -883,6 +933,7 @@ export default function AdminDashboardPage() {
       // Save writeup directly on the footer link
       updateFooterLink(activeColForWriteup, activeLinkForWriteup.id, {
         ...activeLinkForWriteup,
+        label: writeupForm.title || activeLinkForWriteup.label,
         writeup: {
           title: writeupForm.title,
           badge: writeupForm.badge,
@@ -892,6 +943,7 @@ export default function AdminDashboardPage() {
         }
       });
     }
+
     setWriteupSaveSuccess(true);
     setTimeout(() => {
       setWriteupSaveSuccess(false);
@@ -924,30 +976,6 @@ export default function AdminDashboardPage() {
             </div>
 
             <div className="flex flex-wrap items-center gap-3">
-              <button
-                type="button"
-                onClick={() => setActiveTab('pan_african_hub')}
-                className="bg-amber-50 hover:bg-amber-100 border border-amber-300 text-amber-900 font-bold text-xs px-3.5 py-2.5 rounded-xl transition shadow-sm flex items-center gap-2 cursor-pointer"
-                title="Click to fix or adjust daily USD exchange rate"
-              >
-                <Coins className="w-4 h-4 text-amber-600 animate-pulse" />
-                <span className="font-mono">USD Rate: ₦{usdExchangeRate.toLocaleString()}</span>
-                <span className="text-[10px] bg-amber-200/80 px-1.5 py-0.5 rounded text-amber-900 font-sans font-semibold">Adjust</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setActiveTab('demo_transition')}
-                className="bg-emerald-50 hover:bg-emerald-100 border border-emerald-300 text-emerald-900 font-bold text-xs px-3.5 py-2.5 rounded-xl transition shadow-sm flex items-center gap-2 cursor-pointer"
-                title="Catalog & dummy content clean launch control"
-              >
-                <Sparkles className="w-4 h-4 text-emerald-600" />
-                <span>Clean Launch Controls</span>
-                <span className="text-[10px] bg-emerald-200/80 px-1.5 py-0.5 rounded text-emerald-900 font-mono font-bold uppercase">
-                  {demoTransitionMode === 'live_only' && hideDemoVideos ? '100% Live' : 'Active'}
-                </span>
-              </button>
-
               <button
                 onClick={() => setIsAddArtModalOpen(true)}
                 className="bg-art-gold hover:brightness-110 text-art-black font-bold text-xs uppercase tracking-wider px-4 py-3 rounded-xl transition shadow flex items-center gap-2"
@@ -5098,7 +5126,12 @@ export default function AdminDashboardPage() {
             </div>
 
             <button
-              onClick={() => alert('WEMA Bank corporate payment gateway parameters updated successfully!')}
+              onClick={() => {
+                if (typeof window !== 'undefined') {
+                  localStorage.setItem('artellium_payment_settings', JSON.stringify(paymentSettings));
+                }
+                alert('⚡ WEMA Bank corporate gateway credentials saved and active across Artellium!');
+              }}
               className="px-6 py-2.5 bg-art-gold text-art-black font-bold uppercase rounded-xl shadow-gold-glow transition hover:brightness-110"
             >
               Save WEMA Banking Settings

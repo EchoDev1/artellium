@@ -11,6 +11,7 @@ import CustodianModal from '@/components/CustodianModal';
 import MobileBottomNav from '@/components/MobileBottomNav';
 import SystemHealthGuardian from '@/components/SystemHealthGuardian';
 import UniversalBackButton from '@/components/UniversalBackButton';
+import ArtelliumSchemaPlugin from '@/components/ArtelliumSchemaPlugin';
 
 export const metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || 'https://artellium.africa'),
@@ -82,6 +83,7 @@ export default function RootLayout({ children }) {
   return (
     <html lang="en" className="dark">
       <body className="bg-art-black text-slate-100 min-h-screen flex flex-col antialiased selection:bg-art-gold selection:text-art-black">
+        <ArtelliumSchemaPlugin />
         <LanguageProvider>
           <StoreProvider>
             <GoogleTranslateScript />

@@ -39,6 +39,7 @@ import { getCategoryFallback, isValidImageSource, DEFAULT_FALLBACK_IMAGE } from 
 import { normalizeCategory, isCategoryMatch } from '@/lib/category-utils';
 import { isPriorityArtist, sortArtworksByPriority } from '@/lib/priority-utils';
 import { TRACKING_STAGES, createInitialTracking, getStageConfig } from '@/lib/tracking-utils';
+import { broadcastAdminChange, subscribeToAdminChanges } from '@/lib/realtime-sync';
 const StoreContext = createContext();
 
 export function StoreProvider({ children }) {
@@ -562,6 +563,18 @@ export function StoreProvider({ children }) {
             setFooterConfig(INITIAL_FOOTER_CONFIG);
             localStorage.setItem('artellium_footer_config', JSON.stringify(INITIAL_FOOTER_CONFIG));
           } else {
+            // Auto-heal any legacy or broken links such as "we are built" to "/about#vision"
+            if (parsed && Array.isArray(parsed.columns)) {
+              parsed.columns.forEach(col => {
+                if (Array.isArray(col.links)) {
+                  col.links.forEach(l => {
+                    if (l && l.href && (l.href.includes('we are built') || l.href.includes('we%20are%20built') || l.href.includes('/admin/we'))) {
+                      l.href = '/about#vision';
+                    }
+                  });
+                }
+              });
+            }
             setFooterConfig(parsed);
           }
         } catch (e) {
@@ -770,6 +783,27 @@ export function StoreProvider({ children }) {
       console.error('Storage write error:', e);
     }
   }, [artworks, realArtworks, demoTransitionMode, orders, payments, commissions, sellers, usersList, cart, transactions, wishlist, followedArtists, artworkQuestions, notifications, collectorOffers, artistSignatures, headerConfig, heroConfig, homePageConfig, footerConfig, aboutConfig, policiesConfig, contactConfig, priorityBannerPricing, priorityBannerPlacements, isLoggedIn, currentUser]);
+
+  // Real-time synchronization across browser tabs and live routes (Instant reflect)
+  useEffect(() => {
+    const unsubscribe = subscribeToAdminChanges((event) => {
+      if (!event || !event.type) return;
+      if (event.type === 'footer_config') {
+        setFooterConfig(event.payload);
+      } else if (event.type === 'about_config') {
+        setAboutConfig(prev => ({ ...prev, ...event.payload }));
+      } else if (event.type === 'policies_config') {
+        setPoliciesConfig(prev => ({ ...prev, ...event.payload }));
+      } else if (event.type === 'hero_config') {
+        setHeroConfig(event.payload);
+      } else if (event.type === 'header_config') {
+        setHeaderConfig(event.payload);
+      } else if (event.type === 'home_config') {
+        setHomePageConfig(event.payload);
+      }
+    });
+    return unsubscribe;
+  }, []);
 
   // Cart Functions
   const addToCart = (artwork) => {
@@ -2911,7 +2945,12 @@ export function StoreProvider({ children }) {
   // 4. FOOTER PAGE CONFIG ACTIONS
   // ==========================================
   const updateFooterConfig = (updatedFields) => {
-    setFooterConfig(prev => ({ ...prev, ...updatedFields }));
+    setFooterConfig(prev => {
+      const next = { ...prev, ...updatedFields };
+      safeSetItem('artellium_footer_config', next);
+      broadcastAdminChange('footer_config', next);
+      return next;
+    });
   };
 
   const addTrustBadge = (newBadge) => {
@@ -2987,18 +3026,27 @@ export function StoreProvider({ children }) {
   };
 
   const updateFooterLink = (columnId, linkId, updatedFields) => {
-    setFooterConfig(prev => ({
-      ...prev,
-      columns: (prev.columns || []).map(c => {
-        if (c.id === columnId) {
-          return {
-            ...c,
-            links: (c.links || []).map(l => l.id === linkId ? { ...l, ...updatedFields } : l)
-          };
-        }
-        return c;
-      })
-    }));
+    const cleanFields = { ...updatedFields };
+    if (cleanFields.href && (cleanFields.href.includes('we are built') || cleanFields.href.includes('we%20are%20built') || cleanFields.href.includes('/admin/we'))) {
+      cleanFields.href = '/about#vision';
+    }
+    setFooterConfig(prev => {
+      const next = {
+        ...prev,
+        columns: (prev.columns || []).map(c => {
+          if (c.id === columnId) {
+            return {
+              ...c,
+              links: (c.links || []).map(l => l.id === linkId ? { ...l, ...cleanFields } : l)
+            };
+          }
+          return c;
+        })
+      };
+      safeSetItem('artellium_footer_config', next);
+      broadcastAdminChange('footer_config', next);
+      return next;
+    });
   };
 
   const deleteFooterLink = (columnId, linkId) => {
@@ -3048,7 +3096,12 @@ export function StoreProvider({ children }) {
   // ABOUT US CONFIG ACTIONS (CMS)
   // ==========================================
   const updateAboutConfig = (updatedFields) => {
-    setAboutConfig(prev => ({ ...prev, ...updatedFields }));
+    setAboutConfig(prev => {
+      const next = { ...prev, ...updatedFields };
+      safeSetItem('artellium_about_config', next);
+      broadcastAdminChange('about_config', next);
+      return next;
+    });
   };
 
   const addAboutSection = (newSection) => {
@@ -3090,14 +3143,24 @@ export function StoreProvider({ children }) {
   // POLICIES CONFIG ACTIONS (CMS)
   // ==========================================
   const updatePoliciesConfig = (updatedFields) => {
-    setPoliciesConfig(prev => ({ ...prev, ...updatedFields }));
+    setPoliciesConfig(prev => {
+      const next = { ...prev, ...updatedFields };
+      safeSetItem('artellium_policies_config', next);
+      broadcastAdminChange('policies_config', next);
+      return next;
+    });
   };
 
   const updatePolicySection = (sectionId, updatedFields) => {
-    setPoliciesConfig(prev => ({
-      ...prev,
-      sections: (prev.sections || []).map(s => s.id === sectionId ? { ...s, ...updatedFields } : s)
-    }));
+    setPoliciesConfig(prev => {
+      const next = {
+        ...prev,
+        sections: (prev.sections || []).map(s => s.id === sectionId ? { ...s, ...updatedFields } : s)
+      };
+      safeSetItem('artellium_policies_config', next);
+      broadcastAdminChange('policies_config', next);
+      return next;
+    });
   };
 
   const addPolicySection = (newSection) => {
