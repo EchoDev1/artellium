@@ -3,8 +3,9 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Crown, ShieldCheck, Award, Sparkles, ArrowRight, CheckCircle2, Eye, Compass } from 'lucide-react';
+import { useStore } from '@/context/store-context';
 
-const HERITAGE_PILLARS = [
+export const DEFAULT_HERITAGE_PILLARS = [
   {
     id: 'benin-bronze',
     title: 'Kingdom of Benin Guild',
@@ -101,9 +102,20 @@ const HERITAGE_PILLARS = [
 ];
 
 export default function TraditionalHeritageShowcase() {
-  const [activeTab, setActiveTab] = useState(HERITAGE_PILLARS[0].id);
+  const { homePageConfig } = useStore();
+  const pillars = homePageConfig?.heritagePillars && homePageConfig.heritagePillars.length > 0 
+    ? homePageConfig.heritagePillars 
+    : DEFAULT_HERITAGE_PILLARS;
 
-  const currentPillar = HERITAGE_PILLARS.find(p => p.id === activeTab) || HERITAGE_PILLARS[0];
+  const [activeTab, setActiveTab] = useState(pillars[0]?.id || 'benin-bronze');
+
+  useEffect(() => {
+    if (pillars && pillars.length > 0 && !pillars.find(p => p.id === activeTab)) {
+      setActiveTab(pillars[0].id);
+    }
+  }, [pillars, activeTab]);
+
+  const currentPillar = pillars.find(p => p.id === activeTab) || pillars[0];
 
   return (
     <section className="relative my-10 overflow-hidden rounded-2xl sm:rounded-3xl border-2 border-art-gold/50 shadow-[0_20px_50px_rgba(6,35,25,0.4)] bg-[#07080A]" suppressHydrationWarning>
@@ -159,7 +171,7 @@ export default function TraditionalHeritageShowcase() {
 
         {/* ── INTERACTIVE GUILD PILLAR PILLS (Mobile 2-col, Desktop 4-col) ── */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3 pt-4 sm:pt-6">
-          {HERITAGE_PILLARS.map((pillar) => {
+          {pillars.map((pillar) => {
             const isActive = activeTab === pillar.id;
             return (
               <button

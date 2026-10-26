@@ -509,7 +509,14 @@ export function StoreProvider({ children }) {
               const existing = parsed.sections.find(s => s.id === initSec.id || s.type === initSec.type);
               return existing ? { ...initSec, ...existing, isVisible: existing.isVisible !== false } : initSec;
             });
-            setHomePageConfig({ ...INITIAL_HOMEPAGE_CONFIG, ...parsed, sections: mergedSections.filter(s => s.type !== "subscriptions" && s.id !== "sec-subscriptions") });
+            const customSections = parsed.sections.filter(s => 
+              !INITIAL_HOMEPAGE_CONFIG.sections.some(init => init.id === s.id || init.type === s.type)
+            );
+            setHomePageConfig({ 
+              ...INITIAL_HOMEPAGE_CONFIG, 
+              ...parsed, 
+              sections: [...mergedSections, ...customSections].filter(s => s.type !== "subscriptions" && s.id !== "sec-subscriptions") 
+            });
           } else {
             setHomePageConfig(INITIAL_HOMEPAGE_CONFIG);
           }
@@ -2834,6 +2841,41 @@ export function StoreProvider({ children }) {
     }));
   };
 
+  const addHomeSection = (newSection) => {
+    const created = {
+      id: `sec-custom-${Date.now()}`,
+      type: 'custom_content',
+      title: newSection.title || 'Curatorial Policy & Heritage Note',
+      subtitle: newSection.subtitle || '',
+      badge: newSection.badge || 'PLATFORM COVENANT',
+      content: newSection.content || '',
+      ctaText: newSection.ctaText || 'Learn More',
+      ctaLink: newSection.ctaLink || '/policies',
+      bgStyle: newSection.bgStyle || 'gold_luxury',
+      isVisible: true,
+      ...newSection
+    };
+    setHomePageConfig(prev => ({
+      ...prev,
+      sections: [...(prev.sections || []), created]
+    }));
+    return created;
+  };
+
+  const deleteHomeSection = (sectionId) => {
+    setHomePageConfig(prev => ({
+      ...prev,
+      sections: (prev.sections || []).filter(s => s.id !== sectionId)
+    }));
+  };
+
+  const updateHeritagePillars = (pillars) => {
+    setHomePageConfig(prev => ({
+      ...prev,
+      heritagePillars: pillars
+    }));
+  };
+
   const addPromoBanner = (newBanner) => {
     const created = {
       ...newBanner,
@@ -3549,6 +3591,9 @@ export function StoreProvider({ children }) {
         homePageConfig,
         updateHomePageConfig,
         updateHomeSection,
+        addHomeSection,
+        deleteHomeSection,
+        updateHeritagePillars,
         toggleSectionVisibility,
         reorderHomeSections,
         addPromoBanner,

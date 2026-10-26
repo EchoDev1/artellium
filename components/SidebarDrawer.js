@@ -34,7 +34,8 @@ export default function SidebarDrawer() {
   const {
     isSidebarOpen,
     setIsSidebarOpen,
-    currency
+    currency,
+    headerConfig
   } = useStore();
 
   const { currentLanguage, setLanguage, languagesList } = useLanguage();
@@ -287,6 +288,37 @@ export default function SidebarDrawer() {
         {/* Drawer Content Area */}
         <div className="flex-1 overflow-y-auto p-5 space-y-6 scrollbar-thin">
           
+          {/* Dynamic Navigation Links configured by Admin in Header CMS */}
+          {(headerConfig?.navLinks || []).filter(l => l.isVisible !== false).length > 0 && (
+            <div className="space-y-2 pb-2 border-b border-white/10">
+              <span className="text-[10px] text-art-gold font-bold uppercase tracking-widest flex items-center gap-1.5 px-1 mb-1">
+                <Sparkles className="w-3.5 h-3.5 text-art-gold" />
+                <span>Featured Navigation</span>
+              </span>
+              <div className="grid grid-cols-2 gap-2">
+                {(headerConfig.navLinks || []).filter(l => l.isVisible !== false).map((link) => (
+                  <Link
+                    key={link.id}
+                    href={link.href || '#'}
+                    onClick={() => setIsSidebarOpen(false)}
+                    className={`px-3 py-2 rounded-xl border text-xs font-semibold flex items-center justify-between transition ${
+                      link.highlight === 'red'
+                        ? 'bg-red-950/40 border-red-800/40 text-red-300 hover:text-white'
+                        : link.highlight === 'emerald'
+                        ? 'bg-emerald-950/40 border-emerald-800/40 text-emerald-300 hover:text-white'
+                        : link.highlight === 'gold'
+                        ? 'bg-art-gold/15 border-art-gold/40 text-art-gold hover:text-white'
+                        : 'bg-white/5 border-white/10 text-slate-300 hover:text-white'
+                    }`}
+                  >
+                    <span className="truncate">{link.label}</span>
+                    <ChevronRight className="w-3 h-3 text-slate-500 shrink-0" />
+                  </Link>
+                ))}
+              </div>
+            </div>
+          )}
+
           {/* Section 1: Live Arena & Global Features */}
           <div className="space-y-2">
             <div className="flex items-center justify-between px-1 mb-2">

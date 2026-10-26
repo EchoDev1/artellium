@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { useStore } from '@/context/store-context';
 import { 
@@ -231,9 +231,41 @@ export default function ArtistDashboardPage() {
   const [globalStudioNotes, setGlobalStudioNotes] = useState('');
   const [notesSaveMsg, setNotesSaveMsg] = useState(false);
 
+  // Admin Oversight & Artist Selector
+  const isAdmin = currentUser?.role === 'admin';
+  const [selectedArtistName, setSelectedArtistName] = useState('');
+
+  // Available artists list from sellers and artworks
+  const artistsList = useMemo(() => {
+    const list = [];
+    const seen = new Set();
+    (sellers || []).forEach(s => {
+      if (s.name && !seen.has(s.name.toLowerCase())) {
+        seen.add(s.name.toLowerCase());
+        list.push({ id: s.id || s.user_id, name: s.name, country: s.country || 'Nigeria' });
+      }
+    });
+    (artworks || []).forEach(a => {
+      if (a.artistName && !seen.has(a.artistName.toLowerCase())) {
+        seen.add(a.artistName.toLowerCase());
+        list.push({ id: a.artistId || a.artistName, name: a.artistName, country: a.country || 'Africa' });
+      }
+    });
+    return list;
+  }, [sellers, artworks]);
+
+  const activeArtist = isAdmin && selectedArtistName 
+    ? (artistsList.find(a => a.name === selectedArtistName) || { name: selectedArtistName })
+    : null;
+
+  const myArtistName = (isAdmin && activeArtist?.name) 
+    ? activeArtist.name 
+    : (isAdmin && artistsList.length > 0 && !selectedArtistName)
+    ? artistsList[0].name
+    : (currentUser?.name ? currentUser.name.split(' (')[0] : 'Master Artist');
+
   // Digital Signature State & Drawing Canvas
-  const myArtistName = currentUser?.name ? currentUser.name.split(' (')[0] : '';
-  const mySignatureData = (currentUser?.name && artistSignatures && artistSignatures[currentUser.name]) || { style: 'Heritage Calligraphy', signed: false, drawn: null };
+  const mySignatureData = (myArtistName && artistSignatures && artistSignatures[myArtistName]) || { style: 'Heritage Calligraphy', signed: false, drawn: null };
   const [sigMode, setSigMode] = useState('draw'); // 'draw' or 'font'
   const [sigStyle, setSigStyle] = useState(mySignatureData.style || 'Heritage Calligraphy');
   const [drawnSigUrl, setDrawnSigUrl] = useState(mySignatureData.drawn || null);
@@ -643,6 +675,45 @@ export default function ArtistDashboardPage() {
     <div className="bg-white text-slate-800 min-h-screen pb-16 font-sans">
       {/* Top Banner Accent */}
       <div className="h-1 bg-gradient-to-r from-art-gold via-amber-500 to-art-gold-dark w-full" />
+
+      {/* Sticky Admin Oversight Mode Bar */}
+      {isAdmin && (
+        <div className="bg-gradient-to-r from-slate-900 via-amber-950 to-slate-900 border-b-2 border-art-gold p-3.5 px-4 sm:px-8 text-xs text-white shadow-xl sticky top-16 z-30">
+          <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3">
+            <div className="flex items-center gap-2.5">
+              <span className="p-1.5 rounded-lg bg-art-gold text-art-black font-bold text-[10px] uppercase font-mono tracking-wider flex items-center gap-1 shadow">
+                <ShieldCheck className="w-3.5 h-3.5" />
+                <span>Admin Artist Access</span>
+              </span>
+              <span className="text-slate-300 font-sans text-xs hidden md:inline">
+                Full authority to manage artworks, upload new catalog pieces, draw signatures, audit payouts, and moderate videos.
+              </span>
+            </div>
+
+            <div className="flex items-center gap-2.5 flex-wrap">
+              <label className="text-[11px] text-art-gold font-bold">Manage Artist Studio:</label>
+              <select
+                value={myArtistName}
+                onChange={(e) => setSelectedArtistName(e.target.value)}
+                className="bg-black/80 border border-art-gold/50 rounded-lg px-2.5 py-1 text-xs text-white focus:outline-none focus:border-art-gold cursor-pointer"
+              >
+                {artistsList.map((art) => (
+                  <option key={art.id || art.name} value={art.name}>
+                    🎨 {art.name} ({art.country || 'Africa'})
+                  </option>
+                ))}
+              </select>
+
+              <Link
+                href="/admin/dashboard"
+                className="px-3 py-1 bg-art-gold hover:brightness-110 text-art-black font-bold rounded-lg transition text-xs shadow-sm flex items-center gap-1 shrink-0"
+              >
+                <span>← Back to Admin Console</span>
+              </Link>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-8">
         

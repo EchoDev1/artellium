@@ -88,6 +88,7 @@ import AdminAboutCms from '@/components/AdminAboutCms';
 import AdminPoliciesCms from '@/components/AdminPoliciesCms';
 import AdminContactCms from '@/components/AdminContactCms';
 import ArtworkPhotoUploader from '@/components/ArtworkPhotoUploader';
+import { DEFAULT_HERITAGE_PILLARS } from '@/components/TraditionalHeritageShowcase';
 import { 
   TRACKING_STAGES, 
   CARRIER_OPTIONS, 
@@ -166,6 +167,9 @@ export default function AdminDashboardPage() {
     homePageConfig,
     updateHomePageConfig,
     updateHomeSection,
+    addHomeSection,
+    deleteHomeSection,
+    updateHeritagePillars,
     toggleSectionVisibility,
     reorderHomeSections,
     addPromoBanner,
@@ -382,6 +386,20 @@ export default function AdminDashboardPage() {
     bgGradient: 'from-amber-950 via-slate-900 to-black',
     borderColor: 'border-art-gold/40'
   });
+
+  const [isAddCustomSectionModalOpen, setIsAddCustomSectionModalOpen] = useState(false);
+  const [customSectionForm, setCustomSectionForm] = useState({
+    title: '',
+    subtitle: '',
+    badge: 'PLATFORM POLICY & COVENANT',
+    content: '',
+    ctaText: 'Learn More',
+    ctaLink: '/policies',
+    bgStyle: 'gold_luxury'
+  });
+
+  const [editingPillar, setEditingPillar] = useState(null);
+  const [pillarForm, setPillarForm] = useState({});
 
   // Footer Trust Badges, Columns & Socials Modals
   const [isAddBadgeModalOpen, setIsAddBadgeModalOpen] = useState(false);
@@ -649,6 +667,24 @@ export default function AdminDashboardPage() {
                 </span>
               </button>
 
+              <Link
+                href="/artist/dashboard"
+                className="bg-amber-900/10 hover:bg-amber-900/20 text-amber-950 border border-amber-300/80 font-bold text-xs uppercase tracking-wider px-3.5 py-3 rounded-xl transition flex items-center gap-1.5 shadow-sm"
+                title="Enter Artist Studio Console as Administrator"
+              >
+                <Palette className="w-4 h-4 text-amber-700" />
+                <span>Artist Studio</span>
+              </Link>
+
+              <Link
+                href="/buyer/account"
+                className="bg-emerald-900/10 hover:bg-emerald-900/20 text-emerald-950 border border-emerald-300/80 font-bold text-xs uppercase tracking-wider px-3.5 py-3 rounded-xl transition flex items-center gap-1.5 shadow-sm"
+                title="Enter Collector Dashboard as Administrator"
+              >
+                <Award className="w-4 h-4 text-emerald-700" />
+                <span>Collector Portal</span>
+              </Link>
+
               <button
                 onClick={() => setIsAddArtModalOpen(true)}
                 className="bg-art-gold hover:brightness-110 text-art-black font-bold text-xs uppercase tracking-wider px-4 py-3 rounded-xl transition shadow flex items-center gap-2"
@@ -676,7 +712,7 @@ export default function AdminDashboardPage() {
             <div className="p-2 bg-amber-50/70 rounded-xl border border-amber-200/70 space-y-1.5">
               <span className="text-[10px] text-amber-800 font-mono font-bold uppercase tracking-wider block flex items-center gap-1">
                 <Layout className="w-3 h-3 text-amber-600" />
-                <span>Home Page CMS</span>
+                <span>CMS & Platform Content</span>
               </span>
               <div className="flex flex-wrap gap-1">
                 <button
@@ -728,6 +764,33 @@ export default function AdminDashboardPage() {
                 >
                   <Columns className="w-3 h-3" />
                   <span>Footer</span>
+                </button>
+                <button
+                  onClick={() => setActiveTab('policies_cms')}
+                  className={`px-2 py-1 rounded-lg text-[11px] font-bold transition flex items-center gap-1 ${
+                    activeTab === 'policies_cms' ? 'bg-amber-600 text-white shadow-sm ring-2 ring-amber-400' : 'bg-white text-slate-700 hover:bg-amber-100 border border-amber-200/50'
+                  }`}
+                >
+                  <ShieldCheck className="w-3 h-3 text-emerald-600" />
+                  <span>Policies CMS</span>
+                </button>
+                <button
+                  onClick={() => setActiveTab('about_cms')}
+                  className={`px-2 py-1 rounded-lg text-[11px] font-bold transition flex items-center gap-1 ${
+                    activeTab === 'about_cms' ? 'bg-amber-600 text-white shadow-sm' : 'bg-white text-slate-700 hover:bg-amber-100 border border-amber-200/50'
+                  }`}
+                >
+                  <FileText className="w-3 h-3 text-blue-600" />
+                  <span>About Us</span>
+                </button>
+                <button
+                  onClick={() => setActiveTab('contact_cms')}
+                  className={`px-2 py-1 rounded-lg text-[11px] font-bold transition flex items-center gap-1 ${
+                    activeTab === 'contact_cms' ? 'bg-amber-600 text-white shadow-sm' : 'bg-white text-slate-700 hover:bg-amber-100 border border-amber-200/50'
+                  }`}
+                >
+                  <Globe className="w-3 h-3 text-amber-600" />
+                  <span>Contact Us</span>
                 </button>
               </div>
             </div>
@@ -886,6 +949,26 @@ export default function AdminDashboardPage() {
                   <span>Users Council ({usersList.length})</span>
                 </button>
                 <button
+                  onClick={() => setActiveTab('artist_dashboards')}
+                  className={`px-2 py-1 rounded-lg text-[11px] font-bold transition flex items-center gap-1 ${
+                    activeTab === 'artist_dashboards' ? 'bg-gradient-to-r from-amber-700 to-amber-900 text-white shadow-sm ring-2 ring-art-gold' : 'bg-amber-50 text-amber-900 hover:bg-amber-100 border border-amber-300'
+                  }`}
+                  title="View and inspect all Master Artist studio consoles in Admin Mode"
+                >
+                  <Palette className="w-3 h-3 text-art-gold" />
+                  <span>Artist Dashboards</span>
+                </button>
+                <button
+                  onClick={() => setActiveTab('collector_dashboards')}
+                  className={`px-2 py-1 rounded-lg text-[11px] font-bold transition flex items-center gap-1 ${
+                    activeTab === 'collector_dashboards' ? 'bg-gradient-to-r from-emerald-700 to-teal-900 text-white shadow-sm ring-2 ring-emerald-400' : 'bg-emerald-50 text-emerald-900 hover:bg-emerald-100 border border-emerald-300'
+                  }`}
+                  title="View and audit all Collector Portals in Admin Mode"
+                >
+                  <Award className="w-3 h-3 text-emerald-600" />
+                  <span>Collector Dashboards</span>
+                </button>
+                <button
                   onClick={() => setActiveTab('sellers')}
                   className={`px-2 py-1 rounded-lg text-[11px] font-bold transition flex items-center gap-1 ${
                     activeTab === 'sellers' ? 'bg-blue-700 text-white shadow-sm' : 'bg-white text-slate-700 hover:bg-blue-100 border border-blue-200/50'
@@ -1019,6 +1102,206 @@ export default function AdminDashboardPage() {
         {activeTab === 'media_diagnostics' && <AdminImageDiagnostics />}
         {activeTab === 'demo_transition' && <AdminDemoTransitionSuite />}
         {activeTab === 'artist_videos' && <AdminVideoModeration />}
+
+        {/* CMS SUITES: POLICIES, ABOUT US, CONTACT US */}
+        {activeTab === 'policies_cms' && <AdminPoliciesCms />}
+        {activeTab === 'about_cms' && <AdminAboutCms />}
+        {activeTab === 'contact_cms' && <AdminContactCms />}
+
+        {/* ARTIST DASHBOARDS OVERSIGHT PANEL */}
+        {activeTab === 'artist_dashboards' && (
+          <div className="space-y-6 animate-fade-in text-xs">
+            <div className="p-6 sm:p-8 rounded-3xl bg-white border border-slate-200 shadow-sm space-y-6">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-4">
+                <div>
+                  <h3 className="font-serif text-xl font-bold text-slate-900 flex items-center gap-2">
+                    <Palette className="w-5 h-5 text-art-gold" />
+                    <span>Master Artists Studio & Dashboards Control</span>
+                  </h3>
+                  <p className="text-xs text-slate-500 mt-1">
+                    Complete administrative authority to open and manage any Artist Dashboard, upload catalog pieces on their behalf, inspect payouts, and audit digital signatures.
+                  </p>
+                </div>
+                <Link
+                  href="/artist/dashboard"
+                  className="px-4 py-2.5 rounded-xl bg-art-gold hover:brightness-110 text-art-black font-bold uppercase tracking-wider flex items-center gap-2 transition shadow-sm shrink-0"
+                >
+                  <Palette className="w-4 h-4" />
+                  <span>Launch Live Artist Studio</span>
+                </Link>
+              </div>
+
+              {/* Artists Table */}
+              <div className="overflow-x-auto border border-slate-200 rounded-2xl">
+                <table className="w-full text-left text-xs">
+                  <thead>
+                    <tr className="bg-slate-50 border-b border-slate-200 text-slate-500 uppercase font-mono text-[10px]">
+                      <th className="py-3 px-4 font-semibold">Master Artist</th>
+                      <th className="py-3 px-4 font-semibold">Origin & Lineage</th>
+                      <th className="py-3 px-4 font-semibold">Artworks</th>
+                      <th className="py-3 px-4 font-semibold">Placement Tier</th>
+                      <th className="py-3 px-4 font-semibold">Payout Setting</th>
+                      <th className="py-3 px-4 font-semibold text-right">Admin Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100 bg-white">
+                    {sellers.map((seller) => {
+                      const artistArtworks = artworks.filter(a => 
+                        a.artistName && seller.name && a.artistName.toLowerCase().includes(seller.name.toLowerCase())
+                      );
+                      const isPriority = seller.plan === 'premium' || seller.is_featured;
+                      return (
+                        <tr key={seller.id} className="hover:bg-slate-50/80 transition">
+                          <td className="py-3 px-4">
+                            <div className="flex items-center gap-2.5">
+                              <div className="w-9 h-9 rounded-xl bg-slate-100 border border-art-gold/40 flex items-center justify-center font-bold text-slate-800 text-xs overflow-hidden">
+                                {seller.avatar_url ? (
+                                  <img src={seller.avatar_url} alt={seller.name} className="w-full h-full object-cover" />
+                                ) : (
+                                  seller.name?.charAt(0) || 'A'
+                                )}
+                              </div>
+                              <div>
+                                <span className="font-bold text-slate-900 block font-serif">{seller.name}</span>
+                                <span className="text-[10px] text-slate-400 font-mono">{seller.email || 'artist@artellium.africa'}</span>
+                              </div>
+                            </div>
+                          </td>
+                          <td className="py-3 px-4 text-slate-600">
+                            <span>{seller.country || 'Nigeria'}</span>
+                            {seller.city && <span className="text-slate-400 text-[10px] block">{seller.city}</span>}
+                          </td>
+                          <td className="py-3 px-4">
+                            <span className="font-bold text-slate-900 font-mono">{artistArtworks.length}</span>
+                            <span className="text-slate-400 text-[10px] ml-1">works</span>
+                          </td>
+                          <td className="py-3 px-4">
+                            <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                              isPriority ? 'bg-amber-100 text-amber-900 border border-amber-300' : 'bg-slate-100 text-slate-600'
+                            }`}>
+                              {isPriority ? '👑 Priority Tier' : 'Standard'}
+                            </span>
+                          </td>
+                          <td className="py-3 px-4 text-[10px] text-slate-500 font-mono">
+                            {seller.payout_bank ? `${seller.payout_bank} (${seller.payout_account || '***'})` : 'Default WEMA Corporate'}
+                          </td>
+                          <td className="py-3 px-4 text-right space-x-2">
+                            <Link
+                              href="/artist/dashboard"
+                              className="px-3 py-1.5 rounded-lg bg-amber-500/10 hover:bg-amber-500/20 text-amber-900 border border-amber-300/80 font-bold inline-flex items-center gap-1 transition"
+                            >
+                              <span>Enter Studio</span>
+                              <ExternalLink className="w-3 h-3 text-amber-600" />
+                            </Link>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* COLLECTOR DASHBOARDS OVERSIGHT PANEL */}
+        {activeTab === 'collector_dashboards' && (
+          <div className="space-y-6 animate-fade-in text-xs">
+            <div className="p-6 sm:p-8 rounded-3xl bg-white border border-slate-200 shadow-sm space-y-6">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-4">
+                <div>
+                  <h3 className="font-serif text-xl font-bold text-slate-900 flex items-center gap-2">
+                    <Award className="w-5 h-5 text-emerald-600" />
+                    <span>Collector Portals & Accounts Oversight</span>
+                  </h3>
+                  <p className="text-xs text-slate-500 mt-1">
+                    Complete administrative oversight over VIP Collector Portals, authenticity certificates, historical acquisition portfolios, and delivery tracking.
+                  </p>
+                </div>
+                <Link
+                  href="/buyer/account"
+                  className="px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold uppercase tracking-wider flex items-center gap-2 transition shadow-sm shrink-0"
+                >
+                  <Award className="w-4 h-4" />
+                  <span>Launch Live Collector Portal</span>
+                </Link>
+              </div>
+
+              {/* Collectors Table */}
+              <div className="overflow-x-auto border border-slate-200 rounded-2xl">
+                <table className="w-full text-left text-xs">
+                  <thead>
+                    <tr className="bg-slate-50 border-b border-slate-200 text-slate-500 uppercase font-mono text-[10px]">
+                      <th className="py-3 px-4 font-semibold">Collector</th>
+                      <th className="py-3 px-4 font-semibold">Location</th>
+                      <th className="py-3 px-4 font-semibold">Orders & Acquisitions</th>
+                      <th className="py-3 px-4 font-semibold">Offers & Inquiries</th>
+                      <th className="py-3 px-4 font-semibold">Account Status</th>
+                      <th className="py-3 px-4 font-semibold text-right">Admin Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100 bg-white">
+                    {usersList.filter(u => u.role === 'buyer' || u.role === 'collector').map((col) => {
+                      const colOrders = orders.filter(o => 
+                        (o.buyer_id && o.buyer_id === col.id) ||
+                        (o.buyer_email && o.buyer_email.toLowerCase() === col.email?.toLowerCase()) ||
+                        (col.name && o.buyer_name && o.buyer_name.toLowerCase().includes(col.name.toLowerCase()))
+                      );
+                      const colOffers = collectorOffers.filter(co =>
+                        (co.buyerId && co.buyerId === col.id) ||
+                        (co.buyerEmail && co.buyerEmail.toLowerCase() === col.email?.toLowerCase())
+                      );
+                      return (
+                        <tr key={col.id} className="hover:bg-slate-50/80 transition">
+                          <td className="py-3 px-4">
+                            <div className="flex items-center gap-2.5">
+                              <div className="w-9 h-9 rounded-xl bg-emerald-50 border border-emerald-300 flex items-center justify-center font-bold text-emerald-800 text-xs overflow-hidden">
+                                {col.avatar_url ? (
+                                  <img src={col.avatar_url} alt={col.name} className="w-full h-full object-cover" />
+                                ) : (
+                                  col.name?.charAt(0) || 'C'
+                                )}
+                              </div>
+                              <div>
+                                <span className="font-bold text-slate-900 block font-serif">{col.name}</span>
+                                <span className="text-[10px] text-slate-400 font-mono">{col.email}</span>
+                              </div>
+                            </div>
+                          </td>
+                          <td className="py-3 px-4 text-slate-600">
+                            <span>{col.country || 'Nigeria'}</span>
+                          </td>
+                          <td className="py-3 px-4">
+                            <span className="font-bold text-slate-900 font-mono">{colOrders.length}</span>
+                            <span className="text-slate-400 text-[10px] ml-1">orders</span>
+                          </td>
+                          <td className="py-3 px-4">
+                            <span className="font-bold text-slate-900 font-mono">{colOffers.length}</span>
+                            <span className="text-slate-400 text-[10px] ml-1">offers</span>
+                          </td>
+                          <td className="py-3 px-4">
+                            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">
+                              KYC Verified
+                            </span>
+                          </td>
+                          <td className="py-3 px-4 text-right space-x-2">
+                            <Link
+                              href="/buyer/account"
+                              className="px-3 py-1.5 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-900 border border-emerald-300 font-bold inline-flex items-center gap-1 transition"
+                            >
+                              <span>Inspect Portal</span>
+                              <ExternalLink className="w-3 h-3 text-emerald-600" />
+                            </Link>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* 1. OVERVIEW TAB PANEL */}
         {activeTab === 'overview' && (
@@ -1835,17 +2118,37 @@ export default function AdminDashboardPage() {
                     Toggle visibility and edit titles, subtitles, and item display limits for all home page sections.
                   </p>
                 </div>
-                <button
-                  onClick={() => {
-                    if (confirm('Reset home page section configuration to defaults?')) {
-                      resetHomePageConfig();
-                    }
-                  }}
-                  className="px-3 py-1.5 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 font-semibold flex items-center gap-1.5"
-                >
-                  <RefreshCw className="w-3.5 h-3.5" />
-                  <span>Reset Defaults</span>
-                </button>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <button
+                    onClick={() => {
+                      setCustomSectionForm({
+                        title: '',
+                        subtitle: '',
+                        badge: 'PLATFORM POLICY & COVENANT',
+                        content: '',
+                        ctaText: 'Learn More',
+                        ctaLink: '/policies',
+                        bgStyle: 'gold_luxury'
+                      });
+                      setIsAddCustomSectionModalOpen(true);
+                    }}
+                    className="px-4 py-2 rounded-xl bg-art-gold hover:brightness-110 text-art-black font-bold uppercase tracking-wider flex items-center gap-2 shadow-sm text-xs cursor-pointer"
+                  >
+                    <Plus className="w-4 h-4" />
+                    <span>Add Custom Section / Policy Write-Up</span>
+                  </button>
+                  <button
+                    onClick={() => {
+                      if (confirm('Reset home page section configuration to defaults?')) {
+                        resetHomePageConfig();
+                      }
+                    }}
+                    className="px-3 py-2 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 font-semibold flex items-center gap-1.5 text-xs"
+                  >
+                    <RefreshCw className="w-3.5 h-3.5" />
+                    <span>Reset Defaults</span>
+                  </button>
+                </div>
               </div>
 
               {/* Sections Table */}
@@ -1856,7 +2159,7 @@ export default function AdminDashboardPage() {
                       <th className="py-3 px-4 font-semibold">Section Name / Type</th>
                       <th className="py-3 px-4 font-semibold">Display Title</th>
                       <th className="py-3 px-4 font-semibold">Badge Tag</th>
-                      <th className="py-3 px-4 font-semibold">Max Items</th>
+                      <th className="py-3 px-4 font-semibold">Max Items / Content</th>
                       <th className="py-3 px-4 font-semibold">Visibility</th>
                       <th className="py-3 px-4 font-semibold text-right">Actions</th>
                     </tr>
@@ -1866,6 +2169,9 @@ export default function AdminDashboardPage() {
                       <tr key={sec.id} className="hover:bg-slate-50/80 transition">
                         <td className="py-3 px-4 font-bold text-slate-900">
                           <span className="capitalize">{sec.type?.replace('_', ' ')}</span>
+                          {sec.type === 'custom_content' && (
+                            <span className="ml-2 px-1.5 py-0.5 rounded bg-amber-100 text-amber-900 text-[9px] font-mono font-bold">Custom</span>
+                          )}
                         </td>
                         <td className="py-3 px-4 text-slate-700 font-serif">
                           {sec.title || '— (Default)'}
@@ -1874,7 +2180,11 @@ export default function AdminDashboardPage() {
                           {sec.badge || '—'}
                         </td>
                         <td className="py-3 px-4 font-mono text-slate-600">
-                          {sec.maxItems || '—'}
+                          {sec.content ? (
+                            <span className="text-[10px] text-slate-500 truncate block max-w-xs">{sec.content}</span>
+                          ) : (
+                            sec.maxItems || '—'
+                          )}
                         </td>
                         <td className="py-3 px-4">
                           <button
@@ -1895,13 +2205,29 @@ export default function AdminDashboardPage() {
                                 title: sec.title || '',
                                 subtitle: sec.subtitle || '',
                                 badge: sec.badge || '',
-                                maxItems: sec.maxItems || 6
+                                maxItems: sec.maxItems || 6,
+                                content: sec.content || '',
+                                ctaText: sec.ctaText || '',
+                                ctaLink: sec.ctaLink || '',
+                                bgStyle: sec.bgStyle || 'gold_luxury'
                               });
                             }}
                             className="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg font-bold"
                           >
                             Edit
                           </button>
+                          {(sec.type === 'custom_content' || sec.id?.startsWith('sec-custom-')) && (
+                            <button
+                              onClick={() => {
+                                if (confirm(`Delete custom section "${sec.title}"?`)) {
+                                  deleteHomeSection(sec.id);
+                                }
+                              }}
+                              className="px-2.5 py-1 bg-red-100 hover:bg-red-200 text-red-700 rounded-lg font-bold"
+                            >
+                              Delete
+                            </button>
+                          )}
                         </td>
                       </tr>
                     ))}
@@ -1992,6 +2318,62 @@ export default function AdminDashboardPage() {
                       </div>
                     ))
                   )}
+                </div>
+              </div>
+
+              {/* Sovereign African Craftsmanship Guilds Showcase Write-Ups */}
+              <div className="space-y-4 pt-8 border-t border-slate-100">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <div>
+                    <h4 className="font-serif font-bold text-slate-900 text-base flex items-center gap-2">
+                      <Crown className="w-4 h-4 text-art-gold" />
+                      <span>Sovereign Craftsmanship Guilds Showcase Write-Ups</span>
+                    </h4>
+                    <p className="text-slate-500">
+                      Edit historical summaries, guild techniques, and cultural significance statements featured in the African Heritage showcase on the homepage.
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => {
+                      if (confirm('Reset all craftsmanship guild write-ups to standard historical covenants?')) {
+                        updateHeritagePillars(DEFAULT_HERITAGE_PILLARS);
+                      }
+                    }}
+                    className="px-3 py-1.5 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 font-semibold flex items-center gap-1.5 cursor-pointer text-xs"
+                  >
+                    <RefreshCw className="w-3.5 h-3.5" />
+                    <span>Reset Guild Write-Ups</span>
+                  </button>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {(homePageConfig?.heritagePillars || DEFAULT_HERITAGE_PILLARS).map((pillar) => (
+                    <div key={pillar.id} className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-2.5">
+                      <div className="flex items-start justify-between gap-2">
+                        <div>
+                          <span className="font-serif font-bold text-slate-900 text-sm block">{pillar.title}</span>
+                          <span className="text-[10px] text-amber-800 font-mono font-semibold">{pillar.nativeName} · {pillar.region} ({pillar.era})</span>
+                        </div>
+                        <button
+                          onClick={() => {
+                            setEditingPillar(pillar);
+                            setPillarForm({ ...pillar });
+                          }}
+                          className="px-3 py-1 bg-white hover:bg-slate-100 border border-slate-200 text-slate-700 rounded-lg font-bold text-xs cursor-pointer shadow-sm"
+                        >
+                          Edit Write-Up
+                        </button>
+                      </div>
+                      <p className="text-slate-600 text-xs line-clamp-3 leading-relaxed">
+                        {pillar.summary}
+                      </p>
+                      <div className="pt-2 border-t border-slate-200/60 text-[10px] text-slate-500 space-y-1">
+                        <div><strong className="text-slate-700">Medium:</strong> {pillar.medium}</div>
+                        <div><strong className="text-slate-700">Technique:</strong> {pillar.technique}</div>
+                        <div><strong className="text-slate-700">Cultural Significance:</strong> {pillar.culturalSignificance}</div>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </div>
 
@@ -2317,6 +2699,62 @@ export default function AdminDashboardPage() {
                         >
                           <Trash2 className="w-3.5 h-3.5" />
                         </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Sovereign African Craftsmanship Guilds Showcase Write-Ups */}
+              <div className="space-y-4 pt-8 border-t border-slate-100">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <div>
+                    <h4 className="font-serif font-bold text-slate-900 text-base flex items-center gap-2">
+                      <Crown className="w-4 h-4 text-art-gold" />
+                      <span>Sovereign Craftsmanship Guilds Showcase Write-Ups</span>
+                    </h4>
+                    <p className="text-slate-500">
+                      Edit historical summaries, guild techniques, and cultural significance statements featured in the African Heritage showcase on the homepage.
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => {
+                      if (confirm('Reset all craftsmanship guild write-ups to standard historical covenants?')) {
+                        updateHeritagePillars(DEFAULT_HERITAGE_PILLARS);
+                      }
+                    }}
+                    className="px-3 py-1.5 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 font-semibold flex items-center gap-1.5 cursor-pointer text-xs"
+                  >
+                    <RefreshCw className="w-3.5 h-3.5" />
+                    <span>Reset Guild Write-Ups</span>
+                  </button>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {(homePageConfig?.heritagePillars || DEFAULT_HERITAGE_PILLARS).map((pillar) => (
+                    <div key={pillar.id} className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-2.5">
+                      <div className="flex items-start justify-between gap-2">
+                        <div>
+                          <span className="font-serif font-bold text-slate-900 text-sm block">{pillar.title}</span>
+                          <span className="text-[10px] text-amber-800 font-mono font-semibold">{pillar.nativeName} · {pillar.region} ({pillar.era})</span>
+                        </div>
+                        <button
+                          onClick={() => {
+                            setEditingPillar(pillar);
+                            setPillarForm({ ...pillar });
+                          }}
+                          className="px-3 py-1 bg-white hover:bg-slate-100 border border-slate-200 text-slate-700 rounded-lg font-bold text-xs cursor-pointer shadow-sm"
+                        >
+                          Edit Write-Up
+                        </button>
+                      </div>
+                      <p className="text-slate-600 text-xs line-clamp-3 leading-relaxed">
+                        {pillar.summary}
+                      </p>
+                      <div className="pt-2 border-t border-slate-200/60 text-[10px] text-slate-500 space-y-1">
+                        <div><strong className="text-slate-700">Medium:</strong> {pillar.medium}</div>
+                        <div><strong className="text-slate-700">Technique:</strong> {pillar.technique}</div>
+                        <div><strong className="text-slate-700">Cultural Significance:</strong> {pillar.culturalSignificance}</div>
                       </div>
                     </div>
                   ))}
@@ -4786,7 +5224,7 @@ export default function AdminDashboardPage() {
         {/* 3. Homepage Section Edit Modal */}
         {editingHomeSection && (
           <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-            <div className="bg-white rounded-3xl p-6 sm:p-8 max-w-md w-full shadow-2xl border border-slate-200 text-xs animate-scale-in space-y-4">
+            <div className="bg-white rounded-3xl p-6 sm:p-8 max-w-lg w-full shadow-2xl border border-slate-200 text-xs animate-scale-in space-y-4 max-h-[90vh] overflow-y-auto">
               <div className="flex justify-between items-center border-b border-slate-100 pb-3">
                 <h3 className="font-serif text-lg font-bold text-slate-900">
                   Edit Section: <span className="capitalize text-amber-700">{editingHomeSection.type?.replace('_', ' ')}</span>
@@ -4810,7 +5248,7 @@ export default function AdminDashboardPage() {
                     type="text"
                     value={editHomeSectionForm.title || ''}
                     onChange={(e) => setEditHomeSectionForm({ ...editHomeSectionForm, title: e.target.value })}
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-slate-900"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-slate-900 font-bold"
                   />
                 </div>
 
@@ -4830,21 +5268,68 @@ export default function AdminDashboardPage() {
                     type="text"
                     value={editHomeSectionForm.badge || ''}
                     onChange={(e) => setEditHomeSectionForm({ ...editHomeSectionForm, badge: e.target.value })}
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-slate-900"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-slate-900 font-mono text-[11px]"
                   />
                 </div>
 
-                <div>
-                  <label className="block text-slate-600 mb-1 font-medium">Max Items Displayed</label>
-                  <input
-                    type="number"
-                    min="1"
-                    max="30"
-                    value={editHomeSectionForm.maxItems || 6}
-                    onChange={(e) => setEditHomeSectionForm({ ...editHomeSectionForm, maxItems: parseInt(e.target.value) || 6 })}
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-slate-900 font-mono"
-                  />
-                </div>
+                {editingHomeSection.type === 'custom_content' || editingHomeSection.content !== undefined ? (
+                  <>
+                    <div>
+                      <label className="block text-slate-600 mb-1 font-medium">Rich Write-Up / Policy Body</label>
+                      <textarea
+                        rows={5}
+                        value={editHomeSectionForm.content || ''}
+                        onChange={(e) => setEditHomeSectionForm({ ...editHomeSectionForm, content: e.target.value })}
+                        className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-slate-900 font-sans"
+                        placeholder="Detailed editorial narrative, platform covenant, or policy guarantee write-up..."
+                      />
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-slate-600 mb-1 font-medium">CTA Button Label</label>
+                        <input
+                          type="text"
+                          value={editHomeSectionForm.ctaText || ''}
+                          onChange={(e) => setEditHomeSectionForm({ ...editHomeSectionForm, ctaText: e.target.value })}
+                          className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-slate-900"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-slate-600 mb-1 font-medium">CTA Route / Link</label>
+                        <input
+                          type="text"
+                          value={editHomeSectionForm.ctaLink || ''}
+                          onChange={(e) => setEditHomeSectionForm({ ...editHomeSectionForm, ctaLink: e.target.value })}
+                          className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-slate-900 font-mono text-[11px]"
+                        />
+                      </div>
+                    </div>
+                    <div>
+                      <label className="block text-slate-600 mb-1 font-medium">Card Luxury Theme</label>
+                      <select
+                        value={editHomeSectionForm.bgStyle || 'gold_luxury'}
+                        onChange={(e) => setEditHomeSectionForm({ ...editHomeSectionForm, bgStyle: e.target.value })}
+                        className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-slate-900 font-sans"
+                      >
+                        <option value="gold_luxury">👑 Deep Gold & Bronze Sovereign Void</option>
+                        <option value="dark_obsidian">🌌 Dark Obsidian Charcoal</option>
+                        <option value="warm_alabaster">🏛️ Archival Warm Alabaster Canvas</option>
+                      </select>
+                    </div>
+                  </>
+                ) : (
+                  <div>
+                    <label className="block text-slate-600 mb-1 font-medium">Max Items Displayed</label>
+                    <input
+                      type="number"
+                      min="1"
+                      max="30"
+                      value={editHomeSectionForm.maxItems || 6}
+                      onChange={(e) => setEditHomeSectionForm({ ...editHomeSectionForm, maxItems: parseInt(e.target.value) || 6 })}
+                      className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-slate-900 font-mono"
+                    />
+                  </div>
+                )}
 
                 <div className="flex justify-end gap-2 pt-3 border-t border-slate-100">
                   <button
@@ -4856,9 +5341,262 @@ export default function AdminDashboardPage() {
                   </button>
                   <button
                     type="submit"
-                    className="px-5 py-2 bg-art-gold hover:brightness-110 text-art-black font-bold uppercase rounded-xl"
+                    className="px-5 py-2 bg-art-gold hover:brightness-110 text-art-black font-bold uppercase rounded-xl cursor-pointer"
                   >
                     Save Section Settings
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
+
+        {/* 3B. Add Custom Section / Policy Write-Up Modal */}
+        {isAddCustomSectionModalOpen && (
+          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+            <div className="bg-white rounded-3xl p-6 sm:p-8 max-w-lg w-full shadow-2xl border border-slate-200 text-xs animate-scale-in space-y-4 max-h-[90vh] overflow-y-auto">
+              <div className="flex justify-between items-center border-b border-slate-100 pb-3">
+                <h3 className="font-serif text-lg font-bold text-slate-900 flex items-center gap-2">
+                  <FileText className="w-5 h-5 text-art-gold" />
+                  <span>Add Homepage Custom Section / Policy Write-Up</span>
+                </h3>
+                <button onClick={() => setIsAddCustomSectionModalOpen(false)} className="text-slate-400 hover:text-slate-600">
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  addHomeSection(customSectionForm);
+                  setIsAddCustomSectionModalOpen(false);
+                  alert('Custom section / policy write-up added to homepage!');
+                }}
+                className="space-y-3"
+              >
+                <div>
+                  <label className="block text-slate-600 mb-1 font-medium">Display Title</label>
+                  <input
+                    type="text"
+                    required
+                    value={customSectionForm.title}
+                    onChange={(e) => setCustomSectionForm({ ...customSectionForm, title: e.target.value })}
+                    placeholder="e.g. Fiduciary Authenticity Guarantee & Archival Ledger"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-slate-900 font-bold"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-slate-600 mb-1 font-medium">Subtitle / Subhead</label>
+                  <input
+                    type="text"
+                    value={customSectionForm.subtitle}
+                    onChange={(e) => setCustomSectionForm({ ...customSectionForm, subtitle: e.target.value })}
+                    placeholder="e.g. Physical certificate signed by artist & curator with museum-grade freight"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-slate-900"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-slate-600 mb-1 font-medium">Badge Tag (Uppercase)</label>
+                  <input
+                    type="text"
+                    value={customSectionForm.badge}
+                    onChange={(e) => setCustomSectionForm({ ...customSectionForm, badge: e.target.value })}
+                    placeholder="PLATFORM COVENANT & POLICY"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-slate-900 font-mono text-[11px]"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-slate-600 mb-1 font-medium">Rich Write-Up / Story Narrative</label>
+                  <textarea
+                    rows={5}
+                    required
+                    value={customSectionForm.content}
+                    onChange={(e) => setCustomSectionForm({ ...customSectionForm, content: e.target.value })}
+                    placeholder="Enter the complete write-up narrative, provenance rules, collector promises, or cultural policies to display on the homepage..."
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-slate-900 font-sans"
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-slate-600 mb-1 font-medium">Call-to-Action Text</label>
+                    <input
+                      type="text"
+                      value={customSectionForm.ctaText}
+                      onChange={(e) => setCustomSectionForm({ ...customSectionForm, ctaText: e.target.value })}
+                      placeholder="Read Full Policy"
+                      className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-slate-900"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-slate-600 mb-1 font-medium">CTA Link / Route</label>
+                    <input
+                      type="text"
+                      value={customSectionForm.ctaLink}
+                      onChange={(e) => setCustomSectionForm({ ...customSectionForm, ctaLink: e.target.value })}
+                      placeholder="/policies"
+                      className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-slate-900 font-mono text-[11px]"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-slate-600 mb-1 font-medium">Card Luxury Theme</label>
+                  <select
+                    value={customSectionForm.bgStyle}
+                    onChange={(e) => setCustomSectionForm({ ...customSectionForm, bgStyle: e.target.value })}
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-slate-900 font-sans"
+                  >
+                    <option value="gold_luxury">👑 Deep Gold & Bronze Sovereign Void</option>
+                    <option value="dark_obsidian">🌌 Dark Obsidian Charcoal</option>
+                    <option value="warm_alabaster">🏛️ Archival Warm Alabaster Canvas</option>
+                  </select>
+                </div>
+
+                <div className="flex justify-end gap-2 pt-3 border-t border-slate-100">
+                  <button
+                    type="button"
+                    onClick={() => setIsAddCustomSectionModalOpen(false)}
+                    className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-bold"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="px-5 py-2 bg-art-gold hover:brightness-110 text-art-black font-bold uppercase rounded-xl cursor-pointer"
+                  >
+                    Add to Homepage
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
+
+        {/* 3C. Sovereign Craftsmanship Pillar Edit Modal */}
+        {editingPillar && (
+          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+            <div className="bg-white rounded-3xl p-6 sm:p-8 max-w-lg w-full shadow-2xl border border-slate-200 text-xs animate-scale-in space-y-4 max-h-[90vh] overflow-y-auto">
+              <div className="flex justify-between items-center border-b border-slate-100 pb-3">
+                <h3 className="font-serif text-lg font-bold text-slate-900 flex items-center gap-2">
+                  <Crown className="w-5 h-5 text-art-gold" />
+                  <span>Edit Craftsmanship Guild: {editingPillar.title}</span>
+                </h3>
+                <button onClick={() => setEditingPillar(null)} className="text-slate-400 hover:text-slate-600">
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  const currentPillars = homePageConfig?.heritagePillars || DEFAULT_HERITAGE_PILLARS;
+                  const updated = currentPillars.map(p => p.id === editingPillar.id ? { ...p, ...pillarForm } : p);
+                  updateHeritagePillars(updated);
+                  setEditingPillar(null);
+                  alert(`Guild write-up "${pillarForm.title}" saved successfully!`);
+                }}
+                className="space-y-3"
+              >
+                <div>
+                  <label className="block text-slate-600 mb-1 font-medium">Guild Title</label>
+                  <input
+                    type="text"
+                    required
+                    value={pillarForm.title || ''}
+                    onChange={(e) => setPillarForm({ ...pillarForm, title: e.target.value })}
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-slate-900 font-bold"
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-slate-600 mb-1 font-medium">Native Name</label>
+                    <input
+                      type="text"
+                      value={pillarForm.nativeName || ''}
+                      onChange={(e) => setPillarForm({ ...pillarForm, nativeName: e.target.value })}
+                      className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-slate-900"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-slate-600 mb-1 font-medium">Region & Country</label>
+                    <input
+                      type="text"
+                      value={pillarForm.region || ''}
+                      onChange={(e) => setPillarForm({ ...pillarForm, region: e.target.value })}
+                      className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-slate-900"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-slate-600 mb-1 font-medium">Historical Era</label>
+                    <input
+                      type="text"
+                      value={pillarForm.era || ''}
+                      onChange={(e) => setPillarForm({ ...pillarForm, era: e.target.value })}
+                      className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-slate-900"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-slate-600 mb-1 font-medium">Primary Medium</label>
+                    <input
+                      type="text"
+                      value={pillarForm.medium || ''}
+                      onChange={(e) => setPillarForm({ ...pillarForm, medium: e.target.value })}
+                      className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-slate-900"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-slate-600 mb-1 font-medium">Historical Summary & Narrative</label>
+                  <textarea
+                    rows={3}
+                    value={pillarForm.summary || ''}
+                    onChange={(e) => setPillarForm({ ...pillarForm, summary: e.target.value })}
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-slate-900 leading-relaxed"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-slate-600 mb-1 font-medium">Artistic Technique Description</label>
+                  <input
+                    type="text"
+                    value={pillarForm.technique || ''}
+                    onChange={(e) => setPillarForm({ ...pillarForm, technique: e.target.value })}
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-slate-900"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-slate-600 mb-1 font-medium">Cultural & Sovereign Significance</label>
+                  <textarea
+                    rows={2}
+                    value={pillarForm.culturalSignificance || ''}
+                    onChange={(e) => setPillarForm({ ...pillarForm, culturalSignificance: e.target.value })}
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-slate-900 leading-relaxed"
+                  />
+                </div>
+
+                <div className="flex justify-end gap-2 pt-3 border-t border-slate-100">
+                  <button
+                    type="button"
+                    onClick={() => setEditingPillar(null)}
+                    className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-bold"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="px-5 py-2 bg-art-gold hover:brightness-110 text-art-black font-bold uppercase rounded-xl cursor-pointer"
+                  >
+                    Save Guild Write-Up
                   </button>
                 </div>
               </form>

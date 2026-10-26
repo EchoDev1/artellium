@@ -18,6 +18,9 @@ import {
   Menu,
   Eye,
   Film,
+  Palette,
+  Award,
+  Layers
 } from 'lucide-react';
 
 export default function Navbar() {
@@ -148,16 +151,16 @@ export default function Navbar() {
       {/* Main Navigation Bar */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
         <div className="flex items-center justify-between gap-4 sm:gap-6">
-          {/* Brand Logo */}
-          <Link href="/" className="flex items-center group shrink-0" title="ARTELLIUM - Fine Art & Auctions">
+          {/* Brand Logo & Name */}
+          <Link href="/" className="flex items-center gap-2 group shrink-0" title={`${hConfig.brandName || 'ARTELLIUM'} - ${hConfig.brandSubtitle || 'Fine Art & Auctions'}`}>
             <img
               src="/artellium_brand_logo.png"
-              alt="ARTELLIUM Fine Art & Auctions"
+              alt={hConfig.brandName || "ARTELLIUM"}
               className="h-10 sm:h-12 w-auto object-contain transition-transform duration-300 group-hover:scale-105"
             />
           </Link>
 
-          {/* Main Search Box - Styled Matching Mobile Design */}
+          {/* Main Search Box */}
           <form
             onSubmit={handleSearchSubmit}
             className="hidden md:flex flex-1 max-w-2xl items-center relative"
@@ -181,53 +184,97 @@ export default function Navbar() {
           </form>
 
           {/* Right Action Icons & Directives */}
-          <div className="flex items-center gap-2.5 sm:gap-3.5">
-            {/* Voices of Master Artists Quick Link */}
-            <Link
-              href="/artist-voices"
-              className="hidden lg:flex items-center gap-1.5 text-xs font-semibold text-art-gold hover:text-white bg-art-gold/10 border border-art-gold/30 px-3 py-1.5 rounded-full transition shadow-sm"
-              title="Voices of Master Artists"
-            >
-              <Film className="w-3.5 h-3.5 text-art-gold" />
-              <span>Voices of Artists</span>
-            </Link>
+          <div className="flex items-center gap-2 sm:gap-3">
+            {/* Admin Direct Role Switcher Suite */}
+            {currentUser?.role === 'admin' ? (
+              <div className="hidden sm:flex items-center gap-1 bg-amber-950/40 p-1 rounded-xl border border-amber-500/30">
+                <Link
+                  href="/admin/dashboard"
+                  className="flex items-center gap-1 text-[11px] font-bold text-amber-300 bg-amber-900/60 hover:bg-amber-850 px-2 py-1 rounded-lg transition"
+                  title="Admin Console"
+                >
+                  <ShieldCheck className="w-3.5 h-3.5 text-art-gold" />
+                  <span>Admin</span>
+                </Link>
+                <Link
+                  href="/artist/dashboard"
+                  className="flex items-center gap-1 text-[11px] font-semibold text-amber-200 hover:text-white px-2 py-1 rounded-lg hover:bg-white/10 transition"
+                  title="Enter Artist Studio Console (Admin Mode)"
+                >
+                  <Palette className="w-3.5 h-3.5 text-art-gold" />
+                  <span>Artist Studio</span>
+                </Link>
+                <Link
+                  href="/buyer/account"
+                  className="flex items-center gap-1 text-[11px] font-semibold text-emerald-300 hover:text-white px-2 py-1 rounded-lg hover:bg-white/10 transition"
+                  title="Enter Collector Portal (Admin Mode)"
+                >
+                  <Award className="w-3.5 h-3.5 text-emerald-400" />
+                  <span>Collector Portal</span>
+                </Link>
+              </div>
+            ) : (
+              /* Non-Admin Dynamic Header Nav Links */
+              <>
+                {hConfig.navLinks && hConfig.navLinks.length > 0 ? (
+                  hConfig.navLinks
+                    .filter(link => link.isVisible !== false)
+                    .slice(0, 3)
+                    .map(link => (
+                      <Link
+                        key={link.id}
+                        href={link.href || '#'}
+                        className={`hidden lg:flex items-center gap-1 text-xs font-semibold px-2.5 py-1.5 rounded-full transition ${
+                          link.highlight === 'red'
+                            ? 'text-red-400 hover:text-red-300 bg-red-950/40 border border-red-800/40'
+                            : link.highlight === 'emerald'
+                            ? 'text-emerald-400 hover:text-emerald-300 bg-emerald-950/40 border border-emerald-800/40'
+                            : link.highlight === 'gold'
+                            ? 'text-art-gold hover:text-white bg-art-gold/10 border border-art-gold/30'
+                            : 'text-slate-300 hover:text-white bg-white/5 border border-white/10 hover:border-art-gold/30'
+                        }`}
+                      >
+                        {link.highlight === 'red' && <Flame className="w-3.5 h-3.5 text-red-500 animate-pulse" />}
+                        {link.highlight === 'emerald' && <Eye className="w-3.5 h-3.5 text-emerald-400" />}
+                        {link.highlight === 'gold' && <Sparkles className="w-3.5 h-3.5 text-art-gold" />}
+                        <span>{link.label}</span>
+                      </Link>
+                    ))
+                ) : (
+                  <>
+                    <Link
+                      href="/artist-voices"
+                      className="hidden lg:flex items-center gap-1.5 text-xs font-semibold text-art-gold hover:text-white bg-art-gold/10 border border-art-gold/30 px-3 py-1.5 rounded-full transition shadow-sm"
+                    >
+                      <Film className="w-3.5 h-3.5 text-art-gold" />
+                      <span>Voices of Artists</span>
+                    </Link>
+                    <Link
+                      href="/auctions"
+                      className="hidden lg:flex items-center gap-1.5 text-xs font-semibold text-red-400 hover:text-red-300 bg-red-950/40 border border-red-800/40 px-3 py-1.5 rounded-full transition shadow-crimson-glow"
+                    >
+                      <Flame className="w-4 h-4 text-red-500 animate-pulse" />
+                      <span>{t('liveAuctions', 'Live Auctions')}</span>
+                    </Link>
+                    <Link
+                      href="/exhibitions"
+                      className="hidden xl:flex items-center gap-1.5 text-xs font-semibold text-emerald-400 hover:text-emerald-300 bg-emerald-950/40 border border-emerald-800/40 px-3 py-1.5 rounded-full transition shadow-emerald-glow"
+                    >
+                      <Eye className="w-4 h-4 text-emerald-400" />
+                      <span>{t('exhibitions', 'Exhibitions')}</span>
+                    </Link>
+                  </>
+                )}
 
-            {/* Live Auction Quick Link */}
-            <Link
-              href="/auctions"
-              className="hidden lg:flex items-center gap-1.5 text-xs font-semibold text-red-400 hover:text-red-300 bg-red-950/40 border border-red-800/40 px-3 py-1.5 rounded-full transition shadow-crimson-glow"
-            >
-              <Flame className="w-4 h-4 text-red-500 animate-pulse" />
-              <span>{t('liveAuctions', 'Live Auctions')}</span>
-            </Link>
-
-            {/* Virtual Exhibition */}
-            <Link
-              href="/exhibitions"
-              className="hidden xl:flex items-center gap-1.5 text-xs font-semibold text-emerald-400 hover:text-emerald-300 bg-emerald-950/40 border border-emerald-800/40 px-3 py-1.5 rounded-full transition shadow-emerald-glow"
-            >
-              <Eye className="w-4 h-4 text-emerald-400" />
-              <span>{t('exhibitions', 'Exhibitions')}</span>
-            </Link>
-
-            {/* Artist Self-Service Portal */}
-            <Link
-              href="/artist/dashboard"
-              className="hidden sm:flex items-center gap-1.5 text-xs font-semibold text-art-gold hover:text-art-gold-bright bg-art-gold/10 border border-art-gold/30 px-3 py-1.5 rounded-lg transition"
-            >
-              <PlusCircle className="w-4 h-4 text-art-gold" />
-              <span>{t('sellArtwork', 'Sell Artwork')}</span>
-            </Link>
-
-            {/* Admin Dashboard */}
-            {currentUser?.role === 'admin' && (
-              <Link
-                href="/admin/dashboard"
-                className="hidden sm:flex items-center gap-1 text-xs font-bold text-amber-300 bg-amber-950/60 border border-amber-500/40 px-2.5 py-1.5 rounded-lg transition animate-pulse-subtle"
-              >
-                <ShieldCheck className="w-4 h-4 text-art-gold" />
-                <span>Admin</span>
-              </Link>
+                {/* Sell Artwork link for non-admin */}
+                <Link
+                  href="/artist/dashboard"
+                  className="hidden sm:flex items-center gap-1.5 text-xs font-semibold text-art-gold hover:text-art-gold-bright bg-art-gold/10 border border-art-gold/30 px-3 py-1.5 rounded-lg transition"
+                >
+                  <PlusCircle className="w-4 h-4 text-art-gold" />
+                  <span>{t('sellArtwork', 'Sell Artwork')}</span>
+                </Link>
+              </>
             )}
 
             {/* Standard User Account Dropdown Menu */}
@@ -247,7 +294,7 @@ export default function Navbar() {
               )}
             </button>
 
-            {/* Premium Sliding Hamburger Menu Trigger */}
+            {/* Sliding Hamburger Menu Trigger */}
             <button
               onClick={() => setIsSidebarOpen(true)}
               className="p-2 rounded-xl bg-art-black-card border border-art-gold/30 hover:border-art-gold transition text-white group flex items-center justify-center"
