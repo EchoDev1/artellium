@@ -313,7 +313,7 @@ export default function ArtistDashboardPage() {
   };
 
   // Payout Bank Settings state (Account Name, Bank Name, Account Number)
-  const mySellerProfile = sellers.find(s => (myArtistName && s.name?.toLowerCase().includes(myArtistName.toLowerCase())) || (currentUser?.id && s.user_id === currentUser.id)) || {
+  const mySellerProfile = (Array.isArray(sellers) ? sellers : []).find(s => (myArtistName && s && s.name && s.name.toLowerCase().includes(myArtistName.toLowerCase())) || (currentUser?.id && s && s.user_id === currentUser.id)) || {
     payout_account_name: myArtistName ? `${myArtistName} Studio` : '',
     payout_bank: '',
     payout_account: '',
@@ -327,182 +327,201 @@ export default function ArtistDashboardPage() {
 
   // Automated Concierge Diagnostics: Real-time Error Detection for Active Artist
   const detectedArtistIssues = useMemo(() => {
-    if (!isAdmin) return [];
-    const issues = [];
+    try {
+      if (!isAdmin) return [];
+      const issues = [];
 
-    // 1. Missing or Incomplete WEMA Bank Settlement Account
-    const hasValidBank = Boolean(
-      mySellerProfile?.payout_bank && 
-      mySellerProfile?.payout_account && 
-      mySellerProfile.payout_account.toString().trim().length >= 10
-    );
-    if (!hasValidBank) {
-      issues.push({
-        id: 'payout_bank_missing',
-        severity: 'critical',
-        badge: 'CRITICAL PAYOUT ERROR',
-        title: 'Missing WEMA Settlement Account (NUBAN)',
-        description: 'Artist has no registered 10-digit NUBAN account. Payout disbursements for artwork purchases cannot clear automatically.',
-        actionLabel: 'Assign Wema Bank NUBAN Account',
-        fixType: 'banking'
-      });
+      // 1. Missing or Incomplete WEMA Bank Settlement Account
+      const accountStr = String(mySellerProfile?.payout_account || '').trim();
+      const hasValidBank = Boolean(
+        mySellerProfile?.payout_bank && 
+        accountStr.length >= 10
+      );
+      if (!hasValidBank) {
+        issues.push({
+          id: 'payout_bank_missing',
+          severity: 'critical',
+          badge: 'CRITICAL PAYOUT ERROR',
+          title: 'Missing WEMA Settlement Account (NUBAN)',
+          description: 'Artist has no registered 10-digit NUBAN account. Payout disbursements for artwork purchases cannot clear automatically.',
+          actionLabel: 'Assign Wema Bank NUBAN Account',
+          fixType: 'banking'
+        });
+      }
+
+      // 2. Unpublished Studio Bio & Lineage
+      const bioStr = String(mySellerProfile?.bio || '').trim();
+      const hasBio = bioStr.length > 20;
+      if (!hasBio) {
+        issues.push({
+          id: 'bio_missing',
+          severity: 'high',
+          badge: 'PROFILE DEFICIT',
+          title: 'Unpublished Studio Biography & Lineage',
+          description: 'Public profile lacks an accredited curatorial statement and guild lineage, decreasing collector acquisition trust.',
+          actionLabel: 'Generate Curated Master Statement',
+          fixType: 'bio'
+        });
+      }
+
+      // 3. Unverified Studio Status
+      if (!mySellerProfile?.is_verified) {
+        issues.push({
+          id: 'unverified_status',
+          severity: 'medium',
+          badge: 'STATUS INACTIVE',
+          title: 'Studio Verification Seal Pending',
+          description: 'Artist catalog lacks the official Verified Master seal and algorithmic priority placement in searches.',
+          actionLabel: 'Verify & Grant Master Accreditation',
+          fixType: 'verification'
+        });
+      }
+
+      // 4. Incomplete Artwork Catalog Specs
+      const allWorks = Array.isArray(artworks) ? artworks : [];
+      const artistWorks = allWorks.filter(a => a && a.artistName && myArtistName && a.artistName.toLowerCase() === myArtistName.toLowerCase());
+      const uncalibratedWorks = artistWorks.filter(a => a && (!a.medium || !a.dimensions || !a.year));
+      if (uncalibratedWorks.length > 0) {
+        issues.push({
+          id: 'artworks_uncalibrated',
+          severity: 'medium',
+          badge: 'METADATA INCOMPLETE',
+          title: `${uncalibratedWorks.length} Piece(s) Missing Archival Dimensions/Medium`,
+          description: `Pieces such as "${uncalibratedWorks[0]?.title || 'Masterwork'}" are missing physical canvas dimensions or medium classifications.`,
+          actionLabel: 'Calibrate Artwork Specifications',
+          fixType: 'artworks'
+        });
+      }
+
+      return issues;
+    } catch (err) {
+      console.warn('[Artist Diagnostics Notice]: Resilient recovery executed.', err);
+      return [];
     }
-
-    // 2. Unpublished Studio Bio & Lineage
-    const hasBio = Boolean(mySellerProfile?.bio && mySellerProfile.bio.trim().length > 20);
-    if (!hasBio) {
-      issues.push({
-        id: 'bio_missing',
-        severity: 'high',
-        badge: 'PROFILE DEFICIT',
-        title: 'Unpublished Studio Biography & Lineage',
-        description: 'Public profile lacks an accredited curatorial statement and guild lineage, decreasing collector acquisition trust.',
-        actionLabel: 'Generate Curated Master Statement',
-        fixType: 'bio'
-      });
-    }
-
-    // 3. Unverified Studio Status
-    if (!mySellerProfile?.is_verified) {
-      issues.push({
-        id: 'unverified_status',
-        severity: 'medium',
-        badge: 'STATUS INACTIVE',
-        title: 'Studio Verification Seal Pending',
-        description: 'Artist catalog lacks the official Verified Master seal and algorithmic priority placement in searches.',
-        actionLabel: 'Verify & Grant Master Accreditation',
-        fixType: 'verification'
-      });
-    }
-
-    // 4. Incomplete Artwork Catalog Specs
-    const artistWorks = artworks.filter(a => a.artistName?.toLowerCase() === myArtistName?.toLowerCase());
-    const uncalibratedWorks = artistWorks.filter(a => !a.medium || !a.dimensions || !a.year);
-    if (uncalibratedWorks.length > 0) {
-      issues.push({
-        id: 'artworks_uncalibrated',
-        severity: 'medium',
-        badge: 'METADATA INCOMPLETE',
-        title: `${uncalibratedWorks.length} Piece(s) Missing Archival Dimensions/Medium`,
-        description: `Pieces such as "${uncalibratedWorks[0]?.title}" are missing physical canvas dimensions or medium classifications.`,
-        actionLabel: 'Calibrate Artwork Specifications',
-        fixType: 'artworks'
-      });
-    }
-
-    return issues;
   }, [isAdmin, mySellerProfile, artworks, myArtistName]);
 
   const handleFixSingleArtistIssue = (fixType) => {
-    if (!myArtistName) return;
+    try {
+      if (!myArtistName) return;
 
-    if (fixType === 'banking') {
-      const generatedNuban = '012' + Math.floor(1000000 + Math.random() * 9000000);
-      const updates = {
-        payout_bank: 'Wema Bank PLC',
+      if (fixType === 'banking') {
+        const generatedNuban = '012' + Math.floor(1000000 + Math.random() * 9000000);
+        const updates = {
+          payout_bank: 'Wema Bank PLC',
+          payout_account: generatedNuban,
+          payout_account_name: `${myArtistName} Studio Master Account`
+        };
+        if (mySellerProfile?.id) {
+          updateSeller(mySellerProfile.id, updates);
+        }
+        setConciergeBankForm(updates);
+        setBankForm(updates);
+        setConciergeFixStatus(`⚡ Fixed immediately: WEMA Bank settlement account (${generatedNuban}) registered and active!`);
+      } else if (fixType === 'bio') {
+        const bioText = `${myArtistName} is an acclaimed contemporary African visual master whose body of work bridges rich cultural symbolism, figurative modernism, and indigenous heritage narratives. Operating from master studios in ${mySellerProfile?.city || 'Lagos'}, their pieces are represented in prominent private vaults and international collections.`;
+        const updates = {
+          bio: bioText,
+          artistTitle: 'Contemporary Master Visual Artist',
+          guildLineage: 'Pan-African Guild of Heritage Masters',
+          primaryMediums: 'Oil, Acrylic & Mixed Media on Canvas',
+          city: mySellerProfile?.city || 'Lagos',
+          country: mySellerProfile?.country || 'Nigeria'
+        };
+        if (mySellerProfile?.id) {
+          updateSeller(mySellerProfile.id, updates);
+        }
+        setArtistProfileForm(prev => ({ ...prev, ...updates }));
+        setConciergeFixStatus('⚡ Fixed immediately: Studio biography and curatorial lineage statement published!');
+      } else if (fixType === 'verification') {
+        if (mySellerProfile?.id) {
+          updateSeller(mySellerProfile.id, { is_verified: true, plan: 'pro' });
+        }
+        setConciergeFixStatus('⚡ Fixed immediately: Verified Master Artist seal activated and Pro tier granted!');
+      } else if (fixType === 'artworks') {
+        const allWorks = Array.isArray(artworks) ? artworks : [];
+        const artistWorks = allWorks.filter(a => a && a.artistName && myArtistName && a.artistName.toLowerCase() === myArtistName.toLowerCase());
+        let count = 0;
+        artistWorks.forEach(a => {
+          if (a && a.id && (!a.medium || !a.dimensions || !a.year)) {
+            updateArtwork(a.id, {
+              medium: a.medium || 'Oil & Acrylic on Heritage Linen Canvas',
+              dimensions: a.dimensions || '120 x 95 cm (Framed)',
+              year: a.year || '2024',
+              condition: a.condition || 'Mint Studio Archival Condition'
+            });
+            count++;
+          }
+        });
+        setConciergeFixStatus(`⚡ Fixed immediately: Calibrated ${count} artwork(s) with museum-grade physical specifications!`);
+      }
+
+      setTimeout(() => setConciergeFixStatus(''), 6000);
+    } catch (err) {
+      console.warn('[Artist Fix Notice]: Resilient recovery executed.', err);
+    }
+  };
+
+  const handleFixAllArtistIssues = () => {
+    try {
+      if (!myArtistName) return;
+      const accountStr = String(mySellerProfile?.payout_account || '').trim();
+      const generatedNuban = (accountStr.length >= 10)
+        ? accountStr
+        : '012' + Math.floor(1000000 + Math.random() * 9000000);
+
+      const existingBio = String(mySellerProfile?.bio || '').trim();
+      const bioText = existingBio.length > 20
+        ? existingBio
+        : `${myArtistName} is an acclaimed contemporary African visual master whose body of work bridges rich cultural symbolism, figurative modernism, and indigenous heritage narratives. Operating from master studios in ${mySellerProfile?.city || 'Lagos'}, their pieces are represented in prominent private vaults and international collections.`;
+
+      const sellerUpdates = {
+        payout_bank: mySellerProfile?.payout_bank || 'Wema Bank PLC',
         payout_account: generatedNuban,
-        payout_account_name: `${myArtistName} Studio Master Account`
-      };
-      if (mySellerProfile?.id) {
-        updateSeller(mySellerProfile.id, updates);
-      }
-      setConciergeBankForm(updates);
-      setBankForm(updates);
-      setConciergeFixStatus(`⚡ Fixed immediately: WEMA Bank settlement account (${generatedNuban}) registered and active!`);
-    } else if (fixType === 'bio') {
-      const bioText = `${myArtistName} is an acclaimed contemporary African visual master whose body of work bridges rich cultural symbolism, figurative modernism, and indigenous heritage narratives. Operating from master studios in ${mySellerProfile?.city || 'Lagos'}, their pieces are represented in prominent private vaults and international collections.`;
-      const updates = {
+        payout_account_name: mySellerProfile?.payout_account_name || `${myArtistName} Studio Master Account`,
         bio: bioText,
-        artistTitle: 'Contemporary Master Visual Artist',
-        guildLineage: 'Pan-African Guild of Heritage Masters',
-        primaryMediums: 'Oil, Acrylic & Mixed Media on Canvas',
+        artistTitle: mySellerProfile?.artistTitle || 'Contemporary Master Visual Artist',
+        guildLineage: mySellerProfile?.guildLineage || 'Pan-African Guild of Heritage Masters',
+        primaryMediums: mySellerProfile?.primaryMediums || 'Oil, Acrylic & Mixed Media on Canvas',
         city: mySellerProfile?.city || 'Lagos',
-        country: mySellerProfile?.country || 'Nigeria'
+        country: mySellerProfile?.country || 'Nigeria',
+        is_verified: true,
+        plan: 'pro'
       };
+
       if (mySellerProfile?.id) {
-        updateSeller(mySellerProfile.id, updates);
+        updateSeller(mySellerProfile.id, sellerUpdates);
       }
-      setArtistProfileForm(prev => ({ ...prev, ...updates }));
-      setConciergeFixStatus('⚡ Fixed immediately: Studio biography and curatorial lineage statement published!');
-    } else if (fixType === 'verification') {
-      if (mySellerProfile?.id) {
-        updateSeller(mySellerProfile.id, { is_verified: true, plan: 'pro' });
-      }
-      setConciergeFixStatus('⚡ Fixed immediately: Verified Master Artist seal activated and Pro tier granted!');
-    } else if (fixType === 'artworks') {
-      const artistWorks = artworks.filter(a => a.artistName?.toLowerCase() === myArtistName?.toLowerCase());
-      let count = 0;
+      setConciergeBankForm({
+        payout_bank: sellerUpdates.payout_bank,
+        payout_account: sellerUpdates.payout_account,
+        payout_account_name: sellerUpdates.payout_account_name
+      });
+      setBankForm({
+        payout_bank: sellerUpdates.payout_bank,
+        payout_account: sellerUpdates.payout_account,
+        payout_account_name: sellerUpdates.payout_account_name
+      });
+      setArtistProfileForm(prev => ({ ...prev, ...sellerUpdates }));
+
+      // Calibrate all artworks
+      const allWorks = Array.isArray(artworks) ? artworks : [];
+      const artistWorks = allWorks.filter(a => a && a.artistName && myArtistName && a.artistName.toLowerCase() === myArtistName.toLowerCase());
       artistWorks.forEach(a => {
-        if (!a.medium || !a.dimensions || !a.year) {
+        if (a && a.id && (!a.medium || !a.dimensions || !a.year)) {
           updateArtwork(a.id, {
             medium: a.medium || 'Oil & Acrylic on Heritage Linen Canvas',
             dimensions: a.dimensions || '120 x 95 cm (Framed)',
             year: a.year || '2024',
             condition: a.condition || 'Mint Studio Archival Condition'
           });
-          count++;
         }
       });
-      setConciergeFixStatus(`⚡ Fixed immediately: Calibrated ${count} artwork(s) with museum-grade physical specifications!`);
+
+      setConciergeFixStatus('⚡ All detected issues fixed immediately! WEMA banking registered, bio published, verification granted, and catalog calibrated.');
+      setTimeout(() => setConciergeFixStatus(''), 7000);
+    } catch (err) {
+      console.warn('[Artist Fix All Notice]: Resilient recovery executed.', err);
     }
-
-    setTimeout(() => setConciergeFixStatus(''), 6000);
-  };
-
-  const handleFixAllArtistIssues = () => {
-    if (!myArtistName) return;
-    const generatedNuban = (mySellerProfile?.payout_account && mySellerProfile.payout_account.length >= 10)
-      ? mySellerProfile.payout_account
-      : '012' + Math.floor(1000000 + Math.random() * 9000000);
-
-    const bioText = mySellerProfile?.bio && mySellerProfile.bio.length > 20
-      ? mySellerProfile.bio
-      : `${myArtistName} is an acclaimed contemporary African visual master whose body of work bridges rich cultural symbolism, figurative modernism, and indigenous heritage narratives. Operating from master studios in ${mySellerProfile?.city || 'Lagos'}, their pieces are represented in prominent private vaults and international collections.`;
-
-    const sellerUpdates = {
-      payout_bank: mySellerProfile?.payout_bank || 'Wema Bank PLC',
-      payout_account: generatedNuban,
-      payout_account_name: mySellerProfile?.payout_account_name || `${myArtistName} Studio Master Account`,
-      bio: bioText,
-      artistTitle: mySellerProfile?.artistTitle || 'Contemporary Master Visual Artist',
-      guildLineage: mySellerProfile?.guildLineage || 'Pan-African Guild of Heritage Masters',
-      primaryMediums: mySellerProfile?.primaryMediums || 'Oil, Acrylic & Mixed Media on Canvas',
-      city: mySellerProfile?.city || 'Lagos',
-      country: mySellerProfile?.country || 'Nigeria',
-      is_verified: true,
-      plan: 'pro'
-    };
-
-    if (mySellerProfile?.id) {
-      updateSeller(mySellerProfile.id, sellerUpdates);
-    }
-    setConciergeBankForm({
-      payout_bank: sellerUpdates.payout_bank,
-      payout_account: sellerUpdates.payout_account,
-      payout_account_name: sellerUpdates.payout_account_name
-    });
-    setBankForm({
-      payout_bank: sellerUpdates.payout_bank,
-      payout_account: sellerUpdates.payout_account,
-      payout_account_name: sellerUpdates.payout_account_name
-    });
-    setArtistProfileForm(prev => ({ ...prev, ...sellerUpdates }));
-
-    // Calibrate all artworks
-    const artistWorks = artworks.filter(a => a.artistName?.toLowerCase() === myArtistName?.toLowerCase());
-    artistWorks.forEach(a => {
-      if (!a.medium || !a.dimensions || !a.year) {
-        updateArtwork(a.id, {
-          medium: a.medium || 'Oil & Acrylic on Heritage Linen Canvas',
-          dimensions: a.dimensions || '120 x 95 cm (Framed)',
-          year: a.year || '2024',
-          condition: a.condition || 'Mint Studio Archival Condition'
-        });
-      }
-    });
-
-    setConciergeFixStatus('⚡ All detected issues fixed immediately! WEMA banking registered, bio published, verification granted, and catalog calibrated.');
-    setTimeout(() => setConciergeFixStatus(''), 7000);
   };
   
   const [bankForm, setBankForm] = useState({

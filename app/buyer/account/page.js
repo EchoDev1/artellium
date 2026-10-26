@@ -304,131 +304,146 @@ export default function BuyerAccountPage() {
 
   // Automated Concierge Diagnostics: Real-time Error Detection for Collector
   const detectedCollectorIssues = useMemo(() => {
-    if (!isAdmin) return [];
-    const issues = [];
+    try {
+      if (!isAdmin) return [];
+      const issues = [];
 
-    // 1. Unreconciled Pending Orders
-    const pendingOrders = myOrders.filter(o => o.status === 'pending');
-    if (pendingOrders.length > 0) {
-      issues.push({
-        id: 'unreconciled_orders',
-        severity: 'critical',
-        badge: 'PAYMENT PENDING',
-        title: `${pendingOrders.length} Unreconciled WEMA Direct Order(s)`,
-        description: `Order #${pendingOrders[0]?.id?.slice(-8) || 'REF'} has pending settlement status. The collector is awaiting payment verification and release of digital COA certificate.`,
-        actionLabel: 'Reconcile Wema Bank Payment',
-        fixType: 'orders'
-      });
+      // 1. Unreconciled Pending Orders
+      const pendingOrders = Array.isArray(myOrders) ? myOrders.filter(o => o && o.status === 'pending') : [];
+      if (pendingOrders.length > 0) {
+        const orderIdStr = String(pendingOrders[0]?.id || 'REF');
+        const shortRef = orderIdStr.length > 8 ? orderIdStr.slice(-8) : orderIdStr;
+        issues.push({
+          id: 'unreconciled_orders',
+          severity: 'critical',
+          badge: 'PAYMENT PENDING',
+          title: `${pendingOrders.length} Unreconciled WEMA Direct Order(s)`,
+          description: `Order #${shortRef} has pending settlement status. The collector is awaiting payment verification and release of digital COA certificate.`,
+          actionLabel: 'Reconcile Wema Bank Payment',
+          fixType: 'orders'
+        });
+      }
+
+      // 2. Missing Primary Shipping Delivery Address
+      if (activeUser && (!activeUser.address || !activeUser.city)) {
+        issues.push({
+          id: 'missing_delivery_address',
+          severity: 'high',
+          badge: 'SHIPPING ADDRESS BLANK',
+          title: 'Missing Primary Delivery Shipping Address',
+          description: 'Delivery street address or destination city is blank. White-Glove logistics courier cannot calculate direct dispatch route.',
+          actionLabel: 'Assign Verified Delivery Destination',
+          fixType: 'address'
+        });
+      }
+
+      // 3. Missing Phone Contact for Logistics Courier
+      if (activeUser && !activeUser.phone) {
+        issues.push({
+          id: 'missing_phone',
+          severity: 'medium',
+          badge: 'CONTACT MISSING',
+          title: 'Missing Courier Liaison Phone Number',
+          description: 'No mobile telephone registered for Artellium White-Glove delivery dispatch and delivery gate clearance.',
+          actionLabel: 'Assign Priority Liaison Hotline',
+          fixType: 'phone'
+        });
+      }
+
+      // 4. Live Auction Accreditation
+      const isAccredited = Boolean(activeUser && isBidderRegistered && isBidderRegistered(activeUser));
+      if (!isAccredited) {
+        issues.push({
+          id: 'unaccredited_bidder',
+          severity: 'medium',
+          badge: 'ACCREDITATION INACTIVE',
+          title: 'Live Auction Accreditation Pending',
+          description: 'Collector identity has not been verified for real-time live lot auctions.',
+          actionLabel: 'Grant Sovereign Bidder Accreditation',
+          fixType: 'accreditation'
+        });
+      }
+
+      return issues;
+    } catch (err) {
+      console.warn('[Collector Diagnostics Notice]: Resilient recovery executed.', err);
+      return [];
     }
-
-    // 2. Missing Primary Shipping Delivery Address
-    if (!activeUser?.address || !activeUser?.city) {
-      issues.push({
-        id: 'missing_delivery_address',
-        severity: 'high',
-        badge: 'SHIPPING ADDRESS BLANK',
-        title: 'Missing Primary Delivery Shipping Address',
-        description: 'Delivery street address or destination city is blank. White-Glove logistics courier cannot calculate direct dispatch route.',
-        actionLabel: 'Assign Verified Delivery Destination',
-        fixType: 'address'
-      });
-    }
-
-    // 3. Missing Phone Contact for Logistics Courier
-    if (!activeUser?.phone) {
-      issues.push({
-        id: 'missing_phone',
-        severity: 'medium',
-        badge: 'CONTACT MISSING',
-        title: 'Missing Courier Liaison Phone Number',
-        description: 'No mobile telephone registered for Artellium White-Glove delivery dispatch and delivery gate clearance.',
-        actionLabel: 'Assign Priority Liaison Hotline',
-        fixType: 'phone'
-      });
-    }
-
-    // 4. Live Auction Accreditation
-    const isAccredited = Boolean(isBidderRegistered && isBidderRegistered(activeUser));
-    if (!isAccredited) {
-      issues.push({
-        id: 'unaccredited_bidder',
-        severity: 'medium',
-        badge: 'ACCREDITATION INACTIVE',
-        title: 'Live Auction Accreditation Pending',
-        description: 'Collector identity has not been verified for real-time live lot auctions.',
-        actionLabel: 'Grant Sovereign Bidder Accreditation',
-        fixType: 'accreditation'
-      });
-    }
-
-    return issues;
   }, [isAdmin, myOrders, activeUser, isBidderRegistered]);
 
   const handleFixSingleCollectorIssue = (fixType) => {
-    if (!activeUser?.id) return;
+    try {
+      if (!activeUser?.id) return;
 
-    if (fixType === 'orders') {
-      const pendingOrders = myOrders.filter(o => o.status === 'pending');
-      pendingOrders.forEach(o => {
-        updateOrderStatus(o.id, 'paid');
-      });
-      setCollectorConciergeFixStatus(`⚡ Fixed immediately: Reconciled & marked ${pendingOrders.length} pending order(s) as paid via WEMA Bank Direct Banking!`);
-    } else if (fixType === 'address') {
-      const defaultAddr = {
-        address: activeUser.address || '14 Bourdillon Road, Sovereign Vault Suite 4B',
-        city: activeUser.city || 'Ikoyi, Lagos',
-        country: activeUser.country || 'Nigeria'
-      };
-      updateUser(activeUser.id, defaultAddr);
-      setCollectorAddressForm(prev => ({ ...prev, ...defaultAddr }));
-      setCollectorConciergeFixStatus('⚡ Fixed immediately: Assigned verified primary delivery shipping destination in Ikoyi, Lagos!');
-    } else if (fixType === 'phone') {
-      const phoneNum = activeUser.phone || '+234 803 000 8899';
-      updateUser(activeUser.id, { phone: phoneNum });
-      setCollectorAddressForm(prev => ({ ...prev, phone: phoneNum }));
-      setCollectorConciergeFixStatus(`⚡ Fixed immediately: Priority courier contact phone (${phoneNum}) registered!`);
-    } else if (fixType === 'accreditation') {
-      if (registerAuctionBidder) {
-        registerAuctionBidder(activeUser);
+      if (fixType === 'orders') {
+        const pendingOrders = Array.isArray(myOrders) ? myOrders.filter(o => o && o.status === 'pending') : [];
+        pendingOrders.forEach(o => {
+          if (o?.id) updateOrderStatus(o.id, 'paid');
+        });
+        setCollectorConciergeFixStatus(`⚡ Fixed immediately: Reconciled & marked ${pendingOrders.length} pending order(s) as paid via WEMA Bank Direct Banking!`);
+      } else if (fixType === 'address') {
+        const defaultAddr = {
+          address: activeUser.address || '14 Bourdillon Road, Sovereign Vault Suite 4B',
+          city: activeUser.city || 'Ikoyi, Lagos',
+          country: activeUser.country || 'Nigeria'
+        };
+        updateUser(activeUser.id, defaultAddr);
+        setCollectorAddressForm(prev => ({ ...prev, ...defaultAddr }));
+        setCollectorConciergeFixStatus('⚡ Fixed immediately: Assigned verified primary delivery shipping destination in Ikoyi, Lagos!');
+      } else if (fixType === 'phone') {
+        const phoneNum = activeUser.phone || '+234 803 000 8899';
+        updateUser(activeUser.id, { phone: phoneNum });
+        setCollectorAddressForm(prev => ({ ...prev, phone: phoneNum }));
+        setCollectorConciergeFixStatus(`⚡ Fixed immediately: Priority courier contact phone (${phoneNum}) registered!`);
+      } else if (fixType === 'accreditation') {
+        if (registerAuctionBidder) {
+          registerAuctionBidder(activeUser);
+        }
+        updateUser(activeUser.id, { biddingTier: 'Sovereign Patron' });
+        setCollectorAddressForm(prev => ({ ...prev, biddingTier: 'Sovereign Patron' }));
+        setCollectorConciergeFixStatus('⚡ Fixed immediately: Sovereign Patron VIP Bidder accreditation granted for Live Auctions!');
       }
-      updateUser(activeUser.id, { biddingTier: 'Sovereign Patron' });
-      setCollectorAddressForm(prev => ({ ...prev, biddingTier: 'Sovereign Patron' }));
-      setCollectorConciergeFixStatus('⚡ Fixed immediately: Sovereign Patron VIP Bidder accreditation granted for Live Auctions!');
-    }
 
-    setTimeout(() => setCollectorConciergeFixStatus(''), 6000);
+      setTimeout(() => setCollectorConciergeFixStatus(''), 6000);
+    } catch (err) {
+      console.warn('[Collector Fix Notice]: Resilient recovery executed.', err);
+    }
   };
 
   const handleFixAllCollectorIssues = () => {
-    if (!activeUser?.id) return;
+    try {
+      if (!activeUser?.id) return;
 
-    // 1. Reconcile all pending orders
-    const pendingOrders = myOrders.filter(o => o.status === 'pending');
-    pendingOrders.forEach(o => {
-      updateOrderStatus(o.id, 'paid');
-    });
-
-    // 2. Fix address, phone, and tier
-    const updates = {
-      address: activeUser.address || '14 Bourdillon Road, Sovereign Vault Suite 4B',
-      city: activeUser.city || 'Ikoyi, Lagos',
-      country: activeUser.country || 'Nigeria',
-      phone: activeUser.phone || '+234 803 000 8899',
-      biddingTier: 'Sovereign Patron'
-    };
-    updateUser(activeUser.id, updates);
-    setCollectorAddressForm(prev => ({ ...prev, ...updates }));
-
-    // 3. Grant auction accreditation
-    if (registerAuctionBidder) {
-      registerAuctionBidder({
-        ...activeUser,
-        ...updates
+      // 1. Reconcile all pending orders
+      const pendingOrders = Array.isArray(myOrders) ? myOrders.filter(o => o && o.status === 'pending') : [];
+      pendingOrders.forEach(o => {
+        if (o?.id) updateOrderStatus(o.id, 'paid');
       });
-    }
 
-    setCollectorConciergeFixStatus('⚡ All detected collector issues reconciled and resolved immediately! Orders marked paid, address assigned, and Sovereign accreditation granted.');
-    setTimeout(() => setCollectorConciergeFixStatus(''), 7000);
+      // 2. Fix address, phone, and tier
+      const updates = {
+        address: activeUser.address || '14 Bourdillon Road, Sovereign Vault Suite 4B',
+        city: activeUser.city || 'Ikoyi, Lagos',
+        country: activeUser.country || 'Nigeria',
+        phone: activeUser.phone || '+234 803 000 8899',
+        biddingTier: 'Sovereign Patron'
+      };
+      updateUser(activeUser.id, updates);
+      setCollectorAddressForm(prev => ({ ...prev, ...updates }));
+
+      // 3. Grant auction accreditation
+      if (registerAuctionBidder) {
+        registerAuctionBidder({
+          ...activeUser,
+          ...updates
+        });
+      }
+
+      setCollectorConciergeFixStatus('⚡ All detected collector issues reconciled and resolved immediately! Orders marked paid, address assigned, and Sovereign accreditation granted.');
+      setTimeout(() => setCollectorConciergeFixStatus(''), 7000);
+    } catch (err) {
+      console.warn('[Collector Fix All Notice]: Resilient recovery executed.', err);
+    }
   };
 
   // Master Artists Catalog for Following
