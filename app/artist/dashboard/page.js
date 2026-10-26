@@ -51,7 +51,8 @@ import {
   Zap,
   AlertTriangle,
   ShieldAlert,
-  Activity
+  Activity,
+  Wrench
 } from 'lucide-react';
 import Link from 'next/link';
 import ProfilePhotoStudioModal from '@/components/ProfilePhotoStudioModal';

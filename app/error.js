@@ -8,32 +8,24 @@ export default function GlobalErrorPage({ error, reset }) {
   const [isRecovering, setIsRecovering] = useState(false);
 
   useEffect(() => {
-    console.warn('[Artellium Self-Healing Router]: Initiating seamless recovery...', error?.message);
+    console.error('[Artellium Router Notice]:', error?.message || error);
 
     if (typeof window === 'undefined') return;
 
-    // Immediately attempt reset() first to re-render without reloading
-    if (typeof reset === 'function') {
-      try {
-        reset();
-        return;
-      } catch (e) {}
-    }
-
-    // Auto-heal seamlessly if needed
+    // Guard against infinite loop: only attempt silent recovery once every 30 seconds
     const healKey = 'artellium_last_auto_heal';
     const lastHeal = sessionStorage.getItem(healKey);
     const now = Date.now();
 
-    if (!lastHeal || (now - parseInt(lastHeal, 10)) > 15000) {
+    if (!lastHeal || (now - parseInt(lastHeal, 10)) > 30000) {
       sessionStorage.setItem(healKey, now.toString());
-      setTimeout(() => {
+      if (typeof reset === 'function') {
         try {
-          window.location.reload();
+          reset();
         } catch (e) {}
-      }, 150);
+      }
     }
-  }, [error, reset]);
+  }, [error]);
 
   const handleForceRecover = () => {
     setIsRecovering(true);
