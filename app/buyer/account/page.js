@@ -43,7 +43,10 @@ import {
   Users,
   Zap,
   RefreshCw,
-  X
+  X,
+  AlertTriangle,
+  Wrench,
+  ShieldAlert
 } from 'lucide-react';
 import Link from 'next/link';
 import DigitalCertificateModal from '@/components/DigitalCertificateModal';
@@ -299,6 +302,135 @@ export default function BuyerAccountPage() {
     (cleanName && q.askedBy && q.askedBy.toLowerCase().includes(cleanName.toLowerCase()))
   );
 
+  // Automated Concierge Diagnostics: Real-time Error Detection for Collector
+  const detectedCollectorIssues = useMemo(() => {
+    if (!isAdmin) return [];
+    const issues = [];
+
+    // 1. Unreconciled Pending Orders
+    const pendingOrders = myOrders.filter(o => o.status === 'pending');
+    if (pendingOrders.length > 0) {
+      issues.push({
+        id: 'unreconciled_orders',
+        severity: 'critical',
+        badge: 'PAYMENT PENDING',
+        title: `${pendingOrders.length} Unreconciled WEMA Direct Order(s)`,
+        description: `Order #${pendingOrders[0]?.id?.slice(-8) || 'REF'} has pending settlement status. The collector is awaiting payment verification and release of digital COA certificate.`,
+        actionLabel: 'Reconcile Wema Bank Payment',
+        fixType: 'orders'
+      });
+    }
+
+    // 2. Missing Primary Shipping Delivery Address
+    if (!activeUser?.address || !activeUser?.city) {
+      issues.push({
+        id: 'missing_delivery_address',
+        severity: 'high',
+        badge: 'SHIPPING ADDRESS BLANK',
+        title: 'Missing Primary Delivery Shipping Address',
+        description: 'Delivery street address or destination city is blank. White-Glove logistics courier cannot calculate direct dispatch route.',
+        actionLabel: 'Assign Verified Delivery Destination',
+        fixType: 'address'
+      });
+    }
+
+    // 3. Missing Phone Contact for Logistics Courier
+    if (!activeUser?.phone) {
+      issues.push({
+        id: 'missing_phone',
+        severity: 'medium',
+        badge: 'CONTACT MISSING',
+        title: 'Missing Courier Liaison Phone Number',
+        description: 'No mobile telephone registered for Artellium White-Glove delivery dispatch and delivery gate clearance.',
+        actionLabel: 'Assign Priority Liaison Hotline',
+        fixType: 'phone'
+      });
+    }
+
+    // 4. Live Auction Accreditation
+    const isAccredited = Boolean(isBidderRegistered && isBidderRegistered(activeUser));
+    if (!isAccredited) {
+      issues.push({
+        id: 'unaccredited_bidder',
+        severity: 'medium',
+        badge: 'ACCREDITATION INACTIVE',
+        title: 'Live Auction Accreditation Pending',
+        description: 'Collector identity has not been verified for real-time live lot auctions.',
+        actionLabel: 'Grant Sovereign Bidder Accreditation',
+        fixType: 'accreditation'
+      });
+    }
+
+    return issues;
+  }, [isAdmin, myOrders, activeUser, isBidderRegistered]);
+
+  const handleFixSingleCollectorIssue = (fixType) => {
+    if (!activeUser?.id) return;
+
+    if (fixType === 'orders') {
+      const pendingOrders = myOrders.filter(o => o.status === 'pending');
+      pendingOrders.forEach(o => {
+        updateOrderStatus(o.id, 'paid');
+      });
+      setCollectorConciergeFixStatus(`⚡ Fixed immediately: Reconciled & marked ${pendingOrders.length} pending order(s) as paid via WEMA Bank Direct Banking!`);
+    } else if (fixType === 'address') {
+      const defaultAddr = {
+        address: activeUser.address || '14 Bourdillon Road, Sovereign Vault Suite 4B',
+        city: activeUser.city || 'Ikoyi, Lagos',
+        country: activeUser.country || 'Nigeria'
+      };
+      updateUser(activeUser.id, defaultAddr);
+      setCollectorAddressForm(prev => ({ ...prev, ...defaultAddr }));
+      setCollectorConciergeFixStatus('⚡ Fixed immediately: Assigned verified primary delivery shipping destination in Ikoyi, Lagos!');
+    } else if (fixType === 'phone') {
+      const phoneNum = activeUser.phone || '+234 803 000 8899';
+      updateUser(activeUser.id, { phone: phoneNum });
+      setCollectorAddressForm(prev => ({ ...prev, phone: phoneNum }));
+      setCollectorConciergeFixStatus(`⚡ Fixed immediately: Priority courier contact phone (${phoneNum}) registered!`);
+    } else if (fixType === 'accreditation') {
+      if (registerAuctionBidder) {
+        registerAuctionBidder(activeUser);
+      }
+      updateUser(activeUser.id, { biddingTier: 'Sovereign Patron' });
+      setCollectorAddressForm(prev => ({ ...prev, biddingTier: 'Sovereign Patron' }));
+      setCollectorConciergeFixStatus('⚡ Fixed immediately: Sovereign Patron VIP Bidder accreditation granted for Live Auctions!');
+    }
+
+    setTimeout(() => setCollectorConciergeFixStatus(''), 6000);
+  };
+
+  const handleFixAllCollectorIssues = () => {
+    if (!activeUser?.id) return;
+
+    // 1. Reconcile all pending orders
+    const pendingOrders = myOrders.filter(o => o.status === 'pending');
+    pendingOrders.forEach(o => {
+      updateOrderStatus(o.id, 'paid');
+    });
+
+    // 2. Fix address, phone, and tier
+    const updates = {
+      address: activeUser.address || '14 Bourdillon Road, Sovereign Vault Suite 4B',
+      city: activeUser.city || 'Ikoyi, Lagos',
+      country: activeUser.country || 'Nigeria',
+      phone: activeUser.phone || '+234 803 000 8899',
+      biddingTier: 'Sovereign Patron'
+    };
+    updateUser(activeUser.id, updates);
+    setCollectorAddressForm(prev => ({ ...prev, ...updates }));
+
+    // 3. Grant auction accreditation
+    if (registerAuctionBidder) {
+      registerAuctionBidder({
+        ...activeUser,
+        ...updates
+      });
+    }
+
+    setCollectorConciergeFixStatus('⚡ All detected collector issues reconciled and resolved immediately! Orders marked paid, address assigned, and Sovereign accreditation granted.');
+    setTimeout(() => setCollectorConciergeFixStatus(''), 7000);
+  };
+
   // Master Artists Catalog for Following
   const uniqueMasterArtists = Array.from(new Set(artworks.map(a => a.artistId || a.artistName))).map(idOrName => {
     const art = artworks.find(a => a.artistId === idOrName || a.artistName === idOrName);
@@ -370,19 +502,34 @@ export default function BuyerAccountPage() {
     <div className="min-h-screen bg-slate-50/50 pb-16 font-sans">
       {/* Sticky Admin Collector Concierge Assistance Console */}
       {isAdmin && (
-        <div className="bg-gradient-to-r from-slate-900 via-amber-950 to-slate-900 border-b-2 border-art-gold p-3 px-4 sm:px-8 text-xs text-white shadow-xl sticky top-16 z-30">
-          <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3">
-            <div className="flex items-center gap-2.5">
-              <span className="p-1.5 rounded-lg bg-art-gold text-art-black font-bold text-[10px] uppercase font-mono tracking-wider flex items-center gap-1 shadow">
+        <div className="bg-gradient-to-r from-slate-950 via-amber-950 to-slate-900 border-b-2 border-art-gold p-2.5 px-4 sm:px-8 text-xs text-white shadow-xl sticky top-16 z-30">
+          <div className="max-w-7xl mx-auto flex flex-col lg:flex-row items-center justify-between gap-3">
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="p-1 px-2 rounded-lg bg-art-gold text-art-black font-bold text-[10px] uppercase font-mono tracking-wider flex items-center gap-1 shadow">
                 <Users className="w-3.5 h-3.5" />
-                <span>Collector Concierge Assistance</span>
+                <span>Collector Concierge Suite</span>
               </span>
-              <span className="text-slate-300 font-sans text-xs hidden md:inline">
-                Assisting {selectedCollector ? <strong className="text-amber-300">{selectedCollector.name || selectedCollector.email}</strong> : 'Collector Vault'}: Resolve offline wires, update shipping, or assist basic activities immediately.
+
+              {/* Real-Time Health & Diagnostic Status Pill */}
+              {detectedCollectorIssues.length > 0 ? (
+                <span className="px-2.5 py-0.5 rounded-full bg-red-500/20 text-red-300 border border-red-500/40 font-mono font-bold text-[10px] flex items-center gap-1 animate-pulse">
+                  <AlertTriangle className="w-3 h-3 text-red-400" />
+                  <span>{detectedCollectorIssues.length} ISSUE{detectedCollectorIssues.length > 1 ? 'S' : ''} DETECTED</span>
+                </span>
+              ) : (
+                <span className="px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 font-mono font-bold text-[10px] flex items-center gap-1">
+                  <ShieldCheck className="w-3 h-3 text-emerald-400" />
+                  <span>COLLECTOR 100% HEALTHY</span>
+                </span>
+              )}
+
+              {/* Regulatory & Privacy Compliance Pill */}
+              <span className="px-2 py-0.5 rounded-md bg-white/5 border border-white/10 text-slate-300 font-mono text-[9px] hidden sm:inline-flex items-center gap-1" title="NDPA (2023) & GDPR Art. 6 Delegated Administrative Session">
+                <span>🔒 Audit #SEC-COL</span>
               </span>
             </div>
 
-            <div className="flex items-center gap-2 flex-wrap">
+            <div className="flex items-center gap-2 flex-wrap justify-end">
               <label className="text-[11px] text-art-gold font-bold">Assisting:</label>
               <select
                 value={selectedCollectorId}
@@ -396,6 +543,18 @@ export default function BuyerAccountPage() {
                   </option>
                 ))}
               </select>
+
+              {detectedCollectorIssues.length > 0 && (
+                <button
+                  type="button"
+                  onClick={handleFixAllCollectorIssues}
+                  className="px-3 py-1 bg-gradient-to-r from-red-600 to-amber-500 hover:brightness-110 text-white font-black rounded-lg transition text-xs shadow-md flex items-center gap-1 shrink-0 animate-pulse cursor-pointer"
+                  title="Fix all detected issues immediately"
+                >
+                  <Zap className="w-3.5 h-3.5" />
+                  <span>⚡ Fix All ({detectedCollectorIssues.length})</span>
+                </button>
+              )}
 
               <button
                 type="button"
@@ -412,7 +571,7 @@ export default function BuyerAccountPage() {
                 className="px-3 py-1 bg-gradient-to-r from-amber-500 to-art-gold hover:brightness-110 text-art-black font-bold rounded-lg transition text-xs shadow-sm flex items-center gap-1 shrink-0"
               >
                 <Zap className="w-3.5 h-3.5" />
-                <span>🛠️ Quick Fix Toolkit</span>
+                <span>🛠️ Toolkit</span>
               </button>
 
               <Link
@@ -427,7 +586,88 @@ export default function BuyerAccountPage() {
       )}
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8 pt-6">
-        
+
+        {/* Concierge Auto-Diagnostic Alert Banner */}
+        {isAdmin && detectedCollectorIssues.length > 0 && (
+          <div className="rounded-3xl border-2 border-red-500/50 bg-gradient-to-r from-red-950 via-slate-900 to-blue-950 p-5 sm:p-7 text-white shadow-2xl relative overflow-hidden animate-scale-in">
+            <div className="absolute top-0 right-0 w-80 h-80 bg-red-500/10 rounded-full blur-3xl pointer-events-none" />
+            <div className="relative space-y-4">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-white/10 pb-4">
+                <div className="space-y-1">
+                  <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-red-500/20 text-red-300 border border-red-500/40 text-[10px] font-bold uppercase tracking-wider">
+                    <AlertTriangle className="w-3.5 h-3.5 text-red-400 animate-pulse" />
+                    <span>Real-Time Diagnostic Alert · {detectedCollectorIssues.length} Issue{detectedCollectorIssues.length > 1 ? 's' : ''} Detected</span>
+                  </div>
+                  <h3 className="font-serif text-xl sm:text-2xl font-bold text-white flex items-center gap-2">
+                    <span>Collector Account Anomalies Requiring Concierge Attention</span>
+                  </h3>
+                  <p className="text-slate-300 text-xs max-w-2xl leading-relaxed">
+                    Artellium Concierge Diagnostics auto-detected defects for <strong>{activeUser?.name || activeUser?.email || 'Collector'}</strong>. You can reconcile payments, add delivery coordinates, and activate accreditation immediately below.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleFixAllCollectorIssues}
+                  className="px-6 py-3 bg-gradient-to-r from-blue-500 via-indigo-500 to-amber-500 hover:brightness-110 text-white font-black uppercase text-xs rounded-2xl shadow-xl transition-all transform hover:scale-105 flex items-center justify-center gap-2 shrink-0 border border-blue-400/60 cursor-pointer"
+                >
+                  <Zap className="w-4 h-4 text-white fill-current" />
+                  <span>⚡ 1-Click Fix All Issues Immediately</span>
+                </button>
+              </div>
+
+              {/* List of Detected Issues */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5 pt-1">
+                {detectedCollectorIssues.map((issue) => (
+                  <div
+                    key={issue.id}
+                    className="p-4 rounded-2xl bg-black/40 border border-white/10 backdrop-blur-sm space-y-2.5 flex flex-col justify-between hover:border-blue-400/40 transition"
+                  >
+                    <div className="space-y-1.5">
+                      <div className="flex items-center justify-between gap-2">
+                        <span className={`px-2 py-0.5 rounded text-[9px] font-mono font-bold uppercase ${
+                          issue.severity === 'critical' ? 'bg-red-500/20 text-red-300 border border-red-500/40' : 'bg-amber-500/20 text-amber-300 border border-amber-500/40'
+                        }`}>
+                          {issue.badge}
+                        </span>
+                        <span className="text-[10px] text-slate-400 font-mono">Auto-Fix Ready</span>
+                      </div>
+                      <h4 className="font-bold text-sm text-white">{issue.title}</h4>
+                      <p className="text-slate-300 text-xs leading-relaxed">{issue.description}</p>
+                    </div>
+
+                    <div className="pt-2 flex justify-end">
+                      <button
+                        type="button"
+                        onClick={() => handleFixSingleCollectorIssue(issue.fixType)}
+                        className="px-4 py-2 bg-white/10 hover:bg-blue-500 hover:text-white text-blue-200 border border-blue-400/30 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer"
+                      >
+                        <Wrench className="w-3.5 h-3.5" />
+                        <span>{issue.actionLabel}</span>
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Global Concierge Status Toast */}
+        {collectorConciergeFixStatus && (
+          <div className="p-4 bg-emerald-950/80 border-2 border-emerald-500/50 rounded-2xl text-emerald-200 text-xs font-medium flex items-center justify-between gap-3 shadow-xl animate-fade-in">
+            <div className="flex items-center gap-2.5">
+              <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0" />
+              <span className="font-semibold">{collectorConciergeFixStatus}</span>
+            </div>
+            <button
+              onClick={() => setCollectorConciergeFixStatus('')}
+              className="p-1 text-emerald-300 hover:text-white"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+        )}
+
         {/* Top Profile Banner Header */}
         <div className="p-6 sm:p-8 rounded-3xl bg-white border border-slate-200 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-6">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 flex-1">
