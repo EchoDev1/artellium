@@ -271,7 +271,7 @@ export function StoreProvider({ children }) {
       const defaultRealArtworks = INITIAL_ARTWORKS.filter(a => a.isDemo === false);
       defaultRealArtworks.forEach(defArt => {
         if (!loadedReal.some(r => r.id === defArt.id || r.artistName?.toLowerCase() === defArt.artistName?.toLowerCase())) {
-          loadedReal.unshift(defArt);
+          loadedReal.push(defArt);
         }
       });
 

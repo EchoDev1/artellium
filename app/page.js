@@ -59,17 +59,19 @@ export default function HomePage() {
   });
 
   const getNewlyListed = (limit = 12) => {
-    const matching = filteredArtworks.filter((art) => art.status !== 'sold');
-    return sortArtworksByPriority(matching, { sellers, users: usersList }).slice(0, limit);
+    // Real artist-added artworks ALWAYS come first at the very top of Newly Listed!
+    const realWorks = filteredArtworks.filter(art => (art.isDemo === false || !art.isDemo) && art.status !== 'sold');
+    const otherWorks = filteredArtworks.filter(art => art.isDemo === true && art.status !== 'sold');
+    const combined = [...sortArtworksByPriority(realWorks, { sellers, users: usersList }), ...sortArtworksByPriority(otherWorks, { sellers, users: usersList })];
+    return combined.slice(0, limit);
   };
 
   const getLiveAuctions = (limit = 6) => {
     let matching = activeArtworks.filter((art) => art.status === 'auction' || art.isAuction);
+    // NEVER mutate real artist creations into auctions! Only use mock artworks as dummy lots if no real auction exists
     if (matching.length === 0 && (artworks || []).length > 0) {
-      matching = (artworks || []).filter((art) => art.status === 'auction' || art.isAuction);
-    }
-    if (matching.length === 0 && (artworks || []).length > 0) {
-      matching = (artworks || []).slice(0, 3).map((art, idx) => ({
+      const demoPool = (artworks || []).filter(a => a.isDemo === true);
+      matching = demoPool.slice(0, 3).map((art, idx) => ({
         ...art,
         status: 'auction',
         isAuction: true,
@@ -85,20 +87,19 @@ export default function HomePage() {
     const matching = activeArtworks.filter((art) => art.status === 'sold');
     const sorted = sortArtworksByPriority(matching, { sellers, users: usersList, secondarySort: 'sold_date' });
 
-    if (isLiveOnly) {
+    if (isLiveOnly || sorted.length >= limit) {
       return sorted.slice(0, limit);
     }
 
-    if (sorted.length < limit) {
-      const extra = activeArtworks.filter(a => a.status !== 'sold').slice(0, limit - sorted.length).map(a => ({
-        ...a,
-        status: 'sold',
-        soldPrice: a.price,
-        soldTo: 'Private Collector (Provenance Verified)'
-      }));
-      return [...sorted, ...extra].slice(0, limit);
-    }
-    return sorted.slice(0, limit);
+    // ONLY take demo pieces as sold placeholders, NEVER turn real artist artworks into "Sold"!
+    const demoPool = activeArtworks.filter(a => a.isDemo === true && a.status !== 'sold');
+    const extra = demoPool.slice(0, limit - sorted.length).map(a => ({
+      ...a,
+      status: 'sold',
+      soldPrice: a.price,
+      soldTo: 'Private Collector (Provenance Verified)'
+    }));
+    return [...sorted, ...extra].slice(0, limit);
   };
 
   // Determine which hero to render based on heroConfig (JumiaArtHero is default)
