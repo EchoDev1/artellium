@@ -505,12 +505,10 @@ export default function JumiaArtHero() {
                 {/* Artwork Thumbnail & Details */}
                 {featuredAuctionLot ? (
                   <div className="flex items-center gap-2.5">
-                    <Link href={`/artwork/${featuredAuctionLot.id}`} className="w-14 h-14 rounded-xl overflow-hidden bg-black shrink-0 border border-red-800/40 block cursor-pointer">
-                      <img
-                        src={featuredAuctionLot.image}
-                        alt={featuredAuctionLot.title}
-                        className="w-full h-full object-cover hover:scale-110 transition duration-500"
-                      />
+                    <Link href={`/artwork/${featuredAuctionLot.id}`} className="w-14 h-14 rounded-xl overflow-hidden bg-[#0A0505] shrink-0 border border-red-800/40 flex items-center justify-center p-1 text-center cursor-pointer">
+                      <span className="font-serif text-[8px] font-bold tracking-widest uppercase text-white/20 leading-tight select-none">
+                        Coming Soon
+                      </span>
                     </Link>
                     <div className="min-w-0 flex-1">
                       <Link href={`/artwork/${featuredAuctionLot.id}`}>

@@ -16,6 +16,7 @@ import { sortArtworksByPriority, sortExhibitionsByPriority } from '@/lib/priorit
 import { Sparkles, Flame, Eye, ArrowRight, Award, CheckCircle2, Crown, Zap, ShieldCheck, Tag, Gavel } from 'lucide-react';
 import LuxuryOverlay from '@/components/LuxuryOverlay.jsx';
 import TraditionalHeritageShowcase from '@/components/TraditionalHeritageShowcase.jsx';
+import AfricanCulturalKaleidoscope from '@/components/AfricanCulturalKaleidoscope.jsx';
 
 export default function HomePage() {
   const { 
@@ -306,13 +307,16 @@ export default function HomePage() {
                   key={ex.id}
                   className="group relative rounded-2xl overflow-hidden glass-card border border-white/10 hover:border-emerald-500/50 transition duration-300 shadow-2xl flex flex-col justify-between"
                 >
-                  <div className="relative aspect-[16/9] w-full overflow-hidden bg-black">
-                    <img
-                      src={ex.coverImage}
-                      alt={ex.title}
-                      className="w-full h-full object-cover group-hover:scale-105 transition duration-500 opacity-80"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-art-black via-art-black/40 to-transparent" />
+                  <div className="relative aspect-[16/9] w-full overflow-hidden bg-[#070B09] flex items-center justify-center">
+                    <div className="absolute inset-0 bg-gradient-to-br from-[#06140E] via-[#07090D] to-[#0B1410] flex flex-col items-center justify-center p-6 text-center select-none">
+                      <span className="font-serif text-2xl sm:text-3xl font-bold tracking-[0.25em] uppercase text-white/15">
+                        Coming Soon
+                      </span>
+                      <span className="font-mono text-[10px] tracking-[0.3em] uppercase text-emerald-400/20 mt-2">
+                        Exhibition Coming Very Soon
+                      </span>
+                    </div>
+                    <div className="absolute inset-0 bg-gradient-to-t from-art-black via-art-black/40 to-transparent pointer-events-none" />
 
                     <span className="absolute top-4 left-4 bg-art-green text-emerald-300 text-[10px] font-bold px-3 py-1 rounded-full border border-emerald-500/40">
                       {ex.status}
@@ -440,6 +444,9 @@ export default function HomePage() {
         {/* Dynamic Homepage Sections */}
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-20 relative z-10">
           {otherSections.map(renderSection)}
+
+          {/* Pure Visual 3D Sacred African Cosmology & Heritage Kaleidoscope */}
+          <AfricanCulturalKaleidoscope />
 
           {/* Sovereign African Craftsmanship & Provenance Guilds Showcase */}
           <TraditionalHeritageShowcase />

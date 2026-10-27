@@ -96,12 +96,15 @@ export default function ExhibitionMiniPage() {
     <div className="min-h-screen bg-[#07080A] text-slate-100 font-sans pb-24">
       
       {/* 1. Hero Cover & Header */}
-      <div className="relative w-full h-[55vh] min-h-[420px] max-h-[600px] overflow-hidden bg-black">
-        <img
-          src={exhibition.coverImage}
-          alt={exhibition.title}
-          className="w-full h-full object-cover opacity-75 filter brightness-90"
-        />
+      <div className="relative w-full h-[55vh] min-h-[420px] max-h-[600px] overflow-hidden bg-[#070B09] flex items-center justify-center">
+        <div className="absolute inset-0 bg-gradient-to-br from-[#06140E] via-[#07090D] to-[#0B1410] flex flex-col items-center justify-center p-6 text-center select-none pointer-events-none">
+          <span className="font-serif text-4xl sm:text-6xl font-bold tracking-[0.3em] uppercase text-white/10">
+            Coming Soon
+          </span>
+          <span className="font-mono text-xs sm:text-sm tracking-[0.35em] uppercase text-emerald-400/15 mt-3">
+            Exhibition Coming Very Soon
+          </span>
+        </div>
         <div className="absolute inset-0 bg-gradient-to-t from-[#07080A] via-[#07080A]/60 to-transparent" />
 
         <div className="absolute inset-0 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col justify-between py-8">
@@ -254,13 +257,16 @@ export default function ExhibitionMiniPage() {
                     {/* Clickable Image Container (Canvas completely clear of badges) */}
                     <Link
                       href={`/artwork/${art.id}`}
-                      className="block relative aspect-square rounded-2xl overflow-hidden bg-black border border-white/5 cursor-pointer group/canvas"
+                      className="block relative aspect-square rounded-2xl overflow-hidden bg-[#070B09] border border-white/5 cursor-pointer group/canvas flex items-center justify-center"
                     >
-                      <img
-                        src={art.image}
-                        alt={art.title}
-                        className="w-full h-full object-cover group-hover:scale-105 group-hover/canvas:scale-105 transition duration-500"
-                      />
+                      <div className="absolute inset-0 bg-gradient-to-br from-[#06140E] via-[#07090D] to-[#0B1410] flex flex-col items-center justify-center p-4 text-center select-none">
+                        <span className="font-serif text-xl font-bold tracking-[0.25em] uppercase text-white/15">
+                          Coming Soon
+                        </span>
+                        <span className="font-mono text-[9px] tracking-[0.25em] uppercase text-emerald-400/20 mt-1.5">
+                          Exhibition Coming Very Soon
+                        </span>
+                      </div>
                     </Link>
 
                     <div>
@@ -406,12 +412,15 @@ export default function ExhibitionMiniPage() {
               </span>
             </div>
 
-            <div className="relative aspect-[16/9] w-full rounded-2xl overflow-hidden bg-black border border-emerald-500/40 shadow-inner">
-              <img
-                src={exhibition.coverImage}
-                alt="3D Spatial Gallery"
-                className="w-full h-full object-cover filter brightness-75 contrast-125"
-              />
+            <div className="relative aspect-[16/9] w-full rounded-2xl overflow-hidden bg-[#070B09] border border-emerald-500/40 shadow-inner flex items-center justify-center">
+              <div className="absolute inset-0 bg-gradient-to-br from-[#06140E] via-[#07090D] to-[#0B1410] flex flex-col items-center justify-center p-6 text-center select-none">
+                <span className="font-serif text-3xl sm:text-4xl font-bold tracking-[0.25em] uppercase text-white/15">
+                  Coming Soon
+                </span>
+                <span className="font-mono text-xs tracking-[0.3em] uppercase text-emerald-400/20 mt-2">
+                  Exhibition Coming Very Soon
+                </span>
+              </div>
 
               <div className="absolute inset-0 bg-radial-gradient flex flex-col justify-between p-6">
                 <div className="flex justify-between items-start">

@@ -80,17 +80,38 @@ export default function AdminVideoModeration() {
     }
 
     const sizeMB = (file.size / (1024 * 1024)).toFixed(1);
-    const objectUrl = URL.createObjectURL(file);
     setDirectVideoFileMeta({
       name: file.name,
       sizeMB,
       type: file.type
     });
-    setDirectForm(prev => ({
-      ...prev,
-      videoUrl: objectUrl,
-      thumbnail: prev.thumbnail || 'https://images.unsplash.com/photo-1579783902614-a3fb3927b675?auto=format&fit=crop&q=80&w=600'
-    }));
+
+    if (file.size <= 35 * 1024 * 1024) {
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        setDirectForm(prev => ({
+          ...prev,
+          videoUrl: ev.target.result,
+          thumbnail: prev.thumbnail || 'https://images.unsplash.com/photo-1579783902614-a3fb3927b675?auto=format&fit=crop&q=80&w=600'
+        }));
+      };
+      reader.onerror = () => {
+        const objectUrl = URL.createObjectURL(file);
+        setDirectForm(prev => ({
+          ...prev,
+          videoUrl: objectUrl,
+          thumbnail: prev.thumbnail || 'https://images.unsplash.com/photo-1579783902614-a3fb3927b675?auto=format&fit=crop&q=80&w=600'
+        }));
+      };
+      reader.readAsDataURL(file);
+    } else {
+      const objectUrl = URL.createObjectURL(file);
+      setDirectForm(prev => ({
+        ...prev,
+        videoUrl: objectUrl,
+        thumbnail: prev.thumbnail || 'https://images.unsplash.com/photo-1579783902614-a3fb3927b675?auto=format&fit=crop&q=80&w=600'
+      }));
+    }
   };
 
   const pendingVideos = videos.filter((v) => v.status === 'pending');

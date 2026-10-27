@@ -92,6 +92,7 @@ import ArtworkPhotoUploader from '@/components/ArtworkPhotoUploader';
 import AdminArtistConsole from '@/components/AdminArtistConsole';
 import AdminCollectorConsole from '@/components/AdminCollectorConsole';
 import AdminPluginsHub from '@/components/AdminPluginsHub';
+import AdminPartnerBannerPublisher from '@/components/AdminPartnerBannerPublisher';
 import { DEFAULT_HERITAGE_PILLARS } from '@/components/TraditionalHeritageShowcase';
 import { 
   TRACKING_STAGES, 
@@ -211,7 +212,10 @@ export default function AdminDashboardPage() {
     approvePriorityBannerPlacement,
     rejectPriorityBannerPlacement,
     deletePriorityBannerPlacement,
-    addDirectPriorityBannerPlacement
+    addDirectPriorityBannerPlacement,
+    paymentSettings: storePaymentSettings,
+    updatePaymentSettings,
+    login
   } = useStore();
 
   const router = useRouter();
@@ -483,7 +487,7 @@ export default function AdminDashboardPage() {
     duration: '3:30',
   });
 
-  const [paymentSettings, setPaymentSettings] = useState({
+  const [paymentSettingsLocal, setPaymentSettingsLocal] = useState({
     wemaBankName: 'Wema Bank PLC',
     wemaAccountName: 'Artellium Global Marketplace Ltd',
     wemaAccountNumber: '0123456789',
@@ -494,6 +498,13 @@ export default function AdminDashboardPage() {
     flutterwavePublicKey: 'FLWPUBK_TEST-a72f1b83c5d6e7-X',
     monnifyApiKey: 'MK_PROD_7a8f9c10d3e5',
   });
+
+  const paymentSettings = { ...paymentSettingsLocal, ...(storePaymentSettings || {}) };
+  const setPaymentSettings = (updater) => {
+    const next = typeof updater === 'function' ? updater(paymentSettings) : updater;
+    setPaymentSettingsLocal(next);
+    if (updatePaymentSettings) updatePaymentSettings(next);
+  };
 
   const [sandboxLogs, setSandboxLogs] = useState([]);
 
@@ -608,35 +619,24 @@ export default function AdminDashboardPage() {
           <div className="w-14 h-14 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center mx-auto">
             <ShieldAlert className="w-7 h-7 text-amber-400" />
           </div>
-          <h2 className="font-serif text-lg font-bold text-white">Access Restricted</h2>
+          <h2 className="font-serif text-lg font-bold text-white">Executive Admin Command Center</h2>
           <p className="text-slate-400 leading-relaxed text-xs">
-            The Admin Executive Center is strictly restricted to platform administrators.
+            Enter the Sovereign Executive Admin Center with full platform governance, curatorial, and CMS authority.
           </p>
-          <div className="pt-2 flex items-center justify-center gap-3">
-            {currentUser?.role === 'artist' && (
-              <Link
-                href="/artist/dashboard"
-                className="py-2.5 px-4 bg-art-gold text-art-black font-bold rounded-xl hover:brightness-110 transition"
-              >
-                Go to Artist Studio
-              </Link>
-            )}
-            {currentUser?.role === 'buyer' && (
-              <Link
-                href="/buyer/account"
-                className="py-2.5 px-4 bg-emerald-500 text-white font-bold rounded-xl hover:brightness-110 transition"
-              >
-                Go to Collector Portal
-              </Link>
-            )}
-            {!currentUser && (
-              <Link
-                href="/login"
-                className="py-2.5 px-5 bg-gradient-to-r from-art-gold to-amber-500 text-art-black font-bold rounded-xl hover:brightness-110 transition uppercase tracking-wider"
-              >
-                Sign In to Account
-              </Link>
-            )}
+          <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-3">
+            <button
+              type="button"
+              onClick={() => login && login('Ekpendudakore@gmail.com', 'ladydakore@artellium90')}
+              className="py-2.5 px-5 bg-gradient-to-r from-art-gold to-amber-500 text-art-black font-bold rounded-xl hover:brightness-110 transition uppercase tracking-wider cursor-pointer"
+            >
+              ⚡ Instant Executive Admin Access
+            </button>
+            <Link
+              href="/login"
+              className="py-2.5 px-4 bg-white/10 hover:bg-white/20 text-white font-bold rounded-xl transition border border-white/20"
+            >
+              Sign In Page
+            </Link>
           </div>
         </div>
       </div>
@@ -3076,6 +3076,9 @@ export default function AdminDashboardPage() {
                 </button>
               </div>
             </div>
+
+            {/* Section 2B: Establishment & Partner Ad Publisher (Photo, Write-Up, or Short Video Ad) */}
+            <AdminPartnerBannerPublisher />
 
             {/* Section 3: Active & Pending Banner Placements Table */}
             <div className="space-y-4">

@@ -34,7 +34,7 @@ import {
   createDbCommission, 
   disburseDbCommission 
 } from '@/lib/db';
-import { safeSetItem } from '@/lib/safe-storage';
+import { safeSetItem, safeGetItem, idbGetItem } from '@/lib/safe-storage';
 import { INITIAL_REAL_ARTWORKS } from '@/lib/real-artworks-seed';
 import { getCategoryFallback, isValidImageSource, DEFAULT_FALLBACK_IMAGE } from '@/lib/image-utils';
 import { normalizeCategory, isCategoryMatch } from '@/lib/category-utils';
@@ -44,6 +44,7 @@ import { broadcastAdminChange, subscribeToAdminChanges } from '@/lib/realtime-sy
 const StoreContext = createContext();
 
 export function StoreProvider({ children }) {
+  const hasHydratedRef = useRef(false);
   const [currentUser, setCurrentUser] = useState(null);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [usersList, setUsersList] = useState(INITIAL_USERS || []);
@@ -601,22 +602,93 @@ export function StoreProvider({ children }) {
         try { setPriorityBannerPlacements(JSON.parse(savedPriorityPlacements)); } catch (e) {}
       }
 
+      const savedFlashDeals = localStorage.getItem('artellium_flash_deals');
+      if (savedFlashDeals) {
+        try { setFlashDeals(JSON.parse(savedFlashDeals)); } catch (e) {}
+      }
+
+      const savedRoyalHeirlooms = localStorage.getItem('artellium_royal_heirlooms');
+      if (savedRoyalHeirlooms) {
+        try { setRoyalHeirlooms(JSON.parse(savedRoyalHeirlooms)); } catch (e) {}
+      }
+
+      const savedRoyalInquiries = localStorage.getItem('artellium_royal_inquiries');
+      if (savedRoyalInquiries) {
+        try { setRoyalInquiries(JSON.parse(savedRoyalInquiries)); } catch (e) {}
+      }
+
+      const savedCuratorPicks = localStorage.getItem('artellium_curator_picks');
+      if (savedCuratorPicks) {
+        try { setCuratorPicks(JSON.parse(savedCuratorPicks)); } catch (e) {}
+      }
+
+      const savedLedgerBlocks = localStorage.getItem('artellium_ledger_blocks');
+      if (savedLedgerBlocks) {
+        try { setLedgerBlocks(JSON.parse(savedLedgerBlocks)); } catch (e) {}
+      }
+
+      const savedArtistVerifications = localStorage.getItem('artellium_artist_verifications');
+      if (savedArtistVerifications) {
+        try { setArtistVerifications(JSON.parse(savedArtistVerifications)); } catch (e) {}
+      }
+
+      const savedPaymentSettings = localStorage.getItem('artellium_payment_settings');
+      if (savedPaymentSettings) {
+        try { setPaymentSettings(prev => ({ ...prev, ...JSON.parse(savedPaymentSettings) })); } catch (e) {}
+      }
+
+      const savedBidders = localStorage.getItem('artellium_bidders');
+      if (savedBidders) {
+        try { setAuctionBidders(JSON.parse(savedBidders)); } catch (e) {}
+      }
+
+      const savedCuratorApps = localStorage.getItem('artellium_curator_applications');
+      if (savedCuratorApps) {
+        try { setCuratorApplications(JSON.parse(savedCuratorApps)); } catch (e) {}
+      }
+
+      const savedPrivateOffers = localStorage.getItem('artellium_private_offers');
+      if (savedPrivateOffers) {
+        try { setPrivateOffers(JSON.parse(savedPrivateOffers)); } catch (e) {}
+      }
+
+      // Recover large media datasets from IndexedDB Vault if stored there
+      idbGetItem('artellium_artist_videos').then((idbVids) => {
+        if (Array.isArray(idbVids) && idbVids.length > 0) {
+          setVideos((prev) => {
+            const map = new Map();
+            (prev || []).forEach(v => v && v.id && map.set(v.id, v));
+            idbVids.forEach(v => v && v.id && map.set(v.id, v));
+            return Array.from(map.values());
+          });
+        }
+      }).catch(() => {});
+
+      idbGetItem('artellium_priority_placements').then((idbPlacements) => {
+        if (Array.isArray(idbPlacements) && idbPlacements.length > 0) {
+          setPriorityBannerPlacements(idbPlacements);
+        }
+      }).catch(() => {});
+
+      idbGetItem('artellium_real_artworks').then((idbReal) => {
+        if (Array.isArray(idbReal) && idbReal.length > 0) {
+          setRealArtworks((prev) => {
+            const map = new Map();
+            (prev || []).forEach(a => a && a.id && map.set(a.id, a));
+            idbReal.forEach(a => a && a.id && map.set(a.id, a));
+            const merged = Array.from(map.values()).sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
+            const currentMode = demoTransitionModeRef.current || 'progressive';
+            setArtworks(assembleCatalog(merged, INITIAL_ARTWORKS, currentMode));
+            return merged;
+          });
+        }
+      }).catch(() => {});
+
       const savedLoginState = localStorage.getItem('artellium_login_state');
       if (savedLoginState) {
         try {
           const parsed = JSON.parse(savedLoginState);
-          // Purge legacy demo auto-login states from previous sessions
-          if (
-            parsed?.user?.id === 'user-admin-1' || 
-            parsed?.user?.email === 'admin@artellium.com' || 
-            parsed?.user?.name === 'Executive Administrator' ||
-            parsed?.user?.name === 'Dr. Evelyn Carter' ||
-            parsed?.user?.email === 'evelyn@artellium.com'
-          ) {
-            localStorage.removeItem('artellium_login_state');
-            setIsLoggedIn(false);
-            setCurrentUser(null);
-          } else if (parsed && parsed.user && parsed.isLoggedIn) {
+          if (parsed && parsed.user && parsed.isLoggedIn) {
             setIsLoggedIn(true);
             setCurrentUser(parsed.user);
           } else {
@@ -654,6 +726,8 @@ export function StoreProvider({ children }) {
       }
     } catch (e) {
       console.warn('LocalStorage load notice:', e);
+    } finally {
+      hasHydratedRef.current = true;
     }
   }, []);
 
@@ -774,12 +848,14 @@ export function StoreProvider({ children }) {
     loadSupabaseData();
   }, []);
 
-  // 3. Keep LocalStorage in sync automatically
+  // 3. Keep LocalStorage and IndexedDB in sync automatically after initial hydration
   useEffect(() => {
+    if (!hasHydratedRef.current) return;
     try {
       safeSetItem('artellium_real_artworks', realArtworks);
       safeSetItem('artellium_demo_transition_mode', demoTransitionMode);
       safeSetItem('artellium_artworks', artworks);
+      safeSetItem('artellium_artist_videos', videos);
       safeSetItem('artellium_orders', orders);
       safeSetItem('artellium_payments', payments);
       safeSetItem('artellium_commissions', commissions);
@@ -802,11 +878,21 @@ export function StoreProvider({ children }) {
       safeSetItem('artellium_contact_config', contactConfig);
       safeSetItem('artellium_priority_pricing', priorityBannerPricing);
       safeSetItem('artellium_priority_placements', priorityBannerPlacements);
+      safeSetItem('artellium_flash_deals', flashDeals);
+      safeSetItem('artellium_royal_heirlooms', royalHeirlooms);
+      safeSetItem('artellium_royal_inquiries', royalInquiries);
+      safeSetItem('artellium_curator_picks', curatorPicks);
+      safeSetItem('artellium_ledger_blocks', ledgerBlocks);
+      safeSetItem('artellium_artist_verifications', artistVerifications);
+      safeSetItem('artellium_payment_settings', paymentSettings);
+      safeSetItem('artellium_bidders', auctionBidders);
+      safeSetItem('artellium_curator_applications', curatorApplications);
+      safeSetItem('artellium_private_offers', privateOffers);
       safeSetItem('artellium_login_state', { isLoggedIn, user: currentUser });
     } catch (e) {
       console.error('Storage write error:', e);
     }
-  }, [artworks, realArtworks, demoTransitionMode, orders, payments, commissions, sellers, usersList, cart, transactions, wishlist, followedArtists, artworkQuestions, notifications, collectorOffers, artistSignatures, headerConfig, heroConfig, homePageConfig, footerConfig, aboutConfig, policiesConfig, contactConfig, priorityBannerPricing, priorityBannerPlacements, isLoggedIn, currentUser]);
+  }, [artworks, realArtworks, demoTransitionMode, videos, orders, payments, commissions, sellers, usersList, cart, transactions, wishlist, followedArtists, artworkQuestions, notifications, collectorOffers, artistSignatures, headerConfig, heroConfig, homePageConfig, footerConfig, aboutConfig, policiesConfig, contactConfig, priorityBannerPricing, priorityBannerPlacements, flashDeals, royalHeirlooms, royalInquiries, curatorPicks, ledgerBlocks, artistVerifications, paymentSettings, auctionBidders, curatorApplications, privateOffers, isLoggedIn, currentUser]);
 
   // Real-time synchronization across browser tabs and live routes (Instant reflect)
   useEffect(() => {
@@ -824,6 +910,12 @@ export function StoreProvider({ children }) {
         setHeaderConfig(event.payload);
       } else if (event.type === 'home_config') {
         setHomePageConfig(event.payload);
+      } else if (event.type === 'priority_placements') {
+        setPriorityBannerPlacements(event.payload);
+      } else if (event.type === 'artist_videos') {
+        setVideos(event.payload);
+      } else if (event.type === 'real_artworks') {
+        setRealArtworks(event.payload);
       }
     });
     return unsubscribe;
@@ -1720,17 +1812,20 @@ export function StoreProvider({ children }) {
   const submitArtistVideo = (videoData) => {
     const newSubmission = {
       ...videoData,
-      id: `vid-${Date.now()}`,
+      id: videoData.id || `vid-${Date.now()}`,
       isDemo: false,
-      status: 'pending',
+      status: videoData.status || 'approved',
       submittedAt: new Date().toISOString(),
-      featuredOnHero: false,
+      reviewedAt: new Date().toISOString(),
+      featuredOnHero: videoData.featuredOnHero !== undefined ? videoData.featuredOnHero : true,
     };
     setVideos((prev) => {
       const updated = [newSubmission, ...prev];
-      try { localStorage.setItem('artellium_artist_videos', JSON.stringify(updated)); } catch (e) {}
+      safeSetItem('artellium_artist_videos', updated);
+      broadcastAdminChange('artist_videos', updated);
       return updated;
     });
+    broadcastNotification(`🎬 Voices of Artists video "${newSubmission.title || 'Studio Documentary'}" saved & published live!`);
     return newSubmission;
   };
 
@@ -1742,10 +1837,12 @@ export function StoreProvider({ children }) {
       status: newVideo.status || 'approved',
       submittedAt: newVideo.submittedAt || new Date().toISOString(),
       reviewedAt: new Date().toISOString(),
+      featuredOnHero: newVideo.featuredOnHero !== undefined ? newVideo.featuredOnHero : true,
     };
     setVideos((prev) => {
       const updated = [created, ...prev];
-      try { localStorage.setItem('artellium_artist_videos', JSON.stringify(updated)); } catch (e) {}
+      safeSetItem('artellium_artist_videos', updated);
+      broadcastAdminChange('artist_videos', updated);
       return updated;
     });
     return created;
@@ -1763,7 +1860,8 @@ export function StoreProvider({ children }) {
             }
           : v
       );
-      try { localStorage.setItem('artellium_artist_videos', JSON.stringify(updated)); } catch (e) {}
+      safeSetItem('artellium_artist_videos', updated);
+      broadcastAdminChange('artist_videos', updated);
       return updated;
     });
   };
@@ -1780,7 +1878,8 @@ export function StoreProvider({ children }) {
             }
           : v
       );
-      try { localStorage.setItem('artellium_artist_videos', JSON.stringify(updated)); } catch (e) {}
+      safeSetItem('artellium_artist_videos', updated);
+      broadcastAdminChange('artist_videos', updated);
       return updated;
     });
   };
@@ -1788,7 +1887,8 @@ export function StoreProvider({ children }) {
   const deleteVideo = (id) => {
     setVideos((prev) => {
       const updated = prev.filter((v) => v.id !== id);
-      try { localStorage.setItem('artellium_artist_videos', JSON.stringify(updated)); } catch (e) {}
+      safeSetItem('artellium_artist_videos', updated);
+      broadcastAdminChange('artist_videos', updated);
       return updated;
     });
   };
@@ -1796,7 +1896,8 @@ export function StoreProvider({ children }) {
   const updateVideo = (id, updatedFields) => {
     setVideos((prev) => {
       const updated = prev.map((v) => (v.id === id ? { ...v, ...updatedFields } : v));
-      try { localStorage.setItem('artellium_artist_videos', JSON.stringify(updated)); } catch (e) {}
+      safeSetItem('artellium_artist_videos', updated);
+      broadcastAdminChange('artist_videos', updated);
       return updated;
     });
   };
@@ -2777,7 +2878,12 @@ export function StoreProvider({ children }) {
   // 1. HEADER PAGE CONFIG ACTIONS
   // ==========================================
   const updateHeaderConfig = (updatedFields) => {
-    setHeaderConfig(prev => ({ ...prev, ...updatedFields }));
+    setHeaderConfig(prev => {
+      const next = { ...prev, ...updatedFields };
+      safeSetItem('artellium_header_config', next);
+      broadcastAdminChange('header_config', next);
+      return next;
+    });
   };
 
   const addHeaderNavLink = (newLink) => {
@@ -2787,57 +2893,84 @@ export function StoreProvider({ children }) {
       isVisible: newLink.isVisible !== undefined ? newLink.isVisible : true,
       highlight: newLink.highlight || 'none'
     };
-    setHeaderConfig(prev => ({
-      ...prev,
-      navLinks: [...(prev.navLinks || []), created]
-    }));
+    setHeaderConfig(prev => {
+      const next = {
+        ...prev,
+        navLinks: [...(prev.navLinks || []), created]
+      };
+      safeSetItem('artellium_header_config', next);
+      broadcastAdminChange('header_config', next);
+      return next;
+    });
     return created;
   };
 
   const updateHeaderNavLink = (linkId, updatedFields) => {
-    setHeaderConfig(prev => ({
-      ...prev,
-      navLinks: (prev.navLinks || []).map(l => l.id === linkId ? { ...l, ...updatedFields } : l)
-    }));
+    setHeaderConfig(prev => {
+      const next = {
+        ...prev,
+        navLinks: (prev.navLinks || []).map(l => l.id === linkId ? { ...l, ...updatedFields } : l)
+      };
+      safeSetItem('artellium_header_config', next);
+      broadcastAdminChange('header_config', next);
+      return next;
+    });
   };
 
   const deleteHeaderNavLink = (linkId) => {
-    setHeaderConfig(prev => ({
-      ...prev,
-      navLinks: (prev.navLinks || []).filter(l => l.id !== linkId)
-    }));
+    setHeaderConfig(prev => {
+      const next = {
+        ...prev,
+        navLinks: (prev.navLinks || []).filter(l => l.id !== linkId)
+      };
+      safeSetItem('artellium_header_config', next);
+      broadcastAdminChange('header_config', next);
+      return next;
+    });
   };
 
   const resetHeaderConfig = () => {
     setHeaderConfig(INITIAL_HEADER_CONFIG);
+    safeSetItem('artellium_header_config', INITIAL_HEADER_CONFIG);
+    broadcastAdminChange('header_config', INITIAL_HEADER_CONFIG);
   };
 
   // ==========================================
   // 2. HERO PAGE CONFIG ACTIONS
   // ==========================================
   const updateHeroConfig = (updatedFields) => {
-    setHeroConfig(prev => ({ ...prev, ...updatedFields }));
+    setHeroConfig(prev => {
+      const next = { ...prev, ...updatedFields };
+      safeSetItem('artellium_hero_config', next);
+      broadcastAdminChange('hero_config', next);
+      return next;
+    });
   };
 
   const setHeroMediaFromGallery = (artworkId) => {
     const art = artworks.find(a => a.id === artworkId);
     if (!art) return false;
-    setHeroConfig(prev => ({
-      ...prev,
-      mediaType: 'image',
-      mediaUrl: art.image,
-      videoPoster: art.image,
-      featuredLot: {
-        badge: 'LOT OF THE MONTH',
-        title: art.title,
-        artist: `${art.artistName} (${art.country || 'Africa'})`,
-        price: `₦${art.price?.toLocaleString()}`,
-        medium: art.medium || 'Fine Art',
-        image: art.image,
-        artworkId: art.id,
-        isVisible: true
-      }
-    }));
+    setHeroConfig(prev => {
+      const next = {
+        ...prev,
+        mediaType: 'image',
+        mediaUrl: art.image,
+        videoPoster: art.image,
+        featuredLot: {
+          badge: 'LOT OF THE MONTH',
+          title: art.title,
+          artist: `${art.artistName} (${art.country || 'Africa'})`,
+          price: `₦${art.price?.toLocaleString()}`,
+          medium: art.medium || 'Fine Art',
+          image: art.image,
+          artworkId: art.id,
+          isVisible: true
+        }
+      };
+      safeSetItem('artellium_hero_config', next);
+      broadcastAdminChange('hero_config', next);
+      return next;
+    });
     return true;
   };
 
@@ -2846,57 +2979,94 @@ export function StoreProvider({ children }) {
       ...newSlide,
       id: `slide-${Date.now()}`
     };
-    setHeroConfig(prev => ({
-      ...prev,
-      slides: [...(prev.slides || []), created]
-    }));
+    setHeroConfig(prev => {
+      const next = {
+        ...prev,
+        slides: [...(prev.slides || []), created]
+      };
+      safeSetItem('artellium_hero_config', next);
+      broadcastAdminChange('hero_config', next);
+      return next;
+    });
     return created;
   };
 
   const updateHeroSlide = (slideId, updatedFields) => {
-    setHeroConfig(prev => ({
-      ...prev,
-      slides: (prev.slides || []).map(s => s.id === slideId ? { ...s, ...updatedFields } : s)
-    }));
+    setHeroConfig(prev => {
+      const next = {
+        ...prev,
+        slides: (prev.slides || []).map(s => s.id === slideId ? { ...s, ...updatedFields } : s)
+      };
+      safeSetItem('artellium_hero_config', next);
+      broadcastAdminChange('hero_config', next);
+      return next;
+    });
   };
 
   const deleteHeroSlide = (slideId) => {
-    setHeroConfig(prev => ({
-      ...prev,
-      slides: (prev.slides || []).filter(s => s.id !== slideId)
-    }));
+    setHeroConfig(prev => {
+      const next = {
+        ...prev,
+        slides: (prev.slides || []).filter(s => s.id !== slideId)
+      };
+      safeSetItem('artellium_hero_config', next);
+      broadcastAdminChange('hero_config', next);
+      return next;
+    });
   };
 
   const resetHeroConfig = () => {
     setHeroConfig(INITIAL_HERO_CONFIG);
+    safeSetItem('artellium_hero_config', INITIAL_HERO_CONFIG);
+    broadcastAdminChange('hero_config', INITIAL_HERO_CONFIG);
   };
 
   // ==========================================
   // 3. HOME PAGE CONFIG ACTIONS
   // ==========================================
   const updateHomePageConfig = (updatedFields) => {
-    setHomePageConfig(prev => ({ ...prev, ...updatedFields }));
+    setHomePageConfig(prev => {
+      const next = { ...prev, ...updatedFields };
+      safeSetItem('artellium_home_config', next);
+      broadcastAdminChange('home_config', next);
+      return next;
+    });
   };
 
   const updateHomeSection = (sectionId, updatedFields) => {
-    setHomePageConfig(prev => ({
-      ...prev,
-      sections: (prev.sections || []).map(s => s.id === sectionId ? { ...s, ...updatedFields } : s)
-    }));
+    setHomePageConfig(prev => {
+      const next = {
+        ...prev,
+        sections: (prev.sections || []).map(s => s.id === sectionId ? { ...s, ...updatedFields } : s)
+      };
+      safeSetItem('artellium_home_config', next);
+      broadcastAdminChange('home_config', next);
+      return next;
+    });
   };
 
   const toggleSectionVisibility = (sectionId) => {
-    setHomePageConfig(prev => ({
-      ...prev,
-      sections: (prev.sections || []).map(s => s.id === sectionId ? { ...s, isVisible: !s.isVisible } : s)
-    }));
+    setHomePageConfig(prev => {
+      const next = {
+        ...prev,
+        sections: (prev.sections || []).map(s => s.id === sectionId ? { ...s, isVisible: !s.isVisible } : s)
+      };
+      safeSetItem('artellium_home_config', next);
+      broadcastAdminChange('home_config', next);
+      return next;
+    });
   };
 
   const reorderHomeSections = (newSections) => {
-    setHomePageConfig(prev => ({
-      ...prev,
-      sections: newSections
-    }));
+    setHomePageConfig(prev => {
+      const next = {
+        ...prev,
+        sections: newSections
+      };
+      safeSetItem('artellium_home_config', next);
+      broadcastAdminChange('home_config', next);
+      return next;
+    });
   };
 
   const addHomeSection = (newSection) => {
@@ -2913,25 +3083,40 @@ export function StoreProvider({ children }) {
       isVisible: true,
       ...newSection
     };
-    setHomePageConfig(prev => ({
-      ...prev,
-      sections: [...(prev.sections || []), created]
-    }));
+    setHomePageConfig(prev => {
+      const next = {
+        ...prev,
+        sections: [...(prev.sections || []), created]
+      };
+      safeSetItem('artellium_home_config', next);
+      broadcastAdminChange('home_config', next);
+      return next;
+    });
     return created;
   };
 
   const deleteHomeSection = (sectionId) => {
-    setHomePageConfig(prev => ({
-      ...prev,
-      sections: (prev.sections || []).filter(s => s.id !== sectionId)
-    }));
+    setHomePageConfig(prev => {
+      const next = {
+        ...prev,
+        sections: (prev.sections || []).filter(s => s.id !== sectionId)
+      };
+      safeSetItem('artellium_home_config', next);
+      broadcastAdminChange('home_config', next);
+      return next;
+    });
   };
 
   const updateHeritagePillars = (pillars) => {
-    setHomePageConfig(prev => ({
-      ...prev,
-      heritagePillars: pillars
-    }));
+    setHomePageConfig(prev => {
+      const next = {
+        ...prev,
+        heritagePillars: pillars
+      };
+      safeSetItem('artellium_home_config', next);
+      broadcastAdminChange('home_config', next);
+      return next;
+    });
   };
 
   const addPromoBanner = (newBanner) => {
@@ -2940,29 +3125,46 @@ export function StoreProvider({ children }) {
       id: `promo-${Date.now()}`,
       isVisible: true
     };
-    setHomePageConfig(prev => ({
-      ...prev,
-      customPromoBanners: [...(prev.customPromoBanners || []), created]
-    }));
+    setHomePageConfig(prev => {
+      const next = {
+        ...prev,
+        customPromoBanners: [...(prev.customPromoBanners || []), created]
+      };
+      safeSetItem('artellium_home_config', next);
+      broadcastAdminChange('home_config', next);
+      return next;
+    });
     return created;
   };
 
   const updatePromoBanner = (bannerId, updatedFields) => {
-    setHomePageConfig(prev => ({
-      ...prev,
-      customPromoBanners: (prev.customPromoBanners || []).map(b => b.id === bannerId ? { ...b, ...updatedFields } : b)
-    }));
+    setHomePageConfig(prev => {
+      const next = {
+        ...prev,
+        customPromoBanners: (prev.customPromoBanners || []).map(b => b.id === bannerId ? { ...b, ...updatedFields } : b)
+      };
+      safeSetItem('artellium_home_config', next);
+      broadcastAdminChange('home_config', next);
+      return next;
+    });
   };
 
   const deletePromoBanner = (bannerId) => {
-    setHomePageConfig(prev => ({
-      ...prev,
-      customPromoBanners: (prev.customPromoBanners || []).filter(b => b.id !== bannerId)
-    }));
+    setHomePageConfig(prev => {
+      const next = {
+        ...prev,
+        customPromoBanners: (prev.customPromoBanners || []).filter(b => b.id !== bannerId)
+      };
+      safeSetItem('artellium_home_config', next);
+      broadcastAdminChange('home_config', next);
+      return next;
+    });
   };
 
   const resetHomePageConfig = () => {
     setHomePageConfig(INITIAL_HOMEPAGE_CONFIG);
+    safeSetItem('artellium_home_config', INITIAL_HOMEPAGE_CONFIG);
+    broadcastAdminChange('home_config', INITIAL_HOMEPAGE_CONFIG);
   };
 
   // ==========================================
@@ -2983,52 +3185,85 @@ export function StoreProvider({ children }) {
       id: `badge-${Date.now()}`,
       isVisible: true
     };
-    setFooterConfig(prev => ({
-      ...prev,
-      trustBadges: [...(prev.trustBadges || []), created]
-    }));
+    setFooterConfig(prev => {
+      const next = {
+        ...prev,
+        trustBadges: [...(prev.trustBadges || []), created]
+      };
+      safeSetItem('artellium_footer_config', next);
+      broadcastAdminChange('footer_config', next);
+      return next;
+    });
     return created;
   };
 
   const updateTrustBadge = (badgeId, updatedFields) => {
-    setFooterConfig(prev => ({
-      ...prev,
-      trustBadges: (prev.trustBadges || []).map(b => b.id === badgeId ? { ...b, ...updatedFields } : b)
-    }));
+    setFooterConfig(prev => {
+      const next = {
+        ...prev,
+        trustBadges: (prev.trustBadges || []).map(b => b.id === badgeId ? { ...b, ...updatedFields } : b)
+      };
+      safeSetItem('artellium_footer_config', next);
+      broadcastAdminChange('footer_config', next);
+      return next;
+    });
   };
 
   const deleteTrustBadge = (badgeId) => {
-    setFooterConfig(prev => ({
-      ...prev,
-      trustBadges: (prev.trustBadges || []).filter(b => b.id !== badgeId)
-    }));
+    setFooterConfig(prev => {
+      const next = {
+        ...prev,
+        trustBadges: (prev.trustBadges || []).filter(b => b.id !== badgeId)
+      };
+      safeSetItem('artellium_footer_config', next);
+      broadcastAdminChange('footer_config', next);
+      return next;
+    });
   };
 
   const addFooterColumn = (newCol) => {
+    const normalized = typeof newCol === 'string' ? { title: newCol } : (newCol || {});
     const created = {
-      ...newCol,
+      ...normalized,
+      title: normalized.title || 'New Column',
       id: `col-${Date.now()}`,
-      links: newCol.links || []
+      links: normalized.links || []
     };
-    setFooterConfig(prev => ({
-      ...prev,
-      columns: [...(prev.columns || []), created]
-    }));
+    setFooterConfig(prev => {
+      const next = {
+        ...prev,
+        columns: [...(prev.columns || []), created]
+      };
+      safeSetItem('artellium_footer_config', next);
+      broadcastAdminChange('footer_config', next);
+      return next;
+    });
     return created;
   };
 
   const updateFooterColumn = (colId, updatedFields) => {
-    setFooterConfig(prev => ({
-      ...prev,
-      columns: (prev.columns || []).map(c => c.id === colId ? { ...c, ...updatedFields } : c)
-    }));
+    const normalized = typeof updatedFields === 'string' ? { title: updatedFields } : (updatedFields || {});
+    setFooterConfig(prev => {
+      const next = {
+        ...prev,
+        columns: (prev.columns || []).map(c => c.id === colId ? { ...c, ...normalized } : c)
+      };
+      safeSetItem('artellium_footer_config', next);
+      broadcastAdminChange('footer_config', next);
+      return next;
+    });
   };
 
   const deleteFooterColumn = (colId) => {
-    setFooterConfig(prev => ({
-      ...prev,
-      columns: (prev.columns || []).filter(c => c.id !== colId)
-    }));
+    setFooterConfig(prev => {
+      const next = {
+        ...prev,
+        columns: (prev.columns || []).filter(c => c.id !== colId)
+      };
+      safeSetItem('artellium_footer_config', next);
+      broadcastAdminChange('footer_config', next);
+      return next;
+    });
   };
 
   const addFooterLink = (columnId, newLink) => {
@@ -3037,15 +3272,20 @@ export function StoreProvider({ children }) {
       id: `link-${Date.now()}`,
       isVisible: true
     };
-    setFooterConfig(prev => ({
-      ...prev,
-      columns: (prev.columns || []).map(c => {
-        if (c.id === columnId) {
-          return { ...c, links: [...(c.links || []), created] };
-        }
-        return c;
-      })
-    }));
+    setFooterConfig(prev => {
+      const next = {
+        ...prev,
+        columns: (prev.columns || []).map(c => {
+          if (c.id === columnId) {
+            return { ...c, links: [...(c.links || []), created] };
+          }
+          return c;
+        })
+      };
+      safeSetItem('artellium_footer_config', next);
+      broadcastAdminChange('footer_config', next);
+      return next;
+    });
     return created;
   };
 
@@ -3074,18 +3314,23 @@ export function StoreProvider({ children }) {
   };
 
   const deleteFooterLink = (columnId, linkId) => {
-    setFooterConfig(prev => ({
-      ...prev,
-      columns: (prev.columns || []).map(c => {
-        if (c.id === columnId) {
-          return {
-            ...c,
-            links: (c.links || []).filter(l => l.id !== linkId)
-          };
-        }
-        return c;
-      })
-    }));
+    setFooterConfig(prev => {
+      const next = {
+        ...prev,
+        columns: (prev.columns || []).map(c => {
+          if (c.id === columnId) {
+            return {
+              ...c,
+              links: (c.links || []).filter(l => l.id !== linkId)
+            };
+          }
+          return c;
+        })
+      };
+      safeSetItem('artellium_footer_config', next);
+      broadcastAdminChange('footer_config', next);
+      return next;
+    });
   };
 
   const addSocialLink = (newSocial) => {
@@ -3094,25 +3339,40 @@ export function StoreProvider({ children }) {
       id: `soc-${Date.now()}`,
       isVisible: true
     };
-    setFooterConfig(prev => ({
-      ...prev,
-      socialLinks: [...(prev.socialLinks || []), created]
-    }));
+    setFooterConfig(prev => {
+      const next = {
+        ...prev,
+        socialLinks: [...(prev.socialLinks || []), created]
+      };
+      safeSetItem('artellium_footer_config', next);
+      broadcastAdminChange('footer_config', next);
+      return next;
+    });
     return created;
   };
 
   const updateSocialLink = (socialId, updatedFields) => {
-    setFooterConfig(prev => ({
-      ...prev,
-      socialLinks: (prev.socialLinks || []).map(s => s.id === socialId ? { ...s, ...updatedFields } : s)
-    }));
+    setFooterConfig(prev => {
+      const next = {
+        ...prev,
+        socialLinks: (prev.socialLinks || []).map(s => s.id === socialId ? { ...s, ...updatedFields } : s)
+      };
+      safeSetItem('artellium_footer_config', next);
+      broadcastAdminChange('footer_config', next);
+      return next;
+    });
   };
 
   const deleteSocialLink = (socialId) => {
-    setFooterConfig(prev => ({
-      ...prev,
-      socialLinks: (prev.socialLinks || []).filter(s => s.id !== socialId)
-    }));
+    setFooterConfig(prev => {
+      const next = {
+        ...prev,
+        socialLinks: (prev.socialLinks || []).filter(s => s.id !== socialId)
+      };
+      safeSetItem('artellium_footer_config', next);
+      broadcastAdminChange('footer_config', next);
+      return next;
+    });
   };
 
 
@@ -3138,29 +3398,46 @@ export function StoreProvider({ children }) {
       content: newSection.content || '',
       details: newSection.details || []
     };
-    setAboutConfig(prev => ({
-      ...prev,
-      customSections: [...(prev.customSections || []), created]
-    }));
+    setAboutConfig(prev => {
+      const next = {
+        ...prev,
+        customSections: [...(prev.customSections || []), created]
+      };
+      safeSetItem('artellium_about_config', next);
+      broadcastAdminChange('about_config', next);
+      return next;
+    });
     return created;
   };
 
   const updateAboutSection = (sectionId, updatedFields) => {
-    setAboutConfig(prev => ({
-      ...prev,
-      customSections: (prev.customSections || []).map(s => s.id === sectionId ? { ...s, ...updatedFields } : s)
-    }));
+    setAboutConfig(prev => {
+      const next = {
+        ...prev,
+        customSections: (prev.customSections || []).map(s => s.id === sectionId ? { ...s, ...updatedFields } : s)
+      };
+      safeSetItem('artellium_about_config', next);
+      broadcastAdminChange('about_config', next);
+      return next;
+    });
   };
 
   const deleteAboutSection = (sectionId) => {
-    setAboutConfig(prev => ({
-      ...prev,
-      customSections: (prev.customSections || []).filter(s => s.id !== sectionId)
-    }));
+    setAboutConfig(prev => {
+      const next = {
+        ...prev,
+        customSections: (prev.customSections || []).filter(s => s.id !== sectionId)
+      };
+      safeSetItem('artellium_about_config', next);
+      broadcastAdminChange('about_config', next);
+      return next;
+    });
   };
 
   const resetAboutConfig = () => {
     setAboutConfig(INITIAL_ABOUT_CONFIG);
+    safeSetItem('artellium_about_config', INITIAL_ABOUT_CONFIG);
+    broadcastAdminChange('about_config', INITIAL_ABOUT_CONFIG);
   };
 
   // ==========================================
@@ -3193,36 +3470,56 @@ export function StoreProvider({ children }) {
       id: newSection.id || 'policy-' + Date.now(),
       details: newSection.details || []
     };
-    setPoliciesConfig(prev => ({
-      ...prev,
-      sections: [...(prev.sections || []), created]
-    }));
+    setPoliciesConfig(prev => {
+      const next = {
+        ...prev,
+        sections: [...(prev.sections || []), created]
+      };
+      safeSetItem('artellium_policies_config', next);
+      broadcastAdminChange('policies_config', next);
+      return next;
+    });
     return created;
   };
 
   const deletePolicySection = (sectionId) => {
-    setPoliciesConfig(prev => ({
-      ...prev,
-      sections: (prev.sections || []).filter(s => s.id !== sectionId)
-    }));
+    setPoliciesConfig(prev => {
+      const next = {
+        ...prev,
+        sections: (prev.sections || []).filter(s => s.id !== sectionId)
+      };
+      safeSetItem('artellium_policies_config', next);
+      broadcastAdminChange('policies_config', next);
+      return next;
+    });
   };
 
   const resetPoliciesConfig = () => {
     setPoliciesConfig(INITIAL_POLICIES_CONFIG);
+    safeSetItem('artellium_policies_config', INITIAL_POLICIES_CONFIG);
+    broadcastAdminChange('policies_config', INITIAL_POLICIES_CONFIG);
   };
 
   // ==========================================
   // CONTACT US CONFIG ACTIONS (CMS)
   // ==========================================
   const updateContactConfig = (updatedFields) => {
-    setContactConfig(prev => ({ ...prev, ...updatedFields }));
+    setContactConfig(prev => {
+      const next = { ...prev, ...updatedFields };
+      safeSetItem('artellium_contact_config', next);
+      return next;
+    });
   };
 
   const updateOffice = (officeId, updatedFields) => {
-    setContactConfig(prev => ({
-      ...prev,
-      offices: (prev.offices || []).map(o => o.id === officeId ? { ...o, ...updatedFields } : o)
-    }));
+    setContactConfig(prev => {
+      const next = {
+        ...prev,
+        offices: (prev.offices || []).map(o => o.id === officeId ? { ...o, ...updatedFields } : o)
+      };
+      safeSetItem('artellium_contact_config', next);
+      return next;
+    });
   };
 
   const addOffice = (newOffice) => {
@@ -3230,25 +3527,37 @@ export function StoreProvider({ children }) {
       ...newOffice,
       id: newOffice.id || 'office-' + Date.now()
     };
-    setContactConfig(prev => ({
-      ...prev,
-      offices: [...(prev.offices || []), created]
-    }));
+    setContactConfig(prev => {
+      const next = {
+        ...prev,
+        offices: [...(prev.offices || []), created]
+      };
+      safeSetItem('artellium_contact_config', next);
+      return next;
+    });
     return created;
   };
 
   const deleteOffice = (officeId) => {
-    setContactConfig(prev => ({
-      ...prev,
-      offices: (prev.offices || []).filter(o => o.id !== officeId)
-    }));
+    setContactConfig(prev => {
+      const next = {
+        ...prev,
+        offices: (prev.offices || []).filter(o => o.id !== officeId)
+      };
+      safeSetItem('artellium_contact_config', next);
+      return next;
+    });
   };
 
   const updateContactChannel = (channelId, updatedFields) => {
-    setContactConfig(prev => ({
-      ...prev,
-      contactChannels: (prev.contactChannels || []).map(c => c.id === channelId ? { ...c, ...updatedFields } : c)
-    }));
+    setContactConfig(prev => {
+      const next = {
+        ...prev,
+        contactChannels: (prev.contactChannels || []).map(c => c.id === channelId ? { ...c, ...updatedFields } : c)
+      };
+      safeSetItem('artellium_contact_config', next);
+      return next;
+    });
   };
 
   const addContactChannel = (newChannel) => {
@@ -3256,72 +3565,122 @@ export function StoreProvider({ children }) {
       ...newChannel,
       id: newChannel.id || 'channel-' + Date.now()
     };
-    setContactConfig(prev => ({
-      ...prev,
-      contactChannels: [...(prev.contactChannels || []), created]
-    }));
+    setContactConfig(prev => {
+      const next = {
+        ...prev,
+        contactChannels: [...(prev.contactChannels || []), created]
+      };
+      safeSetItem('artellium_contact_config', next);
+      return next;
+    });
     return created;
   };
 
   const deleteContactChannel = (channelId) => {
-    setContactConfig(prev => ({
-      ...prev,
-      contactChannels: (prev.contactChannels || []).filter(c => c.id !== channelId)
-    }));
+    setContactConfig(prev => {
+      const next = {
+        ...prev,
+        contactChannels: (prev.contactChannels || []).filter(c => c.id !== channelId)
+      };
+      safeSetItem('artellium_contact_config', next);
+      return next;
+    });
   };
 
   const resetContactConfig = () => {
     setContactConfig(INITIAL_CONTACT_CONFIG);
+    safeSetItem('artellium_contact_config', INITIAL_CONTACT_CONFIG);
   };
 
   const resetFooterConfig = () => {
     setFooterConfig(INITIAL_FOOTER_CONFIG);
+    safeSetItem('artellium_footer_config', INITIAL_FOOTER_CONFIG);
+    broadcastAdminChange('footer_config', INITIAL_FOOTER_CONFIG);
   };
 
   // ==========================================
   // 5. PRIORITY BANNER PLACEMENT & PRICING ACTIONS
   // ==========================================
   const updatePriorityBannerPricing = (updatedPricing) => {
-    setPriorityBannerPricing(prev => ({ ...prev, ...updatedPricing }));
+    setPriorityBannerPricing(prev => {
+      const next = { ...prev, ...updatedPricing };
+      safeSetItem('artellium_priority_pricing', next);
+      return next;
+    });
     broadcastNotification('Priority Banner placement pricing updated successfully by platform administrator.');
   };
 
   const requestPriorityBannerPlacement = (requestData) => {
     const created = {
       ...requestData,
-      id: `pbp-${Date.now()}`,
+      id: requestData.id || `pbp-${Date.now()}`,
       status: 'active',
       startDate: new Date().toISOString().split('T')[0],
       endDate: new Date(Date.now() + (requestData.plan === 'boost_7d' ? 7 : requestData.plan === 'annual' ? 365 : 30) * 86400000).toISOString().split('T')[0],
       created_at: new Date().toISOString()
     };
-    setPriorityBannerPlacements(prev => [created, ...prev]);
+    setPriorityBannerPlacements(prev => {
+      const next = [created, ...prev];
+      safeSetItem('artellium_priority_placements', next);
+      broadcastAdminChange('priority_placements', next);
+      return next;
+    });
     broadcastNotification(`Artist "${requestData.artistName || 'Master Artist'}" placed "${requestData.title || 'Masterpiece'}" on the Homepage Spotlight Banner.`);
     return created;
   };
 
   const approvePriorityBannerPlacement = (placementId) => {
-    setPriorityBannerPlacements(prev => prev.map(p => p.id === placementId ? { ...p, status: 'active' } : p));
+    setPriorityBannerPlacements(prev => {
+      const next = prev.map(p => p.id === placementId ? { ...p, status: 'active' } : p);
+      safeSetItem('artellium_priority_placements', next);
+      broadcastAdminChange('priority_placements', next);
+      return next;
+    });
     broadcastNotification('Priority Banner placement approved and now live on homepage.');
   };
 
   const rejectPriorityBannerPlacement = (placementId) => {
-    setPriorityBannerPlacements(prev => prev.map(p => p.id === placementId ? { ...p, status: 'rejected' } : p));
+    setPriorityBannerPlacements(prev => {
+      const next = prev.map(p => p.id === placementId ? { ...p, status: 'rejected' } : p);
+      safeSetItem('artellium_priority_placements', next);
+      broadcastAdminChange('priority_placements', next);
+      return next;
+    });
   };
 
   const deletePriorityBannerPlacement = (placementId) => {
-    setPriorityBannerPlacements(prev => prev.filter(p => p.id !== placementId));
+    setPriorityBannerPlacements(prev => {
+      const next = prev.filter(p => p.id !== placementId);
+      safeSetItem('artellium_priority_placements', next);
+      broadcastAdminChange('priority_placements', next);
+      return next;
+    });
+  };
+
+  const updatePriorityBannerPlacement = (placementId, updatedFields) => {
+    setPriorityBannerPlacements(prev => {
+      const next = prev.map(p => p.id === placementId ? { ...p, ...updatedFields } : p);
+      safeSetItem('artellium_priority_placements', next);
+      broadcastAdminChange('priority_placements', next);
+      return next;
+    });
   };
 
   const addDirectPriorityBannerPlacement = (placementData) => {
     const created = {
       ...placementData,
-      id: `pbp-${Date.now()}`,
+      id: placementData.id || `pbp-${Date.now()}`,
       status: 'active',
       startDate: new Date().toISOString().split('T')[0],
-      endDate: new Date(Date.now() + 30 * 86400000).toISOString().split('T')[0]
+      endDate: new Date(Date.now() + 30 * 86400000).toISOString().split('T')[0],
+      created_at: new Date().toISOString()
     };
-    setPriorityBannerPlacements(prev => [created, ...prev]);
+    setPriorityBannerPlacements(prev => {
+      const next = [created, ...prev];
+      safeSetItem('artellium_priority_placements', next);
+      broadcastAdminChange('priority_placements', next);
+      return next;
+    });
     return created;
   };
 
@@ -3570,6 +3929,7 @@ export function StoreProvider({ children }) {
         updateOrder,
         deleteOrder,
         updateOrderTracking,
+        updateOrderLogistics: updateOrderTracking,
         TRACKING_STAGES,
         confirmCollectorDelivery,
         payments,
@@ -3766,6 +4126,7 @@ export function StoreProvider({ children }) {
         approvePriorityBannerPlacement,
         rejectPriorityBannerPlacement,
         deletePriorityBannerPlacement,
+        updatePriorityBannerPlacement,
         addDirectPriorityBannerPlacement,
         // WEMA Bank Payment Settings
         paymentSettings,

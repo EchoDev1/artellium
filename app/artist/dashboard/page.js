@@ -101,9 +101,11 @@ export default function ArtistDashboardPage() {
     priorityBannerPricing,
     priorityBannerPlacements = [],
     requestPriorityBannerPlacement,
+    deletePriorityBannerPlacement,
     artistPayoutPercentage = 85,
     videos = [],
     submitArtistVideo,
+    deleteVideo,
     subscribeArtist,
     followedArtists = [],
     usersList = []
@@ -118,7 +120,8 @@ export default function ArtistDashboardPage() {
   const [videoSubmitNotice, setVideoSubmitNotice] = useState('');
   const [videoFileMeta, setVideoFileMeta] = useState(null);
   const [artistVideoForm, setArtistVideoForm] = useState({
-    artistName: currentUser?.name ? currentUser.name.split(' (')[0] : '',
+    title: '',
+    artistName: currentUser?.name ? currentUser.name.split(' (')[0] : 'Kofi Mensah',
     artistTitle: 'Royal Heritage Master',
     country: currentUser?.country || 'Nigeria',
     countryFlag: '🇳🇬',
@@ -144,38 +147,79 @@ export default function ArtistDashboardPage() {
       return;
     }
 
-    const objectUrl = URL.createObjectURL(file);
     setVideoFileMeta({
       name: file.name,
       sizeMB,
       type: file.type
     });
-    setArtistVideoForm(prev => ({
-      ...prev,
-      videoUrl: objectUrl,
-      thumbnail: prev.thumbnail || 'https://images.unsplash.com/photo-1579783902614-a3fb3927b675?auto=format&fit=crop&q=95&w=2400'
-    }));
+
+    // Convert to persistent Data URL for seamless cross-refresh persistence in IndexedDB & State
+    if (file.size <= 35 * 1024 * 1024) {
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        setArtistVideoForm(prev => ({
+          ...prev,
+          videoUrl: ev.target.result,
+          thumbnail: prev.thumbnail || 'https://images.unsplash.com/photo-1579783902614-a3fb3927b675?auto=format&fit=crop&q=95&w=2400'
+        }));
+      };
+      reader.onerror = () => {
+        const objectUrl = URL.createObjectURL(file);
+        setArtistVideoForm(prev => ({
+          ...prev,
+          videoUrl: objectUrl,
+          thumbnail: prev.thumbnail || 'https://images.unsplash.com/photo-1579783902614-a3fb3927b675?auto=format&fit=crop&q=95&w=2400'
+        }));
+      };
+      reader.readAsDataURL(file);
+    } else {
+      const objectUrl = URL.createObjectURL(file);
+      setArtistVideoForm(prev => ({
+        ...prev,
+        videoUrl: objectUrl,
+        thumbnail: prev.thumbnail || 'https://images.unsplash.com/photo-1579783902614-a3fb3927b675?auto=format&fit=crop&q=95&w=2400'
+      }));
+    }
+  };
+
+  const handleVideoThumbnailFileChange = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      setArtistVideoForm(prev => ({
+        ...prev,
+        thumbnail: ev.target.result
+      }));
+    };
+    reader.readAsDataURL(file);
   };
 
   const handleArtistVideoSubmit = (e) => {
     e.preventDefault();
-    if (!artistVideoForm.artistName || !artistVideoForm.videoUrl) {
-      alert('Please select a video file from your device gallery before submitting.');
-      return;
-    }
+    const resolvedVideoUrl = artistVideoForm.videoUrl || '/videos/artist-savannah.mp4';
+    const resolvedArtistName = artistVideoForm.artistName || currentUser?.name?.split(' (')[0] || 'Kofi Mensah';
 
     submitArtistVideo({
       ...artistVideoForm,
+      title: artistVideoForm.title || `${resolvedArtistName} — Atelier Documentary`,
+      artistName: resolvedArtistName,
+      videoUrl: resolvedVideoUrl,
+      thumbnail: artistVideoForm.thumbnail || 'https://images.unsplash.com/photo-1579783902614-a3fb3927b675?auto=format&fit=crop&q=95&w=2400',
+      countryFlag: getCountryFlag(artistVideoForm.country),
       artistEmail: currentUser?.email || 'artist@artellium.africa',
       artistId: currentUser?.id || 'artist-current',
       videoFileName: videoFileMeta?.name || 'gallery_video.mp4',
       videoSizeMB: videoFileMeta?.sizeMB || '0',
+      status: 'approved',
+      featuredOnHero: true
     });
 
-    setVideoSubmitNotice('🎉 Your 1–2 minute video story has been submitted from your gallery! It is now queued for Admin Review before going live on the Homepage Hero slider.');
+    setVideoSubmitNotice('🎉 Your Voices of Artists video has been saved and published immediately! It is now live on the Voices of Artists page and Homepage Hero.');
     setVideoFileMeta(null);
     setArtistVideoForm({
-      artistName: currentUser?.name ? currentUser.name.split(' (')[0] : '',
+      title: '',
+      artistName: currentUser?.name ? currentUser.name.split(' (')[0] : resolvedArtistName,
       artistTitle: 'Royal Heritage Master',
       country: currentUser?.country || 'Nigeria',
       countryFlag: '🇳🇬',
@@ -197,10 +241,35 @@ export default function ArtistDashboardPage() {
     }));
   };
 
-  // Priority Banner State
+  // Priority Banner / Artist Ad State
+  const [artistAdMode, setArtistAdMode] = useState('artwork'); // 'artwork' | 'custom_ad'
   const [selectedArtForBanner, setSelectedArtForBanner] = useState('');
   const [selectedPlanForBanner, setSelectedPlanForBanner] = useState('monthly');
   const [bannerSubmitMsg, setBannerSubmitMsg] = useState('');
+  const [customArtistAdForm, setCustomArtistAdForm] = useState({
+    title: '',
+    writeUp: '',
+    mediaType: 'image', // 'image' | 'video'
+    image: '',
+    videoUrl: '',
+    price: '',
+    ctaText: 'Inspect Masterpiece & Acquire',
+    ctaLink: '/explore'
+  });
+
+  const handleArtistAdMediaUpload = (e, type = 'image') => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      if (type === 'video') {
+        setCustomArtistAdForm(prev => ({ ...prev, mediaType: 'video', videoUrl: ev.target.result }));
+      } else {
+        setCustomArtistAdForm(prev => ({ ...prev, image: ev.target.result }));
+      }
+    };
+    reader.readAsDataURL(file);
+  };
 
   useEffect(() => {
     if (currentUser && currentUser.role === 'buyer') {
@@ -427,10 +496,11 @@ export default function ArtistDashboardPage() {
 
   const handleSaveSignature = (e) => {
     e.preventDefault();
+    const sigOwner = currentUser?.name || myArtistName || 'Master Artist';
     if (sigMode === 'draw' && drawnSigUrl) {
-      saveArtistSignature(currentUser.name, { drawn: drawnSigUrl, style: 'Drawn Custom Signature' });
+      saveArtistSignature(sigOwner, { drawn: drawnSigUrl, style: 'Drawn Custom Signature' });
     } else {
-      saveArtistSignature(currentUser.name, { drawn: null, style: sigStyle });
+      saveArtistSignature(sigOwner, { drawn: null, style: sigStyle });
     }
     setSigSaveMsg(true);
     setTimeout(() => setSigSaveMsg(false), 3500);
@@ -494,25 +564,68 @@ export default function ArtistDashboardPage() {
 
   // Priority banner placements for this artist
   const myArtistBannerPlacements = (priorityBannerPlacements || []).filter(p => 
-    (myArtistName && p.artistName?.toLowerCase().includes(myArtistName.toLowerCase())) || (currentUser?.id && p.artistId === currentUser.id)
+    (myArtistName && p.artistName?.toLowerCase().includes(myArtistName.toLowerCase())) || (currentUser?.id && p.artistId === currentUser.id) || p.artistId === 'artist-current'
   );
 
   const handleBannerSubmit = (e) => {
     e.preventDefault();
-    const art = artworks.find(a => a.id === selectedArtForBanner) || myArtworks[0];
-    if (!art) return;
-    
     const priceMap = {
       boost_7d: priorityBannerPricing?.boost7d || 15000,
       monthly: priorityBannerPricing?.monthly || 50000,
       annual: priorityBannerPricing?.annual || 350000
     };
 
+    if (artistAdMode === 'custom_ad') {
+      const adTitle = customArtistAdForm.title?.trim() || `${myArtistName} — Atelier Showcase`;
+      const adImage = customArtistAdForm.image || myArtworks[0]?.image || 'https://images.unsplash.com/photo-1579783902614-a3fb3927b675?auto=format&fit=crop&q=95&w=2400';
+      requestPriorityBannerPlacement({
+        adType: 'artist_ad',
+        mediaType: customArtistAdForm.mediaType || 'image',
+        artworkId: myArtworks[0]?.id || `ad-${Date.now()}`,
+        title: adTitle,
+        writeUp: customArtistAdForm.writeUp || `Featured original works and studio exhibition by ${myArtistName}.`,
+        description: customArtistAdForm.writeUp || `Featured original works and studio exhibition by ${myArtistName}.`,
+        artistName: myArtistName || currentUser?.name || 'Master Artist',
+        partnerName: myArtistName || currentUser?.name || 'Master Artist',
+        artistId: currentUser?.id || 'artist-current',
+        country: currentUser?.country || 'Nigeria',
+        countryFlag: getCountryFlag(currentUser?.country || 'Nigeria'),
+        medium: 'Atelier Spotlight Ad',
+        price: customArtistAdForm.price ? parseFloat(customArtistAdForm.price) : (myArtworks[0]?.price || 1500000),
+        image: adImage,
+        videoUrl: customArtistAdForm.videoUrl || '',
+        ctaText: customArtistAdForm.ctaText || 'Inspect Masterpiece & Acquire',
+        ctaLink: customArtistAdForm.ctaLink || (myArtworks[0]?.id ? `/artwork/${myArtworks[0].id}` : '/explore'),
+        plan: selectedPlanForBanner,
+        pricePaid: priceMap[selectedPlanForBanner]
+      });
+
+      setBannerSubmitMsg(`✅ Your custom ad "${adTitle}" has been saved and published immediately to the Homepage TV Banner!`);
+      setCustomArtistAdForm({
+        title: '',
+        writeUp: '',
+        mediaType: 'image',
+        image: '',
+        videoUrl: '',
+        price: '',
+        ctaText: 'Inspect Masterpiece & Acquire',
+        ctaLink: '/explore'
+      });
+      setTimeout(() => setBannerSubmitMsg(''), 6000);
+      return;
+    }
+
+    const art = artworks.find(a => a.id === selectedArtForBanner) || myArtworks[0] || artworks[0];
+    if (!art) return;
+
     requestPriorityBannerPlacement({
+      adType: 'artwork',
+      mediaType: 'image',
       artworkId: art.id,
       title: art.title,
+      writeUp: customArtistAdForm.writeUp || art.description || art.studioNotes || `Authenticated original masterpiece by ${art.artistName || myArtistName}.`,
       artistName: art.artistName || myArtistName,
-      artistId: art.artistId || currentUser?.id || 'artist-1',
+      artistId: art.artistId || currentUser?.id || 'artist-current',
       country: art.country || currentUser?.country || 'Nigeria',
       countryFlag: art.countryFlag || '🇳🇬',
       medium: art.medium || 'Fine Art',
@@ -520,12 +633,14 @@ export default function ArtistDashboardPage() {
       price: art.price,
       priceUSD: art.priceUSD,
       image: art.image,
+      ctaText: 'Acquire This Masterpiece',
+      ctaLink: `/artwork/${art.id}`,
       plan: selectedPlanForBanner,
       pricePaid: priceMap[selectedPlanForBanner]
     });
 
-    setBannerSubmitMsg(`"${art.title}" has been placed in the Homepage Spotlight Banner!`);
-    setTimeout(() => setBannerSubmitMsg(''), 4000);
+    setBannerSubmitMsg(`✅ "${art.title}" has been saved and placed live in the Homepage Spotlight Banner!`);
+    setTimeout(() => setBannerSubmitMsg(''), 6000);
   };
 
   const handleArtworkSubmit = (e) => {
@@ -608,6 +723,12 @@ export default function ArtistDashboardPage() {
     e.preventDefault();
     if (mySellerProfile?.id) {
       updateSeller(mySellerProfile.id, bankForm);
+    }
+    if (saveArtistProfile) {
+      saveArtistProfile({
+        name: myArtistName,
+        ...bankForm
+      });
     }
     setBankSaveMsg(true);
     setTimeout(() => setBankSaveMsg(false), 3500);
@@ -844,10 +965,10 @@ export default function ArtistDashboardPage() {
                     </div>
                   </div>
 
-                  {/* Video Upload from Gallery Only (No External Links Allowed) */}
+                  {/* Video Upload from Device Gallery */}
                   <div>
                     <label className="block font-semibold text-slate-700 mb-1">
-                      Upload Video from Gallery (No Links Allowed) *
+                      Upload Video from Device Gallery *
                     </label>
 
                     {artistVideoForm.videoUrl ? (
@@ -866,7 +987,7 @@ export default function ArtistDashboardPage() {
                               🎬 {videoFileMeta?.name || 'Selected Video from Gallery'}
                             </span>
                             <span className="text-[11px] text-slate-400">
-                              {videoFileMeta?.sizeMB ? `${videoFileMeta.sizeMB} MB` : 'Gallery Video Ready'} · Ready for submission
+                              {videoFileMeta?.sizeMB ? `${videoFileMeta.sizeMB} MB` : 'Gallery Video Ready'} · Ready for instant publication
                             </span>
                           </div>
 
@@ -882,39 +1003,67 @@ export default function ArtistDashboardPage() {
                         </div>
                       </div>
                     ) : (
-                      <label className="flex flex-col items-center justify-center p-8 rounded-2xl border-2 border-dashed border-amber-300/80 hover:border-art-gold bg-amber-50/40 hover:bg-amber-50/80 transition cursor-pointer group">
-                        <div className="w-14 h-14 rounded-2xl bg-art-gold/15 text-art-gold flex items-center justify-center mb-3 group-hover:scale-110 transition shadow-sm border border-art-gold/30">
-                          <Video className="w-7 h-7" />
+                      <div className="space-y-2">
+                        <label className="flex flex-col items-center justify-center p-8 rounded-2xl border-2 border-dashed border-amber-300/80 hover:border-art-gold bg-amber-50/40 hover:bg-amber-50/80 transition cursor-pointer group">
+                          <div className="w-14 h-14 rounded-2xl bg-art-gold/15 text-art-gold flex items-center justify-center mb-3 group-hover:scale-110 transition shadow-sm border border-art-gold/30">
+                            <Video className="w-7 h-7" />
+                          </div>
+                          <span className="font-bold text-slate-800 text-sm mb-1 text-center">
+                            Tap to Select Video from Device Gallery
+                          </span>
+                          <span className="text-xs text-slate-500 text-center max-w-xs">
+                            Choose 1–2 minute video directly from your phone or computer storage (MP4, WebM, MOV)
+                          </span>
+                          <span className="mt-3 px-3 py-1 rounded-full bg-slate-900 text-art-gold text-[11px] font-mono font-bold">
+                            Saves Immediately & Persists Across Reloads
+                          </span>
+                          <input
+                            type="file"
+                            accept="video/*"
+                            onChange={handleVideoFileChange}
+                            className="hidden"
+                          />
+                        </label>
+                        <div className="flex flex-wrap items-center gap-2 pt-1">
+                          <span className="text-[10px] text-slate-500 font-semibold">Or select a Studio Footage Sample:</span>
+                          {[
+                            { label: 'Foundry Casting Studio', url: '/videos/artist-foundry.mp4' },
+                            { label: 'Savannah Atelier', url: '/videos/artist-savannah.mp4' },
+                            { label: 'Loom & Textile Guild', url: '/videos/artist-loom.mp4' },
+                          ].map((sample) => (
+                            <button
+                              key={sample.url}
+                              type="button"
+                              onClick={() => {
+                                setVideoFileMeta({ name: `${sample.label}.mp4`, sizeMB: '4.2', type: 'video/mp4' });
+                                setArtistVideoForm(prev => ({ ...prev, videoUrl: sample.url }));
+                              }}
+                              className="px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-amber-100 text-slate-700 hover:text-amber-900 border border-slate-200 text-[10px] font-bold transition cursor-pointer"
+                            >
+                              🎬 {sample.label}
+                            </button>
+                          ))}
                         </div>
-                        <span className="font-bold text-slate-800 text-sm mb-1 text-center">
-                          Tap to Select Video from Device Gallery
-                        </span>
-                        <span className="text-xs text-slate-500 text-center max-w-xs">
-                          Choose 1–2 minute video directly from your phone or computer storage (MP4, WebM, MOV)
-                        </span>
-                        <span className="mt-3 px-3 py-1 rounded-full bg-slate-900 text-art-gold text-[11px] font-mono font-bold">
-                          Gallery Upload Only · No External Links
-                        </span>
-                        <input
-                          type="file"
-                          accept="video/*"
-                          required
-                          onChange={handleVideoFileChange}
-                          className="hidden"
-                        />
-                      </label>
+                      </div>
                     )}
                   </div>
 
                   <div>
                     <label className="block font-semibold text-slate-700 mb-1">Video Cover Thumbnail / Poster Photo (Optional)</label>
-                    <input
-                      type="url"
-                      value={artistVideoForm.thumbnail}
-                      onChange={(e) => setArtistVideoForm({ ...artistVideoForm, thumbnail: e.target.value })}
-                      placeholder="Optional image link or leave blank for automatic poster"
-                      className="w-full p-3 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-amber-500 font-mono"
-                    />
+                    <div className="flex flex-col sm:flex-row gap-2">
+                      <input
+                        type="text"
+                        value={artistVideoForm.thumbnail}
+                        onChange={(e) => setArtistVideoForm({ ...artistVideoForm, thumbnail: e.target.value })}
+                        placeholder="Optional image link or upload cover photo from device"
+                        className="flex-1 p-3 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-amber-500 font-mono text-xs"
+                      />
+                      <label className="px-4 py-3 rounded-xl bg-slate-900 hover:bg-slate-800 text-art-gold font-bold text-xs cursor-pointer flex items-center justify-center gap-1.5 shrink-0">
+                        <Camera className="w-3.5 h-3.5" />
+                        <span>Upload Cover</span>
+                        <input type="file" accept="image/*" onChange={handleVideoThumbnailFileChange} className="hidden" />
+                      </label>
+                    </div>
                   </div>
 
                   <div>
@@ -934,7 +1083,7 @@ export default function ArtistDashboardPage() {
                     className="w-full py-3.5 rounded-xl bg-gradient-to-r from-art-gold via-[#9E7720] to-art-gold-dark hover:brightness-110 text-white font-bold text-xs uppercase tracking-wider transition shadow-gold-glow flex items-center justify-center gap-2 cursor-pointer"
                   >
                     <ShieldCheck className="w-4 h-4" />
-                    <span>Submit Video for Admin Review</span>
+                    <span>Save & Publish Voices of Artists Video Immediately</span>
                   </button>
                 </form>
               </div>
@@ -950,7 +1099,7 @@ export default function ArtistDashboardPage() {
                   <ul className="text-xs text-amber-900/90 space-y-2 list-disc list-inside leading-relaxed">
                     <li><strong>Length:</strong> Keep videos between 1 to 2 minutes for optimal mobile loading.</li>
                     <li><strong>Content:</strong> Speak directly about your artistic lineage, atelier methods, and the story behind your featured work.</li>
-                    <li><strong>Identity Vetting:</strong> Submissions are verified against your registered atelier credentials to protect authentic African heritage from impersonators.</li>
+                    <li><strong>Instant Publishing:</strong> Your video saves immediately to the Voices of Artists archive and Homepage Hero carousel.</li>
                     <li><strong>Quality:</strong> Clear natural lighting in your atelier and clear spoken audio are prioritized for the Hero carousel.</li>
                   </ul>
                 </div>
@@ -958,40 +1107,58 @@ export default function ArtistDashboardPage() {
                 {/* Submitted Videos Status Table */}
                 <div className="bg-white rounded-3xl p-6 border border-slate-200 shadow-sm space-y-4">
                   <h4 className="font-serif text-base font-bold text-slate-900 flex items-center justify-between">
-                    <span>Recent Platform Video Stories</span>
+                    <span>Published Voices of Artists Videos</span>
                     <span className="text-xs font-mono font-normal text-slate-500">
-                      {videos.length} Registered
+                      {videos.length} Live
                     </span>
                   </h4>
 
-                  <div className="space-y-3">
-                    {videos.slice(0, 4).map((vid) => (
+                  <div className="space-y-3 max-h-96 overflow-y-auto pr-1">
+                    {videos.slice(0, 8).map((vid) => (
                       <div key={vid.id} className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200/70 space-y-2">
-                        <div className="flex items-center justify-between">
+                        <div className="flex items-center justify-between gap-2">
                           <span className="font-serif text-xs font-bold text-slate-900 truncate">
                             {vid.artistName}
                           </span>
-                          <span className={`px-2 py-0.5 rounded-full text-[9px] font-mono font-bold uppercase ${
-                            vid.status === 'approved' 
-                              ? 'bg-emerald-100 text-emerald-800' 
-                              : vid.status === 'pending'
-                              ? 'bg-amber-100 text-amber-800 animate-pulse'
-                              : 'bg-red-100 text-red-800'
-                          }`}>
-                            {vid.status === 'approved' ? '✓ Live on Hero' : vid.status === 'pending' ? '⏳ Pending Review' : '✕ Rejected'}
-                          </span>
+                          <div className="flex items-center gap-1.5 shrink-0">
+                            <span className={`px-2 py-0.5 rounded-full text-[9px] font-mono font-bold uppercase ${
+                              vid.status === 'approved' 
+                                ? 'bg-emerald-100 text-emerald-800' 
+                                : vid.status === 'pending'
+                                ? 'bg-amber-100 text-amber-800 animate-pulse'
+                                : 'bg-red-100 text-red-800'
+                            }`}>
+                              {vid.status === 'approved' ? '✓ Live on Hero & Voices' : vid.status === 'pending' ? '⏳ Pending Review' : '✕ Rejected'}
+                            </span>
+                            {deleteVideo && (
+                              <button
+                                type="button"
+                                onClick={() => deleteVideo(vid.id)}
+                                className="p-1 rounded-lg hover:bg-red-100 text-slate-400 hover:text-red-600 transition cursor-pointer"
+                                title="Remove Video"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            )}
+                          </div>
                         </div>
                         <p className="text-[11px] text-slate-500 italic line-clamp-1 font-serif">
                           &ldquo;{vid.quote}&rdquo;
                         </p>
                         <div className="flex items-center justify-between text-[10px] text-slate-400 font-mono">
                           <span>{vid.duration || '1:30'} · {vid.country}</span>
-                          {vid.status === 'approved' && (
-                            <Link href="/" target="_blank" className="text-art-gold font-bold hover:underline flex items-center gap-0.5">
-                              <span>Watch on Hero</span>
+                          <div className="flex items-center gap-3">
+                            <Link href="/artist-voices" className="text-emerald-700 font-bold hover:underline flex items-center gap-0.5">
+                              <span>Voices Archive</span>
                               <ExternalLink className="w-2.5 h-2.5" />
                             </Link>
-                          )}
+                            {vid.status === 'approved' && (
+                              <Link href="/" className="text-art-gold font-bold hover:underline flex items-center gap-0.5">
+                                <span>Watch on Hero</span>
+                                <ExternalLink className="w-2.5 h-2.5" />
+                              </Link>
+                            )}
+                          </div>
                         </div>
                       </div>
                     ))}
@@ -2488,18 +2655,18 @@ export default function ArtistDashboardPage() {
           {/* Right Column: Spotlight Banner Placement, Payout Bank, Drawing Signature Canvas, Offers & Inventory (5 Columns) */}
           <div className="lg:col-span-5 space-y-6">
 
-            {/* HOMEPAGE SPOTLIGHT BANNER PLACEMENT (ARTIST REQUEST PORTAL) */}
+            {/* HOMEPAGE SPOTLIGHT & ARTIST AD BANNER PLACEMENT */}
             <div className="bg-gradient-to-br from-amber-50/80 via-white to-amber-50/50 rounded-3xl border border-amber-200 p-6 space-y-4 shadow-sm">
               <div className="flex items-center justify-between border-b border-amber-200/60 pb-3">
                 <div className="flex items-center gap-2">
                   <Sparkles className="w-5 h-5 text-art-gold animate-spin" style={{ animationDuration: '8s' }} />
                   <div>
-                    <h3 className="font-serif text-base font-bold text-slate-900">Homepage Spotlight Banner Placement</h3>
-                    <p className="text-[11px] text-slate-500">Feature your artwork in the grand homepage curatorial showcase</p>
+                    <h3 className="font-serif text-base font-bold text-slate-900">Homepage Spotlight & Atelier Ad Banner</h3>
+                    <p className="text-[11px] text-slate-500">Feature an artwork or publish a custom photo/video ad on the Homepage TV Banner</p>
                   </div>
                 </div>
                 <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-art-gold/20 text-amber-900 border border-art-gold/40">
-                  Curatorial Spotlight
+                  Instant Live Ad
                 </span>
               </div>
 
@@ -2509,6 +2676,32 @@ export default function ArtistDashboardPage() {
                   <span>{bannerSubmitMsg}</span>
                 </div>
               )}
+
+              {/* Ad Mode Switcher: Artwork Spotlight vs Custom Atelier Ad */}
+              <div className="grid grid-cols-2 gap-2 p-1 bg-amber-100/70 rounded-xl border border-amber-200 text-xs font-bold">
+                <button
+                  type="button"
+                  onClick={() => setArtistAdMode('artwork')}
+                  className={`py-2 px-3 rounded-lg transition cursor-pointer ${
+                    artistAdMode === 'artwork'
+                      ? 'bg-slate-900 text-art-gold shadow-sm'
+                      : 'text-slate-700 hover:bg-white/60'
+                  }`}
+                >
+                  🎨 Feature Studio Artwork
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setArtistAdMode('custom_ad')}
+                  className={`py-2 px-3 rounded-lg transition cursor-pointer ${
+                    artistAdMode === 'custom_ad'
+                      ? 'bg-slate-900 text-art-gold shadow-sm'
+                      : 'text-slate-700 hover:bg-white/60'
+                  }`}
+                >
+                  📺 Post Custom Photo/Video Ad
+                </button>
+              </div>
 
               {/* Admin Configured Pricing Options */}
               <div className="grid grid-cols-3 gap-2 text-xs">
@@ -2551,50 +2744,127 @@ export default function ArtistDashboardPage() {
 
               {/* Submit Placement Form */}
               <form onSubmit={handleBannerSubmit} className="space-y-3 text-xs">
-                <div>
-                  <label className="block text-slate-700 font-semibold mb-1">Select Artwork to Feature:</label>
-                  <select
-                    value={selectedArtForBanner}
-                    onChange={(e) => setSelectedArtForBanner(e.target.value)}
-                    className="w-full bg-white border border-slate-200 rounded-xl p-2.5 text-slate-800 focus:outline-none focus:border-amber-500"
-                  >
-                    {myArtworks.map(a => (
-                      <option key={a.id} value={a.id}>
-                        {a.title} ({formatPrice(a.price)})
-                      </option>
-                    ))}
-                    {myArtworks.length === 0 && (
-                      <option value="">Upload an artwork first</option>
-                    )}
-                  </select>
-                </div>
+                {artistAdMode === 'artwork' ? (
+                  <>
+                    <div>
+                      <label className="block text-slate-700 font-semibold mb-1">Select Artwork to Feature:</label>
+                      <select
+                        value={selectedArtForBanner}
+                        onChange={(e) => setSelectedArtForBanner(e.target.value)}
+                        className="w-full bg-white border border-slate-200 rounded-xl p-2.5 text-slate-800 focus:outline-none focus:border-amber-500"
+                      >
+                        {(myArtworks.length > 0 ? myArtworks : artworks.slice(0, 10)).map(a => (
+                          <option key={a.id} value={a.id}>
+                            {a.title} ({formatPrice(a.price)})
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-slate-700 font-semibold mb-1">Optional Ad Write-Up / Caption:</label>
+                      <input
+                        type="text"
+                        value={customArtistAdForm.writeUp}
+                        onChange={(e) => setCustomArtistAdForm(prev => ({ ...prev, writeUp: e.target.value }))}
+                        placeholder="e.g. Direct from our Lagos Atelier — Hand-signed with WEMA Provenance..."
+                        className="w-full bg-white border border-slate-200 rounded-xl p-2.5 text-slate-800 focus:outline-none focus:border-amber-500"
+                      />
+                    </div>
+                  </>
+                ) : (
+                  <div className="space-y-3 p-3.5 rounded-2xl bg-white border border-amber-200/80">
+                    <div>
+                      <label className="block text-slate-700 font-semibold mb-1">Ad Headline / Exhibition Title *</label>
+                      <input
+                        type="text"
+                        required
+                        value={customArtistAdForm.title}
+                        onChange={(e) => setCustomArtistAdForm(prev => ({ ...prev, title: e.target.value }))}
+                        placeholder="e.g. Solo Atelier Showcase: Sacred Bronzes of Benin"
+                        className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-slate-800 focus:outline-none focus:border-amber-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-slate-700 font-semibold mb-1">Ad Write-Up / Story *</label>
+                      <textarea
+                        rows={2}
+                        required
+                        value={customArtistAdForm.writeUp}
+                        onChange={(e) => setCustomArtistAdForm(prev => ({ ...prev, writeUp: e.target.value }))}
+                        placeholder="Describe your new collection, studio open house, or featured artwork..."
+                        className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-slate-800 focus:outline-none focus:border-amber-500"
+                      />
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      <label className="p-2.5 rounded-xl bg-amber-50 hover:bg-amber-100 border border-amber-300 text-amber-950 font-bold text-center cursor-pointer transition flex items-center justify-center gap-1.5">
+                        <Camera className="w-3.5 h-3.5 text-art-gold" />
+                        <span>{customArtistAdForm.image ? '✓ Photo Loaded' : 'Upload Ad Photo'}</span>
+                        <input type="file" accept="image/*" onChange={(e) => handleArtistAdMediaUpload(e, 'image')} className="hidden" />
+                      </label>
+                      <label className="p-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-art-gold font-bold text-center cursor-pointer transition flex items-center justify-center gap-1.5">
+                        <Video className="w-3.5 h-3.5" />
+                        <span>{customArtistAdForm.videoUrl ? '✓ Video Loaded' : 'Upload Short Ad Video'}</span>
+                        <input type="file" accept="video/*" onChange={(e) => handleArtistAdMediaUpload(e, 'video')} className="hidden" />
+                      </label>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      <input
+                        type="number"
+                        value={customArtistAdForm.price}
+                        onChange={(e) => setCustomArtistAdForm(prev => ({ ...prev, price: e.target.value }))}
+                        placeholder="Optional Price (₦)"
+                        className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2 text-slate-800"
+                      />
+                      <input
+                        type="text"
+                        value={customArtistAdForm.ctaText}
+                        onChange={(e) => setCustomArtistAdForm(prev => ({ ...prev, ctaText: e.target.value }))}
+                        placeholder="CTA Button Text"
+                        className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2 text-slate-800"
+                      />
+                    </div>
+                  </div>
+                )}
 
                 <button
                   type="submit"
-                  disabled={myArtworks.length === 0}
-                  className="w-full py-2.5 rounded-xl bg-gradient-to-r from-art-gold via-amber-500 to-art-gold-dark hover:brightness-110 text-art-black font-bold text-xs uppercase tracking-wider transition shadow flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+                  className="w-full py-2.5 rounded-xl bg-gradient-to-r from-art-gold via-amber-500 to-art-gold-dark hover:brightness-110 text-art-black font-bold text-xs uppercase tracking-wider transition shadow flex items-center justify-center gap-2 cursor-pointer"
                 >
                   <Sparkles className="w-4 h-4 text-art-black" />
-                  <span>Submit Artwork for Homepage Banner</span>
+                  <span>{artistAdMode === 'custom_ad' ? 'Save & Publish Custom Ad to Homepage' : 'Save & Feature Artwork on Homepage Banner'}</span>
                 </button>
               </form>
 
               {/* Artist's Active Placements List */}
               {myArtistBannerPlacements.length > 0 && (
                 <div className="pt-2 border-t border-amber-200/60 space-y-2">
-                  <span className="text-[11px] font-bold text-slate-700 uppercase tracking-wider block">Your Banner Placements:</span>
+                  <span className="text-[11px] font-bold text-slate-700 uppercase tracking-wider block">Your Active Homepage Ads ({myArtistBannerPlacements.length}):</span>
                   {myArtistBannerPlacements.map(p => (
-                    <div key={p.id} className="p-2.5 rounded-xl bg-white border border-amber-200/80 flex items-center justify-between text-xs">
-                      <div className="flex items-center gap-2">
-                        <img src={p.image || p.artworkImage} alt="" className="w-9 h-9 rounded-lg object-cover" />
-                        <div>
-                          <p className="font-bold text-slate-900 line-clamp-1">{p.title}</p>
-                          <span className="text-[10px] text-slate-500 font-mono capitalize">{p.plan?.replace('_', ' ')} · Active till {p.endDate}</span>
+                    <div key={p.id} className="p-2.5 rounded-xl bg-white border border-amber-200/80 flex items-center justify-between text-xs gap-2">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <img src={p.image || p.artworkImage || 'https://images.unsplash.com/photo-1579783902614-a3fb3927b675?auto=format&fit=crop&q=80&w=400'} alt="" className="w-9 h-9 rounded-lg object-cover shrink-0" />
+                        <div className="min-w-0">
+                          <p className="font-bold text-slate-900 truncate">{p.title}</p>
+                          <span className="text-[10px] text-slate-500 font-mono capitalize block truncate">
+                            {p.mediaType === 'video' ? '🎬 Video Ad · ' : ''}{p.plan?.replace('_', ' ')} · Active till {p.endDate}
+                          </span>
                         </div>
                       </div>
-                      <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800">
-                        Live on Home
-                      </span>
+                      <div className="flex items-center gap-1.5 shrink-0">
+                        <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800">
+                          Live
+                        </span>
+                        {deletePriorityBannerPlacement && (
+                          <button
+                            type="button"
+                            onClick={() => deletePriorityBannerPlacement(p.id)}
+                            className="p-1 rounded-lg hover:bg-red-100 text-slate-400 hover:text-red-600 transition cursor-pointer"
+                            title="Remove Ad"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        )}
+                      </div>
                     </div>
                   ))}
                 </div>

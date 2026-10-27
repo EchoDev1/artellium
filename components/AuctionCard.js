@@ -230,16 +230,16 @@ export default function AuctionCard({ artwork }) {
 
         <Link
           href={`/artwork/${artwork.id || artwork.artworkId}`}
-          className="block relative aspect-[4/3] sm:h-72 w-full rounded-2xl overflow-hidden bg-[#07090D] border border-white/10 cursor-pointer group/lot"
+          className="block relative aspect-[4/3] sm:h-72 w-full rounded-2xl overflow-hidden bg-[#07090D] border border-white/10 cursor-pointer group/lot flex items-center justify-center"
         >
-          <img
-            src={artwork.image || DEFAULT_FALLBACK_IMAGE}
-            alt={artwork.title}
-            onError={(e) => {
-              e.currentTarget.src = DEFAULT_FALLBACK_IMAGE;
-            }}
-            className="w-full h-full object-cover object-center group-hover:scale-105 group-hover/lot:scale-105 transition duration-700"
-          />
+          <div className="absolute inset-0 bg-gradient-to-br from-[#0B0E17] via-[#07090D] to-[#120D05] flex flex-col items-center justify-center p-6 text-center select-none">
+            <span className="font-serif text-2xl sm:text-3xl font-bold tracking-[0.25em] uppercase text-white/15">
+              Coming Soon
+            </span>
+            <span className="font-mono text-[10px] tracking-[0.3em] uppercase text-art-gold/20 mt-2">
+              Live Auction Coming Very Soon
+            </span>
+          </div>
           <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent pointer-events-none" />
 
           {/* Reserve Met Status Pill */}

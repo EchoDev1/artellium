@@ -488,12 +488,10 @@ export default function LiveAuctionExhibitionHub() {
 
             {/* Artwork Preview Card + Details */}
             <div className="flex gap-4 p-3.5 rounded-xl bg-gradient-to-r from-red-950/25 to-black border border-red-900/25 items-center">
-              <Link href={`/artwork/${activeLot.id}`} className="relative w-24 sm:w-28 aspect-square rounded-xl overflow-hidden shrink-0 border border-red-500/30 block cursor-pointer">
-                <img
-                  src={activeLot.image}
-                  alt={activeLot.title}
-                  className="w-full h-full object-cover hover:scale-105 transition duration-500"
-                />
+              <Link href={`/artwork/${activeLot.id}`} className="relative w-24 sm:w-28 aspect-square rounded-xl overflow-hidden shrink-0 border border-red-500/30 bg-[#0A0505] flex items-center justify-center p-2 text-center cursor-pointer">
+                <span className="font-serif text-[10px] font-bold tracking-widest uppercase text-white/15 leading-tight select-none">
+                  Coming Soon
+                </span>
                 <span className="absolute top-1.5 left-1.5 bg-red-600 text-white font-bold text-[8.5px] px-2 py-0.5 rounded-md animate-pulse pointer-events-none">
                   🔥 LIVE
                 </span>
@@ -739,12 +737,15 @@ export default function LiveAuctionExhibitionHub() {
             </div>
 
             {/* Immersive 3D Gallery Preview Screen */}
-            <Link href={`/exhibitions/${activeExhibition.slug || activeExhibition.id}`} className="block relative h-44 sm:h-48 rounded-xl overflow-hidden border border-emerald-500/30 group cursor-pointer">
-              <img
-                src={activeExhibition.coverImage}
-                alt={activeExhibition.title}
-                className="w-full h-full object-cover group-hover:scale-105 transition duration-700 brightness-90"
-              />
+            <Link href={`/exhibitions/${activeExhibition.slug || activeExhibition.id}`} className="block relative h-44 sm:h-48 rounded-xl overflow-hidden border border-emerald-500/30 bg-[#070B09] group cursor-pointer flex items-center justify-center">
+              <div className="absolute inset-0 bg-gradient-to-br from-[#06140E] via-[#07090D] to-[#0B1410] flex flex-col items-center justify-center p-4 text-center select-none">
+                <span className="font-serif text-xl sm:text-2xl font-bold tracking-[0.25em] uppercase text-white/15">
+                  Coming Soon
+                </span>
+                <span className="font-mono text-[9px] tracking-[0.25em] uppercase text-emerald-400/20 mt-1.5">
+                  Exhibition Coming Very Soon
+                </span>
+              </div>
               <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent" />
 
               {/* Live Status + Visitors */}

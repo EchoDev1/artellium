@@ -89,16 +89,27 @@ export default function ArtworkCard({ artwork }) {
         href={`/artwork/${artwork.id}`} 
         className="relative w-full h-64 sm:h-72 overflow-hidden bg-[#07090E] group/img shrink-0 flex items-center justify-center cursor-pointer border-b border-white/5"
       >
-        <img
-          src={artwork.image || fallbackImg}
-          alt={artwork.title}
-          loading="eager"
-          decoding="async"
-          onError={(e) => {
-            e.currentTarget.src = fallbackImg;
-          }}
-          className="relative z-10 w-full h-full object-fill art-card-img contrast-[1.05] saturate-[1.08] brightness-[1.02] group-hover:scale-105 group-hover/img:scale-105 transition-transform duration-500 ease-out"
-        />
+        {(artwork.status === 'exhibition' || artwork.isExhibition || artwork.status === 'auction' || artwork.isAuction) ? (
+          <div className="absolute inset-0 bg-gradient-to-br from-[#06140E] via-[#07090D] to-[#0B1410] flex flex-col items-center justify-center p-6 text-center select-none z-10">
+            <span className="font-serif text-xl sm:text-2xl font-bold tracking-[0.25em] uppercase text-white/15">
+              Coming Soon
+            </span>
+            <span className="font-mono text-[9px] tracking-[0.25em] uppercase text-emerald-400/20 mt-2">
+              {(artwork.status === 'auction' || artwork.isAuction) ? 'Live Auction Coming Very Soon' : 'Exhibition Coming Very Soon'}
+            </span>
+          </div>
+        ) : (
+          <img
+            src={artwork.image || fallbackImg}
+            alt={artwork.title}
+            loading="eager"
+            decoding="async"
+            onError={(e) => {
+              e.currentTarget.src = fallbackImg;
+            }}
+            className="relative z-10 w-full h-full object-fill art-card-img contrast-[1.05] saturate-[1.08] brightness-[1.02] group-hover:scale-105 group-hover/img:scale-105 transition-transform duration-500 ease-out"
+          />
+        )}
 
         {/* Quick View Button */}
         <button

@@ -152,11 +152,11 @@ export default function BuyerAccountPage() {
 
   // Profile Settings Form state
   const [profileForm, setProfileForm] = useState({
-    name: currentUser?.name || '',
-    email: currentUser?.email || '',
-    phone: currentUser?.phone || '',
+    name: currentUser?.name || 'Dr. Evelyn Carter',
+    email: currentUser?.email || 'evelyn@artellium.com',
+    phone: currentUser?.phone || '+234 803 000 1122',
     country: currentUser?.country || 'Nigeria',
-    defaultAddress: ''
+    defaultAddress: currentUser?.defaultAddress || '14 Bourdillon Road, Ikoyi, Lagos'
   });
   const [profileSaveMsg, setProfileSaveMsg] = useState(false);
   const [isPhotoStudioOpen, setIsPhotoStudioOpen] = useState(false);
@@ -164,9 +164,37 @@ export default function BuyerAccountPage() {
 
   const router = useRouter();
 
+  useEffect(() => {
+    if (currentUser) {
+      setProfileForm({
+        name: currentUser.name || 'Dr. Evelyn Carter',
+        email: currentUser.email || 'evelyn@artellium.com',
+        phone: currentUser.phone || '+234 803 000 1122',
+        country: currentUser.country || 'Nigeria',
+        defaultAddress: currentUser.defaultAddress || '14 Bourdillon Road, Ikoyi, Lagos'
+      });
+      setBidderRegForm(prev => ({
+        ...prev,
+        fullName: currentUser.name || prev.fullName || 'Dr. Evelyn Carter',
+        email: currentUser.email || prev.email || 'evelyn@artellium.com',
+        phone: currentUser.phone || prev.phone || '+234 803 000 1122',
+        country: currentUser.country || prev.country || 'Nigeria'
+      }));
+    }
+  }, [currentUser]);
+
+  const activeUser = currentUser || {
+    id: 'user-buyer-1',
+    name: profileForm.name || 'Dr. Evelyn Carter',
+    email: profileForm.email || 'evelyn@artellium.com',
+    role: 'buyer',
+    country: profileForm.country || 'Nigeria',
+    phone: profileForm.phone || '+234 803 000 1122',
+    defaultAddress: profileForm.defaultAddress || '14 Bourdillon Road, Ikoyi, Lagos'
+  };
+
   const handleSaveCollectorPhoto = (croppedPhoto) => {
-    if (!currentUser) return;
-    updateUser(currentUser.id, { avatar_url: croppedPhoto });
+    updateUser(activeUser.id, { avatar_url: croppedPhoto });
     setPhotoSavedNotice(true);
     setTimeout(() => setPhotoSavedNotice(false), 4000);
   };
@@ -179,44 +207,24 @@ export default function BuyerAccountPage() {
     }
   }, [currentUser, router]);
 
-  const activeUser = currentUser;
-
-  if (!currentUser || (currentUser.role !== 'buyer' && currentUser.role !== 'collector' && currentUser.role !== 'admin')) {
+  if (currentUser && currentUser.role !== 'buyer' && currentUser.role !== 'collector' && currentUser.role !== 'admin') {
     return (
       <div className="min-h-screen bg-[#07080A] flex items-center justify-center p-4 font-sans text-xs">
         <div className="max-w-md w-full p-8 rounded-3xl bg-[#0c0f17] border border-emerald-500/30 text-center space-y-4 shadow-2xl">
           <div className="w-14 h-14 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center mx-auto">
             <UserCheck className="w-7 h-7 text-emerald-400" />
           </div>
-          <h2 className="font-serif text-lg font-bold text-white">Collector Portal Restricted</h2>
+          <h2 className="font-serif text-lg font-bold text-white">Artist Studio Account Active</h2>
           <p className="text-slate-400 leading-relaxed text-xs">
-            Please sign in with a verified Collector account to view your acquisitions, orders, and authenticity certificates.
+            You are currently signed in with an Artist account. Switch to a Collector profile or return to your Artist Studio.
           </p>
           <div className="pt-2 flex items-center justify-center gap-3">
-            {currentUser?.role === 'admin' && (
-              <Link
-                href="/admin/dashboard"
-                className="py-2.5 px-4 bg-amber-500 text-black font-bold rounded-xl hover:brightness-110 transition"
-              >
-                Go to Admin Center
-              </Link>
-            )}
-            {currentUser?.role === 'artist' && (
-              <Link
-                href="/artist/dashboard"
-                className="py-2.5 px-4 bg-art-gold text-art-black font-bold rounded-xl hover:brightness-110 transition"
-              >
-                Go to Artist Studio
-              </Link>
-            )}
-            {!currentUser && (
-              <Link
-                href="/login"
-                className="py-2.5 px-5 bg-gradient-to-r from-art-gold to-amber-500 text-art-black font-bold rounded-xl hover:brightness-110 transition uppercase tracking-wider"
-              >
-                Sign In to Account
-              </Link>
-            )}
+            <Link
+              href="/artist/dashboard"
+              className="py-2.5 px-4 bg-art-gold text-art-black font-bold rounded-xl hover:brightness-110 transition"
+            >
+              Go to Artist Studio
+            </Link>
           </div>
         </div>
       </div>
@@ -291,9 +299,7 @@ export default function BuyerAccountPage() {
 
   const handleSaveProfile = (e) => {
     e.preventDefault();
-    if (currentUser?.id) {
-      updateUser(currentUser.id, profileForm);
-    }
+    updateUser(activeUser.id, profileForm);
     setProfileSaveMsg(true);
     setTimeout(() => setProfileSaveMsg(false), 3500);
   };
@@ -321,14 +327,14 @@ export default function BuyerAccountPage() {
   };
 
   const handleExecuteQuickBid = (lot, amount) => {
-    const isAccredited = Boolean(isBidderRegistered && isBidderRegistered(currentUser));
+    const isAccredited = Boolean(isBidderRegistered && isBidderRegistered(activeUser));
     if (!isAccredited) {
-      setActiveTab('bidding_profile');
+      setActiveTab('auction_registration');
       alert('⚠️ Bidder Accreditation Required: Please complete your identity accreditation profile below before placing live bids.');
       return;
     }
     const bidVal = parseFloat(amount);
-    placeBid(lot.id, bidVal, currentUser?.name || 'Accredited Collector');
+    placeBid(lot.id, bidVal, activeUser?.name || 'Accredited Collector');
     setBidSuccessNotice(`Your bid of ${formatPrice(bidVal)} on ${lot.title} has been logged as leading high bid!`);
     setBiddingLot(null);
     setCustomBidAmount('');
@@ -1651,7 +1657,7 @@ export default function BuyerAccountPage() {
 
                 <button
                   type="submit"
-                  className="px-6 py-2.5 bg-slate-900 hover:bg-slate-800 text-white font-bold uppercase rounded-xl shadow"
+                  className="px-6 py-2.5 bg-slate-900 hover:bg-slate-800 text-white font-bold uppercase rounded-xl shadow cursor-pointer"
                 >
                   Save Changes
                 </button>
@@ -1660,23 +1666,242 @@ export default function BuyerAccountPage() {
           </div>
         )}
 
+        {/* TAB: MY PRIVATE OFFERS */}
+        {activeTab === 'my_offers' && (
+          <div className="bg-white rounded-3xl border border-slate-200 p-6 sm:p-8 shadow-sm space-y-6 animate-fade-in">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-4">
+              <div>
+                <h2 className="font-serif text-xl font-bold text-slate-900 flex items-center gap-2">
+                  <Tag className="w-5 h-5 text-art-gold" />
+                  <span>My Private Collector Offers</span>
+                </h2>
+                <p className="text-xs text-slate-500">Manage buyout offers submitted directly to African master ateliers</p>
+              </div>
+              <span className="px-3 py-1 rounded-full bg-amber-50 border border-amber-200 text-amber-900 text-xs font-mono font-bold">
+                {mySentOffers.length} Offers
+              </span>
+            </div>
+
+            {mySentOffers.length === 0 ? (
+              <div className="p-8 text-center space-y-3 bg-slate-50 rounded-2xl border border-slate-200/70">
+                <Tag className="w-8 h-8 text-slate-400 mx-auto" />
+                <p className="text-xs text-slate-600 font-medium">You have not submitted any private buyout offers yet.</p>
+                <Link href="/explore" className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-art-gold text-art-black font-bold text-xs uppercase">
+                  <span>Explore Marketplace</span>
+                  <ChevronRight className="w-3.5 h-3.5" />
+                </Link>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {mySentOffers.map(offer => (
+                  <div key={offer.id} className="p-5 rounded-2xl bg-slate-50 border border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-4 text-xs">
+                    <div className="space-y-1">
+                      <span className="font-serif font-bold text-sm text-slate-900 block">{offer.artworkTitle || 'Original African Masterpiece'}</span>
+                      <span className="text-art-gold font-mono font-bold text-sm block">Offered: {formatPrice(offer.amount)}</span>
+                      {offer.note && <p className="text-slate-600 italic">&ldquo;{offer.note}&rdquo;</p>}
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className={`px-2.5 py-1 rounded-full text-[10px] font-mono font-bold uppercase ${
+                        offer.status === 'accepted' ? 'bg-emerald-100 text-emerald-800' :
+                        offer.status === 'rejected' ? 'bg-red-100 text-red-800' :
+                        'bg-amber-100 text-amber-800'
+                      }`}>
+                        {offer.status || 'pending'}
+                      </span>
+                      {offer.status === 'pending' && (
+                        <>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setEditingOffer(offer);
+                              setEditOfferForm({ amount: offer.amount, note: offer.note || '' });
+                            }}
+                            className="p-2 rounded-lg bg-white border border-slate-200 hover:border-art-gold text-slate-700 cursor-pointer"
+                            title="Edit Offer"
+                          >
+                            <Edit className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => cancelCollectorOffer(offer.id)}
+                            className="p-2 rounded-lg bg-white border border-slate-200 hover:border-red-500 text-red-600 cursor-pointer"
+                            title="Cancel Offer"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* TAB: MY CURATORIAL INQUIRIES & Q&A */}
+        {activeTab === 'my_questions' && (
+          <div className="bg-white rounded-3xl border border-slate-200 p-6 sm:p-8 shadow-sm space-y-6 animate-fade-in">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-4">
+              <div>
+                <h2 className="font-serif text-xl font-bold text-slate-900 flex items-center gap-2">
+                  <MessageSquare className="w-5 h-5 text-art-gold" />
+                  <span>My Atelier & Curatorial Inquiries</span>
+                </h2>
+                <p className="text-xs text-slate-500">Responses from artists and the Artellium Curatorial Board</p>
+              </div>
+              <span className="px-3 py-1 rounded-full bg-amber-50 border border-amber-200 text-amber-900 text-xs font-mono font-bold">
+                {myQuestions.length} Inquiries
+              </span>
+            </div>
+
+            {myQuestions.length === 0 ? (
+              <div className="p-8 text-center space-y-3 bg-slate-50 rounded-2xl border border-slate-200/70">
+                <MessageSquare className="w-8 h-8 text-slate-400 mx-auto" />
+                <p className="text-xs text-slate-600 font-medium">You have not posted any artwork inquiries yet.</p>
+                <Link href="/explore" className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-art-gold text-art-black font-bold text-xs uppercase">
+                  <span>Inspect Artworks</span>
+                  <ChevronRight className="w-3.5 h-3.5" />
+                </Link>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {myQuestions.map(q => (
+                  <div key={q.id} className="p-5 rounded-2xl bg-slate-50 border border-slate-200 space-y-2 text-xs">
+                    <div className="flex items-center justify-between">
+                      <span className="font-serif font-bold text-slate-900">{q.artworkTitle || 'Artwork Inquiry'}</span>
+                      <button
+                        type="button"
+                        onClick={() => deleteQuestion(q.id)}
+                        className="text-slate-400 hover:text-red-600 cursor-pointer"
+                        title="Remove Inquiry"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                    <p className="text-slate-700 font-medium">Q: {q.question}</p>
+                    {q.answer ? (
+                      <div className="p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-900">
+                        <span className="font-bold block text-[10px] uppercase text-emerald-700">Atelier Response ({q.answeredBy || 'Master Artist'}):</span>
+                        <p className="mt-0.5">{q.answer}</p>
+                      </div>
+                    ) : (
+                      <span className="inline-block px-2 py-0.5 rounded bg-amber-100 text-amber-800 text-[10px] font-mono">
+                        Awaiting Curatorial Response
+                      </span>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
       </div>
+
+      {/* Edit Order Shipping Modal */}
+      {editingOrder && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl border border-slate-200 max-w-md w-full p-6 space-y-4 shadow-2xl text-xs">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <h3 className="font-serif text-base font-bold text-slate-900">Update Delivery Address · {editingOrder.id}</h3>
+              <button onClick={() => setEditingOrder(null)} className="text-slate-400 hover:text-slate-700 font-bold">✕</button>
+            </div>
+            <form onSubmit={handleSaveOrderShipping} className="space-y-3">
+              <div>
+                <label className="block font-semibold text-slate-700 mb-1">Delivery Street Address</label>
+                <input
+                  type="text"
+                  required
+                  value={editOrderAddress.address}
+                  onChange={(e) => setEditOrderAddress({ ...editOrderAddress, address: e.target.value })}
+                  className="w-full p-2.5 rounded-xl border border-slate-200 bg-slate-50"
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="block font-semibold text-slate-700 mb-1">City</label>
+                  <input
+                    type="text"
+                    value={editOrderAddress.city}
+                    onChange={(e) => setEditOrderAddress({ ...editOrderAddress, city: e.target.value })}
+                    className="w-full p-2.5 rounded-xl border border-slate-200 bg-slate-50"
+                  />
+                </div>
+                <div>
+                  <label className="block font-semibold text-slate-700 mb-1">Country</label>
+                  <input
+                    type="text"
+                    value={editOrderAddress.country}
+                    onChange={(e) => setEditOrderAddress({ ...editOrderAddress, country: e.target.value })}
+                    className="w-full p-2.5 rounded-xl border border-slate-200 bg-slate-50"
+                  />
+                </div>
+              </div>
+              <div className="flex justify-end gap-2 pt-2">
+                <button type="button" onClick={() => setEditingOrder(null)} className="px-4 py-2 rounded-xl bg-slate-100 text-slate-700 font-bold">Cancel</button>
+                <button type="submit" className="px-4 py-2 rounded-xl bg-art-gold text-art-black font-bold uppercase">Save Delivery Address</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Offer Modal */}
+      {editingOffer && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl border border-slate-200 max-w-md w-full p-6 space-y-4 shadow-2xl text-xs">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <h3 className="font-serif text-base font-bold text-slate-900">Revise Private Offer</h3>
+              <button onClick={() => setEditingOffer(null)} className="text-slate-400 hover:text-slate-700 font-bold">✕</button>
+            </div>
+            <form onSubmit={handleSaveOfferEdit} className="space-y-3">
+              <div>
+                <label className="block font-semibold text-slate-700 mb-1">Offer Amount (₦ NGN)</label>
+                <input
+                  type="number"
+                  required
+                  value={editOfferForm.amount}
+                  onChange={(e) => setEditOfferForm({ ...editOfferForm, amount: e.target.value })}
+                  className="w-full p-2.5 rounded-xl border border-slate-200 bg-slate-50 font-mono"
+                />
+              </div>
+              <div>
+                <label className="block font-semibold text-slate-700 mb-1">Collector Note</label>
+                <textarea
+                  rows={2}
+                  value={editOfferForm.note}
+                  onChange={(e) => setEditOfferForm({ ...editOfferForm, note: e.target.value })}
+                  className="w-full p-2.5 rounded-xl border border-slate-200 bg-slate-50"
+                />
+              </div>
+              <div className="flex justify-end gap-2 pt-2">
+                <button type="button" onClick={() => setEditingOffer(null)} className="px-4 py-2 rounded-xl bg-slate-100 text-slate-700 font-bold">Cancel</button>
+                <button type="submit" className="px-4 py-2 rounded-xl bg-art-gold text-art-black font-bold uppercase">Update Offer</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       {/* Profile Photo Studio Modal */}
       {isPhotoStudioOpen && (
         <ProfilePhotoStudioModal
           isOpen={isPhotoStudioOpen}
           onClose={() => setIsPhotoStudioOpen(false)}
+          onSavePhoto={handleSaveCollectorPhoto}
           onSave={handleSaveCollectorPhoto}
-          currentPhoto={currentUser?.avatar_url}
+          currentPhoto={activeUser?.avatar_url}
           userRole="buyer"
+          userName={activeUser?.name}
         />
       )}
 
       {/* Digital Certificate COA Modal */}
       {activeCert && (
         <DigitalCertificateModal
-          certificate={activeCert}
+          certData={activeCert}
+          artistSignature={artistSignatures?.[activeCert.artistName]}
           onClose={() => setActiveCert(null)}
         />
       )}

@@ -249,13 +249,16 @@ export default function ExhibitionsPage() {
                   className="group relative rounded-3xl overflow-hidden bg-[#0A0D14] border border-emerald-500/30 hover:border-emerald-400 transition-all duration-300 shadow-2xl flex flex-col justify-between"
                 >
                   {/* Exhibition Cover Image */}
-                  <Link href={`/exhibitions/${slug}`} className="block relative aspect-[16/9] w-full overflow-hidden bg-black cursor-pointer group/cover">
-                    <img
-                      src={ex.coverImage}
-                      alt={ex.title}
-                      className="w-full h-full object-cover group-hover:scale-105 group-hover/cover:scale-105 transition duration-700 opacity-90"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-[#0A0D14] via-[#0A0D14]/40 to-transparent" />
+                  <Link href={`/exhibitions/${slug}`} className="block relative aspect-[16/9] w-full overflow-hidden bg-[#070B09] cursor-pointer group/cover flex items-center justify-center">
+                    <div className="absolute inset-0 bg-gradient-to-br from-[#06140E] via-[#07090D] to-[#0B1410] flex flex-col items-center justify-center p-6 text-center select-none">
+                      <span className="font-serif text-2xl sm:text-3xl font-bold tracking-[0.25em] uppercase text-white/15">
+                        Coming Soon
+                      </span>
+                      <span className="font-mono text-[10px] tracking-[0.3em] uppercase text-emerald-400/20 mt-2">
+                        Exhibition Coming Very Soon
+                      </span>
+                    </div>
+                    <div className="absolute inset-0 bg-gradient-to-t from-[#0A0D14] via-[#0A0D14]/40 to-transparent pointer-events-none" />
 
                     {/* Status & Timing Badge */}
                     <div className="absolute top-4 left-4 flex flex-wrap gap-2">
@@ -433,12 +436,15 @@ export default function ExhibitionsPage() {
             </div>
 
             {/* Simulated 3D WebGL Spatial Room */}
-            <div className="relative aspect-[16/9] w-full rounded-2xl overflow-hidden bg-black border border-emerald-500/40 shadow-inner">
-              <img
-                src={active3DRoomExhibition.coverImage}
-                alt="3D Spatial Gallery"
-                className="w-full h-full object-cover filter brightness-75 contrast-125"
-              />
+            <div className="relative aspect-[16/9] w-full rounded-2xl overflow-hidden bg-[#070B09] border border-emerald-500/40 shadow-inner flex items-center justify-center">
+              <div className="absolute inset-0 bg-gradient-to-br from-[#06140E] via-[#07090D] to-[#0B1410] flex flex-col items-center justify-center p-6 text-center select-none">
+                <span className="font-serif text-3xl sm:text-4xl font-bold tracking-[0.25em] uppercase text-white/15">
+                  Coming Soon
+                </span>
+                <span className="font-mono text-xs tracking-[0.3em] uppercase text-emerald-400/20 mt-2">
+                  Exhibition Coming Very Soon
+                </span>
+              </div>
 
               {/* 3D Viewport Controls Overlay */}
               <div className="absolute inset-0 bg-radial-gradient flex flex-col justify-between p-6 pointer-events-none">

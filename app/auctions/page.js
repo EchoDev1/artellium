@@ -771,12 +771,15 @@ export default function AuctionsPage() {
                   )}
 
                   {/* Artwork Image Column */}
-                  <div className="relative lg:w-5/12 aspect-[4/3] rounded-2xl overflow-hidden bg-black shrink-0 border border-white/10">
-                    <img
-                      src={lot.image}
-                      alt={lot.title}
-                      className="w-full h-full object-cover group-hover:scale-105 transition duration-700"
-                    />
+                  <div className="relative lg:w-5/12 aspect-[4/3] rounded-2xl overflow-hidden bg-[#07090D] shrink-0 border border-white/10 flex items-center justify-center">
+                    <div className="absolute inset-0 bg-gradient-to-br from-[#0B0E17] via-[#07090D] to-[#120D05] flex flex-col items-center justify-center p-6 text-center select-none">
+                      <span className="font-serif text-2xl sm:text-3xl font-bold tracking-[0.25em] uppercase text-white/15">
+                        Coming Soon
+                      </span>
+                      <span className="font-mono text-[10px] tracking-[0.3em] uppercase text-art-gold/20 mt-2">
+                        Live Auction Coming Very Soon
+                      </span>
+                    </div>
                     
                     <div className="absolute top-3 left-3 flex flex-wrap gap-1.5">
                       <span className="bg-red-600 text-white font-black text-[10px] px-3 py-1 rounded-full shadow-crimson-glow flex items-center gap-1 animate-pulse">
@@ -993,12 +996,15 @@ export default function AuctionsPage() {
                 className="rounded-3xl overflow-hidden bg-[#0A0D14] border border-cyan-800/40 hover:border-cyan-400 transition-all duration-300 shadow-xl flex flex-col justify-between p-5 space-y-4"
               >
                 <div className="space-y-3">
-                  <div className="relative aspect-[4/3] rounded-2xl overflow-hidden bg-black border border-white/10">
-                    <img
-                      src={lot.image}
-                      alt={lot.title}
-                      className="w-full h-full object-cover"
-                    />
+                  <div className="relative aspect-[4/3] rounded-2xl overflow-hidden bg-[#07090D] border border-white/10 flex items-center justify-center">
+                    <div className="absolute inset-0 bg-gradient-to-br from-[#0B0E17] via-[#07090D] to-[#051116] flex flex-col items-center justify-center p-4 text-center select-none">
+                      <span className="font-serif text-xl sm:text-2xl font-bold tracking-[0.25em] uppercase text-white/15">
+                        Coming Soon
+                      </span>
+                      <span className="font-mono text-[9px] tracking-[0.25em] uppercase text-cyan-400/20 mt-1.5">
+                        Live Auction Coming Very Soon
+                      </span>
+                    </div>
                     <span className="absolute top-3 left-3 bg-cyan-950/90 text-cyan-300 text-[10px] font-mono font-bold px-3 py-1 rounded-full border border-cyan-700/60">
                       {lot.lotNumber}
                     </span>
@@ -1070,8 +1076,10 @@ export default function AuctionsPage() {
                 className="p-5 rounded-3xl bg-[#0A0D14] border border-amber-500/30 flex flex-col md:flex-row items-center justify-between gap-6 shadow-xl"
               >
                 <div className="flex items-center gap-4 w-full md:w-auto">
-                  <div className="w-20 h-20 rounded-2xl overflow-hidden bg-black shrink-0 border border-white/10">
-                    <img src={lot.image} alt={lot.title} className="w-full h-full object-cover" />
+                  <div className="w-20 h-20 rounded-2xl overflow-hidden bg-[#07090D] shrink-0 border border-white/10 flex items-center justify-center p-1 text-center select-none">
+                    <span className="font-serif text-[9px] font-bold tracking-widest uppercase text-white/15 leading-tight">
+                      Coming Soon
+                    </span>
                   </div>
                   <div>
                     <span className="text-[10px] font-mono font-bold text-art-gold uppercase">

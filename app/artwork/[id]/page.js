@@ -371,6 +371,27 @@ export default function ArtworkDetailPage() {
                 </span>
               </div>
             </div>
+
+            {/* Brief History & Cultural Story of the Artwork */}
+            <div id="artwork-history" className="p-5 bg-gradient-to-br from-[#120F07] via-art-black-card to-[#0A0C12] rounded-2xl border border-art-gold/40 space-y-2.5 shadow-lg">
+              <div className="flex items-center justify-between gap-2 border-b border-art-gold/20 pb-2">
+                <span className="text-[10px] font-mono font-bold uppercase tracking-[0.25em] text-art-gold flex items-center gap-1.5">
+                  <Sparkles className="w-3.5 h-3.5 text-art-gold" />
+                  <span>BRIEF HISTORY &amp; STORY OF THIS ARTWORK</span>
+                </span>
+                <span className="text-[10px] font-mono text-slate-400">
+                  {artwork.city || 'Lagos'}, {artwork.country || 'Nigeria'} {artwork.countryFlag || '🇳🇬'}
+                </span>
+              </div>
+              <p className="text-xs sm:text-sm text-slate-200 leading-relaxed whitespace-pre-line font-serif">
+                {artwork.description || artwork.studioNotes || `An authentic African fine art masterwork created by ${artwork.artistName} (${artwork.year || '2026'}) in ${artwork.medium || 'mixed media'}. This work embodies the living cultural heritage, visual language, and ancestral craftsmanship of ${artwork.country || 'Nigeria'}.`}
+              </p>
+              {artwork.provenance && (
+                <div className="pt-2 border-t border-white/10 text-[11px] text-amber-300/90 font-mono">
+                  <strong>Provenance Note:</strong> {artwork.provenance}
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </div>
