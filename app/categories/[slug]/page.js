@@ -428,13 +428,21 @@ export default function CategoryPage() {
               <span className="text-xs text-art-gold font-mono">{categoryArtists.length} Accredited</span>
             </div>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-              {categoryArtists.map((artist) => (
+              {categoryArtists.map((artist) => {
+                const cleanArtistAvatar = artist.avatar && !artist.avatar.includes('unsplash.com') ? artist.avatar : '';
+                return (
                 <div key={artist.name} className="p-3.5 rounded-2xl bg-[#0E1118] border border-white/10 flex items-center gap-3">
-                  <img
-                    src={artist.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=200'}
-                    alt={artist.name}
-                    className="w-12 h-12 rounded-xl object-cover border border-art-gold/40 shadow-sm"
-                  />
+                  {cleanArtistAvatar ? (
+                    <img
+                      src={cleanArtistAvatar}
+                      alt={artist.name}
+                      className="w-12 h-12 rounded-xl object-cover border border-art-gold/40 shadow-sm shrink-0"
+                    />
+                  ) : (
+                    <div className="w-12 h-12 rounded-xl bg-slate-900 border border-art-gold/40 shadow-sm flex items-center justify-center font-serif font-bold text-art-gold shrink-0">
+                      {artist.name ? artist.name.charAt(0).toUpperCase() : 'A'}
+                    </div>
+                  )}
                   <div className="min-w-0 flex-1">
                     <h4 className="font-serif font-bold text-xs text-white truncate">{artist.name}</h4>
                     <p className="text-[10px] text-slate-400 flex items-center gap-1 mt-0.5">
@@ -446,7 +454,8 @@ export default function CategoryPage() {
                     </span>
                   </div>
                 </div>
-              ))}
+                );
+              })}
             </div>
           </div>
         )}

@@ -1,10 +1,12 @@
 'use client';
 
 import React from 'react';
+import { usePathname } from 'next/navigation';
 import { useStore } from '@/context/store-context';
 import { X, Trash2, ShoppingBag, ArrowRight, ShieldCheck, Plus, Minus } from 'lucide-react';
 
 export default function CartDrawer() {
+  const pathname = usePathname();
   const {
     cart = [],
     isCartOpen,
@@ -15,9 +17,11 @@ export default function CartDrawer() {
     currency,
     usdExchangeRate = 1480,
     setIsCheckoutOpen,
+    currentUser,
   } = useStore();
 
-  if (!isCartOpen) return null;
+  // Artists cannot buy artworks or access cart/checkout
+  if (!isCartOpen || currentUser?.role === 'artist' || pathname?.startsWith('/artist')) return null;
 
   const formatPrice = (amount) => {
     if (currency === 'USD') {

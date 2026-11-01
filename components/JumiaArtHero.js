@@ -37,7 +37,7 @@ import {
 } from 'lucide-react';
 
 export default function JumiaArtHero() {
-  const { videos = [], activeVideos = [], artworks = [], heroConfig, currency, formatPrice, setSelectedCategory, demoTransitionMode = 'progressive' } = useStore();
+  const { videos = [], activeVideos = [], artworks = [], heroConfig, currency, formatPrice, setSelectedCategory, demoTransitionMode = 'progressive', currentUser } = useStore();
   const maxSlides = typeof heroConfig?.maxHeroSlides === 'number' ? heroConfig.maxHeroSlides : 4;
   const isLiveOnly = demoTransitionMode === 'live_only';
 
@@ -122,7 +122,7 @@ export default function JumiaArtHero() {
       city: artworks[0]?.city || 'Lagos',
       artworkTitle: artworks[0]?.title || 'The Golden Crown of Benin (Echo of Eternity)',
       videoUrl: '/videos/artist-savannah.mp4',
-      thumbnail: artworks[0]?.image || 'https://images.unsplash.com/photo-1579783902614-a3fb3927b675?auto=format&fit=crop&q=95&w=2400&dpr=2',
+      thumbnail: '',
       quote: 'The future of African art is sovereign, verified, and uncompromised.',
       duration: '1:45',
       priceNGN: artworks[0]?.price || 2800000,
@@ -135,7 +135,7 @@ export default function JumiaArtHero() {
       city: 'Accra',
       artworkTitle: 'The Ancestral Horizon',
       videoUrl: '/videos/artist-savannah.mp4',
-      thumbnail: 'https://images.unsplash.com/photo-1579783902614-a3fb3927b675?auto=format&fit=crop&q=80&w=1200',
+      thumbnail: '',
       quote: 'Every stroke of gold leaf represents a prayer for our forebears.',
       duration: '1:45',
       priceNGN: 1850000,
@@ -340,7 +340,7 @@ export default function JumiaArtHero() {
               onMouseEnter={() => setIsPaused(true)}
               onMouseLeave={() => setIsPaused(false)}
             >
-              {/* Autoplaying Background Artist Video / Visual */}
+              {/* Autoplaying Background Artist Video */}
               <div 
                 className="absolute inset-0 z-0 cursor-pointer"
                 onClick={() => setActiveCinemaVideo(currentSlide)}
@@ -546,35 +546,66 @@ export default function JumiaArtHero() {
               </Link>
             </div>
 
-            {/* CARD 2: ARTIST ONBOARDING & MONETIZATION (EMPOWERING CREATORS) */}
-            <div className="flex-1 rounded-2xl bg-gradient-to-br from-[#1A1407] via-[#100D04] to-[#080602] border border-art-gold/35 p-3.5 shadow-xl flex flex-col justify-between relative overflow-hidden group">
-              <div className="space-y-1.5 relative z-10">
-                <div className="flex items-center justify-between">
-                  <span className="text-[10px] font-bold text-art-gold uppercase tracking-wider font-mono flex items-center gap-1">
-                    <Crown className="w-3 h-3 text-art-gold" />
-                    <span>ARTIST SUBSCRIPTION</span>
-                  </span>
-                  <span className="bg-art-gold text-art-black px-1.5 py-0.2 rounded text-[8px] font-black uppercase font-mono">
-                    DIRECT REMITTANCE
-                  </span>
+            {/* CARD 2: ARTIST ONBOARDING OR COLLECTOR VAULT */}
+            {currentUser?.role === 'buyer' || currentUser?.role === 'collector' ? (
+              <div className="flex-1 rounded-2xl bg-gradient-to-br from-[#1A1407] via-[#100D04] to-[#080602] border border-art-gold/35 p-3.5 shadow-xl flex flex-col justify-between relative overflow-hidden group">
+                <div className="space-y-1.5 relative z-10">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] font-bold text-art-gold uppercase tracking-wider font-mono flex items-center gap-1">
+                      <Crown className="w-3 h-3 text-art-gold" />
+                      <span>COLLECTOR VAULT</span>
+                    </span>
+                    <span className="bg-art-gold text-art-black px-1.5 py-0.2 rounded text-[8px] font-black uppercase font-mono">
+                      VERIFIED PATRON
+                    </span>
+                  </div>
+
+                  <h4 className="font-serif font-bold text-white text-xs leading-snug">
+                    Manage Your Private Art Collection
+                  </h4>
+                  <p className="text-[10px] text-slate-300 leading-tight">
+                    Track acquisitions, inspect dual provenance certificates, and message curatorial concierge.
+                  </p>
                 </div>
 
-                <h4 className="font-serif font-bold text-white text-xs leading-snug">
-                  Showcase & Sell Fine Art Directly
-                </h4>
-                <p className="text-[10px] text-slate-300 leading-tight">
-                  Join 1,200+ master painters & sculptors. Instant payout ledger & verified physical certificates.
-                </p>
+                <Link
+                  href="/buyer/account"
+                  className="mt-2 w-full py-2 bg-art-gold hover:brightness-110 text-white font-bold text-[11px] uppercase tracking-wider rounded-xl transition shadow-gold-glow flex items-center justify-center gap-1.5 text-center relative z-10"
+                >
+                  <ShieldCheck className="w-3.5 h-3.5 text-white" />
+                  <span className="text-white">Open Collector Dashboard</span>
+                </Link>
               </div>
+            ) : (
+              <div className="flex-1 rounded-2xl bg-gradient-to-br from-[#1A1407] via-[#100D04] to-[#080602] border border-art-gold/35 p-3.5 shadow-xl flex flex-col justify-between relative overflow-hidden group">
+                <div className="space-y-1.5 relative z-10">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] font-bold text-art-gold uppercase tracking-wider font-mono flex items-center gap-1">
+                      <Crown className="w-3 h-3 text-art-gold" />
+                      <span>ARTIST STUDIO</span>
+                    </span>
+                    <span className="bg-art-gold text-art-black px-1.5 py-0.2 rounded text-[8px] font-black uppercase font-mono">
+                      DIRECT REMITTANCE
+                    </span>
+                  </div>
 
-              <Link
-                href="/artist/register"
-                className="mt-2 w-full py-2 bg-art-gold hover:brightness-110 text-white font-bold text-[11px] uppercase tracking-wider rounded-xl transition shadow-gold-glow flex items-center justify-center gap-1.5 text-center relative z-10"
-              >
-                <PlusCircle className="w-3.5 h-3.5 text-white" />
-                <span className="text-white">Start Selling Art</span>
-              </Link>
-            </div>
+                  <h4 className="font-serif font-bold text-white text-xs leading-snug">
+                    Showcase & Sell Fine Art Directly
+                  </h4>
+                  <p className="text-[10px] text-slate-300 leading-tight">
+                    Upload original masterworks with direct settlement ledger & verified physical certificates.
+                  </p>
+                </div>
+
+                <Link
+                  href={currentUser?.role === 'artist' ? '/artist/dashboard' : '/artist/register'}
+                  className="mt-2 w-full py-2 bg-art-gold hover:brightness-110 text-white font-bold text-[11px] uppercase tracking-wider rounded-xl transition shadow-gold-glow flex items-center justify-center gap-1.5 text-center relative z-10"
+                >
+                  <PlusCircle className="w-3.5 h-3.5 text-white" />
+                  <span className="text-white">{currentUser?.role === 'artist' ? 'Open Artist Studio' : 'Start Selling Art'}</span>
+                </Link>
+              </div>
+            )}
 
             {/* CARD 3: MUSEUM PROVENANCE & SETTLEMENT ASSURANCE */}
             <div className="rounded-2xl bg-[#0B0E14] border border-emerald-800/40 p-3 shadow-lg flex items-center justify-between gap-2.5">

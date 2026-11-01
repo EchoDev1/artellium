@@ -5,9 +5,9 @@ import { useStore } from '@/context/store-context';
 import CloudflareTurnstile from '@/components/CloudflareTurnstile';
 import { triggerEmailNotification } from '@/lib/email-client';
 import { X, CheckCircle2, ShieldCheck, Lock, CreditCard, Sparkles, Building, Phone, Mail, Award, ArrowRight } from 'lucide-react';
-import Link from 'next/link';
+import Link from 'next/link'; import { usePathname } from 'next/navigation';
 
-export default function CheckoutModal() {
+export default function CheckoutModal() { const pathname = usePathname();
   const { 
     isCheckoutOpen, 
     setIsCheckoutOpen, 
@@ -50,7 +50,8 @@ export default function CheckoutModal() {
     }
   }, [currentUser]);
 
-  if (!isCheckoutOpen) return null;
+  // Artists cannot buy artworks or see a checkout form
+  if (!isCheckoutOpen || currentUser?.role === 'artist' || pathname?.startsWith('/artist')) return null;
 
   const formatPrice = (amount) => {
     if (currency === 'USD') {

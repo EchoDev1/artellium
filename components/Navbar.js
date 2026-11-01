@@ -203,6 +203,13 @@ export default function Navbar() {
                 {hConfig.navLinks && hConfig.navLinks.length > 0 ? (
                   hConfig.navLinks
                     .filter(link => link.isVisible !== false)
+                    .filter(link => {
+                      const isCollectorView = currentUser?.role === 'buyer' || currentUser?.role === 'collector' || pathname?.startsWith('/buyer');
+                      if (isCollectorView && (link.href?.includes('/artist') || link.label?.toLowerCase().includes('subscription') || link.label?.toLowerCase().includes('sell'))) {
+                        return false;
+                      }
+                      return true;
+                    })
                     .slice(0, 3)
                     .map(link => (
                       <Link
@@ -250,33 +257,37 @@ export default function Navbar() {
                   </>
                 )}
 
-                {/* Sell Artwork link for non-admin */}
-                <Link
-                  href="/artist/dashboard"
-                  className="hidden sm:flex items-center gap-1.5 text-xs font-semibold text-art-gold hover:text-art-gold-bright bg-art-gold/10 border border-art-gold/30 px-3 py-1.5 rounded-lg transition"
-                >
-                  <PlusCircle className="w-4 h-4 text-art-gold" />
-                  <span>{t('sellArtwork', 'Sell Artwork')}</span>
-                </Link>
+                {/* Sell Artwork link: Hidden for Collectors / Buyer Dashboard */}
+                {currentUser?.role !== 'buyer' && currentUser?.role !== 'collector' && !pathname?.startsWith('/buyer') && (
+                  <Link
+                    href="/artist/dashboard"
+                    className="hidden sm:flex items-center gap-1.5 text-xs font-semibold text-art-gold hover:text-art-gold-bright bg-art-gold/10 border border-art-gold/30 px-3 py-1.5 rounded-lg transition"
+                  >
+                    <PlusCircle className="w-4 h-4 text-art-gold" />
+                    <span>{currentUser?.role === 'artist' ? 'Artist Studio' : t('sellArtwork', 'Sell Artwork')}</span>
+                  </Link>
+                )}
               </>
             )}
 
             {/* Standard User Account Dropdown Menu */}
             <UserAccountMenu />
 
-            {/* Cart Icon Drawer Trigger */}
-            <button
-              onClick={() => setIsCartOpen(true)}
-              className="relative p-2 rounded-xl bg-art-black-card border border-art-gold/30 hover:border-art-gold transition text-white group"
-              aria-label="View Cart"
-            >
-              <ShoppingBag className="w-5 h-5 text-art-gold group-hover:scale-110 transition transform" />
-              {cartItemsCount > 0 && (
-                <span className="absolute -top-1.5 -right-1.5 bg-art-red text-white text-[11px] font-bold w-5 h-5 rounded-full flex items-center justify-center shadow-lg border border-art-gold">
-                  {cartItemsCount}
-                </span>
-              )}
-            </button>
+            {/* Cart Icon Drawer Trigger: Hidden for Artists / Artist Dashboard */}
+            {currentUser?.role !== 'artist' && !pathname?.startsWith('/artist') && (
+              <button
+                onClick={() => setIsCartOpen(true)}
+                className="relative p-2 rounded-xl bg-art-black-card border border-art-gold/30 hover:border-art-gold transition text-white group"
+                aria-label="View Cart"
+              >
+                <ShoppingBag className="w-5 h-5 text-art-gold group-hover:scale-110 transition transform" />
+                {cartItemsCount > 0 && (
+                  <span className="absolute -top-1.5 -right-1.5 bg-art-red text-white text-[11px] font-bold w-5 h-5 rounded-full flex items-center justify-center shadow-lg border border-art-gold">
+                    {cartItemsCount}
+                  </span>
+                )}
+              </button>
+            )}
 
             {/* Sliding Hamburger Menu Trigger */}
             <button

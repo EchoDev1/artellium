@@ -46,12 +46,17 @@ import {
   X,
   AlertTriangle,
   Wrench,
-  ShieldAlert
+  ShieldAlert,
+  Tag,
+  MessageSquare,
+  Send,
+  Building2,
+  Phone,
+  Mail
 } from 'lucide-react';
 import Link from 'next/link';
 import DigitalCertificateModal from '@/components/DigitalCertificateModal';
 import ProfilePhotoStudioModal from '@/components/ProfilePhotoStudioModal';
-import CollectorPanAfricanSuite from '@/components/CollectorPanAfricanSuite';
 import { TRACKING_STAGES, getStageConfig, getStageStep } from '@/lib/tracking-utils';
 
 export default function BuyerAccountPage() {
@@ -92,7 +97,9 @@ export default function BuyerAccountPage() {
     updateCollectorOffer,
     cancelCollectorOffer, 
     artworkQuestions = [],
-    deleteQuestion
+    deleteQuestion,
+    contactConfig,
+    sendDirectMessageToAdmin
   } = useStore();
 
   const [activeCert, setActiveCert] = useState(null);
@@ -152,49 +159,75 @@ export default function BuyerAccountPage() {
 
   // Profile Settings Form state
   const [profileForm, setProfileForm] = useState({
-    name: currentUser?.name || 'Dr. Evelyn Carter',
-    email: currentUser?.email || 'evelyn@artellium.com',
-    phone: currentUser?.phone || '+234 803 000 1122',
+    name: currentUser?.name || '',
+    email: currentUser?.email || '',
+    phone: currentUser?.phone || '',
     country: currentUser?.country || 'Nigeria',
-    defaultAddress: currentUser?.defaultAddress || '14 Bourdillon Road, Ikoyi, Lagos'
+    defaultAddress: currentUser?.defaultAddress || ''
   });
   const [profileSaveMsg, setProfileSaveMsg] = useState(false);
   const [isPhotoStudioOpen, setIsPhotoStudioOpen] = useState(false);
   const [photoSavedNotice, setPhotoSavedNotice] = useState(false);
+
+  // Direct Message to Admin (Email + WhatsApp) state
+  const [adminMsgForm, setAdminMsgForm] = useState({
+    name: currentUser?.name || '',
+    email: currentUser?.email || '',
+    phone: currentUser?.phone || '',
+    subject: '',
+    message: ''
+  });
+  const [isSendingAdminMsg, setIsSendingAdminMsg] = useState(false);
+  const [adminMsgSent, setAdminMsgSent] = useState(false);
 
   const router = useRouter();
 
   useEffect(() => {
     if (currentUser) {
       setProfileForm({
-        name: currentUser.name || 'Dr. Evelyn Carter',
-        email: currentUser.email || 'evelyn@artellium.com',
-        phone: currentUser.phone || '+234 803 000 1122',
+        name: currentUser.name || '',
+        email: currentUser.email || '',
+        phone: currentUser.phone || '',
         country: currentUser.country || 'Nigeria',
-        defaultAddress: currentUser.defaultAddress || '14 Bourdillon Road, Ikoyi, Lagos'
+        defaultAddress: currentUser.defaultAddress || ''
       });
       setBidderRegForm(prev => ({
         ...prev,
-        fullName: currentUser.name || prev.fullName || 'Dr. Evelyn Carter',
-        email: currentUser.email || prev.email || 'evelyn@artellium.com',
-        phone: currentUser.phone || prev.phone || '+234 803 000 1122',
+        fullName: currentUser.name || prev.fullName || '',
+        email: currentUser.email || prev.email || '',
+        phone: currentUser.phone || prev.phone || '',
         country: currentUser.country || prev.country || 'Nigeria'
+      }));
+      setAdminMsgForm(prev => ({
+        ...prev,
+        name: currentUser.name || prev.name || '',
+        email: currentUser.email || prev.email || '',
+        phone: currentUser.phone || prev.phone || ''
       }));
     }
   }, [currentUser]);
 
-  const activeUser = currentUser || {
-    id: 'user-buyer-1',
-    name: profileForm.name || 'Dr. Evelyn Carter',
-    email: profileForm.email || 'evelyn@artellium.com',
+  const fallbackStoredUser = usersList.find(u => u.id === 'user-buyer-session' || (profileForm.email && u.email?.toLowerCase() === profileForm.email.toLowerCase()));
+  const activeUser = currentUser || fallbackStoredUser || {
+    id: 'user-buyer-session',
+    name: profileForm.name || 'Verified Collector',
+    email: profileForm.email || '',
     role: 'buyer',
     country: profileForm.country || 'Nigeria',
-    phone: profileForm.phone || '+234 803 000 1122',
-    defaultAddress: profileForm.defaultAddress || '14 Bourdillon Road, Ikoyi, Lagos'
+    phone: profileForm.phone || '',
+    defaultAddress: profileForm.defaultAddress || '',
+    avatar_url: ''
   };
 
   const handleSaveCollectorPhoto = (croppedPhoto) => {
-    updateUser(activeUser.id, { avatar_url: croppedPhoto });
+    if (!croppedPhoto) return;
+    updateUser(activeUser.id, {
+      avatar_url: croppedPhoto,
+      avatar: croppedPhoto,
+      name: profileForm.name || activeUser.name || 'Verified Collector',
+      email: profileForm.email || activeUser.email || '',
+      role: activeUser.role || 'buyer'
+    });
     setPhotoSavedNotice(true);
     setTimeout(() => setPhotoSavedNotice(false), 4000);
   };
@@ -277,12 +310,12 @@ export default function BuyerAccountPage() {
   );
 
   // Master Artists Catalog for Following
-  const uniqueMasterArtists = Array.from(new Set(artworks.map(a => a.artistId || a.artistName))).map(idOrName => {
+  const uniqueMasterArtists = Array.from(new Set(artworks.filter(a => !a.isDemo && a.status !== 'sold' && a.status !== 'auction').map(a => a.artistId || a.artistName))).map(idOrName => {
     const art = artworks.find(a => a.artistId === idOrName || a.artistName === idOrName);
     return {
       id: art.artistId || art.artistName,
       name: art.artistName,
-      avatar: art.artistAvatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=300',
+      avatar: art.artistAvatar || '',
       category: art.category,
       city: art.city,
       country: art.country,
@@ -368,7 +401,7 @@ export default function BuyerAccountPage() {
               <div className="space-y-1">
                 <div className="flex items-center gap-2">
                   <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase bg-amber-50 text-amber-900 border border-amber-300">
-                    'Sovereign Collector Account'
+                    Sovereign Collector Account
                   </span>
                   <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-800 border border-emerald-200 flex items-center gap-1">
                     <ShieldCheck className="w-3 h-3 text-emerald-600" />
@@ -378,7 +411,7 @@ export default function BuyerAccountPage() {
                 <h1 className="font-serif text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight">
                   {activeUser?.name || 'Collector Profile'}
                 </h1>
-                <p className="text-xs text-slate-500 font-sans">{activeUser?.email || ''} · Bidder Pass: <strong className="font-mono text-slate-800">ART-BID-88942</strong></p>
+                <p className="text-xs text-slate-500 font-sans">{activeUser?.email || 'Collector Portal'}</p>
               </div>
             </div>
 
@@ -415,21 +448,18 @@ export default function BuyerAccountPage() {
           </div>
         )}
 
-        {/* Pan-African Acquisitions & Provenance Vault */}
-        <CollectorPanAfricanSuite onOpenCertModal={setActiveCert} />
-
-        {/* 10 CORE FEATURES NAVIGATION BAR */}
+        {/* COLLECTOR CORE FEATURES NAVIGATION BAR */}
         <div className="flex items-center gap-1.5 border-b border-slate-200 pb-2 overflow-x-auto no-scrollbar text-xs">
           {[
-            { id: 'orders', label: `Acquisitions & Invoices (${myOrders.length})`, icon: ShoppingBag },
-            { id: 'auction_registration', label: 'Auction Registration for Collectors', icon: ShieldCheck, badge: '🛡️ VIP' },
-            { id: 'followed_artists', label: `Followed Artists (${followedArtists.length})`, icon: UserCheck },
-            { id: 'wishlist', label: `Saved & Wishlists (${wishlist.length})`, icon: Heart },
+            { id: 'orders', label: `My Acquisitions (${myOrders.length})`, icon: ShoppingBag },
             { id: 'collection', label: `My Collection & COAs (${totalItems})`, icon: Package },
-            { id: 'my_offers', label: `My Offers (${mySentOffers.length})`, icon: DollarSign },
-            { id: 'my_questions', label: `Inquiries (${myQuestions.length})`, icon: MessageCircle },
+            { id: 'wishlist', label: `Saved Wishlist (${wishlist.length})`, icon: Heart },
+            { id: 'followed_artists', label: `Followed Artists (${followedArtists.length})`, icon: UserCheck },
+            { id: 'auction_registration', label: 'Live Auctions & KYC', icon: ShieldCheck },
+            { id: 'my_offers', label: `Private Offers (${mySentOffers.length})`, icon: DollarSign },
+            { id: 'contact_admin', label: 'Send Us a Message & Locations', icon: MessageSquare },
             { id: 'notifications', label: `Alerts (${unreadNotificationsCount})`, icon: Bell, hasBadge: unreadNotificationsCount > 0 },
-            { id: 'profile', label: 'Profile & Studio', icon: Settings },
+            { id: 'profile', label: 'Profile Settings', icon: Settings },
           ].map((tab) => {
             const Icon = tab.icon;
             const isActive = activeTab === tab.id;
@@ -1031,9 +1061,11 @@ export default function BuyerAccountPage() {
                       className="p-5 rounded-3xl bg-slate-50 border border-slate-200 hover:border-art-gold transition space-y-4 flex flex-col justify-between"
                     >
                       <div className="space-y-3">
-                        <div className="relative aspect-[4/3] rounded-2xl overflow-hidden bg-black border border-slate-200">
-                          <Link href={`/artwork/${lot.id}`} className="block w-full h-full cursor-pointer">
-                            <img src={lot.image} alt={lot.title} className="w-full h-full object-cover hover:scale-105 transition duration-500" />
+                        <div className="relative aspect-[4/3] rounded-2xl overflow-hidden bg-gradient-to-br from-[#0A0C12] via-[#10141F] to-[#08090D] border border-slate-200 flex items-center justify-center">
+                          <Link href={`/artwork/${lot.id}`} className="w-full h-full flex items-center justify-center cursor-pointer select-none">
+                            <span className="font-serif text-xl sm:text-2xl font-bold uppercase tracking-[0.25em] text-white/10 text-center px-4">
+                              Coming Soon
+                            </span>
                           </Link>
                           <span className="absolute top-2.5 left-2.5 bg-red-600 text-white font-bold text-[10px] px-2.5 py-0.5 rounded-lg shadow animate-pulse pointer-events-none">
                             🔥 LIVE LOT
@@ -1177,9 +1209,15 @@ export default function BuyerAccountPage() {
                     >
                       <Link 
                         href={`/artist/${artist.id}`}
-                        className="w-16 h-16 rounded-full overflow-hidden border-2 border-art-gold bg-black shadow-sm hover:scale-105 transition block"
+                        className="w-16 h-16 rounded-full overflow-hidden border-2 border-art-gold bg-black shadow-sm hover:scale-105 transition flex items-center justify-center"
                       >
-                        <img src={artist.avatar} alt={artist.name} className="w-full h-full object-cover" />
+                        {artist.avatar ? (
+                          <img src={artist.avatar} alt={artist.name} className="w-full h-full object-cover" />
+                        ) : (
+                          <span className="font-serif text-lg font-bold text-art-gold">
+                            {(artist.name || 'A').charAt(0).toUpperCase()}
+                          </span>
+                        )}
                       </Link>
 
                       <div>
@@ -1438,71 +1476,52 @@ export default function BuyerAccountPage() {
             </div>
 
             <div className="space-y-4">
-              <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 flex flex-col sm:flex-row gap-4 items-center hover:border-art-gold transition text-xs">
-                <img 
-                  src="https://images.unsplash.com/photo-1579783902614-a3fb3927b675?auto=format&fit=crop&q=80&w=300" 
-                  alt="" 
-                  className="w-16 h-16 object-cover rounded-xl border border-slate-300 shrink-0" 
-                />
-                <div className="flex-1 text-center sm:text-left">
-                  <h4 className="font-serif text-sm font-bold text-slate-900">The Ancestral Horizon</h4>
-                  <span className="text-[11px] text-art-gold font-semibold block mb-1">By Kofi Mensah · Accra, Ghana</span>
-                  <span className="px-2.5 py-0.5 rounded-full text-[9px] font-bold uppercase bg-emerald-100 text-emerald-800">
-                    Provenance Verified & In-Vault
-                  </span>
+              {myCollection.length === 0 ? (
+                <div className="text-center py-12 space-y-2 bg-slate-50 rounded-2xl border border-slate-200">
+                  <Package className="w-10 h-10 text-slate-300 mx-auto" />
+                  <p className="text-xs text-slate-500 font-medium">No artworks acquired into your collection vault yet.</p>
                 </div>
-                <div className="text-center sm:text-right shrink-0">
-                  <span className="font-serif text-sm font-bold text-slate-900 block">₦1,850,000</span>
-                  <button
-                    onClick={() => setActiveCert({
-                      title: 'The Ancestral Horizon',
-                      artist: 'Kofi Mensah',
-                      price: 1850000,
-                      medium: 'Acrylic & 24k Gold Leaf on Canvas',
-                      dimensions: '150 x 120 cm',
-                      date: 'Feb 10, 2026',
-                      txHash: '0x88F929BA3401CC98FE'
-                    })}
-                    className="mt-2 px-3 py-1 bg-art-gold/15 hover:bg-art-gold text-amber-900 hover:text-black border border-art-gold/40 rounded-xl transition uppercase font-bold text-[10px]"
-                  >
-                    View Digital Certificate (COA)
-                  </button>
-                </div>
-              </div>
-
-              {myCollection.map((art) => (
-                <div key={art.id} className="p-4 rounded-2xl bg-slate-50 border border-slate-200 flex flex-col sm:flex-row gap-4 items-center hover:border-art-gold transition text-xs">
-                  <Link href={`/artwork/${art.id}`} className="shrink-0">
-                    <img src={art.image} alt={art.title} className="w-16 h-16 object-cover rounded-xl border border-slate-300 hover:border-art-gold transition cursor-pointer" />
-                  </Link>
-                  <div className="flex-1 text-center sm:text-left">
-                    <Link href={`/artwork/${art.id}`}>
-                      <h4 className="font-serif text-sm font-bold text-slate-900 hover:text-art-gold transition cursor-pointer">{art.title}</h4>
+              ) : (
+                myCollection.map((art) => (
+                  <div key={art.id} className="p-4 rounded-2xl bg-slate-50 border border-slate-200 flex flex-col sm:flex-row gap-4 items-center hover:border-art-gold transition text-xs">
+                    <Link href={`/artwork/${art.id}`} className="shrink-0">
+                      {art.image ? (
+                        <img src={art.image} alt={art.title} className="w-16 h-16 object-cover rounded-xl border border-slate-300 hover:border-art-gold transition cursor-pointer" />
+                      ) : (
+                        <div className="w-16 h-16 rounded-xl border border-slate-300 bg-slate-900 flex items-center justify-center text-[9px] text-white/30 font-serif uppercase text-center p-1">
+                          COA Vault
+                        </div>
+                      )}
                     </Link>
-                    <span className="text-[11px] text-art-gold font-semibold block mb-1">By {art.artistName} · {art.country}</span>
-                    <span className="px-2.5 py-0.5 rounded-full text-[9px] font-bold uppercase bg-emerald-100 text-emerald-800">
-                      Vault Custody Confirmed
-                    </span>
+                    <div className="flex-1 text-center sm:text-left">
+                      <Link href={`/artwork/${art.id}`}>
+                        <h4 className="font-serif text-sm font-bold text-slate-900 hover:text-art-gold transition cursor-pointer">{art.title}</h4>
+                      </Link>
+                      <span className="text-[11px] text-art-gold font-semibold block mb-1">By {art.artistName} · {art.country}</span>
+                      <span className="px-2.5 py-0.5 rounded-full text-[9px] font-bold uppercase bg-emerald-100 text-emerald-800">
+                        Vault Custody Confirmed
+                      </span>
+                    </div>
+                    <div className="text-center sm:text-right shrink-0">
+                      <span className="font-serif text-sm font-bold text-slate-900 block">{formatPrice(art.soldPrice || art.price)}</span>
+                      <button
+                        onClick={() => setActiveCert({
+                          title: art.title,
+                          artist: art.artistName,
+                          price: art.soldPrice || art.price,
+                          medium: art.medium,
+                          dimensions: art.dimensions,
+                          date: 'Recorded on Ledger',
+                          txHash: `0x${art.id.replace(/-/g, '').substring(0, 18).toUpperCase()}`
+                        })}
+                        className="mt-2 px-3 py-1 bg-art-gold/15 hover:bg-art-gold text-amber-900 hover:text-black border border-art-gold/40 rounded-xl transition uppercase font-bold text-[10px]"
+                      >
+                        View Digital Certificate (COA)
+                      </button>
+                    </div>
                   </div>
-                  <div className="text-center sm:text-right shrink-0">
-                    <span className="font-serif text-sm font-bold text-slate-900 block">{formatPrice(art.soldPrice || art.price)}</span>
-                    <button
-                      onClick={() => setActiveCert({
-                        title: art.title,
-                        artist: art.artistName,
-                        price: art.soldPrice || art.price,
-                        medium: art.medium,
-                        dimensions: art.dimensions,
-                        date: 'Recorded on Ledger',
-                        txHash: `0x${art.id.replace(/-/g, '').substring(0, 18).toUpperCase()}`
-                      })}
-                      className="mt-2 px-3 py-1 bg-art-gold/15 hover:bg-art-gold text-amber-900 hover:text-black border border-art-gold/40 rounded-xl transition uppercase font-bold text-[10px]"
-                    >
-                      View Digital Certificate (COA)
-                    </button>
-                  </div>
-                </div>
-              ))}
+                ))
+              )}
             </div>
           </div>
         )}
@@ -1796,6 +1815,188 @@ export default function BuyerAccountPage() {
             )}
           </div>
         )}
+
+        {/* ========================================================================= */}
+        {/* SEND US A MESSAGE (EMAIL + WHATSAPP) & OUR LOCATIONS (ADMIN SYNCED)       */}
+        {/* ========================================================================= */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 pt-2">
+          {/* Left: Send Us a Message -> Automatically Goes to Admin Email & Admin WhatsApp */}
+          <div className="lg:col-span-7 bg-white rounded-3xl border border-slate-200 p-6 sm:p-8 shadow-sm space-y-5">
+            <div className="border-b border-slate-100 pb-4">
+              <h2 className="font-serif text-xl font-bold text-slate-900 flex items-center gap-2">
+                <MessageSquare className="w-5 h-5 text-art-gold" />
+                <span>Send Us a Message</span>
+              </h2>
+              <p className="text-xs text-slate-500 mt-1">
+                Your message is automatically delivered to Admin Email (<strong className="text-slate-700">{contactConfig?.adminEmail || 'Ekpendudakore@gmail.com'}</strong>) and directly to Admin WhatsApp.
+              </p>
+            </div>
+
+            {adminMsgSent ? (
+              <div className="p-6 rounded-2xl bg-emerald-50 border border-emerald-200 text-center space-y-3 animate-fade-in">
+                <CheckCircle2 className="w-10 h-10 text-emerald-600 mx-auto" />
+                <h3 className="font-serif text-lg font-bold text-slate-900">Message Dispatched to Admin!</h3>
+                <p className="text-xs text-slate-600 max-w-md mx-auto">
+                  Your message has been sent directly to Admin Email and opened in Admin WhatsApp for immediate response.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setAdminMsgSent(false);
+                    setAdminMsgForm(prev => ({ ...prev, subject: '', message: '' }));
+                  }}
+                  className="px-5 py-2 rounded-xl bg-slate-900 text-white text-xs font-bold uppercase tracking-wider cursor-pointer"
+                >
+                  Send Another Message
+                </button>
+              </div>
+            ) : (
+              <form
+                onSubmit={async (e) => {
+                  e.preventDefault();
+                  setIsSendingAdminMsg(true);
+                  try {
+                    await sendDirectMessageToAdmin({
+                      name: adminMsgForm.name || activeUser?.name || 'Collector',
+                      email: adminMsgForm.email || activeUser?.email || '',
+                      phone: adminMsgForm.phone || activeUser?.phone || '',
+                      subject: adminMsgForm.subject,
+                      message: adminMsgForm.message
+                    });
+                  } finally {
+                    setIsSendingAdminMsg(false);
+                    setAdminMsgSent(true);
+                  }
+                }}
+                className="space-y-4 text-xs"
+              >
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-slate-700 font-semibold mb-1">Your Name *</label>
+                    <input
+                      type="text"
+                      required
+                      value={adminMsgForm.name}
+                      onChange={(e) => setAdminMsgForm({ ...adminMsgForm, name: e.target.value })}
+                      placeholder="Full Name"
+                      className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-slate-900 focus:border-art-gold focus:outline-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-slate-700 font-semibold mb-1">Your Email *</label>
+                    <input
+                      type="email"
+                      required
+                      value={adminMsgForm.email}
+                      onChange={(e) => setAdminMsgForm({ ...adminMsgForm, email: e.target.value })}
+                      placeholder="Email Address"
+                      className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-slate-900 focus:border-art-gold focus:outline-none"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-slate-700 font-semibold mb-1">Phone / WhatsApp Number</label>
+                    <input
+                      type="tel"
+                      value={adminMsgForm.phone}
+                      onChange={(e) => setAdminMsgForm({ ...adminMsgForm, phone: e.target.value })}
+                      placeholder="Your phone or WhatsApp number"
+                      className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-slate-900 font-mono focus:border-art-gold focus:outline-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-slate-700 font-semibold mb-1">Subject *</label>
+                    <input
+                      type="text"
+                      required
+                      value={adminMsgForm.subject}
+                      onChange={(e) => setAdminMsgForm({ ...adminMsgForm, subject: e.target.value })}
+                      placeholder="Subject of your message"
+                      className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-slate-900 focus:border-art-gold focus:outline-none"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-slate-700 font-semibold mb-1">Message *</label>
+                  <textarea
+                    rows={4}
+                    required
+                    value={adminMsgForm.message}
+                    onChange={(e) => setAdminMsgForm({ ...adminMsgForm, message: e.target.value })}
+                    placeholder="Write your message to Administration..."
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-slate-900 focus:border-art-gold focus:outline-none"
+                  />
+                </div>
+
+                <div className="flex justify-end">
+                  <button
+                    type="submit"
+                    disabled={isSendingAdminMsg}
+                    className="px-6 py-3 rounded-xl bg-art-gold hover:brightness-110 text-art-black font-bold uppercase tracking-wider transition shadow-md flex items-center gap-2 cursor-pointer"
+                  >
+                    <Send className="w-3.5 h-3.5" />
+                    <span>{isSendingAdminMsg ? 'Sending to Admin...' : 'Send to Admin Email & WhatsApp'}</span>
+                  </button>
+                </div>
+              </form>
+            )}
+          </div>
+
+          {/* Right: Our Locations (Automatically Reflects Locations Filled by Admin) */}
+          <div className="lg:col-span-5 bg-white rounded-3xl border border-slate-200 p-6 sm:p-8 shadow-sm space-y-5">
+            <div className="border-b border-slate-100 pb-4">
+              <h3 className="font-serif text-xl font-bold text-slate-900 flex items-center gap-2">
+                <Building2 className="w-5 h-5 text-art-gold" />
+                <span>Our Locations</span>
+              </h3>
+              <p className="text-xs text-slate-500 mt-1">
+                Official gallery and regional office locations configured by Administration.
+              </p>
+            </div>
+
+            <div className="space-y-4">
+              {(!contactConfig?.offices || contactConfig.offices.length === 0) ? (
+                <div className="p-6 rounded-2xl bg-slate-50 border border-slate-200 text-center space-y-2">
+                  <MapPin className="w-6 h-6 text-art-gold mx-auto" />
+                  <p className="text-xs font-bold text-slate-800">Official Locations</p>
+                  <p className="text-[11px] text-slate-500 leading-relaxed">
+                    Locations filled by Admin in the Admin Dashboard automatically reflect here in real time.
+                  </p>
+                </div>
+              ) : (
+                contactConfig.offices.map((office, idx) => (
+                  <div key={office.id || idx} className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-1.5 text-xs">
+                    <div className="flex items-center justify-between">
+                      <span className="font-serif font-bold text-sm text-slate-900">{office.city}</span>
+                      <span className="text-[11px] text-slate-500">{office.country}</span>
+                    </div>
+                    {office.address && (
+                      <p className="text-slate-600 flex items-start gap-1.5">
+                        <MapPin className="w-3.5 h-3.5 text-art-gold shrink-0 mt-0.5" />
+                        <span>{office.address}</span>
+                      </p>
+                    )}
+                    {office.phone && (
+                      <p className="text-slate-600 flex items-center gap-1.5 font-mono text-[11px]">
+                        <Phone className="w-3 h-3 text-slate-400 shrink-0" />
+                        <span>{office.phone}</span>
+                      </p>
+                    )}
+                    {office.hours && (
+                      <p className="text-slate-500 flex items-center gap-1.5 font-mono text-[10px]">
+                        <Clock className="w-3 h-3 text-slate-400 shrink-0" />
+                        <span>{office.hours}</span>
+                      </p>
+                    )}
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        </div>
 
       </div>
 

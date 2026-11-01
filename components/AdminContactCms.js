@@ -68,11 +68,11 @@ export default function AdminContactCms() {
     const list = [...(formData.offices || [])];
     list.push({
       id: `office-${Date.now()}`,
-      city: 'Nairobi Bureau & Gallery',
-      country: 'Kenya 🇰🇪',
-      address: '22 Kenyatta Avenue, Nairobi',
-      phone: '+254 20 892 1000',
-      hours: 'Mon – Fri: 9:00 AM – 6:00 PM EAT'
+      city: '',
+      country: 'Nigeria 🇳🇬',
+      address: '',
+      phone: '',
+      hours: 'Mon – Fri: 9:00 AM – 6:00 PM'
     });
     setFormData(prev => ({ ...prev, offices: list }));
   };
@@ -200,6 +200,33 @@ export default function AdminContactCms() {
           </div>
         </div>
 
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2 border-t border-slate-200">
+          <div>
+            <label className="block text-xs font-bold text-slate-700 mb-1">
+              Admin Direct Email (Receives "Send Us a Message" Inquiries)
+            </label>
+            <input
+              type="email"
+              value={formData.adminEmail || 'Ekpendudakore@gmail.com'}
+              onChange={(e) => handleHeaderChange('adminEmail', e.target.value)}
+              className="w-full text-xs p-2.5 rounded-lg border border-blue-300 bg-white font-mono font-bold text-blue-900"
+              placeholder="Ekpendudakore@gmail.com"
+            />
+          </div>
+          <div>
+            <label className="block text-xs font-bold text-slate-700 mb-1">
+              Admin Direct WhatsApp Number (Receives Direct WhatsApp Messages)
+            </label>
+            <input
+              type="tel"
+              value={formData.adminWhatsApp || ''}
+              onChange={(e) => handleHeaderChange('adminWhatsApp', e.target.value)}
+              className="w-full text-xs p-2.5 rounded-lg border border-emerald-300 bg-white font-mono font-bold text-emerald-900"
+              placeholder="Enter Admin WhatsApp number with country code"
+            />
+          </div>
+        </div>
+
         <div>
           <label className="block text-xs font-bold text-slate-700 mb-1">
             Emergency Concierge & Escrow Verification Hotline Bar (Sticky Notification)
@@ -209,7 +236,7 @@ export default function AdminContactCms() {
             value={formData.emergencyBannerText || ''}
             onChange={(e) => handleHeaderChange('emergencyBannerText', e.target.value)}
             className="w-full text-xs p-2.5 rounded-lg border border-amber-300 bg-amber-50 font-bold text-amber-900"
-            placeholder="Urgent Collector Inquiries & Escrow Verification: Direct Hotline +234 1 888 2783 · WEMA Bank Fiduciary Bureau"
+            placeholder="Optional notice banner..."
           />
         </div>
 

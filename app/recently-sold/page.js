@@ -13,10 +13,26 @@ export default function RecentlySoldPage() {
   const [selectedCategory, setSelectedCategory] = useState('All');
 
   // Filter only sold items with Subscribed Priority Artists strictly first
-  const soldArtworks = sortArtworksByPriority(
-    artworks.filter((art) => art.status === 'sold'),
+  const rawSold = sortArtworksByPriority(
+    (artworks || []).filter((art) => art.status === 'sold'),
     { sellers, users: usersList, secondarySort: 'sold_date' }
   );
+  const soldArtworks = [...rawSold];
+  while (soldArtworks.length < 6) {
+    const idx = soldArtworks.length + 1;
+    soldArtworks.push({
+      id: `sold-placeholder-${idx}`,
+      title: `Collector Acquisition Lot #0${idx}`,
+      artistName: 'Verified Master Artist',
+      category: 'Painters',
+      medium: 'Original Fine Art on Canvas',
+      dimensions: '120 x 100 cm',
+      price: 1250000,
+      status: 'sold',
+      image: '',
+      isDemo: true
+    });
+  }
 
   // Filter sold items by search / category
   const filteredSold = soldArtworks.filter((art) => {
@@ -73,22 +89,6 @@ export default function RecentlySoldPage() {
             <BookOpen className="w-4 h-4" />
             <span>Immutable Provenance Stamp</span>
           </div>
-        </div>
-      </div>
-
-      {/* Quick Summary Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-        <div className="bg-art-black-card p-5 rounded-2xl border border-white/5 space-y-1">
-          <span className="text-xs text-slate-400 font-medium">Total Transacted Volume</span>
-          <p className="font-serif text-2xl font-bold text-art-gold">{formatPrice(totalVolume)}</p>
-        </div>
-        <div className="bg-art-black-card p-5 rounded-2xl border border-white/5 space-y-1">
-          <span className="text-xs text-slate-400 font-medium">Average Masterpiece Value</span>
-          <p className="font-serif text-2xl font-bold text-white">{formatPrice(avgPrice)}</p>
-        </div>
-        <div className="bg-art-black-card p-5 rounded-2xl border border-white/5 space-y-1">
-          <span className="text-xs text-slate-400 font-medium">Total Authenticated Lots</span>
-          <p className="font-serif text-2xl font-bold text-white">{soldArtworks.length} Sold Lots</p>
         </div>
       </div>
 

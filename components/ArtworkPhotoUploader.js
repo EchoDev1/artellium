@@ -169,19 +169,6 @@ export default function ArtworkPhotoUploader({
 
         <button
           type="button"
-          onClick={() => setActiveTab('library')}
-          className={`flex-1 py-1.5 rounded-lg font-bold text-xs transition flex items-center justify-center gap-1.5 ${
-            activeTab === 'library'
-              ? 'bg-slate-900 text-white shadow-xs'
-              : 'text-slate-600 hover:bg-slate-100'
-          }`}
-        >
-          <Sparkles className="w-3.5 h-3.5 text-art-gold" />
-          <span>Curated African Library</span>
-        </button>
-
-        <button
-          type="button"
           onClick={() => setActiveTab('url')}
           className={`flex-1 py-1.5 rounded-lg font-bold text-xs transition flex items-center justify-center gap-1.5 ${
             activeTab === 'url'
@@ -305,7 +292,7 @@ export default function ArtworkPhotoUploader({
           <div className="flex gap-2">
             <input
               type="url"
-              placeholder="https://images.unsplash.com/photo-..."
+              placeholder="https://your-studio-domain.com/artwork.jpg"
               value={urlInput}
               onChange={(e) => setUrlInput(e.target.value)}
               className="flex-1 bg-white border border-slate-200 rounded-xl p-2.5 text-xs text-slate-800 focus:outline-none focus:border-art-gold"

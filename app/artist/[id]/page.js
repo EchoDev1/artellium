@@ -118,7 +118,8 @@ export default function MasterArtistProfilePage() {
   const country = userMatch?.country || sellerMatch?.country || firstArt?.country || 'Nigeria';
   const city = userMatch?.city || sellerMatch?.city || firstArt?.city || 'Lagos';
   const countryFlag = getCountryFlag(country);
-  const avatar = userMatch?.avatar_url || sellerMatch?.avatar_url || firstArt?.artistAvatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=95&w=2400';
+  const rawAvatar = userMatch?.avatar_url || sellerMatch?.avatar_url || firstArt?.artistAvatar || '';
+  const avatar = rawAvatar && !rawAvatar.includes('unsplash.com') ? rawAvatar : '';
   const guildLineage = userMatch?.guildLineage || sellerMatch?.guildLineage || 'Sovereign Guild of African Master Artisans';
   const primaryMediums = userMatch?.primaryMediums || sellerMatch?.primaryMediums || firstArt?.medium || 'Oil, Acrylic, 24K Gold Leaf & Natural Ochres on Linen';
   const exhibitionsHistory = userMatch?.exhibitionsHistory || sellerMatch?.exhibitionsHistory || 'Venice Biennale African Pavilion, Dakar Biennale (Dak\'Art), Lagos National Museum';
@@ -225,15 +226,18 @@ export default function MasterArtistProfilePage() {
             {/* Left: Avatar, Title, Identity & Badges */}
             <div className="flex flex-col sm:flex-row items-start sm:items-center gap-5 sm:gap-6">
               <div className="relative">
-                <div className="w-24 h-24 sm:w-32 sm:h-32 rounded-3xl overflow-hidden border-2 border-art-gold shadow-[0_0_25px_rgba(212,175,55,0.3)] bg-black shrink-0">
-                  <img
-                    src={avatar}
-                    alt={name}
-                    className="w-full h-full object-cover"
-                    onError={(e) => {
-                      e.currentTarget.src = DEFAULT_FALLBACK_IMAGE;
-                    }}
-                  />
+                <div className="w-24 h-24 sm:w-32 sm:h-32 rounded-3xl overflow-hidden border-2 border-art-gold shadow-[0_0_25px_rgba(212,175,55,0.3)] bg-slate-900 shrink-0 flex items-center justify-center">
+                  {avatar ? (
+                    <img
+                      src={avatar}
+                      alt={name}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <span className="font-serif text-3xl sm:text-4xl font-bold text-art-gold">
+                      {name ? name.charAt(0).toUpperCase() : 'A'}
+                    </span>
+                  )}
                 </div>
                 {isPriority && (
                   <span className="absolute -top-2 -right-2 bg-gradient-to-r from-art-gold to-yellow-500 text-black p-1.5 rounded-full shadow-lg border border-amber-300">

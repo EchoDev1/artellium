@@ -16,7 +16,7 @@ import {
 
 export default function MobileBottomNav() {
   const pathname = usePathname();
-  const { cart = [], setIsCartOpen } = useStore();
+  const { cart = [], setIsCartOpen, currentUser } = useStore();
 
   // Hide mobile bottom nav on authentication pages to maximize screen space for forms & CTA buttons
   if (pathname === '/login' || pathname === '/register' || pathname === '/reset-password') {
@@ -96,7 +96,7 @@ export default function MobileBottomNav() {
         <button
           type="button"
           onClick={() => setIsCartOpen(true)}
-          className="relative flex flex-col items-center justify-center py-1.5 px-3 rounded-xl text-amber-100/80 hover:text-white transition-all duration-200 active:scale-90 cursor-pointer"
+          className={`relative flex flex-col items-center justify-center py-1.5 px-3 rounded-xl text-amber-100/80 hover:text-white transition-all duration-200 active:scale-90 cursor-pointer ${currentUser?.role === 'artist' || pathname?.startsWith('/artist') ? 'hidden' : ''}`}
           aria-label="Open Shopping Bag"
         >
           <div className="relative">

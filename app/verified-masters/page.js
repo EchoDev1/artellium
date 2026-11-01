@@ -40,7 +40,7 @@ export default function VerifiedMastersPage() {
       country: 'Ghana',
       flag: '🇬🇭',
       city: 'Accra',
-      avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=300',
+      avatar: '',
       accreditation: 'National Museum of Ghana Fellow · 25+ Years Atelier Master',
       verificationBadge: 'Gold Crest Certified',
       kycHash: 'VERIF-GH-KM-2026-GOLD',
@@ -50,7 +50,7 @@ export default function VerifiedMastersPage() {
         title: 'The Ancestral Horizon',
         medium: 'Oil & Gold Leaf on Canvas',
         price: 1850000,
-        image: 'https://images.unsplash.com/photo-1579783902614-a3fb3927b675?auto=format&fit=crop&q=95&w=2400'
+        image: ''
       }
     },
     {
@@ -60,7 +60,7 @@ export default function VerifiedMastersPage() {
       country: 'Nigeria',
       flag: '🇳🇬',
       city: 'Benin City',
-      avatar: 'https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?auto=format&fit=crop&q=80&w=300',
+      avatar: '',
       accreditation: 'Royal Guild of Bronzecasters Lineage · Master of Lost-Wax Casting',
       verificationBadge: 'Heritage Master Certified',
       kycHash: 'VERIF-NG-AD-88410-HERIT',
@@ -70,7 +70,7 @@ export default function VerifiedMastersPage() {
         title: 'Warrior of the Bronze Empire',
         medium: 'Cast Bronze & Ebony Wood Base',
         price: 3200000,
-        image: 'https://images.unsplash.com/photo-1544717305-2782549b5136?auto=format&fit=crop&q=95&w=2400'
+        image: ''
       }
     },
     {
@@ -80,7 +80,7 @@ export default function VerifiedMastersPage() {
       country: 'Nigeria',
       flag: '🇳🇬',
       city: 'Oyo',
-      avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=300',
+      avatar: '',
       accreditation: 'Yoruba Sacred Sculptors Guild Elder · National Living Treasure',
       verificationBadge: 'Heritage Master Certified',
       kycHash: 'VERIF-NG-BO-66102-HERIT',
@@ -90,7 +90,7 @@ export default function VerifiedMastersPage() {
         title: 'Spirit of the Mask',
         medium: 'Carved Iroko Wood & Brass Inlay',
         price: 1450000,
-        image: 'https://images.unsplash.com/photo-1561214115-f2f134cc4912?auto=format&fit=crop&q=95&w=2400'
+        image: ''
       }
     },
     {
@@ -100,7 +100,7 @@ export default function VerifiedMastersPage() {
       country: 'Morocco',
       flag: '🇲🇦',
       city: 'Marrakech',
-      avatar: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&q=80&w=300',
+      avatar: '',
       accreditation: 'Ecole Supérieure des Beaux-Arts · North African Biennial Laureate',
       verificationBadge: 'Gold Crest Certified',
       kycHash: 'VERIF-MA-KB-77219-GOLD',
@@ -110,7 +110,7 @@ export default function VerifiedMastersPage() {
         title: 'Children of the Sun',
         medium: 'Acrylic & Gold Dust on Canvas',
         price: 1680000,
-        image: 'https://images.unsplash.com/photo-1579783902614-a3fb3927b675?auto=format&fit=crop&q=95&w=2400&dpr=2'
+        image: ''
       }
     }
   ];
@@ -121,6 +121,7 @@ export default function VerifiedMastersPage() {
 
   const realMasters = realSellers.length > 0 ? realSellers.map(s => {
     const art = realArtworks.find(a => a.artistId === s.id || a.artistName?.toLowerCase() === s.name?.toLowerCase()) || realArtworks[0];
+    const cleanSellerAvatar = s.avatar_url && !s.avatar_url.includes('unsplash.com') ? s.avatar_url : '';
     return {
       id: s.id,
       name: s.name,
@@ -128,7 +129,7 @@ export default function VerifiedMastersPage() {
       country: s.country || 'Nigeria',
       flag: s.country_flag || '🇳🇬',
       city: s.city || 'Lagos',
-      avatar: s.avatar_url || 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=300',
+      avatar: cleanSellerAvatar,
       accreditation: 'Artellium Verified Atelier Sovereign Guild',
       verificationBadge: 'Gold Crest Certified',
       kycHash: `VERIF-NG-${s.id.toUpperCase()}-GOLD`,
@@ -148,7 +149,7 @@ export default function VerifiedMastersPage() {
     country: 'Nigeria',
     flag: '🇳🇬',
     city: 'Lagos',
-    avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=300',
+    avatar: '',
     accreditation: 'Pan-African Fine Art Guild Sovereign Fellow',
     verificationBadge: 'Gold Crest Certified',
     kycHash: 'VERIF-NG-EEE-2026-SOVEREIGN',
@@ -237,11 +238,17 @@ export default function VerifiedMastersPage() {
               {/* Artist Profile Info (7 cols) */}
               <div className="lg:col-span-7 space-y-4">
                 <div className="flex items-center gap-4">
-                  <img
-                    src={master.avatar}
-                    alt={master.name}
-                    className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl object-cover border-2 border-emerald-500/60 shadow-lg"
-                  />
+                  {master.avatar ? (
+                    <img
+                      src={master.avatar}
+                      alt={master.name}
+                      className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl object-cover border-2 border-emerald-500/60 shadow-lg"
+                    />
+                  ) : (
+                    <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-slate-900 border-2 border-emerald-500/60 shadow-lg flex items-center justify-center font-serif text-2xl font-bold text-art-gold shrink-0">
+                      {master.name ? master.name.charAt(0).toUpperCase() : 'M'}
+                    </div>
+                  )}
                   <div className="space-y-1">
                     <div className="flex items-center gap-2">
                       <h2 className="font-serif text-2xl sm:text-3xl font-bold text-white group-hover:text-emerald-400 transition-colors">

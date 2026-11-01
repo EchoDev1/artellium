@@ -227,7 +227,54 @@ export function StoreProvider({ children }) {
     return [...sortedReal, ...remainingDemo];
   };
 
-  const MOCK_VERSION = 'v17-artworks-tracking';
+  const isCleanRealPhoto = (url) => {
+    if (!url || typeof url !== 'string') return false;
+    const trimmed = url.trim();
+    if (!trimmed || trimmed.includes('unsplash.com') || trimmed.includes('pravatar.cc') || trimmed.includes('randomuser.me')) {
+      return false;
+    }
+    return true;
+  };
+
+  const getPhotoVault = () => {
+    if (typeof window === 'undefined') return {};
+    try {
+      const raw = safeGetItem('artellium_user_photos_vault', {});
+      return (raw && typeof raw === 'object') ? raw : {};
+    } catch (e) {
+      return {};
+    }
+  };
+
+  const savePhotoToVault = (identifiers = {}, photoUrl = '') => {
+    if (typeof window === 'undefined' || !isCleanRealPhoto(photoUrl)) return;
+    try {
+      const vault = getPhotoVault();
+      const idKey = identifiers.id ? `id:${String(identifiers.id).trim().toLowerCase()}` : '';
+      const emailKey = identifiers.email ? `email:${String(identifiers.email).trim().toLowerCase()}` : '';
+      const nameKey = identifiers.name ? `name:${String(identifiers.name).split(' (')[0].trim().toLowerCase()}` : '';
+      if (idKey) vault[idKey] = photoUrl;
+      if (emailKey) vault[emailKey] = photoUrl;
+      if (nameKey) vault[nameKey] = photoUrl;
+      safeSetItem('artellium_user_photos_vault', vault);
+    } catch (e) {}
+  };
+
+  const resolveReconciledPhoto = (entity = {}, vaultOverride = null) => {
+    if (!entity) return '';
+    const direct = entity.avatar_url || entity.avatar || entity.artistAvatar || entity.artist_avatar || '';
+    if (isCleanRealPhoto(direct)) return direct;
+    const vault = vaultOverride || getPhotoVault();
+    const idKey = entity.id ? `id:${String(entity.id).trim().toLowerCase()}` : '';
+    const userIdKey = entity.user_id ? `id:${String(entity.user_id).trim().toLowerCase()}` : '';
+    const emailKey = entity.email ? `email:${String(entity.email).trim().toLowerCase()}` : '';
+    const rawName = entity.name || entity.artistName || entity.artist_name || '';
+    const nameKey = rawName ? `name:${String(rawName).split(' (')[0].trim().toLowerCase()}` : '';
+    const match = (idKey && vault[idKey]) || (userIdKey && vault[userIdKey]) || (emailKey && vault[emailKey]) || (nameKey && vault[nameKey]) || '';
+    return isCleanRealPhoto(match) ? match : '';
+  };
+
+  const MOCK_VERSION = 'v21-reconciled-original-photos';
 
   // 1. Load from LocalStorage synchronously first
   useEffect(() => {
@@ -244,8 +291,54 @@ export function StoreProvider({ children }) {
         localStorage.removeItem('artellium_bidders');
         localStorage.removeItem('artellium_priority_banners');
         localStorage.removeItem('artellium_inquiries');
+        localStorage.removeItem('artellium_contact_config');
+        localStorage.removeItem('artellium_footer_config');
+        localStorage.removeItem('artellium_hero_config');
+        localStorage.removeItem('artellium_home_config');
+        localStorage.removeItem('artellium_flash_deals');
+        localStorage.removeItem('artellium_royal_heirlooms');
+        localStorage.removeItem('artellium_curator_picks');
+        localStorage.removeItem('artellium_ledger_blocks');
+        localStorage.removeItem('artellium_artist_verifications');
         localStorage.setItem('artellium_mock_version', MOCK_VERSION);
       }
+
+      // Build reconciled photo vault from any existing local records before hydrating
+      const bootVault = getPhotoVault();
+      try {
+        const rawLogin = localStorage.getItem('artellium_login_state');
+        if (rawLogin) {
+          const parsedLogin = JSON.parse(rawLogin);
+          if (parsedLogin?.user && isCleanRealPhoto(parsedLogin.user.avatar_url)) {
+            savePhotoToVault(parsedLogin.user, parsedLogin.user.avatar_url);
+            Object.assign(bootVault, getPhotoVault());
+          }
+        }
+        const rawUsers = localStorage.getItem('artellium_users');
+        if (rawUsers) {
+          const parsedU = JSON.parse(rawUsers);
+          if (Array.isArray(parsedU)) {
+            parsedU.forEach(u => {
+              if (u && isCleanRealPhoto(u.avatar_url)) {
+                savePhotoToVault(u, u.avatar_url);
+              }
+            });
+            Object.assign(bootVault, getPhotoVault());
+          }
+        }
+        const rawSellers = localStorage.getItem('artellium_sellers');
+        if (rawSellers) {
+          const parsedS = JSON.parse(rawSellers);
+          if (Array.isArray(parsedS)) {
+            parsedS.forEach(s => {
+              if (s && isCleanRealPhoto(s.avatar_url)) {
+                savePhotoToVault({ id: s.user_id || s.id, email: s.email, name: s.name }, s.avatar_url);
+              }
+            });
+            Object.assign(bootVault, getPhotoVault());
+          }
+        }
+      } catch (e) {}
 
       // Load Demo Transition Mode
       const savedMode = localStorage.getItem('artellium_demo_transition_mode');
@@ -304,6 +397,22 @@ export function StoreProvider({ children }) {
         } catch (e) {}
       }
 
+      loadedReal = loadedReal.map(a => {
+        const cleanAvatar = isCleanRealPhoto(a.artistAvatar)
+          ? a.artistAvatar
+          : isCleanRealPhoto(a.artist_avatar)
+          ? a.artist_avatar
+          : resolveReconciledPhoto({ id: a.artistId || a.artist_id, name: a.artistName || a.artist_name }, bootVault);
+        if (cleanAvatar) {
+          savePhotoToVault({ id: a.artistId || a.artist_id, name: a.artistName || a.artist_name }, cleanAvatar);
+        }
+        return {
+          ...a,
+          artist_avatar: cleanAvatar || '',
+          artistAvatar: cleanAvatar || ''
+        };
+      });
+
       setRealArtworks(loadedReal);
       safeSetItem('artellium_real_artworks', loadedReal);
 
@@ -346,7 +455,18 @@ export function StoreProvider({ children }) {
 
       const savedSellers = localStorage.getItem('artellium_sellers');
       if (savedSellers) {
-        try { setSellers(JSON.parse(savedSellers)); } catch (e) {}
+        try {
+          const parsedSellers = JSON.parse(savedSellers);
+          if (Array.isArray(parsedSellers)) {
+            const sanitizedSellers = parsedSellers.map(s => {
+              const cleanPhoto = resolveReconciledPhoto(s);
+              if (cleanPhoto) savePhotoToVault({ id: s.user_id || s.id, email: s.email, name: s.name }, cleanPhoto);
+              return { ...s, avatar_url: cleanPhoto || '' };
+            });
+            setSellers(sanitizedSellers);
+            safeSetItem('artellium_sellers', sanitizedSellers);
+          }
+        } catch (e) {}
       }
 
       const savedCart = localStorage.getItem('artellium_cart');
@@ -435,11 +555,17 @@ export function StoreProvider({ children }) {
             ipAddress: '102.89.22.10',
             securityIncidents: []
           };
-          // Upsert current admin and remove legacy admin entry
-          const withoutOldAdmins = parsed.filter(u => u.role !== 'admin' && u.email?.toLowerCase() !== 'admin@artellium.com' && u.email?.toLowerCase() !== 'ekpendudakore@gmail.com');
+          // Upsert current admin and remove legacy admin entry, while reconciling original user photos
+          const withoutOldAdmins = parsed
+            .filter(u => u.role !== 'admin' && u.email?.toLowerCase() !== 'admin@artellium.com' && u.email?.toLowerCase() !== 'ekpendudakore@gmail.com')
+            .map(u => {
+              const cleanPhoto = resolveReconciledPhoto(u);
+              if (cleanPhoto) savePhotoToVault(u, cleanPhoto);
+              return { ...u, avatar_url: cleanPhoto || '' };
+            });
           const mergedUsers = [adminUser, ...withoutOldAdmins];
           setUsersList(mergedUsers);
-          localStorage.setItem('artellium_users', JSON.stringify(mergedUsers));
+          safeSetItem('artellium_users', mergedUsers);
         } catch (e) {
           setUsersList(INITIAL_USERS);
         }
@@ -447,29 +573,40 @@ export function StoreProvider({ children }) {
         setUsersList(INITIAL_USERS);
       }
 
-      // Fetch persistent registered users from Supabase across all browsers
+      // Fetch persistent registered users from Supabase across all browsers while strictly preserving local profile photos & edits
       fetch('/api/auth/users')
         .then(res => res.json())
         .then(data => {
           if (data && data.success && Array.isArray(data.users) && data.users.length > 0) {
             setUsersList(prev => {
+              const localMap = new Map((prev || []).map(u => [(u.email || '').toLowerCase().trim(), u]));
               const serverMap = new Map(data.users.map(u => [(u.email || '').toLowerCase().trim(), u]));
               const localOnly = (prev || []).filter(u => {
                 const em = (u.email || '').toLowerCase().trim();
                 return em && !serverMap.has(em);
               });
               if (localOnly.length > 0) {
-                // Sync any local-only users up to Supabase
                 fetch('/api/auth/users', {
                   method: 'POST',
                   headers: { 'Content-Type': 'application/json' },
                   body: JSON.stringify({ users: localOnly })
                 }).catch(() => {});
               }
-              const merged = [...data.users, ...localOnly];
-              try {
-                localStorage.setItem('artellium_users', JSON.stringify(merged));
-              } catch (e) {}
+              const mergedServerUsers = data.users.map(su => {
+                const em = (su.email || '').toLowerCase().trim();
+                const localUser = localMap.get(em) || {};
+                const cleanPhoto = resolveReconciledPhoto(localUser) || resolveReconciledPhoto(su) || '';
+                if (cleanPhoto) savePhotoToVault({ ...su, ...localUser }, cleanPhoto);
+                return {
+                  ...su,
+                  ...localUser,
+                  id: localUser.id || su.id,
+                  name: localUser.name || su.name,
+                  avatar_url: cleanPhoto
+                };
+              });
+              const merged = [...mergedServerUsers, ...localOnly];
+              safeSetItem('artellium_users', merged);
               return merged;
             });
           }
@@ -482,10 +619,22 @@ export function StoreProvider({ children }) {
                 const map = new Map(prev.map(u => [(u.email || '').toLowerCase().trim(), u]));
                 for (const u of dbUsers) {
                   const em = (u.email || '').toLowerCase().trim();
-                  if (em) map.set(em, { ...u, status: u.status || 'active', cloudflareVerified: true, securityIncidents: [] });
+                  if (em) {
+                    const localUser = map.get(em) || {};
+                    const cleanPhoto = resolveReconciledPhoto(localUser) || resolveReconciledPhoto(u) || '';
+                    if (cleanPhoto) savePhotoToVault({ ...u, ...localUser }, cleanPhoto);
+                    map.set(em, {
+                      ...u,
+                      ...localUser,
+                      status: localUser.status || u.status || 'active',
+                      avatar_url: cleanPhoto,
+                      cloudflareVerified: true,
+                      securityIncidents: localUser.securityIncidents || []
+                    });
+                  }
                 }
                 const merged = Array.from(map.values());
-                try { localStorage.setItem('artellium_users', JSON.stringify(merged)); } catch (e) {}
+                safeSetItem('artellium_users', merged);
                 return merged;
               });
             }
@@ -684,13 +833,100 @@ export function StoreProvider({ children }) {
         }
       }).catch(() => {});
 
+      idbGetItem('artellium_user_photos_vault').then((idbVault) => {
+        if (idbVault && typeof idbVault === 'object') {
+          const mergedVault = { ...idbVault, ...getPhotoVault() };
+          safeSetItem('artellium_user_photos_vault', mergedVault);
+          setCurrentUser((prev) => {
+            if (!prev) return prev;
+            const photo = resolveReconciledPhoto(prev, mergedVault);
+            return photo && photo !== prev.avatar_url ? { ...prev, avatar_url: photo } : prev;
+          });
+          setUsersList((prev) =>
+            (prev || []).map((u) => {
+              const photo = resolveReconciledPhoto(u, mergedVault);
+              return { ...u, avatar_url: photo || '' };
+            })
+          );
+          setSellers((prev) =>
+            (prev || []).map((s) => {
+              const photo = resolveReconciledPhoto(s, mergedVault);
+              return { ...s, avatar_url: photo || '' };
+            })
+          );
+        }
+      }).catch(() => {});
+
+      idbGetItem('artellium_users').then((idbUsers) => {
+        if (Array.isArray(idbUsers) && idbUsers.length > 0) {
+          setUsersList((prev) => {
+            const map = new Map();
+            (idbUsers || []).forEach((u) => {
+              if (!u) return;
+              const cleanPhoto = resolveReconciledPhoto(u);
+              if (cleanPhoto) savePhotoToVault(u, cleanPhoto);
+              map.set(u.id || u.email, { ...u, avatar_url: cleanPhoto || '' });
+            });
+            (prev || []).forEach((u) => {
+              if (!u) return;
+              const existing = map.get(u.id || u.email) || {};
+              const cleanPhoto = resolveReconciledPhoto(u) || resolveReconciledPhoto(existing);
+              if (cleanPhoto) savePhotoToVault(u, cleanPhoto);
+              map.set(u.id || u.email, { ...existing, ...u, avatar_url: cleanPhoto || '' });
+            });
+            return Array.from(map.values());
+          });
+        }
+      }).catch(() => {});
+
+      idbGetItem('artellium_sellers').then((idbSellers) => {
+        if (Array.isArray(idbSellers) && idbSellers.length > 0) {
+          setSellers((prev) => {
+            const map = new Map();
+            (idbSellers || []).forEach((s) => {
+              if (!s) return;
+              const cleanPhoto = resolveReconciledPhoto(s);
+              if (cleanPhoto) savePhotoToVault({ id: s.user_id || s.id, email: s.email, name: s.name }, cleanPhoto);
+              map.set(s.id || s.name, { ...s, avatar_url: cleanPhoto || '' });
+            });
+            (prev || []).forEach((s) => {
+              if (!s) return;
+              const existing = map.get(s.id || s.name) || {};
+              const cleanPhoto = resolveReconciledPhoto(s) || resolveReconciledPhoto(existing);
+              if (cleanPhoto) savePhotoToVault({ id: s.user_id || s.id, email: s.email, name: s.name }, cleanPhoto);
+              map.set(s.id || s.name, { ...existing, ...s, avatar_url: cleanPhoto || '' });
+            });
+            return Array.from(map.values());
+          });
+        }
+      }).catch(() => {});
+
+      idbGetItem('artellium_login_state').then((idbLogin) => {
+        if (idbLogin && idbLogin.user && idbLogin.isLoggedIn) {
+          const cleanPhoto = resolveReconciledPhoto(idbLogin.user);
+          if (cleanPhoto) savePhotoToVault(idbLogin.user, cleanPhoto);
+          setCurrentUser((prev) => {
+            if (!prev) {
+              setIsLoggedIn(true);
+              return { ...idbLogin.user, avatar_url: cleanPhoto || '' };
+            }
+            const resolved = resolveReconciledPhoto(prev) || cleanPhoto || '';
+            return { ...idbLogin.user, ...prev, avatar_url: resolved };
+          });
+        }
+      }).catch(() => {});
+
       const savedLoginState = localStorage.getItem('artellium_login_state');
       if (savedLoginState) {
         try {
           const parsed = JSON.parse(savedLoginState);
           if (parsed && parsed.user && parsed.isLoggedIn) {
+            const cleanPhoto = resolveReconciledPhoto(parsed.user);
+            if (cleanPhoto) savePhotoToVault(parsed.user, cleanPhoto);
+            const reconciledUser = { ...parsed.user, avatar_url: cleanPhoto || '' };
             setIsLoggedIn(true);
-            setCurrentUser(parsed.user);
+            setCurrentUser(reconciledUser);
+            safeSetItem('artellium_login_state', { isLoggedIn: true, user: reconciledUser });
           } else {
             setIsLoggedIn(false);
             setCurrentUser(null);
@@ -820,7 +1056,12 @@ export function StoreProvider({ children }) {
         if (!sellError && dbSellers && dbSellers.length > 0) {
           setSellers(prev => {
             const map = new Map(prev.map(s => [s.id, s]));
-            dbSellers.forEach(ds => map.set(ds.id, { ...map.get(ds.id), ...ds }));
+            dbSellers.forEach(ds => {
+              const localS = map.get(ds.id) || {};
+              const cleanPhoto = resolveReconciledPhoto(localS) || resolveReconciledPhoto(ds) || '';
+              if (cleanPhoto) savePhotoToVault({ id: ds.user_id || ds.id, email: ds.email, name: ds.name }, cleanPhoto);
+              map.set(ds.id, { ...ds, ...localS, avatar_url: cleanPhoto });
+            });
             const merged = Array.from(map.values());
             safeSetItem('artellium_sellers', merged);
             return merged;
@@ -916,6 +1157,8 @@ export function StoreProvider({ children }) {
         setVideos(event.payload);
       } else if (event.type === 'real_artworks') {
         setRealArtworks(event.payload);
+      } else if (event.type === 'contact_config') {
+        setContactConfig(event.payload);
       }
     });
     return unsubscribe;
@@ -923,6 +1166,10 @@ export function StoreProvider({ children }) {
 
   // Cart Functions
   const addToCart = (artwork) => {
+    if (currentUser?.role === 'artist') {
+      broadcastNotification('Artist accounts are dedicated creator studios and cannot purchase artworks.');
+      return;
+    }
     setCart((prev) => {
       const existing = prev.find((item) => item.id === artwork.id);
       if (existing) {
@@ -1210,27 +1457,106 @@ export function StoreProvider({ children }) {
   };
 
   const updateUser = (userId, updatedFields) => {
+    const cleanAvatar = updatedFields.avatar_url !== undefined
+      ? (isCleanRealPhoto(updatedFields.avatar_url) ? updatedFields.avatar_url : '')
+      : undefined;
+
+    const sanitizedFields = {
+      ...updatedFields,
+      ...(cleanAvatar !== undefined ? { avatar_url: cleanAvatar, avatar: cleanAvatar } : {})
+    };
+
+    const existingUser = usersList.find(u => u.id === userId) || currentUser || {};
+    const targetName = sanitizedFields.name || existingUser.name || '';
+    const targetEmail = sanitizedFields.email || existingUser.email || '';
+
+    if (cleanAvatar) {
+      savePhotoToVault({ id: userId, email: targetEmail, name: targetName }, cleanAvatar);
+    }
+
     setUsersList(prev => {
-      const updated = prev.map(u => u.id === userId ? { ...u, ...updatedFields, updated_at: new Date().toISOString() } : u);
-      try {
-        localStorage.setItem('artellium_users', JSON.stringify(updated));
-      } catch (e) {}
+      const exists = prev.some(u => u.id === userId || (targetEmail && u.email?.toLowerCase() === targetEmail.toLowerCase()));
+      let updated;
+      if (exists) {
+        updated = prev.map(u => {
+          if (u.id === userId || (targetEmail && u.email?.toLowerCase() === targetEmail.toLowerCase())) {
+            return { ...u, ...sanitizedFields, updated_at: new Date().toISOString() };
+          }
+          return u;
+        });
+      } else {
+        updated = [
+          {
+            id: userId || `user-${Date.now()}`,
+            name: targetName || 'Artellium Member',
+            email: targetEmail,
+            role: sanitizedFields.role || currentUser?.role || 'collector',
+            status: 'active',
+            created_at: new Date().toISOString(),
+            ...sanitizedFields,
+            updated_at: new Date().toISOString()
+          },
+          ...prev
+        ];
+      }
+      safeSetItem('artellium_users', updated);
       return updated;
     });
-    if (currentUser?.id === userId) {
-      const merged = { ...currentUser, ...updatedFields };
+
+    if (!currentUser || currentUser.id === userId || (targetEmail && currentUser.email?.toLowerCase() === targetEmail.toLowerCase())) {
+      const merged = {
+        ...(currentUser || { id: userId, name: targetName || 'Artellium Member', email: targetEmail, role: sanitizedFields.role || 'collector' }),
+        ...sanitizedFields,
+        updated_at: new Date().toISOString()
+      };
       setCurrentUser(merged);
-      try {
-        localStorage.setItem('artellium_login_state', JSON.stringify({ isLoggedIn: true, user: merged }));
-      } catch (e) {}
+      setIsLoggedIn(true);
+      safeSetItem('artellium_login_state', { isLoggedIn: true, user: merged });
+    }
+
+    // If avatar_url was updated, sync matching sellers and real artworks immediately
+    if (cleanAvatar !== undefined) {
+      setSellers(prev => {
+        const updated = prev.map(s => {
+          if (
+            s.user_id === userId ||
+            s.id === userId ||
+            (targetEmail && s.email?.toLowerCase() === targetEmail.toLowerCase()) ||
+            (targetName && s.name?.toLowerCase() === targetName.toLowerCase())
+          ) {
+            return { ...s, avatar_url: cleanAvatar, avatar: cleanAvatar, updated_at: new Date().toISOString() };
+          }
+          return s;
+        });
+        safeSetItem('artellium_sellers', updated);
+        return updated;
+      });
+
+      setRealArtworks(prevReal => {
+        const updatedReal = prevReal.map(art => {
+          const isTargetArt = (art.artistId === userId) || (targetName && art.artistName?.toLowerCase() === targetName.toLowerCase());
+          if (isTargetArt) {
+            return {
+              ...art,
+              artistAvatar: cleanAvatar,
+              artist_avatar: cleanAvatar
+            };
+          }
+          return art;
+        });
+        safeSetItem('artellium_real_artworks', updatedReal);
+        const activeMode = demoTransitionModeRef.current || demoTransitionMode || 'progressive';
+        const assembled = assembleCatalog(updatedReal, INITIAL_ARTWORKS, activeMode);
+        setArtworks(assembled);
+        safeSetItem('artellium_artworks', assembled);
+        return updatedReal;
+      });
     }
 
     // If subscription tier was changed, sync matching sellers and real artworks
-    if (updatedFields.subscription_tier || updatedFields.subscriptionTier) {
-      const newTier = updatedFields.subscription_tier || updatedFields.subscriptionTier;
+    if (sanitizedFields.subscription_tier || sanitizedFields.subscriptionTier) {
+      const newTier = sanitizedFields.subscription_tier || sanitizedFields.subscriptionTier;
       const tierName = newTier === 'standard' ? 'Standard' : 'Premium';
-      const targetUser = usersList.find(u => u.id === userId);
-      const targetName = targetUser?.name || updatedFields.name || '';
 
       setSellers(prev => {
         const updated = prev.map(s => {
@@ -1266,11 +1592,11 @@ export function StoreProvider({ children }) {
     }
 
     try {
-      supabase.from('users').update(updatedFields).eq('id', userId).then(() => {});
+      supabase.from('users').update(sanitizedFields).eq('id', userId).then(() => {});
       fetch('/api/auth/update-user', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId, updatedFields })
+        body: JSON.stringify({ userId, updatedFields: sanitizedFields })
       }).catch(() => {});
     } catch (e) {}
   };
@@ -1747,17 +2073,21 @@ export function StoreProvider({ children }) {
     broadcastNotification(`🌍 Exchange rate for ${currencyCode} updated to 1 ${currencyCode} = ₦${parsed.toLocaleString()} NGN.`);
   };
 
-  // Progressive Video Assembler: Real approved videos fill front slots, demo only pad if enabled
+  // Progressive Video Assembler: Hero page Artist Story strictly shows short artist videos (retains dummy videos until artists upload short videos)
   const activeVideos = useMemo(() => {
+    const realUploadedVideos = (videos || []).filter(v => !isDemoVideoItem(v));
+    const demoVideos = (videos || []).filter(v => isDemoVideoItem(v));
+
     if (hideDemoVideos || demoTransitionMode === 'live_only') {
-      return (videos || []).filter(v => !isDemoVideoItem(v));
+      return realUploadedVideos.length > 0 ? realUploadedVideos : demoVideos;
     }
-    if (demoTransitionMode === 'progressive') {
-      const real = (videos || []).filter(v => !isDemoVideoItem(v));
-      const demo = (videos || []).filter(v => isDemoVideoItem(v));
-      return [...real, ...demo];
+
+    // When artists upload real short videos for the Hero story, automatically fill the Hero and eliminate dummy videos
+    if (realUploadedVideos.length > 0) {
+      return realUploadedVideos;
     }
-    return videos || [];
+
+    return demoVideos;
   }, [videos, hideDemoVideos, demoTransitionMode]);
 
   const activeApprovedVideos = useMemo(() => {
@@ -2182,10 +2512,18 @@ export function StoreProvider({ children }) {
   const saveArtistProfile = (profileData) => {
     const artistName = profileData.name || currentUser?.name || 'Master Artist';
     const targetUserId = currentUser?.id || `user-artist-${Date.now()}`;
+    const rawAvatar = profileData.avatar_url || currentUser?.avatar_url || '';
+    const cleanAvatar = isCleanRealPhoto(rawAvatar) ? rawAvatar : resolveReconciledPhoto({ id: targetUserId, email: profileData.email || currentUser?.email, name: artistName });
+
+    if (cleanAvatar) {
+      savePhotoToVault({ id: targetUserId, email: profileData.email || currentUser?.email, name: artistName }, cleanAvatar);
+    }
 
     // 1. Update User Record
     const userUpdates = {
       ...profileData,
+      avatar_url: cleanAvatar,
+      avatar: cleanAvatar,
       role: 'artist',
       name: artistName,
     };
@@ -2216,7 +2554,8 @@ export function StoreProvider({ children }) {
         phone: profileData.phone || currentUser?.phone || '',
         email: profileData.email || currentUser?.email || '',
         experienceYears: profileData.experienceYears || '',
-        avatar_url: profileData.avatar_url || currentUser?.avatar_url || '',
+        avatar_url: cleanAvatar,
+        avatar: cleanAvatar,
         tier: currentUser?.subscription_tier === 'premium' ? 'Premium' : 'Standard',
         verification_badge: currentUser?.subscription_tier === 'premium' ? 'gold' : 'verified',
         payout_bank: profileData.payout_bank || '',
@@ -2257,7 +2596,8 @@ export function StoreProvider({ children }) {
           return {
             ...art,
             artistName: artistName,
-            artistAvatar: profileData.avatar_url || currentUser?.avatar_url || art.artistAvatar,
+            artistAvatar: cleanAvatar,
+            artist_avatar: cleanAvatar,
             country: profileData.country || art.country,
             city: profileData.city || art.city,
             countryFlag: profileData.countryFlag || art.countryFlag
@@ -2580,11 +2920,16 @@ export function StoreProvider({ children }) {
         };
       }
 
-      setCurrentUser(user);
+      const reconciledAvatar = resolveReconciledPhoto(user);
+      const hydratedUser = {
+        ...user,
+        avatar_url: reconciledAvatar,
+        avatar: reconciledAvatar
+      };
+
+      setCurrentUser(hydratedUser);
       setIsLoggedIn(true);
-      try {
-        localStorage.setItem('artellium_login_state', JSON.stringify({ isLoggedIn: true, user }));
-      } catch (e) {}
+      safeSetItem('artellium_login_state', { isLoggedIn: true, user: hydratedUser });
 
       // Dispatch Login Security Alert Email via Resend
       try {
@@ -2593,16 +2938,16 @@ export function StoreProvider({ children }) {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             action: 'login_alert',
-            to: user.email,
-            name: user.name,
-            role: user.role,
+            to: hydratedUser.email,
+            name: hydratedUser.name,
+            role: hydratedUser.role,
             ipAddress: 'Verified Cloudflare IP',
             userAgent: typeof navigator !== 'undefined' ? navigator.userAgent : 'Artellium Secure Web'
           })
         }).catch(() => {});
       } catch (e) {}
 
-      return { success: true, user };
+      return { success: true, user: hydratedUser };
     }
 
     // 4. Query live database across all browsers (Server API first, then direct Supabase fallback)
@@ -2654,8 +2999,11 @@ export function StoreProvider({ children }) {
     }
 
     if (remoteUser) {
+      const reconciledRemoteAvatar = resolveReconciledPhoto(remoteUser);
       const dbUser = {
         ...remoteUser,
+        avatar_url: reconciledRemoteAvatar,
+        avatar: reconciledRemoteAvatar,
         status: remoteUser.status || 'active',
         statusReason: remoteUser.statusReason || '',
         cloudflareVerified: true,
@@ -2666,10 +3014,8 @@ export function StoreProvider({ children }) {
       setCurrentUser(dbUser);
       setIsLoggedIn(true);
 
-      try {
-        localStorage.setItem('artellium_users', JSON.stringify(updatedList));
-        localStorage.setItem('artellium_login_state', JSON.stringify({ isLoggedIn: true, user: dbUser }));
-      } catch (e) {}
+      safeSetItem('artellium_users', updatedList);
+      safeSetItem('artellium_login_state', { isLoggedIn: true, user: dbUser });
 
       // Dispatch Login Security Alert Email via Resend
       try {
@@ -3507,6 +3853,7 @@ export function StoreProvider({ children }) {
     setContactConfig(prev => {
       const next = { ...prev, ...updatedFields };
       safeSetItem('artellium_contact_config', next);
+      broadcastAdminChange('contact_config', next);
       return next;
     });
   };
@@ -3518,6 +3865,7 @@ export function StoreProvider({ children }) {
         offices: (prev.offices || []).map(o => o.id === officeId ? { ...o, ...updatedFields } : o)
       };
       safeSetItem('artellium_contact_config', next);
+      broadcastAdminChange('contact_config', next);
       return next;
     });
   };
@@ -3533,6 +3881,7 @@ export function StoreProvider({ children }) {
         offices: [...(prev.offices || []), created]
       };
       safeSetItem('artellium_contact_config', next);
+      broadcastAdminChange('contact_config', next);
       return next;
     });
     return created;
@@ -3545,6 +3894,7 @@ export function StoreProvider({ children }) {
         offices: (prev.offices || []).filter(o => o.id !== officeId)
       };
       safeSetItem('artellium_contact_config', next);
+      broadcastAdminChange('contact_config', next);
       return next;
     });
   };
@@ -3556,6 +3906,7 @@ export function StoreProvider({ children }) {
         contactChannels: (prev.contactChannels || []).map(c => c.id === channelId ? { ...c, ...updatedFields } : c)
       };
       safeSetItem('artellium_contact_config', next);
+      broadcastAdminChange('contact_config', next);
       return next;
     });
   };
@@ -3571,6 +3922,7 @@ export function StoreProvider({ children }) {
         contactChannels: [...(prev.contactChannels || []), created]
       };
       safeSetItem('artellium_contact_config', next);
+      broadcastAdminChange('contact_config', next);
       return next;
     });
     return created;
@@ -3583,6 +3935,7 @@ export function StoreProvider({ children }) {
         contactChannels: (prev.contactChannels || []).filter(c => c.id !== channelId)
       };
       safeSetItem('artellium_contact_config', next);
+      broadcastAdminChange('contact_config', next);
       return next;
     });
   };
@@ -3590,6 +3943,59 @@ export function StoreProvider({ children }) {
   const resetContactConfig = () => {
     setContactConfig(INITIAL_CONTACT_CONFIG);
     safeSetItem('artellium_contact_config', INITIAL_CONTACT_CONFIG);
+    broadcastAdminChange('contact_config', INITIAL_CONTACT_CONFIG);
+  };
+
+  const sendDirectMessageToAdmin = async ({ name, email, phone, subject, message }) => {
+    const targetAdminEmail = contactConfig?.adminEmail || 'Ekpendudakore@gmail.com';
+    const targetAdminWhatsApp = (contactConfig?.adminWhatsApp || contactConfig?.offices?.[0]?.phone || '').replace(/[^0-9]/g, '');
+
+    // 1. Record inquiry in Admin notifications & royalInquiries
+    const newInq = {
+      id: `msg-${Date.now()}`,
+      collectorName: name || currentUser?.name || 'Collector',
+      collectorEmail: email || currentUser?.email || '',
+      collectorPhone: phone || currentUser?.phone || '',
+      subject: subject || 'Collector Direct Message',
+      message: message || '',
+      heirloomTitle: subject || 'Direct Collector Message',
+      status: 'under_curatorial_review',
+      date: new Date().toISOString()
+    };
+    setRoyalInquiries(prev => [newInq, ...prev]);
+    broadcastNotification(`📩 Direct Collector Message from ${newInq.collectorName} (${newInq.collectorEmail}): "${newInq.subject}"`);
+
+    // 2. Dispatch Email directly to Admin Email via /api/emails/send
+    try {
+      fetch('/api/emails/send', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'custom_broadcast',
+          to: targetAdminEmail,
+          subject: `[Artellium Collector Inquiry] ${subject || 'New Message'} — from ${name || 'Collector'}`,
+          message: `Sender Name: ${name || 'Collector'}\nSender Email: ${email || 'N/A'}\nSender Phone/WhatsApp: ${phone || 'N/A'}\nSubject: ${subject || 'General Inquiry'}\n\nMessage:\n${message || ''}`
+        })
+      }).catch(() => {});
+    } catch (e) {}
+
+    // 3. Route directly to Admin WhatsApp
+    if (typeof window !== 'undefined') {
+      const waText = encodeURIComponent(
+        `*ARTELLIUM COLLECTOR MESSAGE*\n\n` +
+        `*From:* ${name || 'Collector'}\n` +
+        `*Email:* ${email || 'N/A'}\n` +
+        (phone ? `*Phone:* ${phone}\n` : '') +
+        `*Subject:* ${subject || 'Collector Inquiry'}\n\n` +
+        `*Message:*\n${message || ''}`
+      );
+      const waUrl = targetAdminWhatsApp
+        ? `https://wa.me/${targetAdminWhatsApp}?text=${waText}`
+        : `https://api.whatsapp.com/send?text=${waText}`;
+      window.open(waUrl, '_blank', 'noopener,noreferrer');
+    }
+
+    return { success: true, inquiry: newInq };
   };
 
   const resetFooterConfig = () => {
@@ -4118,6 +4524,7 @@ export function StoreProvider({ children }) {
         addContactChannel,
         deleteContactChannel,
         resetContactConfig,
+        sendDirectMessageToAdmin,
         // Priority Banner Management & Pricing
         priorityBannerPricing,
         updatePriorityBannerPricing,

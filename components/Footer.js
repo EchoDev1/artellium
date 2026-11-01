@@ -49,68 +49,7 @@ export default function Footer() {
     return a.studioNotes && a.artistName;
   });
 
-  const fallbackSlides = [
-    {
-      artworkId: 'art-101',
-      artistName: 'Kofi Mensah',
-      artistAvatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=300',
-      country: 'Ghana',
-      city: 'Accra',
-      countryFlag: '🇬🇭',
-      artworkTitle: 'The Ancestral Horizon',
-      artworkImage: 'https://images.unsplash.com/photo-1579783902614-a3fb3927b675?auto=format&fit=crop&q=80&w=1000',
-      firstLine: 'My studio in Accra is filled with ancestral masks and bowls of gold dust.',
-      historySnippet: 'My studio in Accra is filled with ancestral masks and bowls of gold dust. Every morning I grind pigment by hand — a ritual my grandfather taught me. The gold leaf is applied last, always in silence, as an offering to those who came before us.'
-    },
-    {
-      artworkId: 'art-102',
-      artistName: 'Amina Diallo',
-      artistAvatar: 'https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?auto=format&fit=crop&q=80&w=300',
-      country: 'Nigeria',
-      city: 'Benin City',
-      countryFlag: '🇳🇬',
-      artworkTitle: 'Warrior of the Bronze Empire',
-      artworkImage: 'https://images.unsplash.com/photo-1544717305-2782549b5136?auto=format&fit=crop&q=80&w=1000',
-      firstLine: 'I work beside the same foundry fire my great-grandmother lit.',
-      historySnippet: 'I work beside the same foundry fire my great-grandmother lit. The lost-wax method is not a technique to me — it is a language. Bronze holds memory in ways canvas cannot.'
-    },
-    {
-      artworkId: 'art-104',
-      artistName: 'Chief Bakare Ogundele',
-      artistAvatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&q=80&w=300',
-      country: 'Nigeria',
-      city: 'Oyo',
-      countryFlag: '🇳🇬',
-      artworkTitle: 'The Solitary Mask of Oyo',
-      artworkImage: 'https://images.unsplash.com/photo-1561214115-f2f134cc4912?auto=format&fit=crop&q=80&w=1000',
-      firstLine: 'I was initiated into sacred wood carving by my father at age nine.',
-      historySnippet: 'I was initiated into carving by my father at age nine. The chisel speaks its own dialect. My studio is a sacred compound — visitors remove their shoes.'
-    },
-    {
-      artworkId: 'art-103',
-      artistName: 'Tariq Ndebele',
-      artistAvatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=300',
-      country: 'South Africa',
-      city: 'Johannesburg',
-      countryFlag: '🇿🇦',
-      artworkTitle: 'Echoes of the Serengeti',
-      artworkImage: 'https://images.unsplash.com/photo-1541701494587-cb58502866ab?auto=format&fit=crop&q=80&w=1000',
-      firstLine: 'I collect soil, ash, and plant matter from across southern Africa and grind them into natural pigment.',
-      historySnippet: 'I collect soil, ash, and plant matter from across southern Africa and grind them into pigment. There is no synthetic colour in my studio — only the continent itself, translated onto canvas.'
-    },
-    {
-      artworkId: 'art-106',
-      artistName: 'Nour El-Din',
-      artistAvatar: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&q=80&w=300',
-      country: 'Egypt',
-      city: 'Cairo',
-      countryFlag: '🇪🇬',
-      artworkTitle: 'Daughters of the Nile',
-      artworkImage: 'https://images.unsplash.com/photo-1582562124811-c09040d0a901?auto=format&fit=crop&q=80&w=1000',
-      firstLine: 'My studio overlooks the majestic Nile where light dances on historical waters.',
-      historySnippet: 'My studio overlooks the Nile. I spend hours just watching the light change on the water before I pick up a brush.'
-    }
-  ];
+  const fallbackSlides = [];
 
   let artistHistorySlides = [];
   if (artworksWithNotes.length > 0) {
@@ -119,7 +58,7 @@ export default function Footer() {
       return {
         artworkId: a.id,
         artistName: a.artistName,
-        artistAvatar: a.artistAvatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=300',
+        artistAvatar: a.artistAvatar || '',
         country: a.country || 'Nigeria',
         city: a.city || 'Lagos',
         countryFlag: a.countryFlag || '🇳🇬',
@@ -129,7 +68,7 @@ export default function Footer() {
         firstLine: firstLine || a.studioNotes
       };
     });
-  } else if (isLiveOnly) {
+  } else {
     const realArts = (artworks || []).filter(a => !a.isDemo && !a.id?.toString().startsWith('art-1'));
     if (realArts.length > 0) {
       artistHistorySlides = realArts.map(a => {
@@ -138,7 +77,7 @@ export default function Footer() {
         return {
           artworkId: a.id,
           artistName: a.artistName || a.artist || 'Master Artist',
-          artistAvatar: a.artistAvatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=300',
+          artistAvatar: a.artistAvatar || '',
           country: a.country || 'Nigeria',
           city: a.city || 'Lagos',
           countryFlag: a.countryFlag || '🇳🇬',
@@ -151,8 +90,6 @@ export default function Footer() {
     } else {
       artistHistorySlides = [];
     }
-  } else {
-    artistHistorySlides = fallbackSlides;
   }
 
   const [currentSlideIndex, setCurrentSlideIndex] = useState(0);
@@ -335,12 +272,18 @@ export default function Footer() {
             >
               {/* Traditional Framed Artist Portrait */}
               <div className="relative shrink-0">
-                <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl overflow-hidden bg-[#050608] p-1 border border-art-gold/40 shadow-lg relative">
-                  <img
-                    src={activeArtistSlide.artistAvatar}
-                    alt={activeArtistSlide.artistName}
-                    className="w-full h-full object-cover rounded-xl group-hover/link:scale-105 transition duration-500"
-                  />
+                <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl overflow-hidden bg-[#050608] p-1 border border-art-gold/40 shadow-lg relative flex items-center justify-center">
+                  {activeArtistSlide.artistAvatar ? (
+                    <img
+                      src={activeArtistSlide.artistAvatar}
+                      alt={activeArtistSlide.artistName}
+                      className="w-full h-full object-cover rounded-xl group-hover/link:scale-105 transition duration-500"
+                    />
+                  ) : (
+                    <span className="font-serif text-xl font-bold text-art-gold">
+                      {(activeArtistSlide.artistName || 'A').charAt(0).toUpperCase()}
+                    </span>
+                  )}
                   <span className="absolute bottom-2 right-2 text-xs drop-shadow">
                     {activeArtistSlide.countryFlag}
                   </span>

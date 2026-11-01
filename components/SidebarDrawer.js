@@ -35,7 +35,8 @@ export default function SidebarDrawer() {
     isSidebarOpen,
     setIsSidebarOpen,
     currency,
-    headerConfig
+    headerConfig,
+    currentUser
   } = useStore();
 
   const { currentLanguage, setLanguage, languagesList } = useLanguage();
@@ -145,6 +146,9 @@ export default function SidebarDrawer() {
     },
   ];
 
+  const isCollectorRole = currentUser?.role === 'buyer' || currentUser?.role === 'collector' || pathname?.startsWith('/buyer');
+  const isArtistRole = currentUser?.role === 'artist' || pathname?.startsWith('/artist');
+
   const platformFeatures = [
     {
       id: 'nav-artist-voices',
@@ -176,7 +180,7 @@ export default function SidebarDrawer() {
       badge: '🏛️ SDGs Dialogues',
       badgeClass: 'bg-emerald-950/60 text-emerald-300 border-emerald-800/60',
     },
-    {
+    ...(!isCollectorRole ? [{
       id: 'nav-subscriptions',
       label: 'Artist Subscriptions',
       subtitle: 'Sell fine art worldwide • Free & Priority Placement plans',
@@ -185,8 +189,8 @@ export default function SidebarDrawer() {
       iconColor: 'text-art-gold',
       badge: '👑 FREE & PRIORITY',
       badgeClass: 'bg-art-gold/20 text-art-gold border-art-gold/40 font-bold',
-    },
-    {
+    }] : []),
+    ...(!isArtistRole ? [{
       id: 'nav-bidder-reg',
       label: 'Bidder Registration & KYC',
       subtitle: 'Accredited patron verification & sovereign pass',
@@ -195,7 +199,7 @@ export default function SidebarDrawer() {
       iconColor: 'text-emerald-400',
       badge: '✅ KYC PASS',
       badgeClass: 'bg-emerald-950/60 text-emerald-300 border-emerald-800/60',
-    },
+    }] : []),
   ];
 
   const secondaryLinks = [
@@ -289,14 +293,14 @@ export default function SidebarDrawer() {
         <div className="flex-1 overflow-y-auto p-5 space-y-6 scrollbar-thin">
           
           {/* Dynamic Navigation Links configured by Admin in Header CMS */}
-          {(headerConfig?.navLinks || []).filter(l => l.isVisible !== false).length > 0 && (
+          {(headerConfig?.navLinks || []).filter(l => l.isVisible !== false && !(isCollectorRole && (l.href?.includes('/artist') || l.label?.toLowerCase().includes('subscription') || l.label?.toLowerCase().includes('sell')))).length > 0 && (
             <div className="space-y-2 pb-2 border-b border-white/10">
               <span className="text-[10px] text-art-gold font-bold uppercase tracking-widest flex items-center gap-1.5 px-1 mb-1">
                 <Sparkles className="w-3.5 h-3.5 text-art-gold" />
                 <span>Featured Navigation</span>
               </span>
               <div className="grid grid-cols-2 gap-2">
-                {(headerConfig.navLinks || []).filter(l => l.isVisible !== false).map((link) => (
+                {(headerConfig.navLinks || []).filter(l => l.isVisible !== false && !(isCollectorRole && (l.href?.includes('/artist') || l.label?.toLowerCase().includes('subscription') || l.label?.toLowerCase().includes('sell')))).map((link) => (
                   <Link
                     key={link.id}
                     href={link.href || '#'}

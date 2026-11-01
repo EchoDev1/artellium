@@ -67,13 +67,13 @@ export default function ArtworkDetailPage() {
   });
 
   const galleryImages = [
-    artwork.image || DEFAULT_FALLBACK_IMAGE,
+    artwork.image,
     ...(Array.isArray(artwork.additionalImages) ? artwork.additionalImages : [])
   ].filter(Boolean);
 
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [isImageLightboxOpen, setIsImageLightboxOpen] = useState(false);
-  const activeDisplayImage = galleryImages[selectedImageIndex] || artwork.image || DEFAULT_FALLBACK_IMAGE;
+  const activeDisplayImage = galleryImages[selectedImageIndex] || artwork.image || '';
 
   const [offerPrice, setOfferPrice] = useState('');
   const [offerNote, setOfferNote] = useState('');
@@ -133,20 +133,22 @@ export default function ArtworkDetailPage() {
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-10">
       {/* Top Action Bar */}
-      <div className="flex items-center justify-end">
-        {/* Wishlist quick action */}
-        <button
-          onClick={() => isWishlisted ? removeFromWishlist(artwork.id) : addToWishlist(artwork.id)}
-          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold border transition cursor-pointer ${
-            isWishlisted 
-              ? 'bg-red-500/10 border-red-500/30 text-red-400' 
-              : 'bg-art-black-card border-white/10 text-slate-300 hover:border-art-gold/40'
-          }`}
-        >
-          <Heart className={`w-4 h-4 ${isWishlisted ? 'fill-red-500 text-red-500' : ''}`} />
-          <span>{isWishlisted ? 'Saved in Wishlist' : 'Add to Wishlist'}</span>
-        </button>
-      </div>
+      {currentUser?.role !== 'artist' && (
+        <div className="flex items-center justify-end">
+          {/* Wishlist quick action */}
+          <button
+            onClick={() => isWishlisted ? removeFromWishlist(artwork.id) : addToWishlist(artwork.id)}
+            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold border transition cursor-pointer ${
+              isWishlisted 
+                ? 'bg-red-500/10 border-red-500/30 text-red-400' 
+                : 'bg-art-black-card border-white/10 text-slate-300 hover:border-art-gold/40'
+            }`}
+          >
+            <Heart className={`w-4 h-4 ${isWishlisted ? 'fill-red-500 text-red-500' : ''}`} />
+            <span>{isWishlisted ? 'Saved in Wishlist' : 'Add to Wishlist'}</span>
+          </button>
+        </div>
+      )}
 
       {/* Main Grid: Image & Specifications */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
@@ -163,22 +165,29 @@ export default function ArtworkDetailPage() {
           )}
 
           <div 
-            onClick={() => setIsImageLightboxOpen(true)} 
+            onClick={() => activeDisplayImage && setIsImageLightboxOpen(true)} 
             title="Click to view full, complete artwork image" 
-            className="relative w-full rounded-3xl overflow-hidden glass-card-gold border border-art-gold/40 shadow-2xl bg-[#080B11] cursor-zoom-in group/canvas"
+            className="relative w-full rounded-3xl overflow-hidden glass-card-gold border border-art-gold/40 shadow-2xl bg-[#080B11] cursor-zoom-in group/canvas min-h-[280px] flex items-center justify-center"
           >
-            <img
-              src={activeDisplayImage}
-              alt={artwork.title}
-              onError={(e) => {
-                e.currentTarget.src = DEFAULT_FALLBACK_IMAGE;
-              }}
-              className="w-full h-auto block object-contain mx-auto artwork-vibrant group-hover/canvas:scale-[1.01] transition duration-500"
-            />
-            <div className="absolute bottom-4 right-4 bg-black/80 backdrop-blur-md px-3 py-1.5 rounded-xl border border-white/20 text-white text-xs font-mono flex items-center gap-1.5 shadow-lg group-hover/canvas:bg-art-gold group-hover/canvas:text-black transition">
-              <ZoomIn className="w-3.5 h-3.5" />
-              <span>View Full Image</span>
-            </div>
+            {activeDisplayImage && artwork.status !== 'sold' && artwork.status !== 'auction' ? (
+              <>
+                <img
+                  src={activeDisplayImage}
+                  alt={artwork.title}
+                  className="w-full h-auto block object-contain mx-auto artwork-vibrant group-hover/canvas:scale-[1.01] transition duration-500"
+                />
+                <div className="absolute bottom-4 right-4 bg-black/80 backdrop-blur-md px-3 py-1.5 rounded-xl border border-white/20 text-white text-xs font-mono flex items-center gap-1.5 shadow-lg group-hover/canvas:bg-art-gold group-hover/canvas:text-black transition">
+                  <ZoomIn className="w-3.5 h-3.5" />
+                  <span>View Full Image</span>
+                </div>
+              </>
+            ) : (
+              <div className="py-24 px-6 text-center select-none">
+                <span className="font-serif text-xl sm:text-2xl font-bold uppercase tracking-[0.25em] text-white/10">
+                  {artwork.status === 'sold' ? 'We are selling out soon' : 'Coming Soon'}
+                </span>
+              </div>
+            )}
           </div>
 
           {/* Multi-Angle Detail Photos Thumbnail Gallery */}
@@ -248,11 +257,17 @@ export default function ArtworkDetailPage() {
                   href={`/artist/${artwork.artistId || encodeURIComponent(artwork.artistName)}`}
                   className="flex items-center gap-3 group hover:opacity-90 transition"
                 >
-                  <img
-                    src={artwork.artistAvatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=300'}
-                    alt={artwork.artistName}
-                    className="w-11 h-11 rounded-full object-cover border-2 border-art-gold/50 group-hover:border-art-gold transition shadow-sm"
-                  />
+                  {artwork.artistAvatar ? (
+                    <img
+                      src={artwork.artistAvatar}
+                      alt={artwork.artistName}
+                      className="w-11 h-11 rounded-full object-cover border-2 border-art-gold/50 group-hover:border-art-gold transition shadow-sm"
+                    />
+                  ) : (
+                    <div className="w-11 h-11 rounded-full bg-art-gold/15 border-2 border-art-gold/50 flex items-center justify-center font-serif font-bold text-art-gold">
+                      {(artwork.artistName || 'A').charAt(0).toUpperCase()}
+                    </div>
+                  )}
                   <div>
                     <h3 className="text-sm font-bold text-white group-hover:text-art-gold transition flex items-center gap-1.5">
                       <span>{artwork.artistName}</span>
@@ -306,8 +321,8 @@ export default function ArtworkDetailPage() {
                 </span>
               </div>
 
-              {/* Action Buttons based on status */}
-              {artwork.status === 'available' && (
+              {/* Action Buttons based on status (Hidden for Artists) */}
+              {artwork.status === 'available' && currentUser?.role !== 'artist' && (
                 <div className="space-y-2 pt-2">
                   <button
                     onClick={() => addToCart(artwork)}
@@ -409,11 +424,17 @@ export default function ArtworkDetailPage() {
       {artwork.studioNotes && (
         <section id="artist-history" className="scroll-mt-24 bg-gradient-to-r from-art-black-card via-zinc-950 to-art-black-card border border-art-gold/30 rounded-3xl p-8 space-y-4 shadow-xl">
           <div className="flex items-center gap-3">
-            <img 
-              src={artwork.artistAvatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=300'} 
-              alt={artwork.artistName} 
-              className="w-12 h-12 rounded-full object-cover border-2 border-art-gold" 
-            />
+            {artwork.artistAvatar ? (
+              <img 
+                src={artwork.artistAvatar} 
+                alt={artwork.artistName} 
+                className="w-12 h-12 rounded-full object-cover border-2 border-art-gold" 
+              />
+            ) : (
+              <div className="w-12 h-12 rounded-full bg-art-gold/15 border-2 border-art-gold flex items-center justify-center font-serif font-bold text-art-gold">
+                {(artwork.artistName || 'A').charAt(0).toUpperCase()}
+              </div>
+            )}
             <div>
               <span className="text-[10px] font-bold text-art-gold uppercase tracking-widest block">ARTIST LIVING HISTORY & STUDIO JOURNAL</span>
               <h3 className="font-serif text-lg font-bold text-white">Provenance & Heritage from {artwork.artistName}'s Atelier</h3>
@@ -429,8 +450,8 @@ export default function ArtworkDetailPage() {
         </section>
       )}
 
-      {/* Feature 4: "Make an Offer" Private Collector Bid Section */}
-      {artwork.status === 'available' && (
+      {/* Feature 4: "Make an Offer" Private Collector Bid Section (Collectors Only) */}
+      {artwork.status === 'available' && currentUser?.role !== 'artist' && (
         <section className="bg-gradient-to-br from-art-black-card to-zinc-950 border border-amber-500/30 rounded-3xl p-8 space-y-5 shadow-2xl">
           <div className="flex items-center justify-between flex-wrap gap-4">
             <div className="flex items-center gap-3">
@@ -553,7 +574,7 @@ export default function ArtworkDetailPage() {
             const history = artwork.history || [
               { event: 'Masterpiece Created', actor: artwork.artistName, price: 0, date: artwork.created_at || '2026-02-05' },
               ...(artwork.status === 'sold' || artwork.soldTo ? [
-                { event: 'Ownership Transferred', actor: artwork.soldTo || 'Dr. Evelyn Carter', price: artwork.soldPrice || artwork.price, date: '2026-02-12' }
+                { event: 'Ownership Transferred', actor: artwork.soldTo || 'Private Collector', price: artwork.soldPrice || artwork.price, date: '2026-02-12' }
               ] : [])
             ];
 

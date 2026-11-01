@@ -48,7 +48,7 @@ export default function HomePage() {
       { id: 'sec-auctions', type: 'auctions', title: 'Live Fine Art Auctions', subtitle: 'Participate in real-time competitive bidding for high-value African masterworks.', badge: 'LIVE BIDDING ARENA', isVisible: true, maxItems: 6 },
       { id: 'sec-newly-listed', type: 'newly_listed', title: 'Newly Listed Artworks', subtitle: 'Fresh creations uploaded directly by verified master painters, sculptors, and digital artists.', badge: 'CURATED MARKETPLACE', isVisible: true, maxItems: 12 },
       { id: 'sec-subscriptions', type: 'subscriptions', title: 'Showcase Your Fine Art with Zero Hindrance', subtitle: 'Join ARTELLIUM as a verified seller. Upload original oil paintings, bronze sculptures, or digital prints with automated backend tracking and international buyer outreach.', badge: 'ARTIST & SELLER SUBSCRIPTION PACKAGES', isVisible: true },
-      { id: 'sec-recently-sold', type: 'recently_sold', title: 'Recently Sold Masterpieces', subtitle: 'Transactions logged in our immutable ledger of African creative heritage and authenticity registry.', badge: 'HISTORICAL LEDGER & PROVENANCE', isVisible: true, maxItems: 3 },
+      { id: 'sec-recently-sold', type: 'recently_sold', title: 'Recently Sold Masterpieces', subtitle: 'Transactions logged in our immutable ledger of African creative heritage and authenticity registry.', badge: 'HISTORICAL LEDGER & PROVENANCE', isVisible: true, maxItems: 6 },
       { id: 'sec-exhibitions', type: 'exhibitions', title: 'Current Exhibitions', subtitle: 'Explore curated virtual gallery halls from top African museum directors and curators.', badge: 'VIRTUAL GALLERY ROOMS', isVisible: true, maxItems: 6 }
     ],
     customPromoBanners: []
@@ -60,11 +60,12 @@ export default function HomePage() {
   });
 
   const getNewlyListed = (limit = 12) => {
-    // Real artist-added artworks ALWAYS come first at the very top of Newly Listed!
     const realWorks = filteredArtworks.filter(art => (art.isDemo === false || !art.isDemo) && art.status !== 'sold');
+    if (realWorks.length > 0) {
+      return sortArtworksByPriority(realWorks, { sellers, users: usersList, secondarySort: 'newest' }).slice(0, limit);
+    }
     const otherWorks = filteredArtworks.filter(art => art.isDemo === true && art.status !== 'sold');
-    const combined = [...sortArtworksByPriority(realWorks, { sellers, users: usersList, secondarySort: 'newest' }), ...sortArtworksByPriority(otherWorks, { sellers, users: usersList, secondarySort: 'newest' })];
-    return combined.slice(0, limit);
+    return sortArtworksByPriority(otherWorks, { sellers, users: usersList, secondarySort: 'newest' }).slice(0, limit);
   };
 
   const getLiveAuctions = (limit = 6) => {
@@ -84,23 +85,40 @@ export default function HomePage() {
     return sortArtworksByPriority(matching, { sellers, users: usersList }).slice(0, limit);
   };
 
-  const getRecentlySold = (limit = 3) => {
-    const matching = activeArtworks.filter((art) => art.status === 'sold');
+  const getRecentlySold = (limit = 6) => {
+    const matching = (artworks || []).filter((art) => art.status === 'sold');
     const sorted = sortArtworksByPriority(matching, { sellers, users: usersList, secondarySort: 'sold_date' });
 
-    if (isLiveOnly || sorted.length >= limit) {
+    if (sorted.length >= limit) {
       return sorted.slice(0, limit);
     }
 
     // ONLY take demo pieces as sold placeholders, NEVER turn real artist artworks into "Sold"!
-    const demoPool = activeArtworks.filter(a => a.isDemo === true && a.status !== 'sold');
+    const demoPool = (artworks || []).filter(a => a.isDemo === true && a.status !== 'sold');
     const extra = demoPool.slice(0, limit - sorted.length).map(a => ({
       ...a,
+      image: '',
       status: 'sold',
       soldPrice: a.price,
       soldTo: 'Private Collector (Provenance Verified)'
     }));
-    return [...sorted, ...extra].slice(0, limit);
+    const combined = [...sorted, ...extra];
+    while (combined.length < limit) {
+      const idx = combined.length + 1;
+      combined.push({
+        id: `sold-placeholder-${idx}`,
+        title: `Collector Acquisition Lot #0${idx}`,
+        artistName: 'Verified Master Artist',
+        category: 'Paintings',
+        medium: 'Original Fine Art on Canvas',
+        dimensions: '120 x 100 cm',
+        price: 1250000,
+        status: 'sold',
+        image: '',
+        isDemo: true
+      });
+    }
+    return combined.slice(0, limit);
   };
 
   // Determine which hero to render based on heroConfig (JumiaArtHero is default)
@@ -221,7 +239,7 @@ export default function HomePage() {
       }
 
       case 'recently_sold': {
-        const recentlySold = getRecentlySold(sec.maxItems || 3);
+        const recentlySold = getRecentlySold(Math.max(sec.maxItems || 6, 6));
         if (recentlySold.length === 0) return null;
         return (
           <section key={sec.id} suppressHydrationWarning className="relative rounded-2xl sm:rounded-3xl bg-white border-2 border-art-gold/30 shadow-[0_8px_30px_rgba(0,0,0,0.06)] p-5 sm:p-8 space-y-6 overflow-hidden">

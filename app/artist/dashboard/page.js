@@ -121,7 +121,7 @@ export default function ArtistDashboardPage() {
   const [videoFileMeta, setVideoFileMeta] = useState(null);
   const [artistVideoForm, setArtistVideoForm] = useState({
     title: '',
-    artistName: currentUser?.name ? currentUser.name.split(' (')[0] : 'Kofi Mensah',
+    artistName: currentUser?.name ? currentUser.name.split(' (')[0] : 'Master Artist',
     artistTitle: 'Royal Heritage Master',
     country: currentUser?.country || 'Nigeria',
     countryFlag: '🇳🇬',
@@ -160,7 +160,7 @@ export default function ArtistDashboardPage() {
         setArtistVideoForm(prev => ({
           ...prev,
           videoUrl: ev.target.result,
-          thumbnail: prev.thumbnail || 'https://images.unsplash.com/photo-1579783902614-a3fb3927b675?auto=format&fit=crop&q=95&w=2400'
+          thumbnail: prev.thumbnail || ''
         }));
       };
       reader.onerror = () => {
@@ -168,7 +168,7 @@ export default function ArtistDashboardPage() {
         setArtistVideoForm(prev => ({
           ...prev,
           videoUrl: objectUrl,
-          thumbnail: prev.thumbnail || 'https://images.unsplash.com/photo-1579783902614-a3fb3927b675?auto=format&fit=crop&q=95&w=2400'
+          thumbnail: prev.thumbnail || ''
         }));
       };
       reader.readAsDataURL(file);
@@ -177,7 +177,7 @@ export default function ArtistDashboardPage() {
       setArtistVideoForm(prev => ({
         ...prev,
         videoUrl: objectUrl,
-        thumbnail: prev.thumbnail || 'https://images.unsplash.com/photo-1579783902614-a3fb3927b675?auto=format&fit=crop&q=95&w=2400'
+        thumbnail: prev.thumbnail || ''
       }));
     }
   };
@@ -198,14 +198,14 @@ export default function ArtistDashboardPage() {
   const handleArtistVideoSubmit = (e) => {
     e.preventDefault();
     const resolvedVideoUrl = artistVideoForm.videoUrl || '/videos/artist-savannah.mp4';
-    const resolvedArtistName = artistVideoForm.artistName || currentUser?.name?.split(' (')[0] || 'Kofi Mensah';
+    const resolvedArtistName = artistVideoForm.artistName || currentUser?.name?.split(' (')[0] || 'Master Artist';
 
     submitArtistVideo({
       ...artistVideoForm,
       title: artistVideoForm.title || `${resolvedArtistName} — Atelier Documentary`,
       artistName: resolvedArtistName,
       videoUrl: resolvedVideoUrl,
-      thumbnail: artistVideoForm.thumbnail || 'https://images.unsplash.com/photo-1579783902614-a3fb3927b675?auto=format&fit=crop&q=95&w=2400',
+      thumbnail: artistVideoForm.thumbnail || '',
       countryFlag: getCountryFlag(artistVideoForm.country),
       artistEmail: currentUser?.email || 'artist@artellium.africa',
       artistId: currentUser?.id || 'artist-current',
@@ -577,7 +577,7 @@ export default function ArtistDashboardPage() {
 
     if (artistAdMode === 'custom_ad') {
       const adTitle = customArtistAdForm.title?.trim() || `${myArtistName} — Atelier Showcase`;
-      const adImage = customArtistAdForm.image || myArtworks[0]?.image || 'https://images.unsplash.com/photo-1579783902614-a3fb3927b675?auto=format&fit=crop&q=95&w=2400';
+      const adImage = customArtistAdForm.image || myArtworks[0]?.image || '';
       requestPriorityBannerPlacement({
         adType: 'artist_ad',
         mediaType: customArtistAdForm.mediaType || 'image',
@@ -665,7 +665,7 @@ export default function ArtistDashboardPage() {
       artistName: currentUser?.name || myArtistName || 'Master Artist',
       artistId: currentUser?.id || `artist-${Date.now()}`,
       artistType: currentUser?.subscriptionTier === 'premium' ? 'Premium' : 'Standard',
-      artistAvatar: currentUser?.avatar_url || 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=300',
+      artistAvatar: currentUser?.avatar_url || '',
       verificationBadge: currentUser?.subscriptionTier === 'premium' ? 'gold' : 'verified'
     });
 
@@ -751,11 +751,24 @@ export default function ArtistDashboardPage() {
   };
 
   const handleSaveArtistPhoto = (croppedPhoto) => {
-    if (!currentUser) return;
-    updateUser(currentUser.id, { avatar_url: croppedPhoto });
-    const seller = sellers.find(s => s.user_id === currentUser.id || s.name === myArtistName);
+    if (!croppedPhoto) return;
+    const targetId = currentUser?.id || mySellerProfile?.user_id || mySellerProfile?.id || 'user-artist-active';
+    updateUser(targetId, {
+      avatar_url: croppedPhoto,
+      avatar: croppedPhoto,
+      role: 'artist',
+      name: artistProfileForm.name || myArtistName
+    });
+    if (saveArtistProfile) {
+      saveArtistProfile({
+        ...artistProfileForm,
+        name: artistProfileForm.name || myArtistName,
+        avatar_url: croppedPhoto
+      });
+    }
+    const seller = sellers.find(s => (currentUser?.id && s.user_id === currentUser.id) || s.name === myArtistName);
     if (seller?.id) {
-      updateSeller(seller.id, { avatar_url: croppedPhoto });
+      updateSeller(seller.id, { avatar_url: croppedPhoto, avatar: croppedPhoto });
     }
     setPhotoSavedNotice(true);
     setTimeout(() => setPhotoSavedNotice(false), 4000);
@@ -794,33 +807,12 @@ export default function ArtistDashboardPage() {
 
             <div className="flex flex-col sm:flex-row items-end sm:items-center gap-2 sm:gap-3 shrink-0">
               <div className="bg-slate-50 border border-slate-200 px-4 py-2 rounded-2xl text-right">
-                <span className="text-[10px] text-slate-400 block uppercase font-bold tracking-wider">Placement Tier:</span>
-                <span className={`text-xs font-bold uppercase flex items-center gap-1 justify-end mt-0.5 ${
-                  isSubscribed ? 'text-amber-800' : 'text-slate-600'
-                }`}>
-                  {isSubscribed ? <Crown className="w-3.5 h-3.5 text-art-gold fill-current" /> : <Award className="w-3.5 h-3.5 text-slate-400" />}
-                  <span>{isSubscribed ? '👑 Priority Subscribed (Gold)' : 'Standard Artist (Free)'}</span>
+                <span className="text-[10px] text-slate-400 block uppercase font-bold tracking-wider">Atelier Status:</span>
+                <span className="text-xs font-bold uppercase flex items-center gap-1 justify-end mt-0.5 text-amber-800">
+                  <Award className="w-3.5 h-3.5 text-art-gold" />
+                  <span>Verified Creator Atelier</span>
                 </span>
               </div>
-              {!isSubscribed ? (
-                <button
-                  type="button"
-                  onClick={() => setActiveArtistTab('priority_subscription')}
-                  className="px-3.5 py-2 bg-gradient-to-r from-art-gold to-amber-500 hover:brightness-110 text-art-black font-black text-xs rounded-xl shadow transition flex items-center gap-1.5 cursor-pointer"
-                >
-                  <Crown className="w-3.5 h-3.5 fill-current" />
-                  <span>Upgrade to Priority</span>
-                </button>
-              ) : (
-                <button
-                  type="button"
-                  onClick={() => setActiveArtistTab('priority_subscription')}
-                  className="px-3 py-2 bg-slate-900 hover:bg-slate-800 text-art-gold font-bold text-xs rounded-xl transition flex items-center gap-1.5 cursor-pointer border border-art-gold/40"
-                >
-                  <Crown className="w-3.5 h-3.5 fill-current" />
-                  <span>Manage Priority</span>
-                </button>
-              )}
             </div>
           </div>
         </div>
@@ -829,12 +821,9 @@ export default function ArtistDashboardPage() {
         <div className="flex items-center gap-1.5 border-b border-slate-200 pb-2 overflow-x-auto no-scrollbar text-xs">
           {[
             { id: 'studio_operations', label: `Studio & Catalogue (${myArtworks.length})`, icon: Palette },
-            { id: 'priority_subscription', label: 'Priority Plan & Placement', icon: Crown, badge: isSubscribed ? '👑 ACTIVE' : 'UPGRADE' },
-            { id: 'artist_profile', label: 'Master Artist Profile & Atelier', icon: User, badge: '👑 VERIFIED' },
-            { id: 'hero_videos', label: 'Hero Story Videos (1–2 Min)', icon: Film, badge: '🎬 NEW' },
+            { id: 'artist_profile', label: 'Master Artist Profile & Atelier', icon: User, badge: 'VERIFIED' },
+            { id: 'hero_videos', label: 'Voices of Artists Video (1–2 Min)', icon: Film },
             { id: 'live_auctions', label: 'Live Auction Floor', icon: Flame },
-            { id: 'pan_african', label: 'Pan-African Atelier Suite', icon: Globe },
-            { id: 'exhibitions_sdgs', label: 'Exhibitions & SDGs Forums', icon: Eye },
           ].map((tab) => {
             const Icon = tab.icon;
             const isActive = activeArtistTab === tab.id;
@@ -2035,7 +2024,7 @@ export default function ArtistDashboardPage() {
                 <span className="text-xs text-slate-400 font-semibold uppercase tracking-wider block">Collector Followers</span>
                 <div className="space-y-0.5">
                   <p className="font-serif text-2xl font-bold text-slate-900">
-                    {Math.max((followedArtists || []).filter(f => f === myArtistName || (currentUser?.id && f === currentUser.id)).length, 28)} Collectors
+                    {(followedArtists || []).filter(f => f === myArtistName || (currentUser?.id && f === currentUser.id)).length} Collectors
                   </p>
                   <p className="text-[9px] text-slate-500">Subscribed to your new listings & auction alerts</p>
                 </div>
@@ -2276,49 +2265,6 @@ export default function ArtistDashboardPage() {
                 <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-xl text-emerald-700 text-xs font-bold flex items-center gap-2">
                   <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
                   <span>{successMsg}</span>
-                </div>
-              )}
-
-              {/* Priority Placement Status Notice */}
-              {isSubscribed ? (
-                <div className="p-4 bg-gradient-to-r from-amber-50 to-yellow-50 border border-art-gold/60 rounded-2xl flex items-start gap-3 shadow-sm">
-                  <div className="p-2 rounded-xl bg-art-gold text-art-black shrink-0 font-bold">
-                    <Crown className="w-5 h-5 fill-current" />
-                  </div>
-                  <div className="space-y-1">
-                    <div className="flex items-center gap-2">
-                      <span className="font-serif font-black text-amber-950 text-xs tracking-wider uppercase">👑 Top Priority Placement Active</span>
-                      <span className="bg-art-gold text-art-black font-black text-[9px] px-2 py-0.5 rounded-full font-mono uppercase">Premium Subscribed</span>
-                    </div>
-                    <p className="text-[11px] text-amber-900 leading-relaxed font-sans">
-                      Because you are an active <strong>Artellium Priority Subscribed Artist</strong>, new artworks you upload here are automatically ranked <strong>strictly at the top</strong> of the Homepage, Live Auctions Arena, Virtual Exhibitions, and All Main Marketplace Feeds with the authenticated Gold Crown badge.
-                    </p>
-                  </div>
-                </div>
-              ) : (
-                <div className="p-4 bg-slate-50 border border-slate-200 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-sm">
-                  <div className="flex items-start gap-3">
-                    <div className="p-2 rounded-xl bg-slate-200 text-slate-700 shrink-0">
-                      <Sparkles className="w-5 h-5" />
-                    </div>
-                    <div className="space-y-1">
-                      <div className="flex items-center gap-2">
-                        <span className="font-serif font-bold text-slate-900 text-xs uppercase">Standard Artist Listing</span>
-                        <span className="bg-slate-200 text-slate-700 font-bold text-[9px] px-2 py-0.5 rounded-full font-mono uppercase">Free Tier</span>
-                      </div>
-                      <p className="text-[11px] text-slate-600 leading-relaxed font-sans">
-                        Every artist is welcome to upload and sell artworks freely on Artellium Africa. Subscribed artists who support the platform are given <strong>top priority placement</strong>.
-                      </p>
-                    </div>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => setActiveArtistTab('priority_subscription')}
-                    className="shrink-0 px-3.5 py-2 bg-gradient-to-r from-art-gold to-amber-500 hover:brightness-110 text-art-black font-black text-xs rounded-xl transition shadow flex items-center gap-1.5 cursor-pointer"
-                  >
-                    <Crown className="w-3.5 h-3.5 fill-current" />
-                    <span>Upgrade to Priority</span>
-                  </button>
                 </div>
               )}
 
@@ -2842,7 +2788,11 @@ export default function ArtistDashboardPage() {
                   {myArtistBannerPlacements.map(p => (
                     <div key={p.id} className="p-2.5 rounded-xl bg-white border border-amber-200/80 flex items-center justify-between text-xs gap-2">
                       <div className="flex items-center gap-2 min-w-0">
-                        <img src={p.image || p.artworkImage || 'https://images.unsplash.com/photo-1579783902614-a3fb3927b675?auto=format&fit=crop&q=80&w=400'} alt="" className="w-9 h-9 rounded-lg object-cover shrink-0" />
+                        {(p.image || p.artworkImage) ? (
+                          <img src={p.image || p.artworkImage} alt="" className="w-9 h-9 rounded-lg object-cover shrink-0" />
+                        ) : (
+                          <div className="w-9 h-9 rounded-lg bg-slate-900 text-art-gold flex items-center justify-center font-serif font-bold text-xs shrink-0">AD</div>
+                        )}
                         <div className="min-w-0">
                           <p className="font-bold text-slate-900 truncate">{p.title}</p>
                           <span className="text-[10px] text-slate-500 font-mono capitalize block truncate">

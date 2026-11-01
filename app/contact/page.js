@@ -21,7 +21,7 @@ import {
 } from 'lucide-react';
 
 export default function ContactPage() {
-  const { contactConfig } = useStore();
+  const { contactConfig, sendDirectMessageToAdmin } = useStore();
   const cfg = contactConfig || INITIAL_CONTACT_CONFIG;
 
   const [formData, setFormData] = useState({
@@ -36,16 +36,18 @@ export default function ContactPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setIsSubmitting(true);
-    setTimeout(() => {
+    try {
+      await sendDirectMessageToAdmin(formData);
+    } finally {
       setIsSubmitting(false);
       setSubmitted(true);
-    }, 600);
+    }
   };
 
-  const offices = cfg.offices || INITIAL_CONTACT_CONFIG.offices;
+  const offices = Array.isArray(cfg.offices) ? cfg.offices : [];
   const contactChannels = cfg.contactChannels || INITIAL_CONTACT_CONFIG.contactChannels;
 
   return (
@@ -174,10 +176,10 @@ export default function ContactPage() {
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-slate-300 mb-1 font-medium">Phone Number (Optional)</label>
+                    <label className="block text-slate-300 mb-1 font-medium">Phone / WhatsApp (Optional)</label>
                     <input
                       type="tel"
-                      placeholder="e.g. +234 801 234 5678"
+                      placeholder="Your phone or WhatsApp number"
                       value={formData.phone}
                       onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                       className="w-full bg-[#08090D] border border-white/15 rounded-xl p-3 text-white placeholder-slate-500 focus:outline-none focus:border-art-gold transition font-mono"
@@ -261,31 +263,47 @@ export default function ContactPage() {
               </div>
 
               <div className="space-y-5">
-                {offices.map((office, idx) => (
-                  <div key={office.id || idx} className="space-y-1.5 text-xs">
-                    <div className="flex items-center justify-between">
-                      <span className="font-bold text-white font-serif text-sm">
-                        {office.city}
-                      </span>
-                      <span className="text-slate-400 font-sans text-[11px]">{office.country}</span>
-                    </div>
-
-                    <p className="text-slate-400 flex items-start gap-1.5">
-                      <MapPin className="w-3.5 h-3.5 text-art-gold shrink-0 mt-0.5" />
-                      <span>{office.address}</span>
-                    </p>
-
-                    <p className="text-slate-400 flex items-center gap-1.5 font-mono text-[11px]">
-                      <Phone className="w-3 h-3 text-slate-400 shrink-0" />
-                      <span>{office.phone}</span>
-                    </p>
-
-                    <p className="text-slate-500 flex items-center gap-1.5 font-mono text-[10px]">
-                      <Clock className="w-3 h-3 text-slate-500 shrink-0" />
-                      <span>{office.hours}</span>
+                {offices.length === 0 ? (
+                  <div className="p-5 rounded-2xl bg-[#08090D] border border-white/10 text-center space-y-1.5">
+                    <MapPin className="w-5 h-5 text-art-gold mx-auto" />
+                    <p className="text-xs font-semibold text-white">Official Gallery & Office Locations</p>
+                    <p className="text-[11px] text-slate-400">
+                      Locations added by Admin in the Admin Dashboard automatically reflect here in real time.
                     </p>
                   </div>
-                ))}
+                ) : (
+                  offices.map((office, idx) => (
+                    <div key={office.id || idx} className="space-y-1.5 text-xs p-3.5 rounded-2xl bg-[#08090D] border border-white/10">
+                      <div className="flex items-center justify-between">
+                        <span className="font-bold text-white font-serif text-sm">
+                          {office.city}
+                        </span>
+                        <span className="text-slate-400 font-sans text-[11px]">{office.country}</span>
+                      </div>
+
+                      {office.address && (
+                        <p className="text-slate-300 flex items-start gap-1.5">
+                          <MapPin className="w-3.5 h-3.5 text-art-gold shrink-0 mt-0.5" />
+                          <span>{office.address}</span>
+                        </p>
+                      )}
+
+                      {office.phone && (
+                        <p className="text-slate-400 flex items-center gap-1.5 font-mono text-[11px]">
+                          <Phone className="w-3 h-3 text-slate-400 shrink-0" />
+                          <span>{office.phone}</span>
+                        </p>
+                      )}
+
+                      {office.hours && (
+                        <p className="text-slate-500 flex items-center gap-1.5 font-mono text-[10px]">
+                          <Clock className="w-3 h-3 text-slate-500 shrink-0" />
+                          <span>{office.hours}</span>
+                        </p>
+                      )}
+                    </div>
+                  ))
+                )}
               </div>
             </div>
 

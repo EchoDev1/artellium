@@ -9,9 +9,12 @@ import { DEFAULT_FALLBACK_IMAGE, getCategoryFallback } from '@/lib/image-utils';
 import { isPriorityArtist } from '@/lib/priority-utils';
 
 export default function ArtworkCard({ artwork }) {
-  const { addToCart, currency, wishlist, addToWishlist, removeFromWishlist, usdExchangeRate = 1480 } = useStore();
+  const { addToCart, currency, wishlist, addToWishlist, removeFromWishlist, usdExchangeRate = 1480, currentUser } = useStore();
   const [quickViewOpen, setQuickViewOpen] = useState(false);
   const isWishlisted = wishlist?.includes(artwork.id);
+  const isArtistRole = currentUser?.role === 'artist';
+  const hasRealImage = Boolean(artwork.image && !String(artwork.image).includes('unsplash.com') && !artwork.isDemo);
+  const hasRealAvatar = Boolean(artwork.artistAvatar && !String(artwork.artistAvatar).includes('unsplash.com'));
 
   const formatPrice = (amount) => {
     if (currency === 'USD') {
@@ -98,17 +101,26 @@ export default function ArtworkCard({ artwork }) {
               {(artwork.status === 'auction' || artwork.isAuction) ? 'Live Auction Coming Very Soon' : 'Exhibition Coming Very Soon'}
             </span>
           </div>
-        ) : (
+        ) : artwork.status === 'sold' ? (
+          <div className="absolute inset-0 bg-gradient-to-br from-[#0A0D14] via-[#07090D] to-[#110C10] flex flex-col items-center justify-center p-6 text-center select-none z-10">
+            <span className="font-serif text-lg sm:text-xl font-bold tracking-[0.2em] uppercase text-white/15 leading-relaxed">
+              We are selling out soon
+            </span>
+          </div>
+        ) : hasRealImage ? (
           <img
-            src={artwork.image || fallbackImg}
+            src={artwork.image}
             alt={artwork.title}
             loading="eager"
             decoding="async"
-            onError={(e) => {
-              e.currentTarget.src = fallbackImg;
-            }}
             className="relative z-10 w-full h-full object-fill art-card-img contrast-[1.05] saturate-[1.08] brightness-[1.02] group-hover:scale-105 group-hover/img:scale-105 transition-transform duration-500 ease-out"
           />
+        ) : (
+          <div className="absolute inset-0 bg-gradient-to-br from-[#0A0D14] via-[#07090D] to-[#0B0F17] flex flex-col items-center justify-center p-6 text-center select-none z-10">
+            <span className="font-serif text-base sm:text-lg font-bold tracking-[0.2em] uppercase text-white/15">
+              {artwork.title || 'Original Masterpiece'}
+            </span>
+          </div>
         )}
 
         {/* Quick View Button */}
@@ -146,11 +158,17 @@ export default function ArtworkCard({ artwork }) {
               href={`/artist/${artwork.artistId || encodeURIComponent(artwork.artistName)}`}
               className="flex items-center gap-1.5 group/artist hover:opacity-90 transition min-w-0"
             >
-              <img
-                src={artwork.artistAvatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=300'}
-                alt={artwork.artistName}
-                className="w-4 h-4 rounded-full object-cover border border-art-gold/40 shrink-0"
-              />
+              {hasRealAvatar ? (
+                <img
+                  src={artwork.artistAvatar}
+                  alt={artwork.artistName}
+                  className="w-4 h-4 rounded-full object-cover border border-art-gold/40 shrink-0"
+                />
+              ) : (
+                <div className="w-4 h-4 rounded-full bg-art-gold/20 border border-art-gold/40 flex items-center justify-center text-[9px] font-bold text-art-gold shrink-0">
+                  {(artwork.artistName || 'A').charAt(0).toUpperCase()}
+                </div>
+              )}
               <span className="text-xs text-art-gold font-medium truncate group-hover/artist:underline">
                 {artwork.artistName}
               </span>
@@ -176,7 +194,7 @@ export default function ArtworkCard({ artwork }) {
           </div>
 
           <div className="flex items-center gap-1.5">
-            {artwork.status === 'available' && (
+            {artwork.status === 'available' && !isArtistRole && (
               <button
                 onClick={() => addToCart(artwork)}
                 className="h-8 sm:h-8.5 bg-art-gold hover:brightness-110 text-white font-bold text-[11px] sm:text-xs px-3 rounded-xl transition shadow-gold-glow flex items-center gap-1.5 cursor-pointer shrink-0"
@@ -184,6 +202,15 @@ export default function ArtworkCard({ artwork }) {
                 <ShoppingBag className="w-3.5 h-3.5" />
                 <span>Add to Cart</span>
               </button>
+            )}
+
+            {artwork.status === 'available' && isArtistRole && (
+              <Link
+                href={`/artwork/${artwork.id}`}
+                className="h-8 sm:h-8.5 bg-white/10 hover:bg-white/20 text-white font-bold text-[11px] sm:text-xs px-3 rounded-xl transition flex items-center gap-1.5 shrink-0"
+              >
+                <span>View Details</span>
+              </Link>
             )}
 
             {artwork.status === 'auction' && (
@@ -209,16 +236,25 @@ export default function ArtworkCard({ artwork }) {
         <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-xl flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
           <div className="relative w-full max-w-3xl bg-art-black-card border border-art-gold/40 rounded-2xl shadow-2xl flex flex-col md:flex-row my-auto max-h-[92vh] overflow-y-auto pb-6 md:pb-0">
             <div className="md:w-1/2 min-h-[320px] md:min-h-[440px] bg-[#07090D] overflow-hidden relative shrink-0 flex items-center justify-center p-4">
-              <div 
-                className="absolute inset-0 bg-cover bg-center blur-2xl opacity-20 scale-125 pointer-events-none"
-                style={{ backgroundImage: `url(${artwork.image || fallbackImg})` }}
-              />
-              <img
-                src={artwork.image || fallbackImg}
-                alt={artwork.title}
-                onError={(e) => { e.currentTarget.src = fallbackImg; }}
-                className="relative z-10 max-h-full max-w-full object-contain rounded-xl shadow-2xl"
-              />
+              {artwork.status === 'sold' ? (
+                <div className="flex flex-col items-center justify-center p-8 text-center select-none">
+                  <span className="font-serif text-xl font-bold tracking-[0.2em] uppercase text-white/20">
+                    We are selling out soon
+                  </span>
+                </div>
+              ) : hasRealImage ? (
+                <img
+                  src={artwork.image}
+                  alt={artwork.title}
+                  className="relative z-10 max-h-full max-w-full object-contain rounded-xl shadow-2xl"
+                />
+              ) : (
+                <div className="flex flex-col items-center justify-center p-8 text-center select-none">
+                  <span className="font-serif text-xl font-bold tracking-[0.2em] uppercase text-white/20">
+                    {artwork.title}
+                  </span>
+                </div>
+              )}
             </div>
 
             <div className="md:w-1/2 p-5 sm:p-6 flex flex-col justify-between overflow-y-auto">
@@ -255,7 +291,7 @@ export default function ArtworkCard({ artwork }) {
                   </span>
                 </div>
 
-                {artwork.status === 'available' && (
+                {artwork.status === 'available' && !isArtistRole && (
                   <button
                     onClick={() => {
                       addToCart(artwork);

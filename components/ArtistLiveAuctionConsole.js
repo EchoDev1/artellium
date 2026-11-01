@@ -54,7 +54,7 @@ export default function ArtistLiveAuctionConsole({ artistName }) {
     durationMinutes: '60',
     exhibitionHall: 'Grand Benin Bronze Hall',
     antiSniping: true,
-    image: 'https://images.unsplash.com/photo-1579783902614-a3fb3927b675?auto=format&fit=crop&q=80&w=1200',
+    image: '',
     description: 'Masterpiece presented for real-time competitive bidding in the Live Arena Broadcast.'
   });
 
