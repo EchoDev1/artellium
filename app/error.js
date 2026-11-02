@@ -1,76 +1,41 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
-import { RefreshCw, ArrowRight, ShieldCheck } from 'lucide-react';
+import React, { useEffect } from 'react';
 import Link from 'next/link';
+import { RefreshCw, Home } from 'lucide-react';
 
 export default function GlobalErrorPage({ error, reset }) {
-  const [isRecovering, setIsRecovering] = useState(false);
-
   useEffect(() => {
-    console.error('[Artellium Router Notice]:', error?.message || error);
-
-    if (typeof window === 'undefined') return;
-
-    // Guard against infinite loop: only attempt silent recovery once every 30 seconds
-    const healKey = 'artellium_last_auto_heal';
-    const lastHeal = sessionStorage.getItem(healKey);
-    const now = Date.now();
-
-    if (!lastHeal || (now - parseInt(lastHeal, 10)) > 30000) {
-      sessionStorage.setItem(healKey, now.toString());
-      if (typeof reset === 'function') {
-        try {
-          reset();
-        } catch (e) {}
-      }
-    }
-  }, [error]);
-
-  const handleForceRecover = () => {
-    setIsRecovering(true);
+    console.error('[Application Notice]:', error?.message || error);
     if (typeof reset === 'function') {
       try {
         reset();
-        return;
       } catch (e) {}
     }
-    if (typeof window !== 'undefined') {
-      window.location.href = '/';
-    }
-  };
+  }, [error, reset]);
 
   return (
-    <div className="min-h-[75vh] bg-[#07080A] py-20 px-4 flex items-center justify-center text-center font-sans">
-      <div className="max-w-md w-full bg-[#0c0f17] border border-art-gold/30 rounded-3xl p-8 sm:p-10 space-y-6 text-slate-200 shadow-2xl relative overflow-hidden">
-        <div className="w-16 h-16 rounded-2xl bg-art-gold/10 border border-art-gold/40 flex items-center justify-center mx-auto text-art-gold shadow-gold-glow">
-          <ShieldCheck className="w-8 h-8 text-art-gold animate-pulse" />
-        </div>
-
-        <div className="space-y-2">
-          <h2 className="font-serif text-2xl font-bold text-white tracking-wide">
-            Restoring Artellium Gallery
-          </h2>
-          <p className="text-xs text-slate-400 leading-relaxed max-w-sm mx-auto">
-            Synchronizing African masterworks, live auction ledger, and curatorial state.
-          </p>
-        </div>
-
-        <div className="flex flex-col sm:flex-row gap-3 pt-2">
+    <div className="min-h-[70vh] bg-[#07080A] py-16 px-4 flex items-center justify-center text-center font-sans">
+      <div className="max-w-md w-full bg-[#0c0f17] border border-white/10 rounded-3xl p-8 space-y-4 text-slate-200 shadow-2xl">
+        <h2 className="font-serif text-xl font-bold text-white">Application Notice</h2>
+        <p className="text-xs text-slate-400 leading-relaxed">
+          {error?.message || 'We encountered a momentary display interruption.'}
+        </p>
+        <div className="pt-2 flex justify-center gap-3">
           <button
-            onClick={handleForceRecover}
-            disabled={isRecovering}
-            className="flex-1 py-3 px-5 rounded-xl bg-gradient-to-r from-art-gold via-amber-500 to-art-gold hover:brightness-110 text-art-black font-bold text-xs uppercase tracking-wider transition flex items-center justify-center gap-2 cursor-pointer shadow-md"
+            type="button"
+            onClick={() => reset && reset()}
+            className="px-4 py-2 bg-art-gold hover:brightness-110 text-art-black font-bold text-xs uppercase rounded-xl transition cursor-pointer flex items-center gap-1.5"
           >
-            <RefreshCw className={`w-4 h-4 ${isRecovering ? 'animate-spin' : ''}`} />
-            <span>{isRecovering ? 'Restoring...' : 'Continue to Gallery'}</span>
+            <RefreshCw className="w-3.5 h-3.5" />
+            <span>Reload View</span>
           </button>
           <Link
             href="/"
-            className="py-3 px-5 rounded-xl bg-white/10 hover:bg-white/15 text-white font-bold text-xs uppercase tracking-wider transition flex items-center justify-center gap-1.5 border border-white/10"
+            className="px-4 py-2 bg-white/10 hover:bg-white/20 text-white font-bold text-xs uppercase rounded-xl transition flex items-center gap-1.5 border border-white/10"
           >
-            <span>Home</span>
-            <ArrowRight className="w-3.5 h-3.5" />
+            <Home className="w-3.5 h-3.5" />
+            <span>Return Home</span>
           </Link>
         </div>
       </div>

@@ -21,7 +21,8 @@ import {
   Check, 
   X,
   CreditCard,
-  Building
+  Building,
+  ExternalLink
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -473,14 +474,25 @@ export default function AdminCollectorConsole() {
                   <span>Edit Profile</span>
                 </button>
 
-                <button
-                  type="button"
-                  onClick={() => setInspectOrdersCollector(collector)}
-                  className="px-3 py-1.5 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-900 border border-emerald-300 font-bold text-xs flex items-center gap-1 transition"
-                >
-                  <ShoppingBag className="w-3.5 h-3.5 text-emerald-600" />
-                  <span>Orders & Vault ({collector.ordersCount})</span>
-                </button>
+                <div className="flex items-center gap-1.5">
+                  <button
+                    type="button"
+                    onClick={() => setInspectOrdersCollector(collector)}
+                    className="px-3 py-1.5 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-900 border border-emerald-300 font-bold text-xs flex items-center gap-1 transition"
+                  >
+                    <ShoppingBag className="w-3.5 h-3.5 text-emerald-600" />
+                    <span>Orders & Vault ({collector.ordersCount})</span>
+                  </button>
+
+                  <Link
+                    href={`/artist/${encodeURIComponent(collector.id || collector.name)}`}
+                    target="_blank"
+                    className="p-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-600 transition"
+                    title="View public profile page"
+                  >
+                    <ExternalLink className="w-3.5 h-3.5" />
+                  </Link>
+                </div>
               </div>
             </div>
           ))}

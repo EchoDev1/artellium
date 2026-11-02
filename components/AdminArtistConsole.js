@@ -533,7 +533,7 @@ export default function AdminArtistConsole() {
                   </button>
 
                   <Link
-                    href={`/artist/${encodeURIComponent(artist.id || artist.name)}`}
+                    href={`/artist/${encodeURIComponent(artist.sellerId || artist.name || artist.id)}`}
                     target="_blank"
                     className="p-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-600 transition"
                     title="View public profile page"

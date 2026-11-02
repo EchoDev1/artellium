@@ -17,11 +17,12 @@ export default function ArtworkCard({ artwork }) {
   const hasRealAvatar = Boolean(artwork.artistAvatar && !String(artwork.artistAvatar).includes('unsplash.com'));
 
   const formatPrice = (amount) => {
+    const safeAmount = Number(amount) || 0;
     if (currency === 'USD') {
       const rate = (usdExchangeRate && usdExchangeRate > 0) ? usdExchangeRate : 1480;
-      return `$${Math.round(amount / rate).toLocaleString()}`;
+      return `$${Math.round(safeAmount / rate).toLocaleString()}`;
     }
-    return `₦${amount.toLocaleString()}`;
+    return `₦${safeAmount.toLocaleString()}`;
   };
 
   const fallbackImg = getCategoryFallback(artwork.category) || DEFAULT_FALLBACK_IMAGE;

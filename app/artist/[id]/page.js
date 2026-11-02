@@ -54,13 +54,25 @@ const getCountryFlag = (c) => {
 export default function MasterArtistProfilePage() {
   const router = useRouter();
   const params = useParams();
-  const rawId = decodeURIComponent(params?.id || '');
+  const rawParamId = useMemo(() => {
+    try {
+      return decodeURIComponent(params?.id || '');
+    } catch {
+      return String(params?.id || '');
+    }
+  }, [params?.id]);
+
+  // Strip synthetic console prefixes (e.g., 'sel-', 'art-seller-', 'col-') so name/ID lookups always resolve cleanly
+  const rawId = useMemo(() => {
+    return rawParamId.replace(/^(art-seller-|sel-|col-)/i, '').trim();
+  }, [rawParamId]);
 
   const { 
     currentUser, 
     sellers = [], 
     usersList = [], 
     artworks = [], 
+    orders = [],
     followedArtists = [],
     askArtworkQuestion
   } = useStore();
@@ -73,32 +85,44 @@ export default function MasterArtistProfilePage() {
 
   // 1. Resolve matching seller or user
   const sellerMatch = useMemo(() => {
-    return sellers.find(s => 
-      s.id === rawId || 
-      s.user_id === rawId || 
-      s.name?.toLowerCase() === rawId.toLowerCase() ||
-      (rawId && s.name && s.name.toLowerCase().includes(rawId.toLowerCase()))
+    const target = rawId.toLowerCase();
+    return (sellers || []).find(s => 
+      s && (
+        s.id === rawParamId ||
+        s.id === rawId || 
+        s.user_id === rawParamId ||
+        s.user_id === rawId || 
+        s.name?.toLowerCase() === target ||
+        (target && s.name && s.name.toLowerCase().includes(target))
+      )
     );
-  }, [sellers, rawId]);
+  }, [sellers, rawId, rawParamId]);
 
   const userMatch = useMemo(() => {
-    return usersList.find(u => 
-      u.id === rawId || 
-      u.name?.toLowerCase() === rawId.toLowerCase() ||
-      (rawId && u.name && u.name.toLowerCase().includes(rawId.toLowerCase()))
+    const target = rawId.toLowerCase();
+    return (usersList || []).find(u => 
+      u && (
+        u.id === rawParamId ||
+        u.id === rawId || 
+        u.email?.toLowerCase() === target ||
+        u.name?.toLowerCase() === target ||
+        (target && u.name && u.name.toLowerCase().includes(target))
+      )
     );
-  }, [usersList, rawId]);
+  }, [usersList, rawId, rawParamId]);
 
-  // 2. Resolve all artworks created by this artist
+  // 2. Resolve all artworks created by this artist (or acquired by this collector if viewing a collector profile)
   const artistArtworks = useMemo(() => {
     const searchTarget = rawId.toLowerCase();
     const sellerName = sellerMatch?.name?.toLowerCase();
     const userName = userMatch?.name?.toLowerCase();
 
-    return artworks.filter(art => {
+    const createdWorks = (artworks || []).filter(art => {
+      if (!art) return false;
       const artArtistName = art.artistName?.toLowerCase() || '';
       const artArtistId = art.artistId;
       return (
+        artArtistId === rawParamId ||
         artArtistId === rawId ||
         artArtistName === searchTarget ||
         (searchTarget && artArtistName.includes(searchTarget)) ||
@@ -108,13 +132,35 @@ export default function MasterArtistProfilePage() {
         (sellerMatch?.id && artArtistId === sellerMatch.id)
       );
     });
-  }, [artworks, rawId, sellerMatch, userMatch]);
+
+    if (createdWorks.length > 0) return createdWorks;
+
+    // Fallback: if this is a collector profile with acquired works, resolve their collected pieces
+    if (userMatch && (userMatch.role === 'buyer' || userMatch.role === 'collector')) {
+      const cleanName = userMatch.name ? userMatch.name.split(' (')[0].toLowerCase() : '';
+      return (artworks || []).filter(art => {
+        if (!art) return false;
+        const soldMatch = cleanName && art.soldTo && art.soldTo.toLowerCase().includes(cleanName);
+        const orderMatch = (orders || []).some(o => 
+          (o.buyer_id === userMatch.id || (cleanName && o.buyer_name?.toLowerCase().includes(cleanName))) &&
+          (o.items || []).some(i => i.id === art.id || i.title === art.title)
+        );
+        return soldMatch || orderMatch;
+      });
+    }
+
+    return createdWorks;
+  }, [artworks, orders, rawId, rawParamId, sellerMatch, userMatch]);
 
   // 3. Fallback to first artwork for basic metadata if neither seller nor user found
   const firstArt = artistArtworks[0];
-  const name = userMatch?.name || sellerMatch?.name || firstArt?.artistName || rawId;
-  const artistTitle = userMatch?.artistTitle || sellerMatch?.artistTitle || 'Contemporary Master Visual Artist';
-  const bio = userMatch?.bio || sellerMatch?.bio || `${name} is an internationally recognized African Master Visual Artist whose atelier practice champions authentic cultural heritage, classical African iconography, and museum-grade contemporary aesthetics.`;
+  const isCollectorProfile = Boolean(!sellerMatch && userMatch && (userMatch.role === 'buyer' || userMatch.role === 'collector'));
+  const name = userMatch?.name || sellerMatch?.name || firstArt?.artistName || rawId || 'Master Visual Artist';
+  const artistLookupKey = sellerMatch?.id || userMatch?.id || firstArt?.artistId || rawParamId || 'ART-VERIFIED-ID';
+  const artistTitle = userMatch?.artistTitle || sellerMatch?.artistTitle || (isCollectorProfile ? (userMatch?.biddingTier || 'Sovereign Art Collector & Patron') : 'Contemporary Master Visual Artist');
+  const bio = userMatch?.bio || sellerMatch?.bio || (isCollectorProfile
+    ? `${name} is an accredited Sovereign Patron and fine art collector on Artellium Africa, dedicated to acquiring and preserving museum-grade contemporary and heritage African masterworks.`
+    : `${name} is an internationally recognized African Master Visual Artist whose atelier practice champions authentic cultural heritage, classical African iconography, and museum-grade contemporary aesthetics.`);
   const country = userMatch?.country || sellerMatch?.country || firstArt?.country || 'Nigeria';
   const city = userMatch?.city || sellerMatch?.city || firstArt?.city || 'Lagos';
   const countryFlag = getCountryFlag(country);
@@ -134,7 +180,7 @@ export default function MasterArtistProfilePage() {
   // Sensitive Contact Details (ONLY accessible by Admin)
   const phone = userMatch?.phone || sellerMatch?.phone;
   const email = userMatch?.email || sellerMatch?.email;
-  const studioAddress = userMatch?.studioAddress || sellerMatch?.studioAddress;
+  const studioAddress = userMatch?.studioAddress || userMatch?.address || userMatch?.defaultAddress || sellerMatch?.studioAddress;
   const payoutBank = userMatch?.payout_bank || sellerMatch?.payout_bank || 'WEMA Bank PLC';
   const payoutAccount = userMatch?.payout_account || sellerMatch?.payout_account || '0123456789';
   const payoutAccountName = userMatch?.payout_account_name || sellerMatch?.payout_account_name || `${name} Studio`;
@@ -632,7 +678,62 @@ export default function MasterArtistProfilePage() {
 
       </div>
 
-      
+      {/* Atelier Curatorial Inquiry Modal */}
+      {inquiryModalOpen && (
+        <div className="fixed inset-0 bg-black/75 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-[#0c0f17] border border-art-gold/40 rounded-3xl p-6 sm:p-8 max-w-md w-full space-y-4 shadow-2xl">
+            <div className="flex items-center justify-between border-b border-white/10 pb-3">
+              <h3 className="font-serif text-lg font-bold text-white flex items-center gap-2">
+                <MessageCircle className="w-5 h-5 text-art-gold" />
+                <span>Inquire Regarding {name}</span>
+              </h3>
+              <button
+                type="button"
+                onClick={() => setInquiryModalOpen(false)}
+                className="text-slate-400 hover:text-white text-sm font-bold"
+              >
+                ✕
+              </button>
+            </div>
+
+            {inquirySent ? (
+              <div className="p-4 rounded-2xl bg-emerald-500/15 border border-emerald-500/40 text-emerald-300 text-xs font-bold flex items-center gap-2">
+                <CheckCircle2 className="w-4 h-4 shrink-0" />
+                <span>Your curatorial inquiry has been dispatched to the Artellium Escrow Desk.</span>
+              </div>
+            ) : (
+              <form onSubmit={handleSendInquiry} className="space-y-4 text-xs">
+                <p className="text-slate-400 leading-relaxed">
+                  Submit a confidential collector question or commission inquiry for <strong className="text-white">{name}</strong>.
+                </p>
+                <textarea
+                  rows={4}
+                  required
+                  value={inquiryText}
+                  onChange={(e) => setInquiryText(e.target.value)}
+                  placeholder="Ask about availability, custom commissions, provenance certificates, or shipping..."
+                  className="w-full bg-black/60 border border-white/15 rounded-xl p-3 text-white placeholder:text-slate-500 focus:outline-none focus:border-art-gold"
+                />
+                <div className="flex justify-end gap-2 pt-2">
+                  <button
+                    type="button"
+                    onClick={() => setInquiryModalOpen(false)}
+                    className="px-4 py-2 rounded-xl bg-white/10 hover:bg-white/15 text-slate-300 font-bold"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="px-5 py-2 rounded-xl bg-art-gold hover:brightness-110 text-art-black font-bold uppercase tracking-wider"
+                  >
+                    Send Inquiry
+                  </button>
+                </div>
+              </form>
+            )}
+          </div>
+        </div>
+      )}
 
     </div>
   );
