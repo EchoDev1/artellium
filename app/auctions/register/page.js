@@ -25,7 +25,8 @@ import {
 
 export default function BidderRegistrationPage() {
   const router = useRouter();
-  const { currentUser, updateUser, registerAuctionBidder } = useStore();
+  const { currentUser, updateUser, registerAuctionBidder, isArtistUser } = useStore();
+  const isArtist = currentUser?.role === 'artist' || currentUser?.role === 'seller' || (isArtistUser && isArtistUser(currentUser));
 
   const [form, setForm] = useState({
     fullName: currentUser?.name || '',
@@ -46,6 +47,7 @@ export default function BidderRegistrationPage() {
   const [idFileUploaded, setIdFileUploaded] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
   const [generatedBidderId, setGeneratedBidderId] = useState('ART-BID-2026-88942');
 
   const handleCategoryToggle = (cat) => {
@@ -59,14 +61,19 @@ export default function BidderRegistrationPage() {
 
   const handleSubmit = (e) => {
     e.preventDefault();
+    if (isArtist) {
+      setErrorMessage('Security Violation: Artists are permanently blocked from bidder registration, placing bids, and exhibition pass registration.');
+      return;
+    }
     setIsSubmitting(true);
+    setErrorMessage('');
 
     const bidderId = `ART-BID-${Date.now().toString().slice(-5)}`;
     setGeneratedBidderId(bidderId);
 
     // Save to global store if available
     if (registerAuctionBidder) {
-      registerAuctionBidder({
+      const result = registerAuctionBidder({
         bidderId,
         fullName: form.fullName,
         email: form.email,
@@ -81,6 +88,12 @@ export default function BidderRegistrationPage() {
         verified: true,
         highValueApproved: form.biddingTier === 'Sovereign'
       });
+
+      if (result && result.success === false) {
+        setIsSubmitting(false);
+        setErrorMessage(result.error || 'Registration failed.');
+        return;
+      }
     }
 
     setTimeout(() => {
@@ -123,7 +136,7 @@ export default function BidderRegistrationPage() {
         </div>
       </div>
 
-      {currentUser && (currentUser.role === 'artist' || currentUser.role === 'seller') ? (
+      {isArtist ? (
         <div className="bg-[#0A0D14] rounded-3xl border-2 border-art-gold/40 p-8 sm:p-12 space-y-6 text-center shadow-2xl animate-fade-in">
           <div className="w-16 h-16 rounded-full bg-art-gold/20 border-2 border-art-gold flex items-center justify-center text-art-gold mx-auto">
             <Lock className="w-8 h-8 text-art-gold" />
@@ -131,13 +144,13 @@ export default function BidderRegistrationPage() {
 
           <div className="space-y-2">
             <span className="text-xs font-mono font-bold text-art-gold uppercase tracking-widest block">
-              COLLECTOR-EXCLUSIVE PORTAL
+              PERMANENT POLICY RESTRICTION
             </span>
             <h2 className="font-serif text-2xl sm:text-3xl font-bold text-white">
-              Auction Bidder Accreditation is Reserved for Collectors
+              Artists Are Permanently Blocked from Bidding & Bidder Registration
             </h2>
-            <p className="text-xs sm:text-sm text-slate-300 max-w-lg mx-auto">
-              As an Artellium Artist, you can present and submit your masterworks to live auctions through your Atelier Dashboard. However, placing bids and registering as an auction patron is strictly restricted to verified collectors to protect the integrity of the secondary market.
+            <p className="text-xs sm:text-sm text-slate-300 max-w-lg mx-auto leading-relaxed">
+              In accordance with Pan-African fine art market integrity and fiduciary governance, artist profiles are strictly and permanently barred from registering as accredited bidders, placing auction bids, and registering for exhibition passes. Artists participate exclusively as creators submitting works through the Atelier Studio Dashboard.
             </p>
           </div>
 

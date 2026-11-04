@@ -2315,9 +2315,22 @@ export function StoreProvider({ children }) {
     });
   };
 
+  // Permanent security check: Identify if an account is an Artist or Seller
+  const isArtistUser = (user = currentUser) => {
+    if (!user) return false;
+    if (user.role === 'artist' || user.role === 'seller') return true;
+    const matched = (usersList || []).find(u => 
+      (u.id && user.id && u.id === user.id) ||
+      (u.email && user.email && u.email.toLowerCase() === user.email.toLowerCase())
+    );
+    return matched ? (matched.role === 'artist' || matched.role === 'seller') : false;
+  };
+
   // Check if a given user or current user is an accredited registered bidder
   const isBidderRegistered = (user = currentUser) => {
     if (!user) return false;
+    // Strict Permanent Fiduciary Rule: Artists and sellers are permanently blocked from being accredited bidders
+    if (isArtistUser(user)) return false;
     if (user.isBidder || user.isBidderRegistered || user.bidderId) return true;
     return auctionBidders.some(b => 
       (b.email && user.email && b.email.toLowerCase() === user.email.toLowerCase()) ||
@@ -2328,6 +2341,20 @@ export function StoreProvider({ children }) {
 
   // Auction Bidding & Bidder Lead Tracking
   const registerAuctionBidder = (bidderData) => {
+    // Strict Permanent Fiduciary Rule: Artists are permanently blocked from bidder registration
+    const isTargetArtist = 
+      isArtistUser(currentUser) || 
+      bidderData?.role === 'artist' || 
+      bidderData?.role === 'seller' ||
+      (usersList || []).some(u => 
+        (u.email && bidderData?.email && u.email.toLowerCase() === bidderData.email.toLowerCase() && (u.role === 'artist' || u.role === 'seller'))
+      );
+
+    if (isTargetArtist) {
+      broadcastNotification('Security Alert: Artists are permanently blocked from bidder accreditation and registration.');
+      return { success: false, error: 'Artists are permanently blocked from bidder registration.' };
+    }
+
     const newBidder = {
       id: `bidder-${Date.now()}`,
       bidderId: bidderData.bidderId || `ART-BID-${Date.now().toString().slice(-5)}`,
@@ -2378,12 +2405,21 @@ export function StoreProvider({ children }) {
   };
 
   const placeBid = (artworkId, bidAmount, bidderName = currentUser?.name || 'Verified Collector') => {
-    if (currentUser?.role === 'artist' || currentUser?.role === 'seller') {
-      broadcastNotification('Bidding is prohibited for artist profiles. Features are limited to collectors only.');
-      return { success: false, error: 'Artists cannot place bids. Bidding is restricted to collectors.' };
+    const isBidderArtist = 
+      isArtistUser(currentUser) ||
+      (usersList || []).some(u => 
+        ((u.id && currentUser?.id && u.id === currentUser.id) ||
+         (u.email && currentUser?.email && u.email.toLowerCase() === currentUser.email.toLowerCase()) ||
+         (u.name && bidderName && u.name.toLowerCase() === bidderName.toLowerCase())) &&
+        (u.role === 'artist' || u.role === 'seller')
+      );
+
+    if (isBidderArtist) {
+      broadcastNotification('Security Alert: Artists are permanently blocked from placing bids across all auctions and exhibitions.');
+      return { success: false, error: 'Artists are permanently blocked from placing bids.' };
     }
     // Strict Fiduciary Rule: Only accredited registered bidders can place bids in any live auction
-    const hasBidderCredentials = isBidderRegistered(currentUser) || auctionBidders.some(b => b.fullName.toLowerCase() === bidderName.toLowerCase());
+    const hasBidderCredentials = isBidderRegistered(currentUser) || auctionBidders.some(b => b.fullName.toLowerCase() === bidderName.toLowerCase() && !isArtistUser(b));
     if (!hasBidderCredentials) {
       console.warn(`[Live Auction Security]: Bid rejected for ${bidderName}. User is not an accredited registered bidder.`);
       return { success: false, error: 'Only accredited registered bidders can place bids in live auctions.' };
@@ -4670,6 +4706,7 @@ export function StoreProvider({ children }) {
         setArtistCuratorSubmissions,
         placeBid,
         auctionBidders,
+        isArtistUser,
         isBidderRegistered,
         registerAuctionBidder,
         updateBidderHighValueApproval,

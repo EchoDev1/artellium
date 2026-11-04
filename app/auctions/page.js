@@ -43,6 +43,7 @@ export default function AuctionsPage() {
     isLoggedIn, 
     isBidderRegistered, 
     registerAuctionBidder, 
+    isArtistUser,
     auctionBidders = [],
     sellers = [],
     usersList = [],
@@ -88,7 +89,7 @@ export default function AuctionsPage() {
   const [bidderRegSuccessMsg, setBidderRegSuccessMsg] = useState('');
 
   // Determine if active user is accredited
-  const isArtist = currentUser?.role === 'artist' || currentUser?.role === 'seller';
+  const isArtist = currentUser?.role === 'artist' || currentUser?.role === 'seller' || Boolean(isArtistUser && isArtistUser(currentUser));
   const isAccredited = Boolean(isLoggedIn && !isArtist && isBidderRegistered && isBidderRegistered(currentUser));
   const currentBidder = auctionBidders.find(b => 
     (currentUser?.email && b.email?.toLowerCase() === currentUser.email.toLowerCase()) || 
@@ -428,7 +429,7 @@ export default function AuctionsPage() {
       setFlashNotice({
         lotNumber: lot.lotNumber,
         amount: lot.currentBid,
-        msg: 'Atelier Notice: Auction bidding is reserved exclusively for Collector accounts. Artists have viewing rights only.'
+        msg: 'Policy Violation: Artists are permanently blocked from placing bids across all auctions and exhibitions.'
       });
       setTimeout(() => setFlashNotice(null), 5000);
       return;
@@ -497,7 +498,7 @@ export default function AuctionsPage() {
       setFlashNotice({
         lotNumber: lot.lotNumber,
         amount: lot.currentBid,
-        msg: 'Atelier Notice: Auction bidding is reserved exclusively for Collector accounts. Artists have viewing rights only.'
+        msg: 'Policy Violation: Artists are permanently blocked from placing bids across all auctions and exhibitions.'
       });
       setTimeout(() => setFlashNotice(null), 5000);
       return;
@@ -529,7 +530,7 @@ export default function AuctionsPage() {
     }
 
     if (isArtist) {
-      setBidError('Atelier Notice: Auction bidding is reserved exclusively for Collector accounts.');
+      setBidError('Policy Violation: Artists are permanently blocked from placing bids across all auctions and exhibitions.');
       return;
     }
 
@@ -585,7 +586,7 @@ export default function AuctionsPage() {
   const handleQuickBidderRegistration = (e) => {
     e.preventDefault();
     if (isArtist) {
-      alert('Atelier Notice: Auction bidder accreditation is reserved exclusively for Collector accounts.');
+      alert('Policy Violation: Artists are permanently blocked from bidder accreditation, placing bids, and exhibition registration.');
       setIsBidderRegModalOpen(false);
       return;
     }
@@ -645,13 +646,13 @@ export default function AuctionsPage() {
             </div>
             <div>
               <h4 className="font-serif text-sm font-bold text-white flex items-center gap-2">
-                <span>Atelier Peer Preview Protocol</span>
-                <span className="px-2 py-0.5 rounded-full bg-art-gold/20 text-art-gold text-[9px] font-mono uppercase">
-                  Artist Account
+                <span>Permanent Fiduciary Restriction</span>
+                <span className="px-2 py-0.5 rounded-full bg-art-gold/20 text-art-gold text-[9px] font-mono uppercase font-bold">
+                  Artist Account Blocked
                 </span>
               </h4>
-              <p className="text-xs text-slate-300 mt-0.5">
-                You are currently viewing the live auction arena as an <strong className="text-art-gold">Artist</strong>. Live bidding and bidder accreditation are strictly limited to Collector accounts.
+              <p className="text-xs text-slate-300 mt-0.5 leading-relaxed">
+                You are viewing the live auction arena as an <strong className="text-art-gold">Artist</strong>. In accordance with platform governance, artists are permanently blocked from placing bids, bidder registration, and exhibition registration.
               </p>
             </div>
           </div>
@@ -759,7 +760,7 @@ export default function AuctionsPage() {
         {/* Dynamic Bidder Status Indicator */}
         <div className="flex items-center gap-3">
           {isArtist ? (
-            <div className="flex items-center gap-2 bg-art-gold/10 border border-art-gold/30 px-3.5 py-2 rounded-xl text-xs text-art-gold">
+            <div className="flex items-center gap-2 bg-art-gold/10 border border-art-gold/30 px-3.5 py-2 rounded-xl text-xs text-art-gold select-none cursor-not-allowed pointer-events-none">
               <Lock className="w-3.5 h-3.5 text-art-gold" />
               <span className="font-mono text-[11px] font-bold">
                 Atelier View: <strong className="text-white">Artist Account</strong>
@@ -980,10 +981,10 @@ export default function AuctionsPage() {
                     {/* Bidding Action Buttons: PLACE BID & POWER BID */}
                     <div className="flex flex-col sm:flex-row items-center gap-3 pt-2">
                       {isArtist ? (
-                        <div className="flex-1 p-3.5 bg-black/60 border border-art-gold/40 rounded-xl text-center">
+                        <div className="flex-1 p-3.5 bg-black/60 border border-art-gold/40 rounded-xl text-center select-none cursor-not-allowed pointer-events-none">
                           <span className="text-xs font-mono font-bold text-art-gold flex items-center justify-center gap-2">
                             <Lock className="w-4 h-4 text-art-gold shrink-0" />
-                            <span>Atelier Peer Preview: Auction bidding is reserved for Collectors</span>
+                            <span>Artist Account: Permanently Blocked from Bidding & Registration</span>
                           </span>
                         </div>
                       ) : (
@@ -1221,7 +1222,33 @@ export default function AuctionsPage() {
               </button>
             </div>
 
-            {bidSuccessMessage ? (
+            {isArtist ? (
+              <div className="py-6 space-y-4 text-center animate-fade-in">
+                <div className="w-14 h-14 rounded-full bg-art-gold/20 border-2 border-art-gold flex items-center justify-center text-art-gold mx-auto">
+                  <Lock className="w-7 h-7 text-art-gold" />
+                </div>
+                <div className="space-y-1">
+                  <span className="text-[10px] font-mono font-bold text-art-gold uppercase tracking-widest block">
+                    PERMANENT RESTRICTION
+                  </span>
+                  <h4 className="font-serif text-lg font-bold text-white">
+                    Bidding Blocked for Artists
+                  </h4>
+                </div>
+                <p className="text-slate-300 text-xs leading-relaxed max-w-sm mx-auto">
+                  Artists are permanently barred from placing bids and bidder registration across all auctions and exhibitions.
+                </p>
+                <div className="pt-2 flex justify-center gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setBiddingLot(null)}
+                    className="px-6 py-2.5 bg-art-gold text-art-black font-bold text-xs uppercase rounded-xl transition hover:brightness-110"
+                  >
+                    Close Window
+                  </button>
+                </div>
+              </div>
+            ) : bidSuccessMessage ? (
               <div className="p-6 bg-emerald-950/80 border border-emerald-500/50 rounded-2xl text-center space-y-2">
                 <Sparkles className="w-10 h-10 text-emerald-400 mx-auto animate-bounce" />
                 <p className="text-sm sm:text-base font-bold text-emerald-300">{bidSuccessMessage}</p>
@@ -1500,7 +1527,33 @@ export default function AuctionsPage() {
               </div>
             )}
 
-            {isAccredited ? (
+            {isArtist ? (
+              /* ARTIST PERMANENTLY BLOCKED VIEW */
+              <div className="py-6 space-y-4 text-center animate-fade-in">
+                <div className="w-16 h-16 rounded-full bg-art-gold/20 border-2 border-art-gold flex items-center justify-center text-art-gold mx-auto">
+                  <Lock className="w-8 h-8 text-art-gold" />
+                </div>
+                <div className="space-y-1">
+                  <span className="text-[10px] font-mono font-bold text-art-gold uppercase tracking-widest block">
+                    PERMANENT RESTRICTION
+                  </span>
+                  <h4 className="font-serif text-lg font-bold text-white">
+                    Bidder Accreditation Blocked for Artists
+                  </h4>
+                </div>
+                <p className="text-slate-300 text-xs leading-relaxed max-w-sm mx-auto">
+                  In compliance with Artellium fiduciary standards, artists are permanently blocked from registering as bidders and placing bids across all auctions and exhibitions.
+                </p>
+                <div className="pt-2 flex justify-center gap-3">
+                  <button
+                    onClick={() => setIsBidderRegModalOpen(false)}
+                    className="px-6 py-2.5 bg-art-gold text-art-black font-bold text-xs uppercase rounded-xl transition hover:brightness-110"
+                  >
+                    Close Window
+                  </button>
+                </div>
+              </div>
+            ) : isAccredited ? (
               /* ALREADY ACCREDITED VIEW */
               <div className="space-y-5">
                 <div className="p-5 rounded-2xl bg-gradient-to-br from-black via-[#0D121B] to-black border border-art-gold/60 space-y-3 shadow-gold-glow">

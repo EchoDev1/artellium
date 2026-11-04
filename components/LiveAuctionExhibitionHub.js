@@ -36,8 +36,11 @@ export default function LiveAuctionExhibitionHub() {
     isLoggedIn, 
     isBidderRegistered, 
     registerAuctionBidder, 
+    isArtistUser,
     auctionBidders = [] 
   } = useStore();
+
+  const isArtist = currentUser?.role === 'artist' || currentUser?.role === 'seller' || Boolean(isArtistUser && isArtistUser(currentUser));
 
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [isBidderRegModalOpen, setIsBidderRegModalOpen] = useState(false);
@@ -54,7 +57,7 @@ export default function LiveAuctionExhibitionHub() {
     biddingTier: 'Standard'
   });
 
-  const isAccredited = Boolean(isLoggedIn && isBidderRegistered && isBidderRegistered(currentUser));
+  const isAccredited = Boolean(isLoggedIn && !isArtist && isBidderRegistered && isBidderRegistered(currentUser));
   const currentBidder = auctionBidders.find(b => 
     (currentUser?.email && b.email?.toLowerCase() === currentUser.email.toLowerCase()) || 
     (currentUser?.id && b.id === currentUser.id) || 
@@ -232,6 +235,10 @@ export default function LiveAuctionExhibitionHub() {
   };
 
   const openManualBidConsole = (defaultIncrement = 100000) => {
+    if (isArtist) {
+      alert('Policy Violation: Artists are permanently blocked from placing bids across all auctions and exhibitions.');
+      return;
+    }
     const suggested = currentHighestBid + defaultIncrement;
     setManualBidAmount(suggested.toLocaleString());
     setBidError('');
@@ -245,8 +252,8 @@ export default function LiveAuctionExhibitionHub() {
       return;
     }
 
-    if (currentUser?.role === 'artist' || currentUser?.role === 'seller') {
-      alert('Artist profiles are prohibited from placing bids. Bidding is restricted to collectors only.');
+    if (isArtist) {
+      alert('Policy Violation: Artists are permanently blocked from placing bids across all auctions and exhibitions.');
       return;
     }
 
@@ -303,8 +310,8 @@ export default function LiveAuctionExhibitionHub() {
       return;
     }
 
-    if (currentUser?.role === 'artist' || currentUser?.role === 'seller') {
-      setBidError('Artist profiles are prohibited from placing bids. Bidding is restricted to collectors only.');
+    if (isArtist) {
+      setBidError('Policy Violation: Artists are permanently blocked from placing bids across all auctions and exhibitions.');
       return;
     }
 
@@ -367,6 +374,11 @@ export default function LiveAuctionExhibitionHub() {
 
   const handleQuickBidderRegistration = (e) => {
     e.preventDefault();
+    if (isArtist) {
+      alert('Policy Violation: Artists are permanently blocked from bidder accreditation, placing bids, and exhibition registration.');
+      setIsBidderRegModalOpen(false);
+      return;
+    }
     setIsRegisteringBidder(true);
 
     const bidderId = `ART-BID-${Date.now().toString().slice(-5)}`;
@@ -587,7 +599,12 @@ export default function LiveAuctionExhibitionHub() {
 
           {/* Interactive Quick / Power Bid Section */}
           <div className="space-y-2.5 pt-3 border-t border-white/10">
-            {isManualBidOpen ? (
+            {isArtist ? (
+              <div className="p-3 bg-black/60 border border-art-gold/40 rounded-xl text-center text-xs text-art-gold font-mono font-bold flex items-center justify-center gap-2 select-none cursor-not-allowed pointer-events-none">
+                <Lock className="w-4 h-4 text-art-gold shrink-0" />
+                <span>Artist Account: Bidding Permanently Blocked</span>
+              </div>
+            ) : isManualBidOpen ? (
               <form onSubmit={handleManualBidSubmit} className="space-y-3 p-3.5 rounded-xl bg-[#141824] border-2 border-art-gold/60 shadow-2xl animate-fade-in text-xs">
                 <div className="flex items-center justify-between">
                   <span className="font-serif font-bold text-white flex items-center gap-1.5 text-xs">
@@ -934,7 +951,31 @@ export default function LiveAuctionExhibitionHub() {
               </div>
             )}
 
-            <form onSubmit={handleQuickBidderRegistration} className="space-y-4">
+            {isArtist ? (
+              <div className="py-6 space-y-4 text-center animate-fade-in">
+                <div className="w-14 h-14 rounded-full bg-art-gold/20 border-2 border-art-gold flex items-center justify-center text-art-gold mx-auto">
+                  <Lock className="w-7 h-7 text-art-gold" />
+                </div>
+                <div className="space-y-1">
+                  <span className="text-[10px] font-mono font-bold text-art-gold uppercase tracking-widest block">
+                    PERMANENT RESTRICTION
+                  </span>
+                  <h4 className="font-serif text-lg font-bold text-white">
+                    Bidder Accreditation Blocked for Artists
+                  </h4>
+                </div>
+                <p className="text-slate-300 text-xs leading-relaxed max-w-sm mx-auto">
+                  Artists are permanently blocked from bidder accreditation, placing bids, and exhibition pass registration.
+                </p>
+                <button
+                  onClick={() => setIsBidderRegModalOpen(false)}
+                  className="px-6 py-2.5 bg-art-gold text-black font-bold text-xs uppercase rounded-xl transition hover:brightness-110"
+                >
+                  Close Window
+                </button>
+              </div>
+            ) : (
+              <form onSubmit={handleQuickBidderRegistration} className="space-y-4">
               <p className="text-slate-300 text-xs leading-relaxed">
                 Complete your quick accreditation below to activate your official Artellium Bidder Pass and place live bids immediately.
               </p>

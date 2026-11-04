@@ -218,12 +218,18 @@ export default function ArtworkCard({ artwork }) {
             )}
 
             {artwork.status === 'auction' && (
-              <Link
-                href="/auctions"
-                className="h-8 sm:h-8.5 bg-art-red hover:bg-red-700 text-white font-bold text-[11px] sm:text-xs px-3 rounded-xl transition shadow-crimson-glow flex items-center gap-1 shrink-0"
-              >
-                <span>Place Bid</span>
-              </Link>
+              !isArtistRole ? (
+                <Link
+                  href="/auctions"
+                  className="h-8 sm:h-8.5 bg-art-red hover:bg-red-700 text-white font-bold text-[11px] sm:text-xs px-3 rounded-xl transition shadow-crimson-glow flex items-center gap-1 shrink-0"
+                >
+                  <span>Place Bid</span>
+                </Link>
+              ) : (
+                <span className="h-8 sm:h-8.5 inline-flex items-center text-[10px] font-bold text-art-gold bg-art-gold/10 px-2.5 rounded-lg border border-art-gold/30 shrink-0 select-none cursor-not-allowed pointer-events-none">
+                  Auction Lot
+                </span>
+              )
             )}
 
             {artwork.status === 'sold' && (

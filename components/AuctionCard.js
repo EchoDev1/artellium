@@ -35,8 +35,11 @@ export default function AuctionCard({ artwork }) {
     isLoggedIn, 
     isBidderRegistered, 
     registerAuctionBidder, 
+    isArtistUser,
     auctionBidders = [] 
   } = useStore();
+
+  const isArtist = currentUser?.role === 'artist' || currentUser?.role === 'seller' || Boolean(isArtistUser && isArtistUser(currentUser));
 
   const [bidAmount, setBidAmount] = useState('');
   const [biddingOpen, setBiddingOpen] = useState(false);
@@ -62,7 +65,7 @@ export default function AuctionCard({ artwork }) {
     biddingTier: 'Standard'
   });
 
-  const isAccredited = Boolean(isLoggedIn && isBidderRegistered && isBidderRegistered(currentUser));
+  const isAccredited = Boolean(isLoggedIn && !isArtist && isBidderRegistered && isBidderRegistered(currentUser));
   const currentBidder = auctionBidders.find(b => 
     (currentUser?.email && b.email?.toLowerCase() === currentUser.email.toLowerCase()) || 
     (currentUser?.id && b.id === currentUser.id) || 
@@ -119,6 +122,11 @@ export default function AuctionCard({ artwork }) {
       return;
     }
 
+    if (isArtist) {
+      setBidError('Policy Violation: Artists are permanently blocked from placing bids across all auctions and exhibitions.');
+      return;
+    }
+
     if (!isAccredited) {
       setIsBidderRegModalOpen(true);
       return;
@@ -153,6 +161,12 @@ export default function AuctionCard({ artwork }) {
       return;
     }
 
+    if (isArtist) {
+      setFlashNotice('Policy Violation: Artists are permanently blocked from placing bids.');
+      setTimeout(() => setFlashNotice(null), 4000);
+      return;
+    }
+
     if (!isAccredited) {
       setIsBidderRegModalOpen(true);
       return;
@@ -173,6 +187,11 @@ export default function AuctionCard({ artwork }) {
 
   const handleQuickBidderRegistration = (e) => {
     e.preventDefault();
+    if (isArtist) {
+      alert('Policy Violation: Artists are permanently blocked from bidder accreditation, placing bids, and exhibition registration.');
+      setIsBidderRegModalOpen(false);
+      return;
+    }
     setIsRegisteringBidder(true);
 
     const bidderId = `ART-BID-${Date.now().toString().slice(-5)}`;
@@ -363,24 +382,33 @@ export default function AuctionCard({ artwork }) {
           </div>
 
           <div className="flex flex-col sm:flex-row items-center gap-2.5 w-full">
-            <button
-              onClick={() => {
-                setBidAmount(minBid);
-                setBiddingOpen(true);
-              }}
-              className="w-full sm:flex-1 bg-gradient-to-r from-art-red via-red-600 to-art-red hover:brightness-110 text-white font-bold text-xs py-3 rounded-xl transition shadow-crimson-glow flex items-center justify-center gap-1.5 uppercase tracking-wide cursor-pointer"
-            >
-              <Gavel className="w-3.5 h-3.5" />
-              <span>PLACE BID</span>
-            </button>
+            {isArtist ? (
+              <div className="w-full flex-1 p-3 bg-black/60 border border-art-gold/40 rounded-xl text-center text-xs text-art-gold font-mono font-bold flex items-center justify-center gap-2">
+                <Lock className="w-4 h-4 text-art-gold shrink-0" />
+                <span>Artist Account: Permanently Blocked from Bidding</span>
+              </div>
+            ) : (
+              <>
+                <button
+                  onClick={() => {
+                    setBidAmount(minBid);
+                    setBiddingOpen(true);
+                  }}
+                  className="w-full sm:flex-1 bg-gradient-to-r from-art-red via-red-600 to-art-red hover:brightness-110 text-white font-bold text-xs py-3 rounded-xl transition shadow-crimson-glow flex items-center justify-center gap-1.5 uppercase tracking-wide cursor-pointer"
+                >
+                  <Gavel className="w-3.5 h-3.5" />
+                  <span>PLACE BID</span>
+                </button>
 
-            <button
-              onClick={handlePowerBid}
-              className="w-full sm:flex-1 bg-gradient-to-r from-art-gold via-[#9E7720] to-art-gold-dark hover:brightness-110 text-white font-black text-xs py-3 rounded-xl transition shadow-gold-glow flex items-center justify-center gap-1.5 uppercase tracking-wide cursor-pointer"
-            >
-              <Zap className="w-3.5 h-3.5 fill-current animate-pulse text-white" />
-              <span>POWER BID (+₦100K)</span>
-            </button>
+                <button
+                  onClick={handlePowerBid}
+                  className="w-full sm:flex-1 bg-gradient-to-r from-art-gold via-[#9E7720] to-art-gold-dark hover:brightness-110 text-white font-black text-xs py-3 rounded-xl transition shadow-gold-glow flex items-center justify-center gap-1.5 uppercase tracking-wide cursor-pointer"
+                >
+                  <Zap className="w-3.5 h-3.5 fill-current animate-pulse text-white" />
+                  <span>POWER BID (+₦100K)</span>
+                </button>
+              </>
+            )}
 
             <button
               onClick={() => setIsInvoiceOpen(true)}
@@ -438,7 +466,21 @@ export default function AuctionCard({ artwork }) {
               </button>
             </div>
 
-            {bidSuccessMessage ? (
+            {isArtist ? (
+              <div className="p-6 bg-black/80 border border-art-gold/40 rounded-2xl text-center space-y-3">
+                <Lock className="w-8 h-8 text-art-gold mx-auto" />
+                <h4 className="font-serif text-lg font-bold text-white">Bidding Restricted</h4>
+                <p className="text-slate-300 text-xs">
+                  Artists are permanently blocked from placing bids across all auctions and exhibitions.
+                </p>
+                <button
+                  onClick={() => setBiddingOpen(false)}
+                  className="px-5 py-2 bg-art-gold text-black font-bold text-xs uppercase rounded-xl"
+                >
+                  Close Window
+                </button>
+              </div>
+            ) : bidSuccessMessage ? (
               <div className="p-4 bg-emerald-950/60 border border-emerald-500/40 rounded-xl text-center space-y-2">
                 <Sparkles className="w-8 h-8 text-emerald-400 mx-auto animate-bounce" />
                 <p className="text-sm font-bold text-emerald-300">{bidSuccessMessage}</p>
@@ -643,7 +685,31 @@ export default function AuctionCard({ artwork }) {
               </div>
             )}
 
-            <form onSubmit={handleQuickBidderRegistration} className="space-y-4">
+            {isArtist ? (
+              <div className="py-6 space-y-4 text-center animate-fade-in">
+                <div className="w-14 h-14 rounded-full bg-art-gold/20 border-2 border-art-gold flex items-center justify-center text-art-gold mx-auto">
+                  <Lock className="w-7 h-7 text-art-gold" />
+                </div>
+                <div className="space-y-1">
+                  <span className="text-[10px] font-mono font-bold text-art-gold uppercase tracking-widest block">
+                    PERMANENT RESTRICTION
+                  </span>
+                  <h4 className="font-serif text-lg font-bold text-white">
+                    Bidder Accreditation Blocked for Artists
+                  </h4>
+                </div>
+                <p className="text-slate-300 text-xs leading-relaxed max-w-sm mx-auto">
+                  Artists are permanently blocked from bidder accreditation, placing bids, and exhibition pass registration.
+                </p>
+                <button
+                  onClick={() => setIsBidderRegModalOpen(false)}
+                  className="px-6 py-2.5 bg-art-gold text-black font-bold text-xs uppercase rounded-xl transition"
+                >
+                  Close Window
+                </button>
+              </div>
+            ) : (
+              <form onSubmit={handleQuickBidderRegistration} className="space-y-4">
               <p className="text-slate-300 text-xs leading-relaxed">
                 Complete your quick accreditation below to activate your official Artellium Bidder Pass and place live bids immediately.
               </p>
@@ -731,9 +797,10 @@ export default function AuctionCard({ artwork }) {
                 )}
               </button>
             </form>
-          </div>
+          )}
         </div>
-      )}
+      </div>
+    )}
 
     </div>
   );

@@ -3,8 +3,12 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Flame, Eye, Sparkles, Gavel, ShieldCheck, ArrowRight, Radio, Users, Clock } from 'lucide-react';
+import { useStore } from '@/context/store-context';
 
 export default function LiveEventTicker() {
+  const { currentUser, isArtistUser } = useStore();
+  const isArtist = currentUser?.role === 'artist' || currentUser?.role === 'seller' || Boolean(isArtistUser && isArtistUser(currentUser));
+
   const events = [
     {
       id: 'e-1',
@@ -134,7 +138,7 @@ export default function LiveEventTicker() {
             href={activeEvent.link}
             className="inline-flex items-center gap-1 text-xs font-bold text-art-gold hover:text-white transition px-3 py-1 rounded-lg bg-white/5 hover:bg-art-gold/20 border border-white/10"
           >
-            <span>{activeEvent.actionText}</span>
+            <span>{isArtist && activeEvent.actionText === 'Bid Now' ? 'View Arena' : activeEvent.actionText}</span>
             <ArrowRight className="w-3.5 h-3.5" />
           </Link>
         </div>

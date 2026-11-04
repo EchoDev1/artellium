@@ -27,14 +27,16 @@ import {
   Clock,
   Compass,
   ShoppingBag,
-  Crown
+  Crown,
+  Lock
 } from 'lucide-react';
 import { isPriorityArtist, sortArtworksByPriority } from '@/lib/priority-utils';
 
 export default function ExhibitionMiniPage() {
   const params = useParams();
   const router = useRouter();
-  const { exhibitions = [], artworks = [], addToCart, addToWishlist, wishlist = [], currency, usdExchangeRate = 1480, sellers = [], usersList = [] } = useStore();
+  const { exhibitions = [], artworks = [], addToCart, addToWishlist, wishlist = [], currency, usdExchangeRate = 1480, sellers = [], usersList = [], currentUser, isArtistUser } = useStore();
+  const isArtist = currentUser?.role === 'artist' || currentUser?.role === 'seller' || Boolean(isArtistUser && isArtistUser(currentUser));
 
   const slug = params?.slug;
 
@@ -190,12 +192,21 @@ export default function ExhibitionMiniPage() {
               <Eye className="w-4 h-4" />
               <span>Enter 3D Virtual Gallery</span>
             </button>
-            <button
-              onClick={() => setActiveTab('rsvp')}
-              className="flex-1 md:flex-none px-4 py-2.5 bg-white/10 hover:bg-white/20 text-white font-bold uppercase rounded-xl transition border border-white/10"
-            >
-              Book Curatorial Pass
-            </button>
+            {!isArtist ? (
+              <button
+                onClick={() => setActiveTab('rsvp')}
+                className="flex-1 md:flex-none px-4 py-2.5 bg-white/10 hover:bg-white/20 text-white font-bold uppercase rounded-xl transition border border-white/10 cursor-pointer"
+              >
+                Book Curatorial Pass
+              </button>
+            ) : (
+              <span
+                className="flex-1 md:flex-none px-4 py-2.5 bg-white/5 text-slate-500 font-mono text-[11px] font-bold uppercase rounded-xl border border-white/5 cursor-not-allowed select-none pointer-events-none"
+                title="Curatorial Pass registration is blocked for artist accounts"
+              >
+                Passes: Collectors Only
+              </span>
+            )}
           </div>
         </div>
       </div>
@@ -208,7 +219,7 @@ export default function ExhibitionMiniPage() {
             { id: 'statement', label: 'Curator’s Statement' },
             { id: 'artists', label: `Participating Master Artists (${(exhibition.participatingArtists || []).length})` },
             { id: 'virtual_3d', label: '🌐 3D Spatial Virtual Room' },
-            { id: 'rsvp', label: 'Exhibition Pass & SDG Discussions' },
+            ...(!isArtist ? [{ id: 'rsvp', label: 'Exhibition Pass & SDG Discussions' }] : []),
           ].map((tab) => (
             <button
               key={tab.id}
@@ -455,17 +466,41 @@ export default function ExhibitionMiniPage() {
         {/* TAB 5: EXHIBITION PASS & RSVP */}
         {activeTab === 'rsvp' && (
           <div className="bg-[#0A0D14] rounded-3xl border border-white/10 p-6 sm:p-10 space-y-6 shadow-2xl max-w-2xl mx-auto text-xs">
-            <div className="border-b border-white/10 pb-4 text-center space-y-1">
-              <span className="text-[10px] font-mono font-bold text-art-gold uppercase tracking-widest block">
-                VIP ACCREDITED VISITOR PASS
-              </span>
-              <h3 className="font-serif text-2xl font-bold text-white">
-                Register for Curatorial Pass & SDG Forums
-              </h3>
-              <p className="text-slate-400">Physical & Virtual VIP pass with verified digital QR badge.</p>
-            </div>
+            {isArtist ? (
+              <div className="py-8 space-y-6 text-center animate-fade-in">
+                <div className="w-16 h-16 rounded-full bg-art-gold/20 border-2 border-art-gold flex items-center justify-center text-art-gold mx-auto">
+                  <Lock className="w-8 h-8 text-art-gold" />
+                </div>
 
-            {rsvpPassGenerated ? (
+                <div className="space-y-2">
+                  <span className="text-xs font-mono font-bold text-art-gold uppercase tracking-widest block">
+                    PERMANENT POLICY RESTRICTION
+                  </span>
+                  <h3 className="font-serif text-2xl sm:text-3xl font-bold text-white">
+                    Exhibition Pass Registration Blocked for Artists
+                  </h3>
+                  <p className="text-xs sm:text-sm text-slate-300 max-w-lg mx-auto leading-relaxed">
+                    In accordance with Artellium fiduciary standards and art market compliance, artists are permanently blocked from registering for exhibition visitor passes, bidder accreditation, and placing bids. Artists participate exclusively as showcased creators.
+                  </p>
+                </div>
+
+                <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-3">
+                  <Link
+                    href="/artist/dashboard"
+                    className="w-full sm:w-auto px-6 py-3 bg-gradient-to-r from-art-gold to-amber-600 text-art-black font-black text-xs uppercase tracking-wider rounded-xl shadow-gold-glow hover:brightness-110 transition flex items-center justify-center gap-2"
+                  >
+                    <span>Go to Artist Studio Dashboard</span>
+                    <ArrowRight className="w-4 h-4 text-art-black" />
+                  </Link>
+                  <button
+                    onClick={() => setActiveTab('artworks')}
+                    className="w-full sm:w-auto px-6 py-3 bg-white/5 hover:bg-white/10 text-white rounded-xl text-xs font-semibold border border-white/10 transition"
+                  >
+                    View Exhibited Works
+                  </button>
+                </div>
+              </div>
+            ) : rsvpPassGenerated ? (
               <div className="p-6 bg-emerald-950/80 border border-emerald-500/60 rounded-2xl text-center space-y-4 animate-fade-in">
                 <CheckCircle2 className="w-12 h-12 text-emerald-400 mx-auto animate-bounce" />
                 <div>
@@ -481,7 +516,23 @@ export default function ExhibitionMiniPage() {
                 </button>
               </div>
             ) : (
-              <form onSubmit={(e) => { e.preventDefault(); setRsvpPassGenerated(true); }} className="space-y-4">
+              <form onSubmit={(e) => { 
+                e.preventDefault(); 
+                if (isArtist) {
+                  alert('Artists are permanently blocked from registering for exhibition passes.');
+                  return;
+                }
+                setRsvpPassGenerated(true); 
+              }} className="space-y-4">
+                <div className="border-b border-white/10 pb-4 text-center space-y-1">
+                  <span className="text-[10px] font-mono font-bold text-art-gold uppercase tracking-widest block">
+                    VIP ACCREDITED VISITOR PASS
+                  </span>
+                  <h3 className="font-serif text-2xl font-bold text-white">
+                    Register for Curatorial Pass & SDG Forums
+                  </h3>
+                  <p className="text-slate-400">Physical & Virtual VIP pass with verified digital QR badge.</p>
+                </div>
                 <div>
                   <label className="block text-slate-300 mb-1 font-semibold">Your Location / Preferred City Hub</label>
                   <select

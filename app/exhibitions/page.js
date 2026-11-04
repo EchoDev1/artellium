@@ -24,13 +24,15 @@ import {
   Search,
   ExternalLink,
   ShieldCheck,
-  Building
+  Building,
+  Lock
 } from 'lucide-react';
 import { sortExhibitionsByPriority, sortArtworksByPriority } from '@/lib/priority-utils';
 import ArtworkCard from '@/components/ArtworkCard';
 
 export default function ExhibitionsPage() {
-  const { exhibitions = [], artworks = [], sellers = [], usersList = [] } = useStore();
+  const { exhibitions = [], artworks = [], sellers = [], usersList = [], currentUser, isArtistUser } = useStore();
+  const isArtist = currentUser?.role === 'artist' || currentUser?.role === 'seller' || Boolean(isArtistUser && isArtistUser(currentUser));
   
   // Timing Tabs: 'all', 'current', 'upcoming', 'past', 'virtual'
   const [activeTimingTab, setActiveTimingTab] = useState('current');
@@ -152,6 +154,36 @@ export default function ExhibitionsPage() {
           </div>
         </div>
       </div>
+
+      {/* Artist Mode Policy Notice Banner */}
+      {isArtist && (
+        <div className="p-4 sm:p-5 bg-gradient-to-r from-[#170e0a] via-black to-[#170e0a] border-2 border-art-gold/40 rounded-2xl shadow-xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 animate-fade-in">
+          <div className="flex items-center gap-3.5">
+            <div className="w-10 h-10 rounded-xl bg-art-gold/20 border border-art-gold/40 text-art-gold flex items-center justify-center shrink-0">
+              <Lock className="w-5 h-5 text-art-gold" />
+            </div>
+            <div>
+              <h4 className="font-serif text-sm font-bold text-white flex items-center gap-2">
+                <span>Atelier Peer Preview Protocol</span>
+                <span className="px-2 py-0.5 rounded-full bg-art-gold/20 text-art-gold text-[9px] font-mono uppercase font-bold">
+                  Artist Account
+                </span>
+              </h4>
+              <p className="text-xs text-slate-300 mt-0.5 leading-relaxed">
+                You are viewing exhibitions in Artist Preview mode. In accordance with Artellium fiduciary governance, artists are permanently blocked from placing bids, bidder registration, and exhibition attendee pass accreditation.
+              </p>
+            </div>
+          </div>
+
+          <Link
+            href="/artist/dashboard"
+            className="w-full sm:w-auto px-5 py-2.5 bg-art-gold/20 hover:bg-art-gold/30 text-art-gold font-bold text-xs uppercase tracking-wider rounded-xl border border-art-gold/40 transition flex items-center justify-center gap-2 shrink-0"
+          >
+            <span>Artist Studio</span>
+            <ArrowRight className="w-4 h-4 text-art-gold" />
+          </Link>
+        </div>
+      )}
 
       {/* 1. PRIMARY TIMING TABS: Current, Upcoming, Past, Virtual */}
       <div className="space-y-4">
