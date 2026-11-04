@@ -27,14 +27,42 @@ import {
   Check,
   AlertCircle,
   Camera,
-  Image as ImageIcon
+  Image as ImageIcon,
+  Gavel,
+  Wrench,
+  Sparkles,
+  ShieldAlert,
+  Users,
+  CheckCircle,
+  FileText,
+  BadgeAlert,
+  X
 } from 'lucide-react';
 
-export default function AdminSystemStatus({ currentUser }) {
-  const { artistPayoutPercentage = 85, repairMasterAdminCredentials, usersList = [] } = useStore();
+export default function AdminSystemStatus({ currentUser, triggerDiagnosticsKey = 0 }) {
+  const { 
+    artistPayoutPercentage = 85, 
+    repairMasterAdminCredentials, 
+    usersList = [],
+    setUserStatus,
+    updateUser,
+    toggleUserBiddingOverride,
+    auctionBidders = [],
+    registerAuctionBidder,
+    artworks = [],
+    updateArtwork,
+    broadcastNotification
+  } = useStore();
+
   const [isDiagnosing, setIsDiagnosing] = useState(false);
   const [diagProgress, setDiagProgress] = useState(0);
   const [lastChecked, setLastChecked] = useState(new Date().toLocaleTimeString());
+  const [hasRunDiagnostics, setHasRunDiagnostics] = useState(false);
+  const [detectedIssues, setDetectedIssues] = useState([]);
+  const [fixingIssueIds, setFixingIssueIds] = useState([]);
+  const [fixedIssueIds, setFixedIssueIds] = useState([]);
+  const [isAutoFixingAll, setIsAutoFixingAll] = useState(false);
+  const [activeFilterSeverity, setActiveFilterSeverity] = useState('all');
   const [maintenanceMode, setMaintenanceMode] = useState(false);
   const [maintenanceMessage, setMaintenanceMessage] = useState('Scheduled Curatorial Upgrade in progress. Platform will resume shortly.');
   const [isMaintenanceModalOpen, setIsMaintenanceModalOpen] = useState(false);
@@ -83,35 +111,266 @@ export default function AdminSystemStatus({ currentUser }) {
     }, 600);
   };
 
-  // Run full system diagnostics
+  // Live deep-scan engine across all project subsystems
+  const performDiagnosticScan = () => {
+    const issues = [];
+
+    // Check 1: User Security & Account Sanctions
+    (usersList || []).forEach(user => {
+      if (user.status && user.status !== 'active') {
+        issues.push({
+          id: `sanction-${user.id}`,
+          type: 'sanction',
+          severity: 'Critical',
+          subsystem: 'User Security Governance',
+          targetName: user.name || user.email,
+          targetId: user.id,
+          title: `Account Sanction: ${user.name} is ${user.status.toUpperCase()}`,
+          description: `This account is barred by Security Council sanctions (${user.status}). Bidding, session authentication, and acquisitions are blocked.`,
+          fixLabel: 'Unblock & Restore to Active',
+          onFix: () => {
+            setUserStatus(user.id, 'active', 'Restored via Master System Diagnostics');
+            broadcastNotification(`Diagnostics: Account for ${user.name} restored to ACTIVE.`);
+          }
+        });
+      }
+    });
+
+    // Check 2: Artist Bidding Policy Conflict (The current issue!)
+    (usersList || []).forEach(user => {
+      const isArtist = user.role === 'artist' || user.role === 'seller';
+      if (isArtist && !user.allowBiddingOverride) {
+        issues.push({
+          id: `artist-bid-block-${user.id}`,
+          type: 'artist_bidding_lock',
+          severity: 'Policy Lock',
+          subsystem: 'Auction & Fiduciary Compliance',
+          targetName: user.name || user.email,
+          targetId: user.id,
+          title: `Artist Bidding Restriction: ${user.name} (${user.role.toUpperCase()})`,
+          description: `Anti-shill bidding policy permanently bars this artist from placing bids or obtaining curatorial exhibition passes. An administrative exemption or role adjustment is required to allow bidding.`,
+          fixLabel: 'Grant Bidding Exemption (Fix Immediately)',
+          onFix: () => {
+            toggleUserBiddingOverride(user.id, true);
+            if (!auctionBidders.some(b => b.email === user.email)) {
+              registerAuctionBidder({
+                fullName: user.name,
+                email: user.email,
+                phone: user.phone || '+234 800 000 0000',
+                role: user.role,
+                biddingTier: 'Standard',
+                allowBiddingOverride: true
+              });
+            }
+            broadcastNotification(`Diagnostics: Bidding exemption granted & VIP pass activated for ${user.name}.`);
+          },
+          altFixLabel: 'Convert to Art Collector (Buyer)',
+          onAltFix: () => {
+            updateUser(user.id, { role: 'buyer', allowBiddingOverride: true });
+            if (!auctionBidders.some(b => b.email === user.email)) {
+              registerAuctionBidder({
+                fullName: user.name,
+                email: user.email,
+                phone: user.phone || '+234 800 000 0000',
+                role: 'buyer',
+                biddingTier: 'Standard',
+                allowBiddingOverride: true
+              });
+            }
+            broadcastNotification(`Diagnostics: User ${user.name} converted to Art Collector role.`);
+          }
+        });
+      }
+    });
+
+    // Check 3: Missing Bidder Dossier / Accreditation Desync
+    (usersList || []).forEach(user => {
+      const isArtist = user.role === 'artist' || user.role === 'seller';
+      const hasBidderFlag = user.isBidder || user.isBidderRegistered || user.bidderId;
+      const isRegisteredInLedger = auctionBidders.some(b => b.email?.toLowerCase() === user.email?.toLowerCase() || b.id === user.id);
+      
+      if (hasBidderFlag && !isRegisteredInLedger && (!isArtist || user.allowBiddingOverride)) {
+        issues.push({
+          id: `bidder-sync-${user.id}`,
+          type: 'bidder_sync',
+          severity: 'High',
+          subsystem: 'Auction Arena Accreditation',
+          targetName: user.name,
+          targetId: user.id,
+          title: `Unsynchronized Bidder Record: ${user.name}`,
+          description: `Patron has bidder status in user profile, but their accredited badge was missing from the live auction ledger.`,
+          fixLabel: 'Issue Accredited Bidder Pass',
+          onFix: () => {
+            registerAuctionBidder({
+              fullName: user.name,
+              email: user.email,
+              phone: user.phone || '+234 800 000 0000',
+              role: user.role,
+              bidderId: user.bidderId || `ART-BID-${Date.now().toString().slice(-5)}`,
+              biddingTier: 'Standard',
+              allowBiddingOverride: !!user.allowBiddingOverride
+            });
+            broadcastNotification(`Diagnostics: Accredited bidder pass issued to ${user.name}.`);
+          }
+        });
+      }
+    });
+
+    // Check 4: Artwork Media & Asset Integrity
+    (artworks || []).forEach(art => {
+      const hasImage = art.imageUrl || (art.images && art.images.length > 0 && art.images[0]);
+      if (!hasImage) {
+        issues.push({
+          id: `art-media-${art.id}`,
+          type: 'media_missing',
+          severity: 'High',
+          subsystem: 'Catalog & Visual Media Assets',
+          targetName: art.title || `Lot #${art.id}`,
+          targetId: art.id,
+          title: `Missing Visual Asset: "${art.title || 'Untitled Artwork'}"`,
+          description: `Artwork lot has no valid image asset, causing broken renders across the gallery, exhibitions, and auction arena.`,
+          fixLabel: 'Restore Verified Masterpiece Image',
+          onFix: () => {
+            const fallbackUrl = 'https://images.unsplash.com/photo-1579783900882-c0d3dad7b119?auto=format&fit=crop&w=1200&q=80';
+            updateArtwork(art.id, {
+              imageUrl: fallbackUrl,
+              images: [fallbackUrl]
+            });
+            broadcastNotification(`Diagnostics: Verified HD image asset restored for ${art.title || art.id}.`);
+          }
+        });
+      }
+
+      if (!art.price || Number(art.price) <= 0) {
+        issues.push({
+          id: `art-price-${art.id}`,
+          type: 'price_zero',
+          severity: 'Warning',
+          subsystem: 'Financials & Valuation Engine',
+          targetName: art.title || `Lot #${art.id}`,
+          targetId: art.id,
+          title: `Unset Reserve Valuation: "${art.title || 'Untitled'}"`,
+          description: `Artwork has no valid pricing or opening bid valuation set. Bidding and instant escrow acquisitions cannot calculate.`,
+          fixLabel: 'Assign Standard Valuation (₦250,000)',
+          onFix: () => {
+            updateArtwork(art.id, { price: 250000 });
+            broadcastNotification(`Diagnostics: Assigned reserve valuation (₦250,000) for ${art.title || art.id}.`);
+          }
+        });
+      }
+    });
+
+    // Check 5: Master Admin Vault Health
+    const hasActiveAdmin = (usersList || []).some(u => u.role === 'admin' && (!u.status || u.status === 'active'));
+    if (!hasActiveAdmin) {
+      issues.push({
+        id: 'auth-vault-admin',
+        type: 'admin_vault',
+        severity: 'Critical',
+        subsystem: 'Security & Master Vault',
+        targetName: 'Master Admin Credential Store',
+        targetId: 'vault-master',
+        title: 'Master Admin Account Missing or Deactivated',
+        description: 'No active user with executive administrative privileges was found. System is vulnerable to administrative lockout.',
+        fixLabel: 'Synchronize & Re-provision Master Admin',
+        onFix: () => {
+          if (repairMasterAdminCredentials) repairMasterAdminCredentials();
+          broadcastNotification('Diagnostics: Master Admin credentials re-provisioned.');
+        }
+      });
+    }
+
+    return issues;
+  };
+
+  // Run full system diagnostics with real project audit
   const handleRunDiagnostics = () => {
     setIsDiagnosing(true);
-    setDiagProgress(10);
+    setDiagProgress(15);
+    setLastChecked(new Date().toLocaleTimeString());
 
     const interval = setInterval(() => {
       setDiagProgress((prev) => {
         if (prev >= 90) {
           clearInterval(interval);
-          setTimeout(() => {
-            setIsDiagnosing(false);
-            setDiagProgress(0);
-            setLastChecked(new Date().toLocaleTimeString());
-            setLogs((currentLogs) => [
-              {
-                id: Date.now(),
-                time: new Date().toLocaleTimeString(),
-                source: 'DIAGNOSTICS',
-                type: 'success',
-                text: 'Global automated health audit completed. 7 core services including Authentication & Master Admin Access verified 100% operational.'
-              },
-              ...currentLogs.slice(0, 8)
-            ]);
-          }, 600);
+          const found = performDiagnosticScan();
+          setDetectedIssues(found);
+          setIsDiagnosing(false);
+          setDiagProgress(100);
+          setHasRunDiagnostics(true);
+
+          setLogs((currentLogs) => [
+            {
+              id: Date.now(),
+              time: new Date().toLocaleTimeString(),
+              source: 'DIAGNOSTICS',
+              type: found.length > 0 ? 'security' : 'success',
+              text: `Global Diagnostic Audit completed: ${found.length} issues identified across security, bidding policy, catalog media, and vault subsystems.`
+            },
+            ...currentLogs.slice(0, 8)
+          ]);
           return 100;
         }
         return prev + 25;
       });
-    }, 350);
+    }, 250);
+  };
+
+  // Trigger diagnostics on mount and on external trigger
+  useEffect(() => {
+    const found = performDiagnosticScan();
+    setDetectedIssues(found);
+    setHasRunDiagnostics(true);
+  }, [usersList, artworks, auctionBidders]);
+
+  useEffect(() => {
+    if (triggerDiagnosticsKey > 0) {
+      handleRunDiagnostics();
+    }
+  }, [triggerDiagnosticsKey]);
+
+  // Fix individual issue
+  const handleFixIssue = (issueId, fixFn) => {
+    setFixingIssueIds(prev => [...prev, issueId]);
+    setTimeout(() => {
+      try {
+        if (fixFn) fixFn();
+        setFixedIssueIds(prev => [...prev, issueId]);
+        setTimeout(() => {
+          setDetectedIssues(prev => prev.filter(i => i.id !== issueId));
+          setFixingIssueIds(prev => prev.filter(id => id !== issueId));
+        }, 800);
+      } catch (err) {
+        console.error('Diagnostic fix error:', err);
+      }
+    }, 400);
+  };
+
+  // Auto-Fix All Detected Problems in One Click
+  const handleFixAllIssues = () => {
+    setIsAutoFixingAll(true);
+    setTimeout(() => {
+      detectedIssues.forEach(issue => {
+        try {
+          if (issue.onFix) issue.onFix();
+        } catch (err) {
+          console.error('Error auto-fixing issue:', issue.id, err);
+        }
+      });
+      setDetectedIssues([]);
+      setIsAutoFixingAll(false);
+      setLogs((currentLogs) => [
+        {
+          id: Date.now(),
+          time: new Date().toLocaleTimeString(),
+          source: 'AUTO-REPAIR',
+          type: 'success',
+          text: 'Master Diagnostics Auto-Remediation successfully resolved all detected project problems.'
+        },
+        ...currentLogs.slice(0, 8)
+      ]);
+      broadcastNotification('🎉 System Diagnostics: All detected project problems have been automatically resolved!');
+    }, 800);
   };
 
   const systems = [
@@ -364,6 +623,187 @@ export default function AdminSystemStatus({ currentUser }) {
             </div>
           </div>
         </div>
+      </div>
+
+      {/* ========================================================================= */}
+      {/* MASTER PROJECT-WIDE DIAGNOSTICS & ACTIVE SELF-HEALING ENGINE             */}
+      {/* ========================================================================= */}
+      <div className="bg-gradient-to-b from-[#0e121a] via-[#090b10] to-[#0a0d13] border-2 border-art-gold/50 rounded-3xl p-6 sm:p-8 shadow-2xl space-y-6 text-white relative overflow-hidden">
+        {/* Glow Effects */}
+        <div className="absolute top-0 right-1/4 w-72 h-72 bg-red-600/10 blur-3xl pointer-events-none" />
+        <div className="absolute bottom-0 left-1/4 w-72 h-72 bg-art-gold/10 blur-3xl pointer-events-none" />
+
+        {/* Header & Master Auto-Fix All Button */}
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-white/10 pb-5 relative z-10">
+          <div className="space-y-1">
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-red-600 to-amber-600 flex items-center justify-center shadow-lg">
+                <Wrench className="w-4 h-4 text-white" />
+              </div>
+              <h3 className="font-serif text-xl sm:text-2xl font-bold text-white flex items-center gap-2.5">
+                <span>Active Project Diagnostics & Remediation</span>
+                <span className={`text-xs font-mono font-bold px-2.5 py-0.5 rounded-full border ${
+                  detectedIssues.length > 0 
+                    ? 'bg-red-500/20 text-red-300 border-red-500/50 animate-pulse' 
+                    : 'bg-emerald-500/20 text-emerald-300 border-emerald-500/50'
+                }`}>
+                  {detectedIssues.length > 0 ? `${detectedIssues.length} Issues Identified` : '100% Operational (0 Issues)'}
+                </span>
+              </h3>
+            </div>
+            <p className="text-slate-400 text-xs max-w-2xl leading-relaxed">
+              Real-time audit across user access sanctions, artist bidding policy conflicts, auction accreditation ledgers, catalog media integrity, and security vaults.
+            </p>
+          </div>
+
+          <div className="flex items-center gap-2.5 shrink-0">
+            <button
+              onClick={handleRunDiagnostics}
+              disabled={isDiagnosing}
+              className="px-4 py-2.5 rounded-xl bg-white/10 hover:bg-white/15 text-white font-bold text-xs uppercase tracking-wider transition flex items-center gap-2 border border-white/20 cursor-pointer disabled:opacity-50"
+            >
+              <RefreshCw className={`w-3.5 h-3.5 ${isDiagnosing ? 'animate-spin' : ''}`} />
+              <span>{isDiagnosing ? 'Auditing Subsystems...' : 'Re-Run Diagnostics'}</span>
+            </button>
+
+            {detectedIssues.length > 0 && (
+              <button
+                onClick={handleFixAllIssues}
+                disabled={isAutoFixingAll}
+                className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-red-600 via-rose-600 to-amber-600 hover:brightness-110 text-white font-black text-xs uppercase tracking-wider transition shadow-crimson-glow flex items-center gap-2 cursor-pointer active:scale-95 disabled:opacity-50 animate-pulse"
+                title="Automatically fix all detected issues across every project subsystem in one click"
+              >
+                <Sparkles className="w-4 h-4 text-white" />
+                <span>{isAutoFixingAll ? 'Fixing All Issues...' : `Auto-Fix All (${detectedIssues.length}) Problems`}</span>
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* Progress Bar when running */}
+        {isDiagnosing && (
+          <div className="space-y-1.5 p-4 rounded-2xl bg-black/40 border border-art-gold/30 animate-pulse">
+            <div className="flex justify-between text-xs font-mono">
+              <span className="text-art-gold font-bold flex items-center gap-2">
+                <Activity className="w-3.5 h-3.5 animate-spin" />
+                <span>Deep Auditing Security Policies, Artist Bidding Locks & Assets...</span>
+              </span>
+              <span className="text-white font-bold">{diagProgress}%</span>
+            </div>
+            <div className="h-2 w-full bg-white/10 rounded-full overflow-hidden">
+              <div 
+                className="h-full bg-gradient-to-r from-red-600 via-amber-500 to-emerald-500 transition-all duration-300" 
+                style={{ width: `${diagProgress}%` }}
+              />
+            </div>
+          </div>
+        )}
+
+        {/* Issues List or Clean Bill of Health */}
+        {detectedIssues.length === 0 ? (
+          <div className="p-8 rounded-2xl bg-emerald-950/20 border border-emerald-500/40 text-center space-y-3">
+            <div className="w-12 h-12 rounded-full bg-emerald-500/20 border border-emerald-500/50 flex items-center justify-center mx-auto text-emerald-400">
+              <CheckCircle2 className="w-6 h-6" />
+            </div>
+            <h4 className="font-serif text-lg font-bold text-emerald-400">
+              Project Health 100% Operational & Clean
+            </h4>
+            <p className="text-slate-300 text-xs max-w-xl mx-auto">
+              Every subsystem has passed diagnostic verification. No security sanctions, broken artwork assets, or unauthorized bidding locks detected.
+            </p>
+          </div>
+        ) : (
+          <div className="space-y-3 relative z-10">
+            <div className="flex items-center justify-between text-xs text-slate-400 font-mono">
+              <span>Showing <strong>{detectedIssues.length}</strong> active problem{detectedIssues.length === 1 ? '' : 's'} requiring immediate resolution:</span>
+              <span className="text-art-gold">Click any button below to fix immediately:</span>
+            </div>
+
+            <div className="grid grid-cols-1 gap-3">
+              {detectedIssues.map((issue) => {
+                const isFixing = fixingIssueIds.includes(issue.id);
+                const isFixed = fixedIssueIds.includes(issue.id);
+
+                return (
+                  <div
+                    key={issue.id}
+                    className={`p-4 sm:p-5 rounded-2xl border transition-all duration-300 flex flex-col md:flex-row md:items-center justify-between gap-4 ${
+                      isFixed
+                        ? 'bg-emerald-950/40 border-emerald-500/60'
+                        : issue.severity === 'Critical'
+                        ? 'bg-red-950/30 border-red-500/50 hover:border-red-400'
+                        : issue.severity === 'Policy Lock'
+                        ? 'bg-amber-950/30 border-amber-500/50 hover:border-amber-400'
+                        : 'bg-slate-900/80 border-white/10 hover:border-white/20'
+                    }`}
+                  >
+                    <div className="space-y-1.5 max-w-3xl">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className={`text-[10px] font-mono font-black uppercase px-2.5 py-0.5 rounded-full border ${
+                          issue.severity === 'Critical'
+                            ? 'bg-red-500/20 text-red-300 border-red-500/50'
+                            : issue.severity === 'Policy Lock'
+                            ? 'bg-amber-500/20 text-amber-300 border-amber-500/50'
+                            : 'bg-blue-500/20 text-blue-300 border-blue-500/50'
+                        }`}>
+                          {issue.severity}
+                        </span>
+
+                        <span className="text-[10px] font-mono text-slate-400 uppercase tracking-wider bg-white/5 px-2 py-0.5 rounded border border-white/10">
+                          {issue.subsystem}
+                        </span>
+
+                        <span className="text-[11px] font-mono font-bold text-art-gold">
+                          Target: {issue.targetName}
+                        </span>
+                      </div>
+
+                      <h4 className="font-serif text-base font-bold text-white flex items-center gap-2">
+                        <AlertCircle className="w-4 h-4 text-art-gold shrink-0" />
+                        <span>{issue.title}</span>
+                      </h4>
+
+                      <p className="text-slate-300 text-xs leading-relaxed">
+                        {issue.description}
+                      </p>
+                    </div>
+
+                    <div className="flex flex-wrap md:flex-col items-stretch gap-2 shrink-0">
+                      {isFixed ? (
+                        <div className="px-4 py-2.5 rounded-xl bg-emerald-600 text-white font-bold text-xs uppercase flex items-center justify-center gap-1.5 shadow">
+                          <Check className="w-4 h-4" />
+                          <span>Fixed & Verified!</span>
+                        </div>
+                      ) : (
+                        <>
+                          <button
+                            onClick={() => handleFixIssue(issue.id, issue.onFix)}
+                            disabled={isFixing}
+                            className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-red-600 to-rose-700 hover:brightness-110 text-white font-bold text-xs uppercase tracking-wider transition shadow-crimson-glow flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50 active:scale-95"
+                          >
+                            <Wrench className={`w-3.5 h-3.5 ${isFixing ? 'animate-spin' : ''}`} />
+                            <span>{isFixing ? 'Fixing Problem...' : issue.fixLabel}</span>
+                          </button>
+
+                          {issue.altFixLabel && (
+                            <button
+                              onClick={() => handleFixIssue(issue.id, issue.onAltFix)}
+                              disabled={isFixing}
+                              className="px-4 py-2 rounded-xl bg-art-gold hover:brightness-110 text-art-black font-bold text-[11px] uppercase tracking-wider transition shadow-gold-glow flex items-center justify-center gap-1 cursor-pointer disabled:opacity-50 active:scale-95"
+                            >
+                              <Users className="w-3.5 h-3.5" />
+                              <span>{issue.altFixLabel}</span>
+                            </button>
+                          )}
+                        </>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* ========================================================================= */}

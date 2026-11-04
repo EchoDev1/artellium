@@ -348,6 +348,7 @@ export default function AdminDashboardPage() {
   const [isAddNavModalOpen, setIsAddNavModalOpen] = useState(false);
   const [editingNavLink, setEditingNavLink] = useState(null);
   const [navLinkForm, setNavLinkForm] = useState({ label: '', href: '', isVisible: true, highlight: 'none', icon: '' });
+  const [triggerSystemDiagnostics, setTriggerSystemDiagnostics] = useState(0);
 
   // Hero Gallery Picker & Slides Modals
   const [isGalleryPickerOpen, setIsGalleryPickerOpen] = useState(false);
@@ -989,6 +990,18 @@ export default function AdminDashboardPage() {
             </div>
 
             <div className="flex flex-wrap items-center gap-2.5">
+              <button
+                onClick={() => {
+                  setActiveTab('system_status');
+                  setTriggerSystemDiagnostics(prev => prev + 1);
+                }}
+                className="bg-gradient-to-r from-red-600 via-rose-600 to-amber-600 hover:brightness-110 text-white font-bold text-xs uppercase tracking-wider px-3.5 py-2.5 rounded-xl transition shadow-lg flex items-center gap-1.5 cursor-pointer animate-pulse"
+                title="Run deep system diagnostics and immediately auto-repair any issues across the project"
+              >
+                <Activity className="w-4 h-4 text-white" />
+                <span>Run Diagnostics</span>
+              </button>
+
               <button
                 onClick={() => setIsAddArtModalOpen(true)}
                 className="bg-art-gold hover:brightness-110 text-art-black font-bold text-xs uppercase tracking-wider px-3.5 py-2.5 rounded-xl transition shadow flex items-center gap-1.5 cursor-pointer"
@@ -5712,7 +5725,7 @@ export default function AdminDashboardPage() {
 
         {/* 11. SYSTEM STATUS & INFRASTRUCTURE HEALTH TAB */}
         {activeTab === 'system_status' && (
-          <AdminSystemStatus currentUser={currentUser} />
+          <AdminSystemStatus currentUser={currentUser} triggerDiagnosticsKey={triggerSystemDiagnostics} />
         )}
 
         {/* ========================================================================= */}
