@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useParams } from 'next/navigation';
 import { useStore } from '@/context/store-context';
 import { CUSTOMER_REVIEWS } from '@/lib/mock-data';
