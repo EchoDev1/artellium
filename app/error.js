@@ -7,10 +7,18 @@ import { RefreshCw, Home } from 'lucide-react';
 export default function GlobalErrorPage({ error, reset }) {
   useEffect(() => {
     console.error('[Application Notice]:', error?.message || error);
-    if (typeof reset === 'function') {
-      try {
-        reset();
-      } catch (e) {}
+    // Auto-recover once only for transient chunk/network failures, avoiding infinite loops on code errors
+    const isChunkFailure = error?.message?.includes('Loading chunk') || error?.message?.includes('Failed to fetch');
+    if (isChunkFailure && typeof reset === 'function') {
+      const key = '__artellium_last_chunk_recovery';
+      const lastRecovery = sessionStorage.getItem(key);
+      const now = Date.now();
+      if (!lastRecovery || now - Number(lastRecovery) > 10000) {
+        sessionStorage.setItem(key, String(now));
+        try {
+          reset();
+        } catch (e) {}
+      }
     }
   }, [error, reset]);
 

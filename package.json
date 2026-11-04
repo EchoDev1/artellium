@@ -4,8 +4,11 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
+    "prebuild": "node scripts/verify-code-integrity.js",
     "build": "next build",
     "start": "next start",
+    "verify": "node scripts/verify-code-integrity.js",
+    "test": "node scripts/verify-code-integrity.js",
     "lint": "next lint"
   },
   "dependencies": {

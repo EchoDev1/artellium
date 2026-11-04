@@ -1,0 +1,17 @@
+#!/bin/sh
+# Artellium Africa - Pre-Commit Code Integrity Enforcement
+echo "🔒 [Artellium Code Guard] Verifying React hooks, icons, and component imports..."
+
+node scripts/verify-code-integrity.js
+
+STATUS=$?
+if [ $STATUS -ne 0 ]; then
+  echo ""
+  echo "❌ [Artellium Code Guard] COMMIT REJECTED!"
+  echo "A React hook, component, or icon is used without being imported."
+  echo "Please fix the missing import(s) listed above and retry."
+  exit 1
+fi
+
+echo "✅ [Artellium Code Guard] Integrity check passed. Proceeding with commit."
+exit 0
