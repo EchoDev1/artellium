@@ -12,6 +12,7 @@ import {
   Heart, 
   DollarSign, 
   Clock, 
+  Star,
   ExternalLink,
   ChevronRight,
   TrendingUp,
@@ -99,14 +100,21 @@ export default function BuyerAccountPage() {
     artworkQuestions = [],
     deleteQuestion,
     contactConfig,
-    sendDirectMessageToAdmin
+    sendDirectMessageToAdmin,
+    reviews = [],
+    submitArtworkReview
   } = useStore();
 
   const [activeCert, setActiveCert] = useState(null);
-  // Navigation Tabs: 'orders', 'auction_registration', 'followed_artists', 'wishlist', 'collection', 'my_offers', 'my_questions', 'notifications', 'profile'
+  // Navigation Tabs: 'orders', 'auction_registration', 'followed_artists', 'wishlist', 'collection', 'my_offers', 'my_questions', 'collector_reviews', 'notifications', 'profile'
   const [activeTab, setActiveTab] = useState('orders');
   const [copiedTracking, setCopiedTracking] = useState(null);
   const [expandedTracking, setExpandedTracking] = useState({});
+
+  // Collector Review Submission Modal state
+  const [reviewingOrder, setReviewingOrder] = useState(null);
+  const [collectorRatingVal, setCollectorRatingVal] = useState(5);
+  const [collectorCommentVal, setCollectorCommentVal] = useState('');
 
   const toggleTrackingHistory = (orderId) => {
     setExpandedTracking(prev => ({ ...prev, [orderId]: !prev[orderId] }));
@@ -269,7 +277,7 @@ export default function BuyerAccountPage() {
       const rate = (usdExchangeRate && usdExchangeRate > 0) ? usdExchangeRate : 1480;
       return `$${Math.round(amount / rate).toLocaleString()}`;
     }
-    return `₦${amount?.toLocaleString() || '0'}`;
+    return `Γéª${amount?.toLocaleString() || '0'}`;
   };
 
   const cleanName = activeUser?.name ? activeUser.name.split(' (')[0] : '';
@@ -319,7 +327,7 @@ export default function BuyerAccountPage() {
       category: art.category,
       city: art.city,
       country: art.country,
-      countryFlag: art.countryFlag || '🌍',
+      countryFlag: art.countryFlag || '≡ƒîì',
       verificationBadge: art.verificationBadge || 'verified',
       worksCount: artworks.filter(a => a.artistName === art.artistName).length
     };
@@ -359,11 +367,39 @@ export default function BuyerAccountPage() {
     setEditingOffer(null);
   };
 
+  // Reviews submitted by this collector
+  const mySubmittedReviews = (reviews || []).filter(r =>
+    (activeUser?.email && r.collectorEmail?.toLowerCase() === activeUser.email.toLowerCase()) ||
+    (activeUser?.name && r.collectorName?.toLowerCase() === activeUser.name.toLowerCase()) ||
+    (cleanName && r.collectorName && r.collectorName.toLowerCase().includes(cleanName.toLowerCase())) ||
+    myOrders.some(o => o.id === r.orderId)
+  );
+
+  const handleCollectorReviewSubmit = (e) => {
+    e.preventDefault();
+    if (!reviewingOrder || !collectorCommentVal.trim()) return;
+    if (submitArtworkReview) {
+      submitArtworkReview({
+        orderId: reviewingOrder.orderId,
+        artworkId: reviewingOrder.artworkId,
+        artworkTitle: reviewingOrder.artworkTitle,
+        artistName: reviewingOrder.artistName,
+        rating: collectorRatingVal,
+        comment: collectorCommentVal,
+        collectorName: activeUser?.name || 'Verified Collector',
+        collectorLocation: activeUser?.city ? `${activeUser.city}, ${activeUser.country || 'Nigeria'}` : 'Lagos, Nigeria',
+        collectorEmail: activeUser?.email || ''
+      });
+    }
+    setReviewingOrder(null);
+    setCollectorCommentVal('');
+  };
+
   const handleExecuteQuickBid = (lot, amount) => {
     const isAccredited = Boolean(isBidderRegistered && isBidderRegistered(activeUser));
     if (!isAccredited) {
       setActiveTab('auction_registration');
-      alert('⚠️ Bidder Accreditation Required: Please complete your identity accreditation profile below before placing live bids.');
+      alert('ΓÜá∩╕Å Bidder Accreditation Required: Please complete your identity accreditation profile below before placing live bids.');
       return;
     }
     const bidVal = parseFloat(amount);
@@ -444,7 +480,7 @@ export default function BuyerAccountPage() {
               <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
               <span>{bidSuccessNotice}</span>
             </div>
-            <button onClick={() => setBidSuccessNotice(null)} className="text-emerald-700 hover:text-emerald-950 font-bold">✕</button>
+            <button onClick={() => setBidSuccessNotice(null)} className="text-emerald-700 hover:text-emerald-950 font-bold">Γ£ò</button>
           </div>
         )}
 
@@ -453,6 +489,7 @@ export default function BuyerAccountPage() {
           {[
             { id: 'orders', label: `My Acquisitions (${myOrders.length})`, icon: ShoppingBag },
             { id: 'collection', label: `My Collection & COAs (${totalItems})`, icon: Package },
+            { id: 'collector_reviews', label: `Reviews & Feedback (${mySubmittedReviews.length})`, icon: Star },
             { id: 'wishlist', label: `Saved Wishlist (${wishlist.length})`, icon: Heart },
             { id: 'followed_artists', label: `Followed Artists (${followedArtists.length})`, icon: UserCheck },
             { id: 'auction_registration', label: 'Live Auctions & KYC', icon: ShieldCheck },
@@ -508,7 +545,7 @@ export default function BuyerAccountPage() {
                 <ShoppingBag className="w-10 h-10 text-slate-300 mx-auto" />
                 <p className="text-xs text-slate-400 italic">No acquisitions logged yet.</p>
                 <Link href="/explore" className="inline-block text-xs font-bold text-art-gold hover:underline">
-                  Browse Catalog to Acquire Masterpieces →
+                  Browse Catalog to Acquire Masterpieces ΓåÆ
                 </Link>
               </div>
             ) : (
@@ -530,7 +567,7 @@ export default function BuyerAccountPage() {
                             </span>
                           </div>
                           <span className="text-[10px] text-slate-500 font-mono">
-                            Acquired on {new Date(ord.created_at).toLocaleDateString()} · Fiduciary Account Reference: {ord.id}-WEMA
+                            Acquired on {new Date(ord.created_at).toLocaleDateString()} ┬╖ Fiduciary Account Reference: {ord.id}-WEMA
                           </span>
                         </div>
 
@@ -568,7 +605,7 @@ export default function BuyerAccountPage() {
                                 artist: firstItem?.artistName || 'Master Artist',
                                 price: ord.total_amount,
                                 medium: 'Authentic Fine Art & Archival Pigments',
-                                dimensions: '120 × 90 cm',
+                                dimensions: '120 ├ù 90 cm',
                                 date: new Date(ord.created_at).toLocaleDateString(),
                                 txHash: `0x${ord.id.replace(/-/g, '').substring(0, 18).toUpperCase()}`
                               });
@@ -613,7 +650,7 @@ export default function BuyerAccountPage() {
                                   </h5>
                                   <div className="text-[11px] text-slate-500 flex flex-wrap items-center gap-1.5 mt-0.5">
                                     <span>Carrier: <strong className="text-slate-800">{trk.carrier}</strong></span>
-                                    <span>·</span>
+                                    <span>┬╖</span>
                                     <span>Air Waybill / Tracking ID:</span>
                                     <span className="font-mono font-bold text-slate-900 bg-slate-100 px-2 py-0.5 rounded border border-slate-200">
                                       {trk.trackingNumber}
@@ -633,7 +670,7 @@ export default function BuyerAccountPage() {
                               <div className="text-left sm:text-right space-y-0.5">
                                 <span className="text-[10px] text-slate-400 font-mono uppercase block">Estimated Delivery</span>
                                 <span className="font-serif text-sm font-bold text-slate-900 block">
-                                  {trk.currentStage === 'delivered' ? '✓ Delivered & Received' : trk.estimatedDelivery || 'In Transit'}
+                                  {trk.currentStage === 'delivered' ? 'Γ£ô Delivered & Received' : trk.estimatedDelivery || 'In Transit'}
                                 </span>
                               </div>
                             </div>
@@ -761,9 +798,140 @@ export default function BuyerAccountPage() {
                         );
                       })()}
 
+                      {/* Collector Rating & Feedback for this Acquisition */}
+                      <div className="bg-white p-4 rounded-2xl border border-slate-200 mt-3 space-y-3">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <Star className="w-4 h-4 text-amber-500 fill-current" />
+                            <span className="font-serif font-bold text-xs text-slate-900">
+                              Collector Rating &amp; Atelier Feedback
+                            </span>
+                          </div>
+                          {(() => {
+                            const existingRev = ord.review || (reviews || []).find(r => r.orderId === ord.id || (firstItem?.id && r.artworkId === firstItem.id));
+                            if (existingRev) {
+                              return (
+                                <div className="flex items-center gap-1 text-amber-500 text-xs font-bold">
+                                  {Array.from({ length: 5 }).map((_, i) => (
+                                    <Star key={i} className={`w-3.5 h-3.5 ${i < (existingRev.rating || 5) ? 'fill-current text-amber-400' : 'text-slate-200'}`} />
+                                  ))}
+                                  <span className="ml-1 text-[11px] font-mono text-slate-700 font-bold">
+                                    ({existingRev.rating || 5}.0 / 5.0)
+                                  </span>
+                                </div>
+                              );
+                            }
+                            return null;
+                          })()}
+                        </div>
+
+                        {(() => {
+                          const existingRev = ord.review || (reviews || []).find(r => r.orderId === ord.id || (firstItem?.id && r.artworkId === firstItem.id));
+                          if (existingRev) {
+                            return (
+                              <div className="p-3 bg-amber-50/50 rounded-xl border border-amber-200/60 text-xs space-y-1">
+                                <p className="italic text-slate-800 leading-relaxed font-serif">&ldquo;{existingRev.comment}&rdquo;</p>
+                                <div className="flex items-center justify-between text-[10px] text-slate-500 font-sans pt-1 border-t border-amber-100">
+                                  <span>Submitted for: <strong className="text-slate-700">{firstItem?.title}</strong> by <strong className="text-slate-700">{firstItem?.artistName}</strong></span>
+                                  <span className="text-emerald-700 font-bold">✓ Published &amp; Boosted Artist Rating</span>
+                                </div>
+                              </div>
+                            );
+                          }
+                          return (
+                            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                              <p className="text-[11px] text-slate-500">
+                                Rate this artwork and provide collector feedback to update the artist&apos;s verified platform rating.
+                              </p>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setReviewingOrder({
+                                    orderId: ord.id,
+                                    artworkId: firstItem?.id || ord.id,
+                                    artworkTitle: firstItem?.title || 'Masterpiece Artwork',
+                                    artistName: firstItem?.artistName || 'Master Artist'
+                                  });
+                                  setCollectorRatingVal(5);
+                                  setCollectorCommentVal('');
+                                }}
+                                className="px-4 py-2 bg-gradient-to-r from-art-gold via-amber-400 to-art-gold-dark text-art-black font-bold text-xs uppercase rounded-xl shadow hover:brightness-110 flex items-center justify-center gap-1.5 transition cursor-pointer shrink-0"
+                              >
+                                <Star className="w-3.5 h-3.5 fill-current" />
+                                <span>Leave Rating &amp; Feedback</span>
+                              </button>
+                            </div>
+                          );
+                        })()}
+                      </div>
+
                     </div>
                   );
                 })}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ========================================================================= */}
+        {/* TAB: COLLECTOR REVIEWS & FEEDBACK                                         */}
+        {/* ========================================================================= */}
+        {activeTab === 'collector_reviews' && (
+          <div className="bg-white rounded-3xl border border-slate-200 p-6 sm:p-8 space-y-6 shadow-sm animate-fade-in">
+            <div className="border-b border-slate-100 pb-4">
+              <div className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full bg-art-gold/10 text-amber-900 border border-art-gold/30 text-[10px] font-bold uppercase tracking-wider mb-1">
+                <Star className="w-3.5 h-3.5 text-art-gold fill-current" />
+                <span>Collector Reputation &amp; Ratings Desk</span>
+              </div>
+              <h3 className="font-serif text-xl sm:text-2xl font-bold text-slate-900">
+                My Reviews &amp; Feedback Ratings
+              </h3>
+              <p className="text-xs text-slate-500 mt-1">
+                View all ratings and provenance feedback you have provided for acquired artworks. Positive feedback directly elevates the master artist&apos;s verified platform rating.
+              </p>
+            </div>
+
+            {mySubmittedReviews.length === 0 ? (
+              <div className="p-12 text-center bg-slate-50 rounded-2xl border border-slate-200 space-y-3">
+                <div className="w-12 h-12 rounded-full bg-amber-500/10 text-art-gold flex items-center justify-center mx-auto">
+                  <Star className="w-6 h-6" />
+                </div>
+                <h4 className="font-serif text-base font-bold text-slate-900">No Reviews Submitted Yet</h4>
+                <p className="text-xs text-slate-500 max-w-sm mx-auto">
+                  When you acquire artworks, you can rate the masterpiece (1-5 stars) and write condition feedback to support master African artists.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => setActiveTab('orders')}
+                  className="px-4 py-2 bg-slate-900 text-white rounded-xl text-xs font-bold transition hover:bg-slate-800 cursor-pointer"
+                >
+                  View My Acquisitions
+                </button>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {mySubmittedReviews.map((rev) => (
+                  <div key={rev.id} className="p-5 rounded-2xl bg-slate-50 border border-slate-200 space-y-3 text-xs">
+                    <div className="flex items-center justify-between border-b border-slate-200 pb-2.5">
+                      <div>
+                        <h4 className="font-serif text-sm font-bold text-slate-900">{rev.artworkTitle || 'Masterpiece'}</h4>
+                        <p className="text-[11px] text-art-gold font-medium">By {rev.artistName || 'Master Artist'}</p>
+                      </div>
+                      <div className="flex text-amber-500">
+                        {Array.from({ length: rev.rating || 5 }).map((_, i) => (
+                          <Star key={i} className="w-4 h-4 fill-current" />
+                        ))}
+                      </div>
+                    </div>
+                    <p className="text-xs text-slate-700 italic font-serif leading-relaxed bg-white p-3 rounded-xl border border-slate-200/60">
+                      &ldquo;{rev.comment}&rdquo;
+                    </p>
+                    <div className="flex items-center justify-between text-[10px] text-slate-400 font-mono pt-1">
+                      <span>{rev.date || 'Acquisition Review'}</span>
+                      <span className="text-emerald-700 font-bold">✓ Verified Collector Review</span>
+                    </div>
+                  </div>
+                ))}
               </div>
             )}
           </div>
@@ -793,7 +961,7 @@ export default function BuyerAccountPage() {
                 className="px-4 py-2.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold transition flex items-center gap-1.5 shadow"
               >
                 <Flame className="w-4 h-4 text-red-500" />
-                <span>Enter Live Auction Floor →</span>
+                <span>Enter Live Auction Floor ΓåÆ</span>
               </Link>
             </div>
 
@@ -803,7 +971,7 @@ export default function BuyerAccountPage() {
                 <div className="space-y-1">
                   <div className="flex items-center gap-2">
                     <span className="px-2.5 py-0.5 rounded-full text-[9px] font-mono font-bold uppercase bg-emerald-500/20 text-emerald-300 border border-emerald-500/40">
-                      ✓ ACCREDITED PATRON ACTIVE
+                      Γ£ô ACCREDITED PATRON ACTIVE
                     </span>
                     <span className="px-2.5 py-0.5 rounded-full text-[9px] font-mono font-bold uppercase bg-art-gold/20 text-art-gold border border-art-gold/30">
                       {bidderRegForm.biddingTier} VIP TIER
@@ -813,14 +981,14 @@ export default function BuyerAccountPage() {
                     {bidderRegForm.fullName}
                   </h4>
                   <p className="text-slate-400 text-xs font-mono">
-                    Official Bidder Pass: <strong className="text-art-gold">ART-BID-88942</strong> · Fiduciary Desk: {bidderRegForm.bankName}
+                    Official Bidder Pass: <strong className="text-art-gold">ART-BID-88942</strong> ┬╖ Fiduciary Desk: {bidderRegForm.bankName}
                   </p>
                 </div>
 
                 <div className="text-left sm:text-right font-mono text-xs space-y-0.5 shrink-0 bg-white/5 p-3.5 rounded-2xl border border-white/10">
                   <span className="text-slate-400 text-[10px] uppercase block">Bidding Limit Clearance</span>
                   <span className="font-serif text-base font-bold text-emerald-400">
-                    {bidderRegForm.biddingTier === 'Sovereign' ? 'Unlimited High-Value Lots' : 'Up to ₦10,000,000'}
+                    {bidderRegForm.biddingTier === 'Sovereign' ? 'Unlimited High-Value Lots' : 'Up to Γéª10,000,000'}
                   </span>
                   <span className="text-[10px] text-slate-400 block">WEMA Fiduciary Guaranteed</span>
                 </div>
@@ -965,8 +1133,8 @@ export default function BuyerAccountPage() {
                       onChange={e => setBidderRegForm({ ...bidderRegForm, biddingTier: e.target.value })}
                       className="w-full bg-white border border-slate-200 rounded-xl p-3 text-slate-900 font-bold focus:border-art-gold focus:outline-none cursor-pointer"
                     >
-                      <option value="Sovereign">Sovereign Tier (Unlimited / High-Value Lots &gt; ₦10M)</option>
-                      <option value="Standard">Standard Tier (Bidding up to ₦10,000,000)</option>
+                      <option value="Sovereign">Sovereign Tier (Unlimited / High-Value Lots &gt; Γéª10M)</option>
+                      <option value="Standard">Standard Tier (Bidding up to Γéª10,000,000)</option>
                     </select>
                   </div>
 
@@ -1046,7 +1214,7 @@ export default function BuyerAccountPage() {
                   href="/auctions"
                   className="text-xs text-art-gold font-bold hover:underline"
                 >
-                  View Full Auction Floor →
+                  View Full Auction Floor ΓåÆ
                 </Link>
               </div>
 
@@ -1068,7 +1236,7 @@ export default function BuyerAccountPage() {
                             </span>
                           </Link>
                           <span className="absolute top-2.5 left-2.5 bg-red-600 text-white font-bold text-[10px] px-2.5 py-0.5 rounded-lg shadow animate-pulse pointer-events-none">
-                            🔥 LIVE LOT
+                            ≡ƒöÑ LIVE LOT
                           </span>
 
                           <button
@@ -1092,7 +1260,7 @@ export default function BuyerAccountPage() {
                           <Link href={`/artwork/${lot.id}`}>
                             <h4 className="font-serif text-base font-bold text-slate-900 mt-0.5 hover:text-art-gold transition cursor-pointer">{lot.title}</h4>
                           </Link>
-                          <p className="text-xs text-slate-600">By {lot.artistName} · {lot.country}</p>
+                          <p className="text-xs text-slate-600">By {lot.artistName} ┬╖ {lot.country}</p>
                         </div>
                       </div>
 
@@ -1108,7 +1276,7 @@ export default function BuyerAccountPage() {
                             className="flex-1 py-2 bg-gradient-to-r from-red-600 to-amber-600 hover:brightness-110 text-white rounded-xl font-bold text-xs uppercase transition shadow flex items-center justify-center gap-1 cursor-pointer"
                           >
                             <Flame className="w-3.5 h-3.5" />
-                            <span>Power Bid (+₦100k)</span>
+                            <span>Power Bid (+Γéª100k)</span>
                           </button>
 
                           <button
@@ -1132,9 +1300,9 @@ export default function BuyerAccountPage() {
                 <div className="bg-white rounded-3xl border border-slate-200 max-w-md w-full p-5 sm:p-6 space-y-4 shadow-2xl animate-scale-in text-xs my-auto max-h-[92vh] overflow-y-auto pb-10 sm:pb-6">
                   <div className="flex justify-between items-center border-b border-slate-100 pb-3">
                     <h3 className="font-serif text-base font-bold text-slate-900">
-                      Place Accredited Bid · {biddingLot.title}
+                      Place Accredited Bid ┬╖ {biddingLot.title}
                     </h3>
-                    <button onClick={() => setBiddingLot(null)} className="text-slate-400 font-bold p-1">✕</button>
+                    <button onClick={() => setBiddingLot(null)} className="text-slate-400 font-bold p-1">Γ£ò</button>
                   </div>
 
                   <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 flex items-center gap-3">
@@ -1147,7 +1315,7 @@ export default function BuyerAccountPage() {
 
                   <form onSubmit={(e) => { e.preventDefault(); handleExecuteQuickBid(biddingLot, customBidAmount); }} className="space-y-3">
                     <div>
-                      <label className="block text-slate-700 font-bold mb-1">Your Bid Amount (₦ NGN)</label>
+                      <label className="block text-slate-700 font-bold mb-1">Your Bid Amount (Γéª NGN)</label>
                       <input
                         type="number"
                         required
@@ -1160,7 +1328,7 @@ export default function BuyerAccountPage() {
                     </div>
 
                     <div className="p-3 bg-emerald-50 rounded-xl border border-emerald-200 text-emerald-900 text-[11px]">
-                      🛡️ Covered under WEMA Bank Sovereign Fiduciary Guarantee.
+                      ≡ƒ¢í∩╕Å Covered under WEMA Bank Sovereign Fiduciary Guarantee.
                     </div>
 
                     <div className="flex justify-end gap-2 pt-2 border-t border-slate-100">
@@ -1274,14 +1442,14 @@ export default function BuyerAccountPage() {
                         <img src={art.image} alt={art.title} className="w-full h-full object-cover hover:scale-105 transition duration-500" />
                       </Link>
                       <span className="absolute top-2.5 left-2.5 bg-black/80 backdrop-blur-md text-emerald-300 font-mono text-[9px] font-bold px-2.5 py-0.5 rounded-lg border border-emerald-500/40 pointer-events-none">
-                        ✨ NEW STUDIO UPLOAD
+                        Γ£¿ NEW STUDIO UPLOAD
                       </span>
                     </div>
 
                     <div className="p-4 space-y-3 flex-1 flex flex-col justify-between text-xs">
                       <div>
                         <span className="text-[10px] text-art-gold font-bold uppercase tracking-wider block">
-                          {art.category} • {art.country}
+                          {art.category} ΓÇó {art.country}
                         </span>
                         <Link href={`/artwork/${art.id}`}>
                           <h5 className="font-serif text-base font-bold text-slate-900 line-clamp-1 hover:text-art-gold transition cursor-pointer">{art.title}</h5>
@@ -1421,7 +1589,7 @@ export default function BuyerAccountPage() {
                     <div className="p-4 space-y-3 flex-1 flex flex-col justify-between text-xs">
                       <div>
                         <span className="text-[10px] text-art-gold font-bold uppercase tracking-wider block">
-                          {art.category} • {art.city}, {art.country}
+                          {art.category} ΓÇó {art.city}, {art.country}
                         </span>
                         <Link href={`/artwork/${art.id}`}>
                           <h4 className="font-serif text-base font-bold text-slate-900 line-clamp-1 hover:text-art-gold transition cursor-pointer">{art.title}</h4>
@@ -1497,7 +1665,7 @@ export default function BuyerAccountPage() {
                       <Link href={`/artwork/${art.id}`}>
                         <h4 className="font-serif text-sm font-bold text-slate-900 hover:text-art-gold transition cursor-pointer">{art.title}</h4>
                       </Link>
-                      <span className="text-[11px] text-art-gold font-semibold block mb-1">By {art.artistName} · {art.country}</span>
+                      <span className="text-[11px] text-art-gold font-semibold block mb-1">By {art.artistName} ┬╖ {art.country}</span>
                       <span className="px-2.5 py-0.5 rounded-full text-[9px] font-bold uppercase bg-emerald-100 text-emerald-800">
                         Vault Custody Confirmed
                       </span>
@@ -2005,8 +2173,8 @@ export default function BuyerAccountPage() {
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="bg-white rounded-3xl border border-slate-200 max-w-md w-full p-6 space-y-4 shadow-2xl text-xs">
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-              <h3 className="font-serif text-base font-bold text-slate-900">Update Delivery Address · {editingOrder.id}</h3>
-              <button onClick={() => setEditingOrder(null)} className="text-slate-400 hover:text-slate-700 font-bold">✕</button>
+              <h3 className="font-serif text-base font-bold text-slate-900">Update Delivery Address ┬╖ {editingOrder.id}</h3>
+              <button onClick={() => setEditingOrder(null)} className="text-slate-400 hover:text-slate-700 font-bold">Γ£ò</button>
             </div>
             <form onSubmit={handleSaveOrderShipping} className="space-y-3">
               <div>
@@ -2054,11 +2222,11 @@ export default function BuyerAccountPage() {
           <div className="bg-white rounded-3xl border border-slate-200 max-w-md w-full p-6 space-y-4 shadow-2xl text-xs">
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
               <h3 className="font-serif text-base font-bold text-slate-900">Revise Private Offer</h3>
-              <button onClick={() => setEditingOffer(null)} className="text-slate-400 hover:text-slate-700 font-bold">✕</button>
+              <button onClick={() => setEditingOffer(null)} className="text-slate-400 hover:text-slate-700 font-bold">Γ£ò</button>
             </div>
             <form onSubmit={handleSaveOfferEdit} className="space-y-3">
               <div>
-                <label className="block font-semibold text-slate-700 mb-1">Offer Amount (₦ NGN)</label>
+                <label className="block font-semibold text-slate-700 mb-1">Offer Amount (Γéª NGN)</label>
                 <input
                   type="number"
                   required
@@ -2096,6 +2264,76 @@ export default function BuyerAccountPage() {
           userRole="buyer"
           userName={activeUser?.name}
         />
+      )}
+
+      {/* Collector Rating & Review Submission Modal */}
+      {reviewingOrder && (
+        <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl border border-slate-200 max-w-md w-full p-6 space-y-4 shadow-2xl text-xs animate-fade-in">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <div>
+                <h3 className="font-serif text-base font-bold text-slate-900 flex items-center gap-2">
+                  <Star className="w-4 h-4 text-amber-500 fill-current" />
+                  <span>Rate Masterpiece &amp; Artist</span>
+                </h3>
+                <p className="text-[11px] text-slate-500 font-sans mt-0.5">{reviewingOrder.artworkTitle} by {reviewingOrder.artistName}</p>
+              </div>
+              <button onClick={() => setReviewingOrder(null)} className="text-slate-400 hover:text-slate-700 font-bold text-sm">✕</button>
+            </div>
+
+            <form onSubmit={handleCollectorReviewSubmit} className="space-y-4">
+              <div>
+                <label className="block text-slate-700 mb-1 font-bold">Collector Rating (1 to 5 Stars)</label>
+                <div className="flex items-center gap-2 py-1">
+                  {[1, 2, 3, 4, 5].map((starVal) => (
+                    <button
+                      key={starVal}
+                      type="button"
+                      onClick={() => setCollectorRatingVal(starVal)}
+                      className="p-1 hover:scale-125 transition transform cursor-pointer"
+                    >
+                      <Star className={`w-6 h-6 ${starVal <= collectorRatingVal ? 'text-amber-400 fill-current' : 'text-slate-200'}`} />
+                    </button>
+                  ))}
+                  <span className="font-bold font-mono text-sm text-slate-800 ml-2">
+                    {collectorRatingVal}.0 / 5.0
+                  </span>
+                </div>
+                <p className="text-[10px] text-slate-400">
+                  Positive 4 &amp; 5-star feedback directly increases the artist&apos;s verified platform rating.
+                </p>
+              </div>
+
+              <div>
+                <label className="block text-slate-700 mb-1 font-bold">Collector Feedback Statement *</label>
+                <textarea
+                  rows="3"
+                  required
+                  value={collectorCommentVal}
+                  onChange={(e) => setCollectorCommentVal(e.target.value)}
+                  placeholder="Share feedback on condition, framing, packaging, canvas texture, or provenance certificates..."
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-slate-800 text-xs focus:outline-none focus:border-art-gold"
+                />
+              </div>
+
+              <div className="flex justify-end gap-2 pt-2 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => setReviewingOrder(null)}
+                  className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-5 py-2 bg-gradient-to-r from-art-gold via-amber-500 to-art-gold-dark hover:brightness-110 text-art-black font-bold uppercase rounded-xl shadow cursor-pointer"
+                >
+                  Submit Feedback &amp; Rate Artist
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
       )}
 
       {/* Digital Certificate COA Modal */}

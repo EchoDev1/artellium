@@ -9,12 +9,15 @@ import { DEFAULT_FALLBACK_IMAGE, getCategoryFallback } from '@/lib/image-utils';
 import { isPriorityArtist } from '@/lib/priority-utils';
 
 export default function ArtworkCard({ artwork }) {
-  const { addToCart, currency, wishlist, addToWishlist, removeFromWishlist, usdExchangeRate = 1480, currentUser } = useStore();
+  const { addToCart, currency, wishlist, addToWishlist, removeFromWishlist, usdExchangeRate = 1480, currentUser, getArtistRating } = useStore();
   const [quickViewOpen, setQuickViewOpen] = useState(false);
   const isWishlisted = wishlist?.includes(artwork.id);
-  const isArtistRole = currentUser?.role === 'artist';
+  const isArtistRole = currentUser?.role === 'artist' || currentUser?.role === 'seller';
   const hasRealImage = Boolean(artwork.image && !String(artwork.image).includes('unsplash.com') && !artwork.isDemo);
   const hasRealAvatar = Boolean(artwork.artistAvatar && !String(artwork.artistAvatar).includes('unsplash.com'));
+
+  const artistRep = getArtistRating ? getArtistRating(artwork.artistName || artwork.artistId) : null;
+  const cardRating = artistRep?.rating !== undefined ? artistRep.rating : (typeof artwork.rating === 'number' ? artwork.rating : 0.0);
 
   const formatPrice = (amount) => {
     const safeAmount = Number(amount) || 0;
@@ -140,9 +143,9 @@ export default function ArtworkCard({ artwork }) {
           {/* Category & Rating Row */}
           <div className="h-4 flex items-center justify-between text-[11px] text-slate-400">
             <span className="font-mono uppercase tracking-wider text-[10px] text-slate-400">{artwork.category}</span>
-            <div className="flex items-center gap-1 text-art-gold font-semibold text-[11px]">
-              <Star className="w-3 h-3 fill-current" />
-              <span>{artwork.rating || '5.0'}</span>
+            <div className={`flex items-center gap-1 font-semibold text-[11px] ${cardRating > 0 ? 'text-art-gold' : 'text-slate-500'}`}>
+              <Star className={`w-3 h-3 ${cardRating > 0 ? 'fill-current text-art-gold' : 'text-slate-600'}`} />
+              <span>{cardRating > 0 ? cardRating.toFixed(1) : '0.0'}</span>
             </div>
           </div>
 

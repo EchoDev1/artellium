@@ -147,7 +147,7 @@ export default function SidebarDrawer() {
   ];
 
   const isCollectorRole = currentUser?.role === 'buyer' || currentUser?.role === 'collector' || pathname?.startsWith('/buyer');
-  const isArtistRole = currentUser?.role === 'artist' || pathname?.startsWith('/artist');
+  const isArtistRole = currentUser?.role === 'artist' || currentUser?.role === 'seller' || pathname?.startsWith('/artist');
 
   const platformFeatures = [
     {

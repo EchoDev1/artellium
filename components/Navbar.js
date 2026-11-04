@@ -274,7 +274,7 @@ export default function Navbar() {
             <UserAccountMenu />
 
             {/* Cart Icon Drawer Trigger: Hidden for Artists / Artist Dashboard */}
-            {currentUser?.role !== 'artist' && !pathname?.startsWith('/artist') && (
+            {currentUser?.role !== 'artist' && currentUser?.role !== 'seller' && !pathname?.startsWith('/artist') && (
               <button
                 onClick={() => setIsCartOpen(true)}
                 className="relative p-2 rounded-xl bg-art-black-card border border-art-gold/30 hover:border-art-gold transition text-white group"

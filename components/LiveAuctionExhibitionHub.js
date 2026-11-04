@@ -245,6 +245,11 @@ export default function LiveAuctionExhibitionHub() {
       return;
     }
 
+    if (currentUser?.role === 'artist' || currentUser?.role === 'seller') {
+      alert('Artist profiles are prohibited from placing bids. Bidding is restricted to collectors only.');
+      return;
+    }
+
     if (!isAccredited) {
       setIsBidderRegModalOpen(true);
       return;
@@ -295,6 +300,11 @@ export default function LiveAuctionExhibitionHub() {
 
     if (!isLoggedIn) {
       setIsAuthModalOpen(true);
+      return;
+    }
+
+    if (currentUser?.role === 'artist' || currentUser?.role === 'seller') {
+      setBidError('Artist profiles are prohibited from placing bids. Bidding is restricted to collectors only.');
       return;
     }
 

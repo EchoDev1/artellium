@@ -32,7 +32,8 @@ import {
   MessageCircle,
   Clock,
   Compass,
-  FileCheck
+  FileCheck,
+  Star
 } from 'lucide-react';
 import ArtworkCard from '@/components/ArtworkCard';
 import VerificationBadge from '@/components/VerificationBadge';
@@ -74,8 +75,11 @@ export default function MasterArtistProfilePage() {
     artworks = [], 
     orders = [],
     followedArtists = [],
-    askArtworkQuestion
+    askArtworkQuestion,
+    getArtistRating
   } = useStore();
+
+  const isArtistRole = currentUser?.role === 'artist' || currentUser?.role === 'seller';
 
   const [activePortfolioTab, setActivePortfolioTab] = useState('all'); // 'all' | 'available' | 'auction' | 'exhibition' | 'sold'
   const [copiedLink, setCopiedLink] = useState(false);
@@ -173,6 +177,10 @@ export default function MasterArtistProfilePage() {
   const verificationBadge = sellerMatch?.verification_badge || userMatch?.verificationBadge || firstArt?.verificationBadge || 'gold';
   const isPriority = Boolean(sellerMatch?.tier === 'Premium' || userMatch?.subscriptionTier === 'premium' || firstArt?.artistType === 'Premium' || isPriorityArtist({ artistName: name, ...userMatch }));
 
+  const artistRep = useMemo(() => {
+    return getArtistRating ? getArtistRating(name || rawId) : { rating: 0.0, reviewsCount: 0 };
+  }, [getArtistRating, name, rawId]);
+
   // Links
   const website = userMatch?.website || sellerMatch?.website;
   const instagram = userMatch?.instagram || sellerMatch?.instagram;
@@ -214,6 +222,10 @@ export default function MasterArtistProfilePage() {
 
   const handleSendInquiry = (e) => {
     e.preventDefault();
+    if (isArtistRole) {
+      alert('Artists cannot send inquiries or contact fellow artists. Inquiries are reserved for collectors.');
+      return;
+    }
     if (!inquiryText.trim()) return;
     if (firstArt && askArtworkQuestion) {
       askArtworkQuestion(firstArt.id, inquiryText);
@@ -320,6 +332,21 @@ export default function MasterArtistProfilePage() {
                   <span className="text-emerald-400 font-bold">
                     {artistArtworks.length} Documented Artworks
                   </span>
+
+                  <span>·</span>
+                  <div className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-black/60 border border-art-gold/30">
+                    <div className="flex text-amber-400">
+                      {Array.from({ length: 5 }).map((_, i) => (
+                        <Star key={i} className={`w-3 h-3 ${i < Math.round(artistRep.rating) && artistRep.rating > 0 ? 'fill-current text-amber-400' : 'text-slate-600'}`} />
+                      ))}
+                    </div>
+                    <span className={artistRep.rating > 0 ? 'text-amber-400 font-bold' : 'text-slate-400 font-medium'}>
+                      {artistRep.rating > 0 ? `${artistRep.rating.toFixed(1)} ★` : '0.0 ★ (0 Stars)'}
+                    </span>
+                    <span className="text-[10px] text-slate-500">
+                      ({artistRep.reviewsCount} {artistRep.reviewsCount === 1 ? 'review' : 'reviews'})
+                    </span>
+                  </div>
                 </div>
               </div>
             </div>
@@ -335,14 +362,16 @@ export default function MasterArtistProfilePage() {
                 </div>
               </div>
 
-              {/* Curatorial Inquire via Artellium Platform Administration */}
-              <Link
-                href={`/contact?subject=Collector%20Inquiry%20regarding%20Master%20Artist%20${encodeURIComponent(name)}&type=curatorial_inquiry`}
-                className="flex-1 sm:flex-initial px-5 py-3 rounded-2xl bg-gradient-to-r from-art-gold via-[#9E7720] to-art-gold-dark hover:brightness-110 text-white font-bold text-xs uppercase tracking-wider transition shadow-gold-glow flex items-center justify-center gap-2"
-              >
-                <ShieldCheck className="w-4 h-4" />
-                <span>Inquire with Administration</span>
-              </Link>
+              {/* Curatorial Inquire via Artellium Platform Administration (Collectors Only) */}
+              {!isArtistRole && (
+                <Link
+                  href={`/contact?subject=Collector%20Inquiry%20regarding%20Master%20Artist%20${encodeURIComponent(name)}&type=curatorial_inquiry`}
+                  className="flex-1 sm:flex-initial px-5 py-3 rounded-2xl bg-gradient-to-r from-art-gold via-[#9E7720] to-art-gold-dark hover:brightness-110 text-white font-bold text-xs uppercase tracking-wider transition shadow-gold-glow flex items-center justify-center gap-2"
+                >
+                  <ShieldCheck className="w-4 h-4" />
+                  <span>Inquire with Administration</span>
+                </Link>
+              )}
             </div>
 
           </div>
@@ -497,12 +526,19 @@ export default function MasterArtistProfilePage() {
               </div>
             </div>
 
-            <button
-              onClick={() => setInquiryModalOpen(true)}
-              className="px-5 py-2.5 bg-art-gold/20 hover:bg-art-gold text-art-gold hover:text-black rounded-xl text-xs font-bold uppercase tracking-wider transition border border-art-gold/40 shrink-0 self-start md:self-auto cursor-pointer"
-            >
-              Ask Atelier Question
-            </button>
+            {isArtistRole ? (
+              <div className="px-4 py-2 bg-white/5 border border-white/10 rounded-xl text-xs text-slate-400 font-medium flex items-center gap-2">
+                <Shield className="w-3.5 h-3.5 text-art-gold" />
+                <span>Contacting fellow artists is reserved for Collector accounts.</span>
+              </div>
+            ) : (
+              <button
+                onClick={() => setInquiryModalOpen(true)}
+                className="px-5 py-2.5 bg-art-gold/20 hover:bg-art-gold text-art-gold hover:text-black rounded-xl text-xs font-bold uppercase tracking-wider transition border border-art-gold/40 shrink-0 self-start md:self-auto cursor-pointer"
+              >
+                Ask Atelier Question
+              </button>
+            )}
           </div>
         )}
 

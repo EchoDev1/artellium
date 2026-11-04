@@ -63,7 +63,7 @@ export function StoreProvider({ children }) {
   const [commissions, setCommissions] = useState(INITIAL_COMMISSIONS || []);
 
   const [videos, setVideos] = useState(ARTIST_VIDEOS);
-  const [exhibitions] = useState(VIRTUAL_EXHIBITIONS);
+  const [exhibitions, setExhibitions] = useState(() => safeGetItem('artellium_exhibitions', VIRTUAL_EXHIBITIONS));
 
   // Cart & Checkout State
   const [cart, setCart] = useState([]);
@@ -100,6 +100,20 @@ export function StoreProvider({ children }) {
   const [notifications, setNotifications] = useState([]);
   const [artworkQuestions, setArtworkQuestions] = useState([]);
   const [collectorOffers, setCollectorOffers] = useState([]);
+  const [reviews, setReviews] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const saved = safeGetItem('artellium_reviews', null);
+      if (Array.isArray(saved)) return saved;
+    }
+    return [];
+  });
+  const [adminArtistRatings, setAdminArtistRatings] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const saved = safeGetItem('artellium_admin_artist_ratings', null);
+      if (saved && typeof saved === 'object') return saved;
+    }
+    return {};
+  });
   const [artistPayoutPercentage, setArtistPayoutPercentage] = useState(85);
 
   const updateArtistPayoutPercentage = (newPercentage) => {
@@ -274,7 +288,7 @@ export function StoreProvider({ children }) {
     return isCleanRealPhoto(match) ? match : '';
   };
 
-  const MOCK_VERSION = 'v21-reconciled-original-photos';
+  const MOCK_VERSION = 'v23-artist-zero-rating-and-role-separation';
 
   // 1. Load from LocalStorage synchronously first
   useEffect(() => {
@@ -282,6 +296,7 @@ export function StoreProvider({ children }) {
       const storedVersion = localStorage.getItem('artellium_mock_version');
       if (storedVersion !== MOCK_VERSION) {
         localStorage.removeItem('artellium_artworks');
+        localStorage.removeItem('artellium_real_artworks');
         localStorage.removeItem('artellium_orders');
         localStorage.removeItem('artellium_payments');
         localStorage.removeItem('artellium_commissions');
@@ -1166,7 +1181,7 @@ export function StoreProvider({ children }) {
 
   // Cart Functions
   const addToCart = (artwork) => {
-    if (currentUser?.role === 'artist') {
+    if (currentUser?.role === 'artist' || currentUser?.role === 'seller') {
       broadcastNotification('Artist accounts are dedicated creator studios and cannot purchase artworks.');
       return;
     }
@@ -1615,20 +1630,88 @@ export function StoreProvider({ children }) {
   };
 
   const addSeller = (newSeller) => {
-    const created = { ...newSeller, id: `artist-${Date.now()}`, created_at: new Date().toISOString() };
-    setSellers(prev => [...prev, created]);
-    supabase.from('sellers').insert([created]).then(() => {});
+    const created = { ...newSeller, id: newSeller.id || `artist-${Date.now()}`, created_at: new Date().toISOString() };
+    setSellers(prev => {
+      const updated = [...prev.filter(s => s.id !== created.id), created];
+      safeSetItem('artellium_sellers', updated);
+      return updated;
+    });
+    try {
+      supabase.from('sellers').insert([created]).then(() => {});
+    } catch (e) {}
     return created;
   };
 
   const updateSeller = (sellerId, updatedFields) => {
-    setSellers(prev => prev.map(s => s.id === sellerId ? { ...s, ...updatedFields, updated_at: new Date().toISOString() } : s));
-    supabase.from('sellers').update(updatedFields).eq('id', sellerId).then(() => {});
+    setSellers(prev => {
+      const updated = prev.map(s => s.id === sellerId ? { ...s, ...updatedFields, updated_at: new Date().toISOString() } : s);
+      safeSetItem('artellium_sellers', updated);
+      return updated;
+    });
+    try {
+      supabase.from('sellers').update(updatedFields).eq('id', sellerId).then(() => {});
+    } catch (e) {}
   };
 
   const deleteSeller = (sellerId) => {
-    setSellers(prev => prev.filter(s => s.id !== sellerId));
-    supabase.from('sellers').delete().eq('id', sellerId).then(() => {});
+    setSellers(prev => {
+      const updated = prev.filter(s => s.id !== sellerId);
+      safeSetItem('artellium_sellers', updated);
+      return updated;
+    });
+    try {
+      supabase.from('sellers').delete().eq('id', sellerId).then(() => {});
+    } catch (e) {}
+  };
+
+  // Curatorial Exhibitions CRUD with Full Local Storage & Dynamic Re-rendering
+  const addExhibition = (newEx) => {
+    const slug = newEx.slug || (newEx.title || 'curated-exhibition').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+    const exWithDefaults = {
+      id: newEx.id || `ex-${Date.now()}`,
+      slug,
+      title: newEx.title || 'Untitled Exhibition',
+      curator: newEx.curator || 'Curatorial Pavilion',
+      format: newEx.format || 'Physical exhibitions',
+      timing: newEx.timing || 'current',
+      dates: newEx.dates || 'Ongoing • 2026',
+      location: newEx.location || 'Lagos, Nigeria',
+      sdg: newEx.sdg || 'SDG 11: Cultural Heritage',
+      description: newEx.description || '',
+      coverImage: newEx.coverImage || 'https://images.unsplash.com/photo-1579783902614-a3fb3927b675?auto=format&fit=crop&q=95&w=2400',
+      artworksCount: newEx.artworksCount || 12,
+      featuredArtists: Array.isArray(newEx.featuredArtists) ? newEx.featuredArtists : [newEx.curator || 'African Master Creators'],
+      isLive3D: Boolean(newEx.isLive3D ?? true),
+      status: newEx.status || 'Live Now',
+      created_at: new Date().toISOString()
+    };
+    setExhibitions(prev => {
+      const updated = [exWithDefaults, ...prev.filter(e => e.id !== exWithDefaults.id && e.slug !== exWithDefaults.slug)];
+      safeSetItem('artellium_exhibitions', updated);
+      return updated;
+    });
+    return exWithDefaults;
+  };
+
+  const updateExhibition = (idOrSlug, updatedFields) => {
+    setExhibitions(prev => {
+      const updated = prev.map(ex => {
+        if (ex.id === idOrSlug || ex.slug === idOrSlug) {
+          return { ...ex, ...updatedFields };
+        }
+        return ex;
+      });
+      safeSetItem('artellium_exhibitions', updated);
+      return updated;
+    });
+  };
+
+  const deleteExhibition = (idOrSlug) => {
+    setExhibitions(prev => {
+      const updated = prev.filter(ex => ex.id !== idOrSlug && ex.slug !== idOrSlug);
+      safeSetItem('artellium_exhibitions', updated);
+      return updated;
+    });
   };
 
   // Artworks CRUD with Progressive Real-First Replacement Engine
@@ -1681,7 +1764,7 @@ export function StoreProvider({ children }) {
       isPriorityArtist: isPriority,
       artistType: isPriority ? 'Premium' : (newArt.artistType || 'Standard'),
       verificationBadge: isPriority ? 'gold' : (newArt.verificationBadge || 'verified'),
-      rating: newArt.rating || 5.0,
+      rating: typeof newArt.rating === 'number' ? newArt.rating : 0.0,
       reviewsCount: newArt.reviewsCount || 0,
       status: newArt.status || (isAuction ? 'auction' : isExhibition ? 'exhibition' : 'available'),
       isAuction: Boolean(isAuction),
@@ -1752,7 +1835,7 @@ export function StoreProvider({ children }) {
       artist_avatar: created.artistAvatar || '',
       verification_badge: created.verificationBadge,
       studio_notes: created.studioNotes || '',
-      rating: created.rating || 5.0,
+      rating: typeof created.rating === 'number' ? created.rating : 0.0,
       reviews_count: created.reviewsCount || 0,
       is_newly_listed: true,
       is_featured: created.status === 'exhibition' || created.isPriorityArtist === true,
@@ -2295,6 +2378,10 @@ export function StoreProvider({ children }) {
   };
 
   const placeBid = (artworkId, bidAmount, bidderName = currentUser?.name || 'Verified Collector') => {
+    if (currentUser?.role === 'artist' || currentUser?.role === 'seller') {
+      broadcastNotification('Bidding is prohibited for artist profiles. Features are limited to collectors only.');
+      return { success: false, error: 'Artists cannot place bids. Bidding is restricted to collectors.' };
+    }
     // Strict Fiduciary Rule: Only accredited registered bidders can place bids in any live auction
     const hasBidderCredentials = isBidderRegistered(currentUser) || auctionBidders.some(b => b.fullName.toLowerCase() === bidderName.toLowerCase());
     if (!hasBidderCredentials) {
@@ -2638,8 +2725,12 @@ export function StoreProvider({ children }) {
     setNotifications((prev) => [{ id: `notif-${Date.now()}`, message, read: false, date: new Date().toISOString() }, ...prev]);
   };
 
-  // Q&A
+  // Q&A (Restricted to Collectors)
   const askQuestion = (artworkId, question, askedBy) => {
+    if (currentUser?.role === 'artist' || currentUser?.role === 'seller') {
+      broadcastNotification('Inquiries on artworks are prohibited for artist profiles. Limited to collectors only.');
+      return;
+    }
     const newQ = { id: `q-${Date.now()}`, artworkId, question, askedBy: askedBy || 'Anonymous Collector', date: new Date().toISOString().split('T')[0], answer: null, answeredBy: null, answeredDate: null };
     setArtworkQuestions((prev) => [...prev, newQ]);
   };
@@ -2651,8 +2742,12 @@ export function StoreProvider({ children }) {
     setArtworkQuestions((prev) => prev.map((q) => q.id === questionId ? { ...q, answer: newAnswer, answeredBy: answeredBy || q.answeredBy, answeredDate: new Date().toISOString().split('T')[0] } : q));
   };
 
-  // Collector Offers
+  // Collector Offers (Restricted to Collectors)
   const submitCollectorOffer = (artworkId, artworkTitle, amount, note, buyerName) => {
+    if (currentUser?.role === 'artist' || currentUser?.role === 'seller') {
+      broadcastNotification('Making buyout offers is prohibited for artist profiles. Limited to collectors only.');
+      return;
+    }
     const offer = { id: `coffer-${Date.now()}`, artworkId, artworkTitle, amount: parseFloat(amount), note, buyerName, buyerId: currentUser?.id || 'anon-buyer', date: new Date().toISOString().split('T')[0], status: 'pending' };
     setCollectorOffers((prev) => [...prev, offer]);
   };
@@ -2663,6 +2758,166 @@ export function StoreProvider({ children }) {
     setCollectorOffers((prev) => prev.map((o) => o.id === offerId ? { ...o, ...updatedFields } : o));
   };
   const cancelCollectorOffer = (offerId) => setCollectorOffers((prev) => prev.filter((o) => o.id !== offerId));
+
+  // =========================================================================
+  // DYNAMIC ARTIST RATING & REPUTATION ENGINE
+  // Baseline: All artists start at 0.0 stars (unrated).
+  // Sources: Admin direct override + Collector ratings & positive feedbacks + Standard platform fulfillment
+  // =========================================================================
+  const getArtistRating = (artistIdentifier) => {
+    if (!artistIdentifier) return { rating: 0.0, reviewsCount: 0, stars: 0, isAdminRated: false };
+
+    const targetKey = String(artistIdentifier).trim().toLowerCase();
+
+    // 1. Admin direct override rating check
+    if (adminArtistRatings && adminArtistRatings[targetKey] && typeof adminArtistRatings[targetKey].rating === 'number') {
+      const adminVal = Number(Math.max(0.0, Math.min(5.0, adminArtistRatings[targetKey].rating)).toFixed(1));
+      const matchingRevs = (reviews || []).filter(r => {
+        const artName = (r?.artistName || '').toLowerCase();
+        return artName === targetKey || artName.includes(targetKey) || targetKey.includes(artName);
+      });
+      return {
+        rating: adminVal,
+        reviewsCount: matchingRevs.length,
+        stars: Math.round(adminVal),
+        isAdminRated: true
+      };
+    }
+
+    // 2. Collector reviews & feedback ratings
+    const matchingReviews = (reviews || []).filter(r => {
+      if (!r) return false;
+      const rArtName = (r.artistName || '').toLowerCase();
+      const rArtId = r.artworkId;
+      const artObj = (artworks || []).find(a => a.id === rArtId);
+      const artArtist = (artObj?.artistName || '').toLowerCase();
+      return rArtName === targetKey || rArtName.includes(targetKey) || targetKey.includes(rArtName) ||
+             artArtist === targetKey || artArtist.includes(targetKey) || targetKey.includes(artArtist);
+    });
+
+    const reviewsCount = matchingReviews.length;
+    let collectorRatingSum = 0;
+    let positiveReviewsCount = 0;
+
+    matchingReviews.forEach(r => {
+      const num = Number(r.rating) || 0;
+      collectorRatingSum += num;
+      if (num >= 4) positiveReviewsCount++;
+    });
+
+    // 3. Completed sales fulfillment activities
+    const completedSales = (orders || []).filter(ord => {
+      const ordItems = Array.isArray(ord?.items) ? ord.items : [];
+      const matchesArt = ordItems.some(i => {
+        const itemArt = (artworks || []).find(a => a.id === i.id || a.title === i.title);
+        const itemArtist = (itemArt?.artistName || i.artistName || '').toLowerCase();
+        return itemArtist === targetKey || itemArtist.includes(targetKey) || targetKey.includes(itemArtist);
+      });
+      return matchesArt && (ord.status === 'delivered' || ord.tracking?.stage === 'delivered');
+    });
+
+    // 4. Verification badge
+    const isVerified = (sellers || []).some(s => {
+      const sName = (s?.name || '').toLowerCase();
+      return (sName === targetKey || sName.includes(targetKey)) && (s.is_verified || s.verification_badge === 'gold');
+    }) || (artworks || []).some(a => {
+      const aName = (a?.artistName || '').toLowerCase();
+      return (aName === targetKey || aName.includes(targetKey)) && a.verificationBadge === 'gold';
+    });
+
+    // STRICT BASELINE: If zero reviews, zero sales, no admin override -> 0.0 STARS!
+    if (reviewsCount === 0 && completedSales.length === 0) {
+      return { rating: 0.0, reviewsCount: 0, stars: 0, isAdminRated: false };
+    }
+
+    let calculatedRating = 0.0;
+    if (reviewsCount > 0) {
+      const avgReview = collectorRatingSum / reviewsCount;
+      const salesBonus = Math.min(0.4, completedSales.length * 0.1);
+      const verifiedBonus = isVerified ? 0.2 : 0;
+      calculatedRating = Math.min(5.0, avgReview + salesBonus + verifiedBonus);
+    } else if (completedSales.length > 0) {
+      const salesBonus = Math.min(1.5, completedSales.length * 0.5);
+      const verifiedBonus = isVerified ? 0.5 : 0;
+      calculatedRating = Math.min(3.0, salesBonus + verifiedBonus);
+    }
+
+    const finalRating = Number(Math.max(0.0, Math.min(5.0, calculatedRating)).toFixed(1));
+    return {
+      rating: finalRating,
+      reviewsCount,
+      stars: Math.round(finalRating),
+      isAdminRated: false
+    };
+  };
+
+  const submitArtworkReview = ({ artworkId, artworkTitle, artistName, rating, comment, collectorName, collectorLocation, collectorEmail, orderId }) => {
+    if (currentUser?.role === 'artist' || currentUser?.role === 'seller') {
+      broadcastNotification('Artists cannot submit collector reviews or ratings.');
+      return { success: false, error: 'Artists cannot submit collector reviews.' };
+    }
+
+    const numRating = Math.max(1, Math.min(5, Number(rating) || 5));
+    const newRev = {
+      id: `rev-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+      artworkId,
+      artworkTitle: artworkTitle || '',
+      artistName: artistName || '',
+      rating: numRating,
+      comment: (comment || '').trim(),
+      collectorName: collectorName || currentUser?.name || 'Verified Collector',
+      collectorEmail: collectorEmail || currentUser?.email || '',
+      collectorLocation: collectorLocation || (currentUser?.city ? `${currentUser?.city}, ${currentUser?.country || 'Nigeria'}` : 'Lagos, Nigeria'),
+      orderId: orderId || null,
+      isVerifiedPurchase: Boolean(orderId),
+      date: 'Just now',
+      createdAt: new Date().toISOString()
+    };
+
+    setReviews(prev => {
+      const updated = [newRev, ...prev];
+      try {
+        safeSetItem('artellium_reviews', updated);
+      } catch (e) {}
+      return updated;
+    });
+
+    if (orderId) {
+      setOrders(prev => {
+        const updated = prev.map(o => o.id === orderId ? { ...o, review: newRev, rating: numRating } : o);
+        try {
+          safeSetItem('artellium_orders', updated);
+        } catch (e) {}
+        return updated;
+      });
+    }
+
+    broadcastNotification(`⭐ Collector review and ${numRating}-star rating submitted!`);
+    return { success: true, review: newRev };
+  };
+
+  const adminSetArtistRating = (artistIdentifier, ratingScore) => {
+    const val = Number(Math.max(0.0, Math.min(5.0, Number(ratingScore) || 0)).toFixed(1));
+    const key = String(artistIdentifier).trim().toLowerCase();
+
+    setAdminArtistRatings(prev => {
+      const updated = {
+        ...prev,
+        [key]: {
+          rating: val,
+          updatedAt: new Date().toISOString(),
+          setBy: 'admin'
+        }
+      };
+      try {
+        safeSetItem('artellium_admin_artist_ratings', updated);
+      } catch (e) {}
+      return updated;
+    });
+
+    broadcastNotification(`👑 Official Admin rating for "${artistIdentifier}" updated to ${val} ★`);
+    return val;
+  };
 
   // =========================================================================
   // AUTHENTICATION & RESEND TRANSACTIONAL EMAIL REGISTRATION
@@ -4359,6 +4614,10 @@ export function StoreProvider({ children }) {
         rejectVideo,
         updateVideo,
         exhibitions,
+        setExhibitions,
+        addExhibition,
+        updateExhibition,
+        deleteExhibition,
         cart,
         addToCart,
         removeFromCart,
@@ -4456,6 +4715,12 @@ export function StoreProvider({ children }) {
         updateCollectorOfferStatus,
         updateCollectorOffer,
         cancelCollectorOffer,
+        // Reputation, Reviews & Feedback
+        reviews,
+        submitArtworkReview,
+        adminArtistRatings,
+        adminSetArtistRating,
+        getArtistRating,
         // Header
         headerConfig,
         updateHeaderConfig,

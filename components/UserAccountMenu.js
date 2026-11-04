@@ -302,6 +302,7 @@ export default function UserAccountMenu() {
       case 'admin':
         return { label: 'System Admin', bg: 'bg-amber-500/20 text-amber-300 border-amber-500/40', icon: ShieldCheck };
       case 'artist':
+      case 'seller':
         return { label: 'Master Artist', bg: 'bg-art-gold/20 text-art-gold border-art-gold/40', icon: Palette };
       default:
         return { label: 'Verified Collector', bg: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40', icon: UserCheck };
@@ -340,7 +341,7 @@ export default function UserAccountMenu() {
                 {currentUser.name.split(' ')[0]}
               </span>
               <span className="text-[9px] text-art-gold font-sans uppercase tracking-wider">
-                {currentUser.role === 'admin' ? 'Admin' : currentUser.role === 'artist' ? 'Artist' : 'Collector'}
+                {currentUser.role === 'admin' ? 'Admin' : (currentUser.role === 'artist' || currentUser.role === 'seller') ? 'Artist' : 'Collector'}
               </span>
             </div>
             <ChevronDown className={`w-3.5 h-3.5 text-slate-400 transition-transform duration-200 ${isOpen ? 'rotate-180 text-art-gold' : ''}`} />
@@ -415,7 +416,7 @@ export default function UserAccountMenu() {
 
               {/* Role-Specific Portal Navigation (Strictly Isolated - No Cross-Portal Overlaps) */}
               <div>
-                {currentUser.role === 'buyer' && (
+                {(currentUser.role === 'buyer' || currentUser.role === 'collector') && (
                   <Link
                     href="/buyer/account"
                     onClick={() => setIsOpen(false)}
@@ -429,7 +430,7 @@ export default function UserAccountMenu() {
                   </Link>
                 )}
 
-                {currentUser.role === 'artist' && (
+                {(currentUser.role === 'artist' || currentUser.role === 'seller') && (
                   <Link
                     href="/artist/dashboard"
                     onClick={() => setIsOpen(false)}

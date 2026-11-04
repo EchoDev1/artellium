@@ -48,17 +48,27 @@ export default function ArtworkDetailPage() {
     askQuestion,
     submitCollectorOffer,
     toggleFollowArtist,
-    isFollowingArtist
+    isFollowingArtist,
+    reviews: globalReviews = [],
+    submitArtworkReview,
+    getArtistRating
   } = useStore();
+
+  const isArtistRole = currentUser?.role === 'artist' || currentUser?.role === 'seller';
 
   const artwork = (artworks || []).find((item) => String(item.id) === String(id) || encodeURIComponent(String(item.id)) === String(id)) ||
                   (realArtworks || []).find((item) => String(item.id) === String(id) || encodeURIComponent(String(item.id)) === String(id)) ||
                   (artworks || [])[0] || {};
   const isWishlisted = wishlist?.includes(artwork.id);
 
-  const [reviews, setReviews] = useState(
-    CUSTOMER_REVIEWS.filter((r) => r.artworkId === artwork.id) || CUSTOMER_REVIEWS
-  );
+  const artistRep = useMemo(() => {
+    return getArtistRating ? getArtistRating(artwork.artistName || artwork.artistId) : { rating: 0.0, reviewsCount: 0 };
+  }, [getArtistRating, artwork.artistName, artwork.artistId, globalReviews]);
+
+  // Combine matching global reviews for this artwork
+  const artworkReviews = useMemo(() => {
+    return (globalReviews || []).filter((r) => r && r.artworkId === artwork.id);
+  }, [globalReviews, artwork.id]);
 
   const [newReviewForm, setNewReviewForm] = useState({
     rating: 5,
@@ -92,24 +102,34 @@ export default function ArtworkDetailPage() {
 
   const handleReviewSubmit = (e) => {
     e.preventDefault();
-    if (!newReviewForm.comment) return;
+    if (isArtistRole) {
+      alert('Review submissions are reserved for collectors.');
+      return;
+    }
+    if (!newReviewForm.comment.trim()) return;
 
-    const createdReview = {
-      id: `rev-${Date.now()}`,
-      artworkId: artwork.id,
-      userName: currentUser?.name || 'Verified Collector',
-      location: newReviewForm.location,
-      rating: newReviewForm.rating,
-      date: 'Just now',
-      comment: newReviewForm.comment,
-    };
+    if (submitArtworkReview) {
+      submitArtworkReview({
+        artworkId: artwork.id,
+        artworkTitle: artwork.title,
+        artistName: artwork.artistName,
+        rating: newReviewForm.rating,
+        comment: newReviewForm.comment,
+        collectorName: currentUser?.name || 'Verified Collector',
+        collectorLocation: newReviewForm.location,
+        collectorEmail: currentUser?.email || ''
+      });
+    }
 
-    setReviews([createdReview, ...reviews]);
     setNewReviewForm({ rating: 5, comment: '', location: 'Lagos, Nigeria' });
   };
 
   const handleOfferSubmit = (e) => {
     e.preventDefault();
+    if (isArtistRole) {
+      alert('Private offers are reserved for collectors.');
+      return;
+    }
     if (!offerPrice) return;
     submitCollectorOffer(artwork.id, artwork.title, offerPrice, offerNote, currentUser?.name || 'Verified Collector');
     setOfferSubmitted(true);
@@ -321,37 +341,51 @@ export default function ArtworkDetailPage() {
                 </span>
               </div>
 
-              {/* Action Buttons based on status (Hidden for Artists) */}
-              {artwork.status === 'available' && currentUser?.role !== 'artist' && (
-                <div className="space-y-2 pt-2">
-                  <button
-                    onClick={() => addToCart(artwork)}
-                    className="w-full py-3.5 bg-gradient-to-r from-art-gold via-amber-400 to-art-gold-dark text-art-black font-bold text-sm uppercase tracking-wider rounded-xl transition shadow-gold-glow hover:brightness-110 flex items-center justify-center gap-2"
-                  >
-                    <ShoppingBag className="w-4 h-4" />
-                    <span>Acquire Masterpiece (Direct Settlement)</span>
-                  </button>
-                  <p className="text-[11px] text-center text-slate-400">
-                    Direct settlement secured via WEMA Bank PLC Corporate Gateway.
+              {/* Action Buttons based on status (Hidden for Artists, with professional peer view banner) */}
+              {isArtistRole ? (
+                <div className="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-amber-300 text-xs space-y-1.5">
+                  <div className="flex items-center gap-2 font-bold text-art-gold">
+                    <ShieldCheck className="w-4 h-4" />
+                    <span>Atelier Peer Preview Mode</span>
+                  </div>
+                  <p className="text-slate-300 text-[11px] leading-relaxed">
+                    You are viewing this artwork as a registered Artist. Direct acquisitions, auction bidding, private buyout offers, and inquiries are strictly reserved for verified Collector accounts.
                   </p>
                 </div>
-              )}
+              ) : (
+                <>
+                  {artwork.status === 'available' && (
+                    <div className="space-y-2 pt-2">
+                      <button
+                        onClick={() => addToCart(artwork)}
+                        className="w-full py-3.5 bg-gradient-to-r from-art-gold via-amber-400 to-art-gold-dark text-art-black font-bold text-sm uppercase tracking-wider rounded-xl transition shadow-gold-glow hover:brightness-110 flex items-center justify-center gap-2 cursor-pointer"
+                      >
+                        <ShoppingBag className="w-4 h-4" />
+                        <span>Acquire Masterpiece (Direct Settlement)</span>
+                      </button>
+                      <p className="text-[11px] text-center text-slate-400">
+                        Direct settlement secured via WEMA Bank PLC Corporate Gateway.
+                      </p>
+                    </div>
+                  )}
 
-              {artwork.status === 'auction' && (
-                <div className="space-y-3 pt-2">
-                  <div className="p-3 bg-red-950/30 border border-red-800/40 rounded-xl flex justify-between items-center text-xs">
-                    <span className="text-slate-300 font-medium">Live Auction Highest Bid:</span>
-                    <span className="font-mono text-base font-bold text-red-400">
-                      {formatPrice(artwork.auction?.currentBid || artwork.price)}
-                    </span>
-                  </div>
-                  <Link
-                    href="/auctions"
-                    className="w-full py-3.5 bg-art-red hover:bg-red-700 text-white font-bold text-sm uppercase tracking-wider rounded-xl transition shadow-crimson-glow flex items-center justify-center gap-2 text-center"
-                  >
-                    <span>Enter Live Bidding Room</span>
-                  </Link>
-                </div>
+                  {artwork.status === 'auction' && (
+                    <div className="space-y-3 pt-2">
+                      <div className="p-3 bg-red-950/30 border border-red-800/40 rounded-xl flex justify-between items-center text-xs">
+                        <span className="text-slate-300 font-medium">Live Auction Highest Bid:</span>
+                        <span className="font-mono text-base font-bold text-red-400">
+                          {formatPrice(artwork.auction?.currentBid || artwork.price)}
+                        </span>
+                      </div>
+                      <Link
+                        href="/auctions"
+                        className="w-full py-3.5 bg-art-red hover:bg-red-700 text-white font-bold text-sm uppercase tracking-wider rounded-xl transition shadow-crimson-glow flex items-center justify-center gap-2 text-center"
+                      >
+                        <span>Enter Live Bidding Room</span>
+                      </Link>
+                    </div>
+                  )}
+                </>
               )}
 
               {artwork.status === 'sold' && (
@@ -451,7 +485,7 @@ export default function ArtworkDetailPage() {
       )}
 
       {/* Feature 4: "Make an Offer" Private Collector Bid Section (Collectors Only) */}
-      {artwork.status === 'available' && currentUser?.role !== 'artist' && (
+      {artwork.status === 'available' && !isArtistRole && (
         <section className="bg-gradient-to-br from-art-black-card to-zinc-950 border border-amber-500/30 rounded-3xl p-8 space-y-5 shadow-2xl">
           <div className="flex items-center justify-between flex-wrap gap-4">
             <div className="flex items-center gap-3">
@@ -550,13 +584,19 @@ export default function ArtworkDetailPage() {
               All collector inquiries are handled directly by Artellium Platform Administration to ensure complete fiduciary security, authenticity verification, and professional logistics.
             </p>
           </div>
-          <Link
-            href={`/contact?subject=Collector%20Inquiry%20regarding%20${encodeURIComponent(artwork.title)}&artworkId=${artwork.id}`}
-            className="px-6 py-3.5 bg-gradient-to-r from-art-gold via-[#9E7720] to-art-gold-dark hover:brightness-110 text-white font-bold text-xs uppercase tracking-wider rounded-xl transition shadow-gold-glow flex items-center justify-center gap-2 shrink-0 cursor-pointer"
-          >
-            <Send className="w-3.5 h-3.5" />
-            <span>Inquire with Administration</span>
-          </Link>
+          {isArtistRole ? (
+            <div className="px-5 py-3 rounded-xl bg-white/5 border border-white/10 text-slate-400 text-xs font-medium text-center">
+              Inquiries and acquisitions are limited to Collectors.
+            </div>
+          ) : (
+            <Link
+              href={`/contact?subject=Collector%20Inquiry%20regarding%20${encodeURIComponent(artwork.title)}&artworkId=${artwork.id}`}
+              className="px-6 py-3.5 bg-gradient-to-r from-art-gold via-[#9E7720] to-art-gold-dark hover:brightness-110 text-white font-bold text-xs uppercase tracking-wider rounded-xl transition shadow-gold-glow flex items-center justify-center gap-2 shrink-0 cursor-pointer"
+            >
+              <Send className="w-3.5 h-3.5" />
+              <span>Inquire with Administration</span>
+            </Link>
+          )}
         </div>
       </section>
 
@@ -603,91 +643,118 @@ export default function ArtworkDetailPage() {
 
       {/* Customer Reviews & Feedback Section */}
       <section className="pt-10 border-t border-white/10 space-y-8">
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between flex-wrap gap-4">
           <div className="flex items-center gap-2">
             <MessageSquare className="w-5 h-5 text-art-gold" />
             <h2 className="font-serif text-2xl font-bold text-white">Collector Feedback & Reviews</h2>
           </div>
-          <div className="flex items-center gap-1 text-amber-400 font-bold text-sm">
-            <Star className="w-4 h-4 fill-current" />
-            <span>4.9 / 5.0 Rating</span>
+          <div className="flex items-center gap-2 font-bold text-sm">
+            <div className="flex text-amber-400">
+              {Array.from({ length: 5 }).map((_, i) => (
+                <Star key={i} className={`w-4 h-4 ${i < Math.round(artistRep.rating) && artistRep.rating > 0 ? 'fill-current text-amber-400' : 'text-slate-600'}`} />
+              ))}
+            </div>
+            <span className={artistRep.rating > 0 ? 'text-amber-400 font-mono' : 'text-slate-400 font-mono'}>
+              {artistRep.rating > 0 ? `${artistRep.rating.toFixed(1)} / 5.0 Rating` : '0.0 / 5.0 (0 Stars)'}
+            </span>
+            <span className="text-xs text-slate-500 font-mono">
+              ({artworkReviews.length} {artworkReviews.length === 1 ? 'Review' : 'Reviews'})
+            </span>
           </div>
         </div>
 
-        {/* Submit Review Form */}
-        <form onSubmit={handleReviewSubmit} className="bg-art-black-card p-6 rounded-2xl border border-white/10 space-y-4">
-          <h3 className="font-serif text-sm font-bold text-white">Write Collector Review</h3>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
-            <div>
-              <label className="block text-slate-400 mb-1 font-medium">Rating (Out of 5 Stars)</label>
-              <select
-                value={newReviewForm.rating}
-                onChange={(e) => setNewReviewForm({ ...newReviewForm, rating: Number(e.target.value) })}
-                className="w-full bg-art-black border border-white/10 rounded-lg p-2.5 text-white focus:outline-none cursor-pointer"
-              >
-                <option value={5}>⭐⭐⭐⭐⭐ (5 - Exceptional Masterwork)</option>
-                <option value={4}>⭐⭐⭐⭐ (4 - Very High Quality)</option>
-                <option value={3}>⭐⭐⭐ (3 - Satisfactory)</option>
-              </select>
+        {/* Submit Review Form (Collector Only) */}
+        {isArtistRole ? (
+          <div className="bg-art-black-card p-6 rounded-2xl border border-white/10 text-xs text-slate-400 space-y-1.5">
+            <div className="flex items-center gap-2 text-art-gold font-bold">
+              <ShieldCheck className="w-4 h-4" />
+              <span>Collector Ratings & Reviews Escrow</span>
+            </div>
+            <p className="text-slate-400 leading-relaxed">
+              Collector reviews and feedback ratings are submitted exclusively by verified collectors who have acquired artworks.
+            </p>
+          </div>
+        ) : (
+          <form onSubmit={handleReviewSubmit} className="bg-art-black-card p-6 rounded-2xl border border-white/10 space-y-4">
+            <h3 className="font-serif text-sm font-bold text-white">Write Collector Review</h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
+              <div>
+                <label className="block text-slate-400 mb-1 font-medium">Rating (Out of 5 Stars)</label>
+                <select
+                  value={newReviewForm.rating}
+                  onChange={(e) => setNewReviewForm({ ...newReviewForm, rating: Number(e.target.value) })}
+                  className="w-full bg-art-black border border-white/10 rounded-lg p-2.5 text-white focus:outline-none cursor-pointer"
+                >
+                  <option value={5}>⭐⭐⭐⭐⭐ (5 - Exceptional Masterwork)</option>
+                  <option value={4}>⭐⭐⭐⭐ (4 - Very High Quality)</option>
+                  <option value={3}>⭐⭐⭐ (3 - Satisfactory)</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-slate-400 mb-1 font-medium">Collector Location</label>
+                <input
+                  type="text"
+                  value={newReviewForm.location}
+                  onChange={(e) => setNewReviewForm({ ...newReviewForm, location: e.target.value })}
+                  placeholder="e.g. London, UK or Lagos, Nigeria"
+                  className="w-full bg-art-black border border-white/10 rounded-lg p-2.5 text-white focus:outline-none"
+                />
+              </div>
             </div>
 
             <div>
-              <label className="block text-slate-400 mb-1 font-medium">Collector Location</label>
-              <input
-                type="text"
-                value={newReviewForm.location}
-                onChange={(e) => setNewReviewForm({ ...newReviewForm, location: e.target.value })}
-                placeholder="e.g. London, UK or Lagos, Nigeria"
-                className="w-full bg-art-black border border-white/10 rounded-lg p-2.5 text-white focus:outline-none"
+              <label className="block text-xs text-slate-400 mb-1 font-medium">Your Review Statement</label>
+              <textarea
+                rows="3"
+                required
+                value={newReviewForm.comment}
+                onChange={(e) => setNewReviewForm({ ...newReviewForm, comment: e.target.value })}
+                placeholder="Share your feedback on provenance, framing, or delivery experience..."
+                className="w-full bg-art-black border border-white/10 rounded-lg p-2.5 text-xs text-white focus:outline-none"
               />
             </div>
-          </div>
 
-          <div>
-            <label className="block text-xs text-slate-400 mb-1 font-medium">Your Review Statement</label>
-            <textarea
-              rows="3"
-              required
-              value={newReviewForm.comment}
-              onChange={(e) => setNewReviewForm({ ...newReviewForm, comment: e.target.value })}
-              placeholder="Share your feedback on provenance, framing, or delivery experience..."
-              className="w-full bg-art-black border border-white/10 rounded-lg p-2.5 text-xs text-white focus:outline-none"
-            />
-          </div>
-
-          <button
-            type="submit"
-            className="bg-art-gold text-art-black font-bold text-xs px-5 py-2.5 rounded-xl hover:brightness-110 transition shadow-gold-glow"
-          >
-            Submit Collector Review
-          </button>
-        </form>
+            <button
+              type="submit"
+              className="bg-art-gold text-art-black font-bold text-xs px-5 py-2.5 rounded-xl hover:brightness-110 transition shadow-gold-glow cursor-pointer"
+            >
+              Submit Collector Review
+            </button>
+          </form>
+        )}
 
         {/* Existing Reviews List */}
         <div className="space-y-4">
-          {reviews.map((rev) => (
-            <div key={rev.id} className="p-5 rounded-2xl bg-art-black border border-white/10 space-y-2">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <div className="w-8 h-8 rounded-full bg-art-gold/10 text-art-gold flex items-center justify-center font-bold text-xs">
-                    <User className="w-4 h-4" />
+          {artworkReviews.length === 0 ? (
+            <p className="text-slate-500 text-xs italic py-4">
+              No collector reviews yet for this masterpiece. Reviews appear here after collector acquisition and delivery confirmation.
+            </p>
+          ) : (
+            artworkReviews.map((rev) => (
+              <div key={rev.id} className="p-5 rounded-2xl bg-art-black border border-white/10 space-y-2">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <div className="w-8 h-8 rounded-full bg-art-gold/10 text-art-gold flex items-center justify-center font-bold text-xs">
+                      <User className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <h4 className="text-xs font-bold text-white">{rev.collectorName || rev.userName}</h4>
+                      <p className="text-[10px] text-slate-400">{rev.collectorLocation || rev.location} • {rev.date || 'Recent'}</p>
+                    </div>
                   </div>
-                  <div>
-                    <h4 className="text-xs font-bold text-white">{rev.userName}</h4>
-                    <p className="text-[10px] text-slate-400">{rev.location} • {rev.date}</p>
+
+                  <div className="flex text-amber-400 text-xs">
+                    {Array.from({ length: rev.rating || 5 }).map((_, i) => (
+                      <Star key={i} className="w-3.5 h-3.5 fill-current" />
+                    ))}
                   </div>
                 </div>
 
-                <div className="flex text-amber-400 text-xs">
-                  {Array.from({ length: rev.rating }).map((_, i) => (
-                    <Star key={i} className="w-3.5 h-3.5 fill-current" />
-                  ))}
-                </div>
+                <p className="text-xs text-slate-300 italic pt-1">{rev.comment}</p>
               </div>
-
-              <p className="text-xs text-slate-300 italic pt-1">{rev.comment}</p>
-            </div>
-          ))}
+            ))
+          )}
         </div>
       </section>
 

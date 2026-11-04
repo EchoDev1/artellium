@@ -88,7 +88,8 @@ export default function AuctionsPage() {
   const [bidderRegSuccessMsg, setBidderRegSuccessMsg] = useState('');
 
   // Determine if active user is accredited
-  const isAccredited = Boolean(isLoggedIn && isBidderRegistered && isBidderRegistered(currentUser));
+  const isArtist = currentUser?.role === 'artist' || currentUser?.role === 'seller';
+  const isAccredited = Boolean(isLoggedIn && !isArtist && isBidderRegistered && isBidderRegistered(currentUser));
   const currentBidder = auctionBidders.find(b => 
     (currentUser?.email && b.email?.toLowerCase() === currentUser.email.toLowerCase()) || 
     (currentUser?.id && b.id === currentUser.id) || 
@@ -423,6 +424,16 @@ export default function AuctionsPage() {
       return;
     }
 
+    if (isArtist) {
+      setFlashNotice({
+        lotNumber: lot.lotNumber,
+        amount: lot.currentBid,
+        msg: 'Atelier Notice: Auction bidding is reserved exclusively for Collector accounts. Artists have viewing rights only.'
+      });
+      setTimeout(() => setFlashNotice(null), 5000);
+      return;
+    }
+
     if (!isAccredited) {
       setPendingBidLot(lot);
       setIsBidderRegModalOpen(true);
@@ -482,6 +493,16 @@ export default function AuctionsPage() {
       return;
     }
 
+    if (isArtist) {
+      setFlashNotice({
+        lotNumber: lot.lotNumber,
+        amount: lot.currentBid,
+        msg: 'Atelier Notice: Auction bidding is reserved exclusively for Collector accounts. Artists have viewing rights only.'
+      });
+      setTimeout(() => setFlashNotice(null), 5000);
+      return;
+    }
+
     if (!isAccredited) {
       setPendingBidLot(lot);
       setIsBidderRegModalOpen(true);
@@ -504,6 +525,11 @@ export default function AuctionsPage() {
     e.preventDefault();
     if (!isLoggedIn) {
       setIsAuthModalOpen(true);
+      return;
+    }
+
+    if (isArtist) {
+      setBidError('Atelier Notice: Auction bidding is reserved exclusively for Collector accounts.');
       return;
     }
 
@@ -558,6 +584,11 @@ export default function AuctionsPage() {
   // Instant In-Modal Bidder Accreditation Submit Handler
   const handleQuickBidderRegistration = (e) => {
     e.preventDefault();
+    if (isArtist) {
+      alert('Atelier Notice: Auction bidder accreditation is reserved exclusively for Collector accounts.');
+      setIsBidderRegModalOpen(false);
+      return;
+    }
     setIsRegisteringBidder(true);
 
     const bidderId = `ART-BID-${Date.now().toString().slice(-5)}`;
@@ -606,7 +637,34 @@ export default function AuctionsPage() {
       )}
 
       {/* Unaccredited Bidder Warning Banner */}
-      {!isAccredited && (
+      {isArtist ? (
+        <div className="p-4 sm:p-5 bg-gradient-to-r from-[#170e0a] via-black to-[#170e0a] border-2 border-art-gold/40 rounded-2xl shadow-xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 animate-fade-in">
+          <div className="flex items-center gap-3.5">
+            <div className="w-10 h-10 rounded-xl bg-art-gold/20 border border-art-gold/40 text-art-gold flex items-center justify-center shrink-0">
+              <Lock className="w-5 h-5" />
+            </div>
+            <div>
+              <h4 className="font-serif text-sm font-bold text-white flex items-center gap-2">
+                <span>Atelier Peer Preview Protocol</span>
+                <span className="px-2 py-0.5 rounded-full bg-art-gold/20 text-art-gold text-[9px] font-mono uppercase">
+                  Artist Account
+                </span>
+              </h4>
+              <p className="text-xs text-slate-300 mt-0.5">
+                You are currently viewing the live auction arena as an <strong className="text-art-gold">Artist</strong>. Live bidding and bidder accreditation are strictly limited to Collector accounts.
+              </p>
+            </div>
+          </div>
+
+          <Link
+            href="/artist/dashboard"
+            className="w-full sm:w-auto px-5 py-2.5 bg-art-gold/20 hover:bg-art-gold/30 text-art-gold font-bold text-xs uppercase tracking-wider rounded-xl border border-art-gold/40 transition flex items-center justify-center gap-2"
+          >
+            <span>Artist Studio Dashboard</span>
+            <ArrowRight className="w-4 h-4 text-art-gold" />
+          </Link>
+        </div>
+      ) : !isAccredited && (
         <div className="p-4 sm:p-5 bg-gradient-to-r from-amber-950/80 via-black to-amber-950/60 border-2 border-art-gold/50 rounded-2xl shadow-xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 animate-fade-in">
           <div className="flex items-center gap-3.5">
             <div className="w-10 h-10 rounded-xl bg-art-gold/20 border border-art-gold/40 text-art-gold flex items-center justify-center shrink-0">
@@ -700,7 +758,14 @@ export default function AuctionsPage() {
 
         {/* Dynamic Bidder Status Indicator */}
         <div className="flex items-center gap-3">
-          {isAccredited ? (
+          {isArtist ? (
+            <div className="flex items-center gap-2 bg-art-gold/10 border border-art-gold/30 px-3.5 py-2 rounded-xl text-xs text-art-gold">
+              <Lock className="w-3.5 h-3.5 text-art-gold" />
+              <span className="font-mono text-[11px] font-bold">
+                Atelier View: <strong className="text-white">Artist Account</strong>
+              </span>
+            </div>
+          ) : isAccredited ? (
             <button
               onClick={() => setIsBidderRegModalOpen(true)}
               className="flex items-center gap-2 bg-emerald-950/70 border border-emerald-500/50 hover:border-emerald-400 px-3.5 py-2 rounded-xl text-xs text-emerald-200 transition shadow-[0_0_15px_rgba(16,185,129,0.25)] cursor-pointer"
@@ -727,13 +792,15 @@ export default function AuctionsPage() {
             </button>
           )}
 
-          <Link
-            href="/auctions/register"
-            className="hidden sm:inline-flex px-3.5 py-2 bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white border border-white/10 rounded-xl text-xs font-semibold transition items-center gap-1.5"
-          >
-            <span>Full Accreditation Portal</span>
-            <ArrowRight className="w-3 h-3 text-slate-400" />
-          </Link>
+          {!isArtist && (
+            <Link
+              href="/auctions/register"
+              className="hidden sm:inline-flex px-3.5 py-2 bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white border border-white/10 rounded-xl text-xs font-semibold transition items-center gap-1.5"
+            >
+              <span>Full Accreditation Portal</span>
+              <ArrowRight className="w-3 h-3 text-slate-400" />
+            </Link>
+          )}
         </div>
       </div>
 
@@ -912,21 +979,32 @@ export default function AuctionsPage() {
 
                     {/* Bidding Action Buttons: PLACE BID & POWER BID */}
                     <div className="flex flex-col sm:flex-row items-center gap-3 pt-2">
-                      <button
-                        onClick={() => openCustomBidModal(lot)}
-                        className="w-full sm:flex-1 py-3.5 bg-gradient-to-r from-red-600 via-art-red to-red-700 hover:brightness-110 text-white font-bold text-xs uppercase tracking-wider rounded-xl transition shadow-crimson-glow flex items-center justify-center gap-2 cursor-pointer"
-                      >
-                        <Gavel className="w-4 h-4" />
-                        <span>PLACE BID</span>
-                      </button>
+                      {isArtist ? (
+                        <div className="flex-1 p-3.5 bg-black/60 border border-art-gold/40 rounded-xl text-center">
+                          <span className="text-xs font-mono font-bold text-art-gold flex items-center justify-center gap-2">
+                            <Lock className="w-4 h-4 text-art-gold shrink-0" />
+                            <span>Atelier Peer Preview: Auction bidding is reserved for Collectors</span>
+                          </span>
+                        </div>
+                      ) : (
+                        <>
+                          <button
+                            onClick={() => openCustomBidModal(lot)}
+                            className="w-full sm:flex-1 py-3.5 bg-gradient-to-r from-red-600 via-art-red to-red-700 hover:brightness-110 text-white font-bold text-xs uppercase tracking-wider rounded-xl transition shadow-crimson-glow flex items-center justify-center gap-2 cursor-pointer"
+                          >
+                            <Gavel className="w-4 h-4" />
+                            <span>PLACE BID</span>
+                          </button>
 
-                      <button
-                        onClick={() => handlePowerBid(lot)}
-                        className="w-full sm:flex-1 py-3.5 bg-gradient-to-r from-art-gold via-amber-500 to-art-gold-dark hover:brightness-110 text-art-black font-black text-xs uppercase tracking-wider rounded-xl transition shadow-gold-glow flex items-center justify-center gap-2 cursor-pointer"
-                      >
-                        <Zap className="w-4 h-4 text-art-black fill-current animate-pulse" />
-                        <span>POWER BID (+₦100K)</span>
-                      </button>
+                          <button
+                            onClick={() => handlePowerBid(lot)}
+                            className="w-full sm:flex-1 py-3.5 bg-gradient-to-r from-art-gold via-amber-500 to-art-gold-dark hover:brightness-110 text-art-black font-black text-xs uppercase tracking-wider rounded-xl transition shadow-gold-glow flex items-center justify-center gap-2 cursor-pointer"
+                          >
+                            <Zap className="w-4 h-4 text-art-black fill-current animate-pulse" />
+                            <span>POWER BID (+₦100K)</span>
+                          </button>
+                        </>
+                      )}
 
                       <button
                         onClick={() => setInvoiceLot(lot)}

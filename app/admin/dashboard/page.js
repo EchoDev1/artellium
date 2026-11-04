@@ -121,6 +121,9 @@ export default function AdminDashboardPage() {
     settleTransaction, 
     freezeTransaction,
     exhibitions = [], 
+    addExhibition,
+    updateExhibition,
+    deleteExhibition,
     usersList = [],
     addUser,
     updateUser,
@@ -244,18 +247,25 @@ export default function AdminDashboardPage() {
     setIsMounted(true);
   }, []);
 
-  useEffect(() => {
-    if (isMounted) {
-      if (currentUser && currentUser.role === 'buyer') {
-        router.push('/buyer/account');
-      } else if (currentUser && currentUser.role === 'artist') {
-        router.push('/artist/dashboard');
-      }
-    }
-  }, [currentUser, isMounted, router]);
-
   const [activeTab, setActiveTab] = useState('overview'); // overview, header, hero, homepage, footer, priority_banner, logistics, orders, commissions, payments, artworks, qa, broadcasts, sellers, settings
   const [isVideoModalOpen, setIsVideoModalOpen] = useState(false);
+
+  // Exhibitions Management State
+  const [isAddExhibitionModalOpen, setIsAddExhibitionModalOpen] = useState(false);
+  const [editingExhibition, setEditingExhibition] = useState(null);
+  const [newExhibitionForm, setNewExhibitionForm] = useState({
+    title: '',
+    curator: 'Artellium Curatorial Pavilion',
+    format: 'Physical exhibitions',
+    timing: 'current',
+    dates: 'Ongoing • 2026',
+    location: 'Lagos, Nigeria',
+    sdg: 'SDG 11: Sustainable Cities & Cultural Heritage',
+    description: '',
+    coverImage: 'https://images.unsplash.com/photo-1579783902614-a3fb3927b675?auto=format&fit=crop&q=95&w=2400',
+    artworksCount: 16,
+    status: 'Live Now'
+  });
 
   // Modals state
   const [editingArtwork, setEditingArtwork] = useState(null);
@@ -978,18 +988,47 @@ export default function AdminDashboardPage() {
               </p>
             </div>
 
-            <div className="flex flex-wrap items-center gap-3">
+            <div className="flex flex-wrap items-center gap-2.5">
               <button
                 onClick={() => setIsAddArtModalOpen(true)}
-                className="bg-art-gold hover:brightness-110 text-art-black font-bold text-xs uppercase tracking-wider px-4 py-3 rounded-xl transition shadow flex items-center gap-2"
+                className="bg-art-gold hover:brightness-110 text-art-black font-bold text-xs uppercase tracking-wider px-3.5 py-2.5 rounded-xl transition shadow flex items-center gap-1.5 cursor-pointer"
+                title="Post new artwork to catalogue"
               >
                 <Plus className="w-4 h-4" />
                 <span>Add Artwork</span>
               </button>
 
               <button
+                onClick={() => setIsAddExhibitionModalOpen(true)}
+                className="bg-emerald-700 hover:bg-emerald-600 text-white font-bold text-xs uppercase tracking-wider px-3.5 py-2.5 rounded-xl transition shadow flex items-center gap-1.5 cursor-pointer"
+                title="Curate and publish new exhibition"
+              >
+                <Eye className="w-4 h-4 text-emerald-300" />
+                <span>Curate Exhibition</span>
+              </button>
+
+              <button
+                onClick={() => setActiveTab('live_auctions')}
+                className="bg-red-700 hover:bg-red-600 text-white font-bold text-xs uppercase tracking-wider px-3.5 py-2.5 rounded-xl transition shadow flex items-center gap-1.5 cursor-pointer"
+                title="Manage and launch live auction lots"
+              >
+                <Flame className="w-4 h-4 text-red-300 animate-pulse" />
+                <span>Live Auction Lot</span>
+              </button>
+
+              <button
+                onClick={() => setActiveTab('admin_artists')}
+                className="bg-amber-600 hover:bg-amber-500 text-white font-bold text-xs uppercase tracking-wider px-3.5 py-2.5 rounded-xl transition shadow flex items-center gap-1.5 cursor-pointer"
+                title="Onboard and manage master artists"
+              >
+                <Palette className="w-4 h-4 text-amber-200" />
+                <span>Onboard Artist</span>
+              </button>
+
+              <button
                 onClick={() => setIsVideoModalOpen(true)}
-                className="bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs uppercase tracking-wider px-4 py-3 rounded-xl transition flex items-center gap-2"
+                className="bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs uppercase tracking-wider px-3.5 py-2.5 rounded-xl transition flex items-center gap-1.5 cursor-pointer"
+                title="Upload documentary master spotlight video"
               >
                 <Video className="w-4 h-4 text-art-gold" />
                 <span>Spotlight Video</span>
@@ -3214,11 +3253,19 @@ export default function AdminDashboardPage() {
                   We curate exhibitions that showcase artistic excellence while connecting creators with wider audiences through various SDGs discussions for a sustainable living.
                 </p>
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 flex-wrap">
+                <button
+                  type="button"
+                  onClick={() => setIsAddExhibitionModalOpen(true)}
+                  className="px-4 py-2 bg-emerald-700 hover:bg-emerald-600 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 shadow transition cursor-pointer"
+                >
+                  <Plus className="w-4 h-4 text-emerald-300" />
+                  <span>Curate New Exhibition</span>
+                </button>
                 <Link
                   href="/exhibitions"
                   target="_blank"
-                  className="px-3.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-xl text-xs font-bold flex items-center gap-1"
+                  className="px-3.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-xl text-xs font-bold flex items-center gap-1"
                 >
                   <ExternalLink className="w-3.5 h-3.5" />
                   <span>View Public 3D Hall</span>
@@ -3226,62 +3273,373 @@ export default function AdminDashboardPage() {
               </div>
             </div>
 
-            {/* 4 Exhibition Types Overview */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
-              {[
-                {
-                  format: 'Physical exhibitions',
-                  title: 'Dynasties of the Niger: Benin Bronze & Sacred Timber',
-                  location: 'National Museum Pavilion, Lagos, Nigeria',
-                  sdg: 'SDG 11: Cultural Heritage',
-                  status: 'Live Now'
-                },
-                {
-                  format: 'Virtual exhibitions',
-                  title: 'Pan-African 3D Spatial Continuum',
-                  location: 'Immersive 3D WebGL Gallery Hall',
-                  sdg: 'SDG 9: Digital Infrastructure',
-                  status: 'Live Now'
-                },
-                {
-                  format: 'Pop-up galleries',
-                  title: 'Earth Pigments & Sustainable Living Salon',
-                  location: 'Victoria Island Curatorial Lounge, Lagos',
-                  sdg: 'SDG 12: Eco Raw Materials',
-                  status: 'Live Now'
-                },
-                {
-                  format: 'International showcases',
-                  title: 'African Master Creators: London & Paris Diaspora Biennale',
-                  location: 'Grand Palais Diaspora Pavilion, Paris & London',
-                  sdg: 'SDG 8 & 17: Creator Growth & Global Partnerships',
-                  status: 'Upcoming'
-                },
-              ].map((ex, idx) => (
-                <div key={idx} className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-2.5 flex flex-col justify-between">
-                  <div className="space-y-1">
-                    <div className="flex items-center justify-between">
-                      <span className="px-2 py-0.5 rounded-full text-[9px] font-bold bg-emerald-100 text-emerald-800">
-                        {ex.format}
-                      </span>
-                      <span className="text-[9px] font-mono font-bold text-slate-500">{ex.status}</span>
+            {/* Dynamic Exhibitions List */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 text-xs">
+              {(exhibitions || []).map((ex) => {
+                const cover = ex.coverImage || 'https://images.unsplash.com/photo-1579783902614-a3fb3927b675?auto=format&fit=crop&q=95&w=2400';
+                return (
+                  <div key={ex.id || ex.slug} className="p-4 rounded-2xl bg-slate-50 border border-slate-200 hover:border-emerald-500/40 transition space-y-3 flex flex-col justify-between shadow-xs">
+                    <div className="space-y-2">
+                      <div className="relative aspect-[16/9] w-full rounded-xl overflow-hidden bg-black border border-slate-200">
+                        <img src={cover} alt={ex.title} className="w-full h-full object-cover" />
+                        <span className="absolute top-2 left-2 px-2 py-0.5 rounded-full text-[9px] font-bold bg-black/80 text-emerald-300 border border-emerald-500/30">
+                          {ex.format || 'Physical exhibitions'}
+                        </span>
+                        <span className={`absolute top-2 right-2 px-2 py-0.5 rounded-full text-[9px] font-bold font-mono ${
+                          ex.timing === 'current' ? 'bg-emerald-600 text-white' : ex.timing === 'upcoming' ? 'bg-cyan-700 text-white' : 'bg-slate-700 text-slate-200'
+                        }`}>
+                          {ex.status || (ex.timing === 'current' ? 'Live Now' : ex.timing === 'upcoming' ? 'Opening Soon' : 'Archived')}
+                        </span>
+                      </div>
+
+                      <div>
+                        <h4 className="font-serif font-bold text-slate-900 text-sm line-clamp-1">{ex.title}</h4>
+                        <p className="text-[10px] text-slate-500 font-medium">{ex.location || 'Pan-African Hall'} · {ex.dates || '2026'}</p>
+                        <p className="text-[10px] text-slate-400">Curator: <strong className="text-slate-700">{ex.curator || 'Curatorial Board'}</strong></p>
+                      </div>
+
+                      {ex.sdg && (
+                        <div className="p-1.5 bg-emerald-50 text-emerald-800 rounded-lg font-mono text-[9px] flex items-center gap-1 border border-emerald-200">
+                          <Leaf className="w-3 h-3 text-emerald-600 shrink-0" />
+                          <span className="truncate">{ex.sdg}</span>
+                        </div>
+                      )}
                     </div>
-                    <h4 className="font-serif font-bold text-slate-900 text-xs pt-1">{ex.title}</h4>
-                    <p className="text-[10px] text-slate-500">{ex.location}</p>
-                    <div className="p-1.5 bg-emerald-50 text-emerald-800 rounded font-mono text-[9px] flex items-center gap-1">
-                      <Leaf className="w-3 h-3 text-emerald-600 shrink-0" />
-                      <span className="truncate">{ex.sdg}</span>
+
+                    <div className="space-y-2 pt-2 border-t border-slate-200">
+                      {/* Timing status buttons */}
+                      <div className="flex items-center gap-1 text-[9px] font-mono">
+                        <button
+                          type="button"
+                          onClick={() => updateExhibition(ex.id, { timing: 'current', status: 'Live Now' })}
+                          className={`flex-1 py-1 rounded text-center transition ${ex.timing === 'current' ? 'bg-emerald-700 text-white font-bold' : 'bg-slate-200 text-slate-600 hover:bg-slate-300'}`}
+                        >
+                          Live
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => updateExhibition(ex.id, { timing: 'upcoming', status: 'Opening Soon' })}
+                          className={`flex-1 py-1 rounded text-center transition ${ex.timing === 'upcoming' ? 'bg-cyan-700 text-white font-bold' : 'bg-slate-200 text-slate-600 hover:bg-slate-300'}`}
+                        >
+                          Upcoming
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => updateExhibition(ex.id, { timing: 'past', status: 'Archived' })}
+                          className={`flex-1 py-1 rounded text-center transition ${ex.timing === 'past' ? 'bg-slate-700 text-white font-bold' : 'bg-slate-200 text-slate-600 hover:bg-slate-300'}`}
+                        >
+                          Past
+                        </button>
+                      </div>
+
+                      <div className="flex items-center gap-1.5">
+                        <button
+                          type="button"
+                          onClick={() => setEditingExhibition(ex)}
+                          className="flex-1 py-1.5 bg-slate-900 hover:bg-slate-800 text-white font-bold text-[10px] uppercase rounded-lg transition text-center"
+                        >
+                          Edit Curatorial Staging
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (confirm(`Remove exhibition "${ex.title}" from Artellium?`)) {
+                              deleteExhibition(ex.id || ex.slug);
+                            }
+                          }}
+                          className="p-1.5 bg-red-50 hover:bg-red-100 text-red-600 rounded-lg transition"
+                          title="Delete Exhibition"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
                     </div>
                   </div>
-                  <button
-                    onClick={() => alert(`Status & Curator settings for "${ex.title}" updated!`)}
-                    className="w-full py-1.5 bg-slate-900 hover:bg-slate-800 text-white font-bold text-[10px] uppercase rounded-lg transition"
-                  >
-                    Manage Curatorial Staging
-                  </button>
-                </div>
-              ))}
+                );
+              })}
             </div>
+
+            {/* Add Exhibition Modal */}
+            {isAddExhibitionModalOpen && (
+              <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+                <div className="bg-white rounded-3xl border border-slate-200 max-w-xl w-full p-6 sm:p-8 space-y-4 shadow-2xl max-h-[90vh] overflow-y-auto">
+                  <div className="flex justify-between items-center border-b border-slate-100 pb-3">
+                    <h3 className="font-serif text-lg font-bold text-slate-900 flex items-center gap-2">
+                      <Eye className="w-5 h-5 text-emerald-600" />
+                      <span>Curate & Launch New Exhibition</span>
+                    </h3>
+                    <button onClick={() => setIsAddExhibitionModalOpen(false)} className="text-slate-400 font-bold">✕</button>
+                  </div>
+
+                  <form
+                    onSubmit={(e) => {
+                      e.preventDefault();
+                      if (!newExhibitionForm.title.trim()) return;
+                      addExhibition(newExhibitionForm);
+                      setIsAddExhibitionModalOpen(false);
+                      setNewExhibitionForm({
+                        title: '',
+                        curator: 'Artellium Curatorial Pavilion',
+                        format: 'Physical exhibitions',
+                        timing: 'current',
+                        dates: 'Ongoing • 2026',
+                        location: 'Lagos, Nigeria',
+                        sdg: 'SDG 11: Sustainable Cities & Cultural Heritage',
+                        description: '',
+                        coverImage: 'https://images.unsplash.com/photo-1579783902614-a3fb3927b675?auto=format&fit=crop&q=95&w=2400',
+                        artworksCount: 16,
+                        status: 'Live Now'
+                      });
+                    }}
+                    className="space-y-3.5 text-xs"
+                  >
+                    <div>
+                      <label className="block text-slate-600 mb-1 font-medium">Exhibition Title</label>
+                      <input
+                        type="text"
+                        required
+                        value={newExhibitionForm.title}
+                        onChange={e => setNewExhibitionForm({ ...newExhibitionForm, title: e.target.value })}
+                        placeholder="e.g. Dynasties of the Niger: Benin Bronze & Sacred Timber"
+                        className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-slate-800"
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-slate-600 mb-1 font-medium">Format</label>
+                        <select
+                          value={newExhibitionForm.format}
+                          onChange={e => setNewExhibitionForm({ ...newExhibitionForm, format: e.target.value })}
+                          className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-slate-800"
+                        >
+                          <option value="Physical exhibitions">Physical exhibitions</option>
+                          <option value="Virtual exhibitions">Virtual exhibitions (3D WebGL)</option>
+                          <option value="Pop-up galleries">Pop-up galleries</option>
+                          <option value="International showcases">International showcases</option>
+                        </select>
+                      </div>
+
+                      <div>
+                        <label className="block text-slate-600 mb-1 font-medium">Timing Stage</label>
+                        <select
+                          value={newExhibitionForm.timing}
+                          onChange={e => setNewExhibitionForm({ ...newExhibitionForm, timing: e.target.value, status: e.target.value === 'current' ? 'Live Now' : e.target.value === 'upcoming' ? 'Opening Soon' : 'Archived' })}
+                          className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-slate-800"
+                        >
+                          <option value="current">Current (Live Now)</option>
+                          <option value="upcoming">Upcoming (Opening Soon)</option>
+                          <option value="past">Past (Archived Catalog)</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-slate-600 mb-1 font-medium">Curator / Pavilion Lead</label>
+                        <input
+                          type="text"
+                          value={newExhibitionForm.curator}
+                          onChange={e => setNewExhibitionForm({ ...newExhibitionForm, curator: e.target.value })}
+                          className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-slate-800"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-slate-600 mb-1 font-medium">Exhibition Dates</label>
+                        <input
+                          type="text"
+                          value={newExhibitionForm.dates}
+                          onChange={e => setNewExhibitionForm({ ...newExhibitionForm, dates: e.target.value })}
+                          placeholder="e.g. Mar 1 – Apr 30, 2026"
+                          className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-slate-800"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-slate-600 mb-1 font-medium">Venue Location / City</label>
+                        <input
+                          type="text"
+                          value={newExhibitionForm.location}
+                          onChange={e => setNewExhibitionForm({ ...newExhibitionForm, location: e.target.value })}
+                          placeholder="e.g. National Museum Pavilion, Lagos, Nigeria"
+                          className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-slate-800"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-slate-600 mb-1 font-medium">SDGs Sustainable Living Theme</label>
+                        <input
+                          type="text"
+                          value={newExhibitionForm.sdg}
+                          onChange={e => setNewExhibitionForm({ ...newExhibitionForm, sdg: e.target.value })}
+                          placeholder="e.g. SDG 11: Sustainable Cultural Heritage"
+                          className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-slate-800"
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-slate-600 mb-1 font-medium">Cover Image URL</label>
+                      <input
+                        type="text"
+                        value={newExhibitionForm.coverImage}
+                        onChange={e => setNewExhibitionForm({ ...newExhibitionForm, coverImage: e.target.value })}
+                        placeholder="https://..."
+                        className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-slate-800 font-mono text-[11px]"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-slate-600 mb-1 font-medium">Curatorial Overview / Statement</label>
+                      <textarea
+                        rows="3"
+                        value={newExhibitionForm.description}
+                        onChange={e => setNewExhibitionForm({ ...newExhibitionForm, description: e.target.value })}
+                        placeholder="Detailed curatorial statement connecting traditional artistry with contemporary sustainability..."
+                        className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-slate-800"
+                      />
+                    </div>
+
+                    <div className="flex justify-end gap-2 pt-2 border-t border-slate-100">
+                      <button type="button" onClick={() => setIsAddExhibitionModalOpen(false)} className="px-4 py-2 bg-slate-100 rounded-xl font-bold">Cancel</button>
+                      <button type="submit" className="px-5 py-2 bg-emerald-700 text-white font-bold uppercase rounded-xl">Publish Exhibition</button>
+                    </div>
+                  </form>
+                </div>
+              </div>
+            )}
+
+            {/* Edit Exhibition Modal */}
+            {editingExhibition && (
+              <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+                <div className="bg-white rounded-3xl border border-slate-200 max-w-xl w-full p-6 sm:p-8 space-y-4 shadow-2xl max-h-[90vh] overflow-y-auto">
+                  <div className="flex justify-between items-center border-b border-slate-100 pb-3">
+                    <h3 className="font-serif text-lg font-bold text-slate-900 flex items-center gap-2">
+                      <Edit className="w-4 h-4 text-emerald-600" />
+                      <span>Edit Exhibition · {editingExhibition.title}</span>
+                    </h3>
+                    <button onClick={() => setEditingExhibition(null)} className="text-slate-400 font-bold">✕</button>
+                  </div>
+
+                  <form
+                    onSubmit={(e) => {
+                      e.preventDefault();
+                      updateExhibition(editingExhibition.id, editingExhibition);
+                      setEditingExhibition(null);
+                    }}
+                    className="space-y-3.5 text-xs"
+                  >
+                    <div>
+                      <label className="block text-slate-600 mb-1 font-medium">Title</label>
+                      <input
+                        type="text"
+                        required
+                        value={editingExhibition.title || ''}
+                        onChange={e => setEditingExhibition({ ...editingExhibition, title: e.target.value })}
+                        className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-slate-800"
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-slate-600 mb-1 font-medium">Format</label>
+                        <select
+                          value={editingExhibition.format || 'Physical exhibitions'}
+                          onChange={e => setEditingExhibition({ ...editingExhibition, format: e.target.value })}
+                          className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-slate-800"
+                        >
+                          <option value="Physical exhibitions">Physical exhibitions</option>
+                          <option value="Virtual exhibitions">Virtual exhibitions (3D WebGL)</option>
+                          <option value="Pop-up galleries">Pop-up galleries</option>
+                          <option value="International showcases">International showcases</option>
+                        </select>
+                      </div>
+
+                      <div>
+                        <label className="block text-slate-600 mb-1 font-medium">Timing Stage</label>
+                        <select
+                          value={editingExhibition.timing || 'current'}
+                          onChange={e => setEditingExhibition({ ...editingExhibition, timing: e.target.value, status: e.target.value === 'current' ? 'Live Now' : e.target.value === 'upcoming' ? 'Opening Soon' : 'Archived' })}
+                          className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-slate-800"
+                        >
+                          <option value="current">Current (Live Now)</option>
+                          <option value="upcoming">Upcoming (Opening Soon)</option>
+                          <option value="past">Past (Archived Catalog)</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-slate-600 mb-1 font-medium">Curator</label>
+                        <input
+                          type="text"
+                          value={editingExhibition.curator || ''}
+                          onChange={e => setEditingExhibition({ ...editingExhibition, curator: e.target.value })}
+                          className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-slate-800"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-slate-600 mb-1 font-medium">Dates</label>
+                        <input
+                          type="text"
+                          value={editingExhibition.dates || ''}
+                          onChange={e => setEditingExhibition({ ...editingExhibition, dates: e.target.value })}
+                          className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-slate-800"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-slate-600 mb-1 font-medium">Location</label>
+                        <input
+                          type="text"
+                          value={editingExhibition.location || ''}
+                          onChange={e => setEditingExhibition({ ...editingExhibition, location: e.target.value })}
+                          className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-slate-800"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-slate-600 mb-1 font-medium">SDGs Sustainable Theme</label>
+                        <input
+                          type="text"
+                          value={editingExhibition.sdg || ''}
+                          onChange={e => setEditingExhibition({ ...editingExhibition, sdg: e.target.value })}
+                          className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-slate-800"
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-slate-600 mb-1 font-medium">Cover Image URL</label>
+                      <input
+                        type="text"
+                        value={editingExhibition.coverImage || ''}
+                        onChange={e => setEditingExhibition({ ...editingExhibition, coverImage: e.target.value })}
+                        className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-slate-800 font-mono text-[11px]"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-slate-600 mb-1 font-medium">Description</label>
+                      <textarea
+                        rows="3"
+                        value={editingExhibition.description || ''}
+                        onChange={e => setEditingExhibition({ ...editingExhibition, description: e.target.value })}
+                        className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-slate-800"
+                      />
+                    </div>
+
+                    <div className="flex justify-end gap-2 pt-2 border-t border-slate-100">
+                      <button type="button" onClick={() => setEditingExhibition(null)} className="px-4 py-2 bg-slate-100 rounded-xl font-bold">Cancel</button>
+                      <button type="submit" className="px-5 py-2 bg-emerald-700 text-white font-bold uppercase rounded-xl">Save Changes</button>
+                    </div>
+                  </form>
+                </div>
+              </div>
+            )}
           </div>
         )}
 
@@ -4429,6 +4787,85 @@ export default function AdminDashboardPage() {
                       </div>
                     </div>
 
+                    <div className="grid grid-cols-3 gap-3">
+                      <div>
+                        <label className="block text-slate-600 mb-1">Medium & Materials</label>
+                        <input
+                          type="text"
+                          value={newArtForm.medium || ''}
+                          onChange={e => setNewArtForm({ ...newArtForm, medium: e.target.value })}
+                          placeholder="e.g. Oil & Gold Leaf on Canvas"
+                          className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-slate-800"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-slate-600 mb-1">Dimensions</label>
+                        <input
+                          type="text"
+                          value={newArtForm.dimensions || ''}
+                          onChange={e => setNewArtForm({ ...newArtForm, dimensions: e.target.value })}
+                          placeholder="e.g. 120 x 100 cm"
+                          className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-slate-800"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-slate-600 mb-1">Creation Year</label>
+                        <input
+                          type="text"
+                          value={newArtForm.year || '2026'}
+                          onChange={e => setNewArtForm({ ...newArtForm, year: e.target.value })}
+                          placeholder="2026"
+                          className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-slate-800"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-slate-600 mb-1">Listing Destination / Mode</label>
+                        <select
+                          value={newArtForm.status || 'available'}
+                          onChange={e => setNewArtForm({ 
+                            ...newArtForm, 
+                            status: e.target.value,
+                            isAuction: e.target.value === 'auction',
+                            isExhibition: e.target.value === 'exhibition'
+                          })}
+                          className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-slate-800 font-semibold"
+                        >
+                          <option value="available">Regular Catalogue Sale</option>
+                          <option value="auction">🔥 Live Auction Arena Lot</option>
+                          <option value="exhibition">🏛️ Museum Exhibition Showcase</option>
+                        </select>
+                      </div>
+
+                      {newArtForm.status === 'auction' ? (
+                        <div>
+                          <label className="block text-slate-600 mb-1">Reserve Price (₦ NGN)</label>
+                          <input
+                            type="number"
+                            value={newArtForm.reservePrice || (newArtForm.price ? Math.round(Number(newArtForm.price) * 1.2) : '')}
+                            onChange={e => setNewArtForm({ ...newArtForm, reservePrice: e.target.value })}
+                            placeholder="Minimum auction reserve"
+                            className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-slate-800 font-mono"
+                          />
+                        </div>
+                      ) : (
+                        <div>
+                          <label className="block text-slate-600 mb-1">Verification Seal</label>
+                          <select
+                            value={newArtForm.verificationBadge || 'gold'}
+                            onChange={e => setNewArtForm({ ...newArtForm, verificationBadge: e.target.value })}
+                            className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-slate-800"
+                          >
+                            <option value="gold">Gold Seal (Sovereign Master)</option>
+                            <option value="verified">Verified Creator</option>
+                            <option value="standard">Standard Atelier</option>
+                          </select>
+                        </div>
+                      )}
+                    </div>
+
                     {/* Artwork Photography & Studio Proof Suite */}
                     <div>
                       <label className="block text-slate-600 mb-1.5 font-medium">Artwork Photography</label>
@@ -4495,6 +4932,102 @@ export default function AdminDashboardPage() {
                           onChange={(e) => setEditArtForm({ ...editArtForm, price: e.target.value })}
                           className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-slate-800 font-mono"
                         />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-slate-600 mb-1 font-medium">Artist Name</label>
+                        <input
+                          type="text"
+                          value={editArtForm.artistName || ''}
+                          onChange={(e) => setEditArtForm({ ...editArtForm, artistName: e.target.value })}
+                          className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-slate-800"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-slate-600 mb-1 font-medium">Category</label>
+                        <select
+                          value={editArtForm.category || 'Paintings'}
+                          onChange={(e) => setEditArtForm({ ...editArtForm, category: e.target.value })}
+                          className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-slate-800"
+                        >
+                          <option value="Paintings">Paintings</option>
+                          <option value="Sculptures">Sculptures</option>
+                          <option value="Drawings">Drawings</option>
+                          <option value="Photography">Photography</option>
+                          <option value="Textiles">Textiles</option>
+                          <option value="Pottery">Pottery</option>
+                          <option value="Ceramics">Ceramics</option>
+                          <option value="Woodworks">Woodworks</option>
+                          <option value="Metal works">Metal works</option>
+                          <option value="Handmade crafts">Handmade crafts</option>
+                          <option value="Indigenous artworks">Indigenous artworks</option>
+                          <option value="Limited edition collections">Limited edition collections</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                      <div>
+                        <label className="block text-slate-600 mb-1 font-medium">Medium</label>
+                        <input
+                          type="text"
+                          value={editArtForm.medium || ''}
+                          onChange={(e) => setEditArtForm({ ...editArtForm, medium: e.target.value })}
+                          className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-slate-800"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-slate-600 mb-1 font-medium">Dimensions</label>
+                        <input
+                          type="text"
+                          value={editArtForm.dimensions || ''}
+                          onChange={(e) => setEditArtForm({ ...editArtForm, dimensions: e.target.value })}
+                          className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-slate-800"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-slate-600 mb-1 font-medium">Year</label>
+                        <input
+                          type="text"
+                          value={editArtForm.year || '2026'}
+                          onChange={(e) => setEditArtForm({ ...editArtForm, year: e.target.value })}
+                          className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-slate-800"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-slate-600 mb-1 font-medium">Listing Status</label>
+                        <select
+                          value={editArtForm.status || 'available'}
+                          onChange={(e) => setEditArtForm({ 
+                            ...editArtForm, 
+                            status: e.target.value,
+                            isAuction: e.target.value === 'auction',
+                            isExhibition: e.target.value === 'exhibition'
+                          })}
+                          className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-slate-800 font-semibold"
+                        >
+                          <option value="available">Catalogue Sale (Available)</option>
+                          <option value="auction">🔥 Live Auction Arena</option>
+                          <option value="exhibition">🏛️ Museum Curatorial Exhibition</option>
+                          <option value="sold">Sold</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label className="block text-slate-600 mb-1 font-medium">Verification Seal</label>
+                        <select
+                          value={editArtForm.verificationBadge || 'gold'}
+                          onChange={(e) => setEditArtForm({ ...editArtForm, verificationBadge: e.target.value })}
+                          className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-slate-800"
+                        >
+                          <option value="gold">Gold Seal (Sovereign Master)</option>
+                          <option value="verified">Verified Creator</option>
+                          <option value="standard">Standard Atelier</option>
+                        </select>
                       </div>
                     </div>
 
@@ -6540,9 +7073,159 @@ export default function AdminDashboardPage() {
           </div>
         )}
 
+        {/* Spotlight Video Modal */}
+        {isVideoModalOpen && (
+          <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+            <div className="bg-white rounded-3xl border border-slate-200 max-w-xl w-full p-6 sm:p-8 space-y-4 shadow-2xl max-h-[90vh] overflow-y-auto">
+              <div className="flex justify-between items-center border-b border-slate-100 pb-3">
+                <h3 className="font-serif text-lg font-bold text-slate-900 flex items-center gap-2">
+                  <Video className="w-5 h-5 text-art-gold" />
+                  <span>Spotlight Video · Post Master Documentary</span>
+                </h3>
+                <button 
+                  type="button"
+                  onClick={() => setIsVideoModalOpen(false)} 
+                  className="text-slate-400 hover:text-slate-700 font-bold"
+                >
+                  ✕
+                </button>
+              </div>
 
+              <form onSubmit={handleVideoSubmit} className="space-y-3.5 text-xs">
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-slate-600 mb-1 font-medium">Artist Name</label>
+                    <input
+                      type="text"
+                      required
+                      value={videoForm.artistName || ''}
+                      onChange={e => setVideoForm({ ...videoForm, artistName: e.target.value })}
+                      placeholder="e.g. Chief Bakare Ogundele"
+                      className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-slate-900"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-slate-600 mb-1 font-medium">Artist Title / Discipline</label>
+                    <input
+                      type="text"
+                      value={videoForm.artistTitle || ''}
+                      onChange={e => setVideoForm({ ...videoForm, artistTitle: e.target.value })}
+                      placeholder="e.g. Master Wood Sculptor & Carver"
+                      className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-slate-900"
+                    />
+                  </div>
+                </div>
 
-      </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-slate-600 mb-1 font-medium">Country & City</label>
+                    <input
+                      type="text"
+                      value={videoForm.country || ''}
+                      onChange={e => setVideoForm({ ...videoForm, country: e.target.value })}
+                      placeholder="Oyo, Nigeria 🇳🇬"
+                      className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-slate-900"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-slate-600 mb-1 font-medium">Video Duration</label>
+                    <input
+                      type="text"
+                      value={videoForm.duration || '3:30'}
+                      onChange={e => setVideoForm({ ...videoForm, duration: e.target.value })}
+                      placeholder="3:30"
+                      className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-slate-900 font-mono"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-slate-600 mb-1 font-medium">Featured Artwork / Video Title</label>
+                  <input
+                    type="text"
+                    value={videoForm.artworkTitle || ''}
+                    onChange={e => setVideoForm({ ...videoForm, artworkTitle: e.target.value })}
+                    placeholder="e.g. The Living Soul of Ancient Oyo Iroko Wood"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-slate-900"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-slate-600 mb-1 font-medium">Video Source URL (MP4, YouTube, Vimeo, S3)</label>
+                  <input
+                    type="text"
+                    required
+                    value={videoForm.videoUrl || ''}
+                    onChange={e => setVideoForm({ ...videoForm, videoUrl: e.target.value })}
+                    placeholder="https://cdn.example.com/artist-spotlight.mp4 or YouTube link"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-slate-900 font-mono text-[11px]"
+                  />
+                  <div className="mt-1 flex items-center gap-2">
+                    <span className="text-[10px] text-slate-400">Or select local MP4 video:</span>
+                    <input
+                      type="file"
+                      accept="video/*"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) {
+                          if (file.size <= 40 * 1024 * 1024) {
+                            const reader = new FileReader();
+                            reader.onload = (ev) => {
+                              setVideoForm(prev => ({ ...prev, videoUrl: ev.target.result }));
+                            };
+                            reader.readAsDataURL(file);
+                          } else {
+                            const objUrl = URL.createObjectURL(file);
+                            setVideoForm(prev => ({ ...prev, videoUrl: objUrl }));
+                          }
+                        }
+                      }}
+                      className="text-[10px] text-slate-500"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-slate-600 mb-1 font-medium">Thumbnail Poster Image URL</label>
+                  <input
+                    type="text"
+                    value={videoForm.thumbnail || ''}
+                    onChange={e => setVideoForm({ ...videoForm, thumbnail: e.target.value })}
+                    placeholder="https://images.unsplash.com/..."
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-slate-900 font-mono text-[11px]"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-slate-600 mb-1 font-medium">Artist Curatorial Quote</label>
+                  <textarea
+                    rows="2"
+                    value={videoForm.quote || ''}
+                    onChange={e => setVideoForm({ ...videoForm, quote: e.target.value })}
+                    placeholder="e.g. Every stroke carries the spiritual resonance of our forebears..."
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-slate-900"
+                  />
+                </div>
+
+                <div className="flex justify-end gap-2 pt-3 border-t border-slate-100">
+                  <button
+                    type="button"
+                    onClick={() => setIsVideoModalOpen(false)}
+                    className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-bold"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="px-5 py-2 bg-art-gold hover:brightness-110 text-art-black font-bold uppercase rounded-xl transition shadow"
+                  >
+                    Publish Spotlight Video
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
     </div>
   );
 }

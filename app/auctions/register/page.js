@@ -123,7 +123,42 @@ export default function BidderRegistrationPage() {
         </div>
       </div>
 
-      {isSuccess ? (
+      {currentUser && (currentUser.role === 'artist' || currentUser.role === 'seller') ? (
+        <div className="bg-[#0A0D14] rounded-3xl border-2 border-art-gold/40 p-8 sm:p-12 space-y-6 text-center shadow-2xl animate-fade-in">
+          <div className="w-16 h-16 rounded-full bg-art-gold/20 border-2 border-art-gold flex items-center justify-center text-art-gold mx-auto">
+            <Lock className="w-8 h-8 text-art-gold" />
+          </div>
+
+          <div className="space-y-2">
+            <span className="text-xs font-mono font-bold text-art-gold uppercase tracking-widest block">
+              COLLECTOR-EXCLUSIVE PORTAL
+            </span>
+            <h2 className="font-serif text-2xl sm:text-3xl font-bold text-white">
+              Auction Bidder Accreditation is Reserved for Collectors
+            </h2>
+            <p className="text-xs sm:text-sm text-slate-300 max-w-lg mx-auto">
+              As an Artellium Artist, you can present and submit your masterworks to live auctions through your Atelier Dashboard. However, placing bids and registering as an auction patron is strictly restricted to verified collectors to protect the integrity of the secondary market.
+            </p>
+          </div>
+
+          <div className="pt-4 flex flex-col sm:flex-row items-center justify-center gap-4">
+            <Link
+              href="/artist/dashboard"
+              className="w-full sm:w-auto px-8 py-3.5 bg-gradient-to-r from-art-gold to-amber-600 text-art-black font-black text-xs uppercase tracking-wider rounded-xl shadow-gold-glow hover:brightness-110 transition flex items-center justify-center gap-2"
+            >
+              <span>Go to Artist Studio Dashboard</span>
+              <ArrowRight className="w-4 h-4 text-art-black" />
+            </Link>
+
+            <Link
+              href="/auctions"
+              className="w-full sm:w-auto px-6 py-3.5 bg-white/5 hover:bg-white/10 text-white rounded-xl text-xs font-semibold border border-white/10 transition flex items-center justify-center gap-2"
+            >
+              <span>Spectate Live Auctions</span>
+            </Link>
+          </div>
+        </div>
+      ) : isSuccess ? (
         /* Success Screen */
         <div className="bg-[#0A0D14] rounded-3xl border-2 border-emerald-500 p-8 sm:p-12 space-y-6 text-center shadow-2xl animate-fade-in">
           <div className="w-16 h-16 rounded-full bg-emerald-500/20 border-2 border-emerald-500 flex items-center justify-center text-emerald-400 mx-auto animate-bounce">

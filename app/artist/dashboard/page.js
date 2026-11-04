@@ -43,6 +43,7 @@ import {
   ShieldCheck,
   Film,
   Video,
+  Star,
   Play,
   Crown,
   ChevronDown,
@@ -108,7 +109,9 @@ export default function ArtistDashboardPage() {
     deleteVideo,
     subscribeArtist,
     followedArtists = [],
-    usersList = []
+    usersList = [],
+    reviews = [],
+    getArtistRating
   } = useStore();
 
   const [successMsg, setSuccessMsg] = useState('');
@@ -506,8 +509,8 @@ export default function ArtistDashboardPage() {
     setTimeout(() => setSigSaveMsg(false), 3500);
   };
 
-  // Only restrict pure buyer accounts who have no artist privileges
-  if (currentUser && currentUser.role === 'buyer') {
+  // Only restrict pure buyer/collector accounts who have no artist privileges
+  if (currentUser && (currentUser.role === 'buyer' || currentUser.role === 'collector')) {
     return (
       <div className="min-h-screen bg-[#07080A] flex items-center justify-center p-4 font-sans text-xs">
         <div className="max-w-md w-full p-8 rounded-3xl bg-[#0c0f17] border border-art-gold/30 text-center space-y-4 shadow-2xl">
@@ -516,7 +519,7 @@ export default function ArtistDashboardPage() {
           </div>
           <h2 className="font-serif text-lg font-bold text-white">Collector Account Active</h2>
           <p className="text-slate-400 leading-relaxed text-xs">
-            You are currently signed in with a Collector account. To manage artworks, switch to an Artist profile or return to your Collector Portal.
+            You are currently signed in with a Collector account. Artist Dashboard features are strictly limited to registered Artists. Return to your Collector Portal to manage acquisitions and bidding.
           </p>
           <div className="pt-2 flex items-center justify-center gap-3">
             <Link
@@ -2245,6 +2248,58 @@ export default function ArtistDashboardPage() {
                               </div>
                             </div>
                           )}
+                        </div>
+
+                        {/* Collector Rating & Feedback for this Sold Masterpiece */}
+                        <div className="bg-white p-4 rounded-xl border border-slate-200 space-y-2">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                              <Star className="w-4 h-4 text-amber-500 fill-current" />
+                              <span className="font-serif font-bold text-xs text-slate-900">
+                                Collector Rating &amp; Feedback for Recently Sold Work
+                              </span>
+                            </div>
+                            {(() => {
+                              const artReview = ord.review || (reviews || []).find(r => r.orderId === ord.id || r.artworkId === firstItem?.id);
+                              if (artReview) {
+                                return (
+                                  <div className="flex items-center gap-1 text-amber-500 text-xs font-bold">
+                                    {Array.from({ length: 5 }).map((_, i) => (
+                                      <Star key={i} className={`w-3.5 h-3.5 ${i < (artReview.rating || 5) ? 'fill-current text-amber-400' : 'text-slate-200'}`} />
+                                    ))}
+                                    <span className="ml-1 text-[11px] font-mono text-slate-700 font-bold">
+                                      ({artReview.rating || 5}.0 / 5.0)
+                                    </span>
+                                  </div>
+                                );
+                              }
+                              return (
+                                <span className="text-[10px] text-amber-700 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200 font-mono">
+                                  Pending Collector Review
+                                </span>
+                              );
+                            })()}
+                          </div>
+
+                          {(() => {
+                            const artReview = ord.review || (reviews || []).find(r => r.orderId === ord.id || r.artworkId === firstItem?.id);
+                            if (artReview) {
+                              return (
+                                <div className="p-3 bg-amber-50/50 rounded-xl border border-amber-200/60 text-xs space-y-1">
+                                  <p className="italic text-slate-800 leading-relaxed font-serif">&ldquo;{artReview.comment}&rdquo;</p>
+                                  <div className="flex items-center justify-between text-[10px] text-slate-500 font-sans pt-1 border-t border-amber-100">
+                                    <span>Verified Collector: <strong className="text-slate-700">{artReview.collectorName || ord.buyer_name}</strong> ({artReview.collectorLocation || 'Private Collection'})</span>
+                                    <span className="text-emerald-700 font-bold">✓ Positive Feedback Boosted Rating</span>
+                                  </div>
+                                </div>
+                              );
+                            }
+                            return (
+                              <p className="text-[11px] text-slate-500 italic">
+                                Collector rating and feedback comment will automatically appear here once white-glove courier delivery is confirmed.
+                              </p>
+                            );
+                          })()}
                         </div>
 
                       </div>
