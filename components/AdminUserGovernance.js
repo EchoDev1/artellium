@@ -34,9 +34,11 @@ import {
   X,
   Check,
   Building,
-  ExternalLink
+  ExternalLink,
+  Gavel
 } from 'lucide-react';
 import Link from 'next/link';
+import { useStore } from '@/context/store-context';
 import VerificationBadge from '@/components/VerificationBadge';
 
 export default function AdminUserGovernance({
@@ -49,6 +51,7 @@ export default function AdminUserGovernance({
   deleteUser,
   currentUser
 }) {
+  const { toggleUserBiddingOverride } = useStore();
   // Navigation role sub-tab
   const [roleFilter, setRoleFilter] = useState('all'); // 'all' | 'artist' | 'buyer' | 'admin' | 'flagged'
   const [statusFilter, setStatusFilter] = useState('all'); // 'all' | 'active' | 'suspended' | 'frozen' | 'blocked'
@@ -75,7 +78,8 @@ export default function AdminUserGovernance({
     phone: '',
     country: 'Nigeria',
     role: 'buyer',
-    subscription_tier: 'standard'
+    subscription_tier: 'standard',
+    allowBiddingOverride: false
   });
 
   // Add User Form state
@@ -137,12 +141,12 @@ export default function AdminUserGovernance({
   }, [usersList, roleFilter, statusFilter, searchQuery]);
 
   // Actions Handlers
-  const handleExecuteStatusChange = (newStatus) => {
-    if (!selectedUser) return;
+  const handleExecuteStatusChange = (newStatus, targetUser = selectedUser) => {
+    if (!targetUser) return;
     const reasonText = actionReason.trim() || `Status updated to ${newStatus} by ${currentUser?.name || 'Admin'}`;
-    setUserStatus(selectedUser.id, newStatus, reasonText);
+    setUserStatus(targetUser.id, newStatus, reasonText);
     
-    setActionSuccessNotice(`Account status for ${selectedUser.name} updated to ${newStatus.toUpperCase()} successfully.`);
+    setActionSuccessNotice(`Account status for ${targetUser.name} updated to ${newStatus.toUpperCase()} successfully.`);
     setTimeout(() => {
       setActionSuccessNotice('');
       setActionModalType(null);
@@ -678,18 +682,17 @@ export default function AdminUserGovernance({
                             </button>
                           )}
 
-                          {/* Block / Unblock */}
-                          {status === 'blocked' ? (
+                          {/* Restore Active / Unblock */}
+                          {status !== 'active' ? (
                             <button
                               onClick={() => {
-                                setSelectedUser(user);
-                                handleExecuteStatusChange('active');
+                                handleExecuteStatusChange('active', user);
                               }}
-                              className="px-2.5 py-1.5 rounded-lg bg-slate-900 text-white font-bold text-[10px] transition flex items-center gap-1 cursor-pointer"
-                              title="Unblock Account"
+                              className="px-2.5 py-1.5 rounded-lg bg-emerald-700 hover:bg-emerald-600 text-white font-bold text-[10px] transition flex items-center gap-1 cursor-pointer shadow-sm"
+                              title="Restore / Unblock Account to Active Status"
                             >
                               <Check className="w-3 h-3" />
-                              <span>Unblock</span>
+                              <span>Restore</span>
                             </button>
                           ) : (
                             <button
@@ -703,6 +706,22 @@ export default function AdminUserGovernance({
                             >
                               <Ban className="w-3 h-3" />
                               <span>Block</span>
+                            </button>
+                          )}
+
+                          {/* Quick Admin Bidding Exemption Toggle for Artists */}
+                          {user.role === 'artist' && (
+                            <button
+                              onClick={() => toggleUserBiddingOverride?.(user.id, !user.allowBiddingOverride)}
+                              className={`px-2 py-1.5 rounded-lg font-bold text-[10px] transition flex items-center gap-1 cursor-pointer ${
+                                user.allowBiddingOverride
+                                  ? 'bg-emerald-100 text-emerald-900 border border-emerald-300'
+                                  : 'bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300'
+                              }`}
+                              title={user.allowBiddingOverride ? 'Revoke Bidding Exemption' : 'Grant Bidding Exemption (Allows Bidding & Registration for this Artist)'}
+                            >
+                              <Gavel className="w-3 h-3" />
+                              <span>{user.allowBiddingOverride ? 'Bidding Allowed' : 'Exempt'}</span>
                             </button>
                           )}
 
@@ -746,7 +765,8 @@ export default function AdminUserGovernance({
                                 phone: user.phone || '+234 800 000 0000',
                                 country: user.country || 'Nigeria',
                                 role: user.role,
-                                subscription_tier: user.subscription_tier || 'standard'
+                                subscription_tier: user.subscription_tier || 'standard',
+                                allowBiddingOverride: !!user.allowBiddingOverride
                               });
                               setActionModalType('edit');
                             }}
@@ -1208,6 +1228,26 @@ export default function AdminUserGovernance({
                   </p>
                 </div>
               )}
+
+              {/* Admin Bidding & Accreditation Exemption Override */}
+              <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl space-y-1">
+                <label className="flex items-center gap-2 cursor-pointer select-none">
+                  <input
+                    type="checkbox"
+                    id="allowBiddingOverride"
+                    checked={!!editForm.allowBiddingOverride}
+                    onChange={(e) => setEditForm({ ...editForm, allowBiddingOverride: e.target.checked })}
+                    className="w-4 h-4 text-red-600 rounded cursor-pointer accent-red-600"
+                  />
+                  <span className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
+                    <Gavel className="w-3.5 h-3.5 text-art-gold" />
+                    <span>Admin Bidding & Accreditation Exemption</span>
+                  </span>
+                </label>
+                <p className="text-[10px] text-slate-500 pl-6">
+                  When enabled, this user is permitted to place live auction bids, obtain curatorial exhibition passes, and register for bidder accreditation regardless of their Artist/Seller account role.
+                </p>
+              </div>
 
               <div className="flex justify-end gap-2 pt-2 border-t border-slate-100">
                 <button

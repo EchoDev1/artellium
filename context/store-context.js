@@ -2316,20 +2316,23 @@ export function StoreProvider({ children }) {
   };
 
   // Permanent security check: Identify if an account is an Artist or Seller
+  // Admins or accounts with explicit Administrative Bidding Exemption (allowBiddingOverride) bypass this block.
   const isArtistUser = (user = currentUser) => {
     if (!user) return false;
-    if (user.role === 'artist' || user.role === 'seller') return true;
+    if (user.role === 'admin' || user.isAdmin || user.allowBiddingOverride) return false;
     const matched = (usersList || []).find(u => 
       (u.id && user.id && u.id === user.id) ||
       (u.email && user.email && u.email.toLowerCase() === user.email.toLowerCase())
     );
+    if (matched && (matched.role === 'admin' || matched.allowBiddingOverride)) return false;
+    if (user.role === 'artist' || user.role === 'seller') return true;
     return matched ? (matched.role === 'artist' || matched.role === 'seller') : false;
   };
 
   // Check if a given user or current user is an accredited registered bidder
   const isBidderRegistered = (user = currentUser) => {
     if (!user) return false;
-    // Strict Permanent Fiduciary Rule: Artists and sellers are permanently blocked from being accredited bidders
+    // Strict Permanent Fiduciary Rule: Artists and sellers are blocked from being accredited bidders UNLESS granted Admin Override
     if (isArtistUser(user)) return false;
     if (user.isBidder || user.isBidderRegistered || user.bidderId) return true;
     return auctionBidders.some(b => 
@@ -2339,16 +2342,32 @@ export function StoreProvider({ children }) {
     );
   };
 
+  // Admin Security Management: Toggle explicit administrative bidding exemption
+  const toggleUserBiddingOverride = (userId, overrideAllowed = true) => {
+    setUsersList(prev => prev.map(u => {
+      if (u.id === userId || u.email === userId) {
+        return { ...u, allowBiddingOverride: overrideAllowed };
+      }
+      return u;
+    }));
+    if (currentUser && (currentUser.id === userId || currentUser.email === userId)) {
+      setCurrentUser(prev => ({ ...prev, allowBiddingOverride: overrideAllowed }));
+    }
+    broadcastNotification(`Admin Security Override: User ${userId} bidding exemption ${overrideAllowed ? 'GRANTED' : 'REVOKED'}.`);
+  };
+
   // Auction Bidding & Bidder Lead Tracking
   const registerAuctionBidder = (bidderData) => {
-    // Strict Permanent Fiduciary Rule: Artists are permanently blocked from bidder registration
+    // Strict Permanent Fiduciary Rule: Artists are blocked from bidder registration unless admin-exempt
     const isTargetArtist = 
       isArtistUser(currentUser) || 
-      bidderData?.role === 'artist' || 
-      bidderData?.role === 'seller' ||
-      (usersList || []).some(u => 
-        (u.email && bidderData?.email && u.email.toLowerCase() === bidderData.email.toLowerCase() && (u.role === 'artist' || u.role === 'seller'))
-      );
+      (currentUser?.role !== 'admin' && !bidderData?.allowBiddingOverride && (
+        bidderData?.role === 'artist' || 
+        bidderData?.role === 'seller' ||
+        (usersList || []).some(u => 
+          (u.email && bidderData?.email && u.email.toLowerCase() === bidderData.email.toLowerCase() && !u.allowBiddingOverride && (u.role === 'artist' || u.role === 'seller'))
+        )
+      ));
 
     if (isTargetArtist) {
       broadcastNotification('Security Alert: Artists are permanently blocked from bidder accreditation and registration.');
@@ -2407,12 +2426,13 @@ export function StoreProvider({ children }) {
   const placeBid = (artworkId, bidAmount, bidderName = currentUser?.name || 'Verified Collector') => {
     const isBidderArtist = 
       isArtistUser(currentUser) ||
-      (usersList || []).some(u => 
+      (currentUser?.role !== 'admin' && !currentUser?.allowBiddingOverride && (usersList || []).some(u => 
         ((u.id && currentUser?.id && u.id === currentUser.id) ||
          (u.email && currentUser?.email && u.email.toLowerCase() === currentUser.email.toLowerCase()) ||
          (u.name && bidderName && u.name.toLowerCase() === bidderName.toLowerCase())) &&
+        !u.allowBiddingOverride &&
         (u.role === 'artist' || u.role === 'seller')
-      );
+      ));
 
     if (isBidderArtist) {
       broadcastNotification('Security Alert: Artists are permanently blocked from placing bids across all auctions and exhibitions.');
@@ -4711,6 +4731,7 @@ export function StoreProvider({ children }) {
         registerAuctionBidder,
         updateBidderHighValueApproval,
         deleteAuctionBidder,
+        toggleUserBiddingOverride,
         transactions,
         addTransaction,
         settleTransaction,
