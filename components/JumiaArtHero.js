@@ -94,15 +94,74 @@ export default function JumiaArtHero() {
   const [isPlaying, setIsPlaying] = useState(true);
   const [activeCinemaVideo, setActiveCinemaVideo] = useState(null);
   const videoRef = useRef(null);
+  const heroSectionRef = useRef(null);
+  const [isHeroVisible, setIsHeroVisible] = useState(true);
+  const userManuallyPaused = useRef(false);
 
-  // Auto-advance slides every 7.5 seconds unless user is hovering or cinema modal is open
+  // Viewport intersection observer: automatically stops video and sound when scrolled past the hero page
   useEffect(() => {
-    if (isPaused || activeCinemaVideo || heroVideos.length <= 1) return;
+    const handleScrollOrResize = () => {
+      if (!heroSectionRef.current) return;
+      const rect = heroSectionRef.current.getBoundingClientRect();
+      const windowHeight = window.innerHeight || document.documentElement.clientHeight;
+      // Scrolled past when the bottom of hero is above viewport top (or less than 80px remains)
+      // or top is below the viewport bottom
+      const visible = rect.bottom > 80 && rect.top < windowHeight;
+      setIsHeroVisible(visible);
+    };
+
+    let observer;
+    if (typeof IntersectionObserver !== 'undefined' && heroSectionRef.current) {
+      observer = new IntersectionObserver(
+        (entries) => {
+          const entry = entries[0];
+          if (entry) {
+            const visible = entry.isIntersecting && entry.intersectionRatio > 0.05;
+            setIsHeroVisible(visible);
+          }
+        },
+        {
+          threshold: [0, 0.05, 0.2, 0.5]
+        }
+      );
+      observer.observe(heroSectionRef.current);
+    }
+
+    window.addEventListener('scroll', handleScrollOrResize, { passive: true });
+    window.addEventListener('resize', handleScrollOrResize, { passive: true });
+    handleScrollOrResize();
+
+    return () => {
+      if (observer) observer.disconnect();
+      window.removeEventListener('scroll', handleScrollOrResize);
+      window.removeEventListener('resize', handleScrollOrResize);
+    };
+  }, []);
+
+  // Stop playback when browser tab is minimized or hidden
+  useEffect(() => {
+    const handleVisibility = () => {
+      if (!videoRef.current) return;
+      if (document.hidden) {
+        try {
+          videoRef.current.pause();
+        } catch (e) {}
+      } else if (isHeroVisible && isPlaying && !userManuallyPaused.current && !activeCinemaVideo) {
+        videoRef.current.play().catch(() => {});
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibility);
+    return () => document.removeEventListener('visibilitychange', handleVisibility);
+  }, [isHeroVisible, isPlaying, activeCinemaVideo]);
+
+  // Auto-advance slides every 7.5 seconds unless user is hovering, modal is open, or scrolled away
+  useEffect(() => {
+    if (isPaused || activeCinemaVideo || heroVideos.length <= 1 || !isHeroVisible) return;
     const timer = setInterval(() => {
       setCurrentSlideIndex((prev) => (prev + 1) % heroVideos.length);
     }, 7500);
     return () => clearInterval(timer);
-  }, [isPaused, activeCinemaVideo, heroVideos.length]);
+  }, [isPaused, activeCinemaVideo, heroVideos.length, isHeroVisible]);
 
   const handleNextSlide = () => {
     setCurrentSlideIndex((prev) => (prev + 1) % heroVideos.length);
@@ -143,33 +202,44 @@ export default function JumiaArtHero() {
     }
   );
 
-  // Video element playback synchronization (Autoplays with sound by default; users can mute)
+  // Video element playback synchronization: plays on enter, pauses video and sound when scrolled past
   useEffect(() => {
-    if (videoRef.current) {
-      videoRef.current.currentTime = 0;
-      videoRef.current.muted = isMuted;
-      if (isPlaying) {
-        const playPromise = videoRef.current.play();
-        if (playPromise !== undefined) {
-          playPromise.catch((err) => {
-            // If the browser enforces a strict autoplay gesture requirement on cold-load,
-            // fall back to playing muted until first interaction unlocks the sound
-            if (err.name === 'NotAllowedError' && !isMuted) {
-              if (videoRef.current) {
-                videoRef.current.muted = true;
-                videoRef.current.play().catch(() => {});
-              }
-            }
-          });
-        }
-      }
-    }
-  }, [safeIndex, isPlaying, isMuted]);
+    if (!videoRef.current) return;
 
-  // Unlock unmuted sound on user's first document interaction if still unmuted
+    // Scrolled past hero section or cinema modal open: immediately pause and silence
+    if (!isHeroVisible || activeCinemaVideo) {
+      try {
+        videoRef.current.pause();
+      } catch (err) {}
+      return;
+    }
+
+    // In hero view and user has not manually paused: play with configured mute state
+    if (isPlaying && !userManuallyPaused.current) {
+      videoRef.current.muted = isMuted;
+      const playPromise = videoRef.current.play();
+      if (playPromise !== undefined) {
+        playPromise.catch((err) => {
+          // If browser restricts unmuted autoplay before user gesture, fallback to muted
+          if (err.name === 'NotAllowedError' && !isMuted) {
+            if (videoRef.current && isHeroVisible) {
+              videoRef.current.muted = true;
+              videoRef.current.play().catch(() => {});
+            }
+          }
+        });
+      }
+    } else {
+      try {
+        videoRef.current.pause();
+      } catch (err) {}
+    }
+  }, [safeIndex, isPlaying, isMuted, isHeroVisible, activeCinemaVideo]);
+
+  // Unlock unmuted sound on user's first document interaction if still unmuted and in hero view
   useEffect(() => {
     const handleFirstInteraction = () => {
-      if (videoRef.current && !isMuted) {
+      if (videoRef.current && !isMuted && isHeroVisible && !userManuallyPaused.current && !activeCinemaVideo) {
         videoRef.current.muted = false;
         videoRef.current.play().catch(() => {});
       }
@@ -184,7 +254,7 @@ export default function JumiaArtHero() {
       window.removeEventListener('touchstart', handleFirstInteraction);
       window.removeEventListener('keydown', handleFirstInteraction);
     };
-  }, [isMuted]);
+  }, [isMuted, isHeroVisible, activeCinemaVideo]);
 
   const toggleMute = (e) => {
     e.stopPropagation();
@@ -200,8 +270,10 @@ export default function JumiaArtHero() {
     if (videoRef.current) {
       if (isPlaying) {
         videoRef.current.pause();
+        userManuallyPaused.current = true;
       } else {
-        videoRef.current.play();
+        videoRef.current.play().catch(() => {});
+        userManuallyPaused.current = false;
       }
     }
     setIsPlaying(!isPlaying);
@@ -233,7 +305,7 @@ export default function JumiaArtHero() {
   };
 
   return (
-    <section className="w-full bg-[#FAF9F6] text-white pt-3 pb-6 border-b border-art-gold/20 select-none">
+    <section ref={heroSectionRef} className="w-full bg-[#FAF9F6] text-white pt-3 pb-6 border-b border-art-gold/20 select-none">
       <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-6">
         
         {/* ========================================================================= */}
@@ -347,11 +419,15 @@ export default function JumiaArtHero() {
                 title="Click to watch full video story with sound"
               >
                 {currentSlide.videoUrl?.includes('youtube') || currentSlide.videoUrl?.includes('youtu.be') ? (
-                  <iframe
-                    src={`${currentSlide.videoUrl.replace('watch?v=', 'embed/')}?autoplay=1&mute=1&controls=0&loop=1&playlist=${currentSlide.videoUrl.split('embed/')[1] || ''}`}
-                    title={currentSlide.artistName}
-                    className="w-full h-full object-cover pointer-events-none scale-125 opacity-85 group-hover:opacity-100 transition-opacity"
-                  />
+                  isHeroVisible ? (
+                    <iframe
+                      src={`${currentSlide.videoUrl.replace('watch?v=', 'embed/')}?autoplay=1&mute=${isMuted ? '1' : '0'}&controls=0&loop=1&playlist=${currentSlide.videoUrl.split('embed/')[1] || ''}`}
+                      title={currentSlide.artistName}
+                      className="w-full h-full object-cover pointer-events-none scale-125 opacity-85 group-hover:opacity-100 transition-opacity"
+                    />
+                  ) : (
+                    <div className="w-full h-full bg-black/80" />
+                  )
                 ) : (
                   <video
                     ref={videoRef}
@@ -366,7 +442,9 @@ export default function JumiaArtHero() {
                     onError={(e) => {
                       if (e.currentTarget && !e.currentTarget.src.includes('/videos/artist-savannah.mp4')) {
                         e.currentTarget.src = '/videos/artist-savannah.mp4';
-                        e.currentTarget.play().catch(() => {});
+                        if (isHeroVisible && isPlaying && !userManuallyPaused.current) {
+                          e.currentTarget.play().catch(() => {});
+                        }
                       }
                     }}
                     className="w-full h-full object-cover object-center transition-transform duration-1000 scale-100 group-hover:scale-105"
