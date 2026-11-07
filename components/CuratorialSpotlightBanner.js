@@ -87,27 +87,41 @@ export default function CuratorialSpotlightBanner() {
   const currentSlide = slides[safeIndex] || slides[0];
   const isVideoSlide = Boolean(currentSlide && (currentSlide.mediaType === 'video' || currentSlide.videoUrl));
 
-  // Auto-slide effect every 6.5 seconds (pauses on hover)
+  // Auto-slide effect: if video is actively playing, let onEnded handle the slide transition smoothly
   useEffect(() => {
     if (isPaused || slides.length <= 1) return;
+
+    if (isVideoSlide && isPlaying) {
+      // Natural video playback onEnded handles slide advance smoothly without interruption
+      return;
+    }
 
     const timer = setInterval(() => {
       setCurrentIndex((prev) => (prev + 1) % slides.length);
     }, isVideoSlide ? 12000 : 6500);
 
     return () => clearInterval(timer);
-  }, [isPaused, slides.length, isVideoSlide]);
+  }, [isPaused, slides.length, isVideoSlide, isPlaying]);
 
-  // Sync video playback when slide changes
+  // Sync video playback when slide changes without remounting DOM
   useEffect(() => {
     if (isVideoSlide && videoRef.current) {
-      videoRef.current.currentTime = 0;
+      const targetSrc = currentSlide.videoUrl || '';
+      if (videoRef.current.currentSrc !== targetSrc && !videoRef.current.src.endsWith(targetSrc)) {
+        videoRef.current.src = targetSrc;
+        videoRef.current.load();
+      }
       videoRef.current.muted = isMuted;
       if (isPlaying) {
-        videoRef.current.play().catch(() => {});
+        videoRef.current.play().catch(() => {
+          if (videoRef.current && !isMuted) {
+            videoRef.current.muted = true;
+            videoRef.current.play().catch(() => {});
+          }
+        });
       }
     }
-  }, [safeIndex, isVideoSlide, isMuted, isPlaying]);
+  }, [safeIndex, isVideoSlide, isMuted, isPlaying, currentSlide?.videoUrl]);
 
   const handleNext = () => {
     setCurrentIndex((prev) => (prev + 1) % slides.length);
@@ -161,13 +175,27 @@ export default function CuratorialSpotlightBanner() {
               ) : (
                 <video
                   ref={videoRef}
-                  key={currentSlide.videoUrl || currentSlide.id}
                   src={currentSlide.videoUrl}
                   poster={currentSlide.image || currentSlide.artworkImage}
                   autoPlay
                   muted={isMuted}
-                  loop
+                  loop={slides.length <= 1}
                   playsInline
+                  preload="auto"
+                  onEnded={() => {
+                    if (slides.length > 1) {
+                      handleNext();
+                    } else if (videoRef.current) {
+                      videoRef.current.currentTime = 0;
+                      videoRef.current.play().catch(() => {});
+                    }
+                  }}
+                  onError={(e) => {
+                    if (e.currentTarget && !e.currentTarget.src.includes('/videos/artist-savannah.mp4')) {
+                      e.currentTarget.src = '/videos/artist-savannah.mp4';
+                      if (isPlaying) e.currentTarget.play().catch(() => {});
+                    }
+                  }}
                   className="w-full h-full object-cover object-center transition-transform duration-1000 group-hover:scale-[1.02]"
                 />
               )
