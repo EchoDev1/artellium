@@ -32,84 +32,9 @@ export default function Under1MPage() {
     return `₦${amount.toLocaleString()}`;
   };
 
-  // Fine art pieces strictly under ₦1,000,000
-  const fallbackUnder1M = [
-    {
-      id: 'art-110',
-      title: 'Ancestral Geometry',
-      artistName: 'Ekele Ojogbe Mercy',
-      category: 'Painters',
-      medium: 'Mixed Media & Natural Riverbed Pigments',
-      dimensions: '80 × 60 cm',
-      price: 465000, // ₦465K
-      country: 'Nigeria 🇳🇬',
-      image: '/artworks/ebuka-1.svg',
-      description: 'Intricate Uli-inspired geometric expressions utilizing organic riverbed minerals on stretched linen.'
-    },
-    {
-      id: 'art-103',
-      title: 'Echoes of the Serengeti',
-      artistName: 'Ekele Ojogbe Mercy',
-      category: 'Painters',
-      medium: 'Soil Pigment & Ash on Raw Canvas',
-      dimensions: '120 × 90 cm',
-      price: 950000, // ₦950K
-      country: 'Nigeria 🇳🇬',
-      image: '/artworks/ebuka-2.svg',
-      description: 'Rich earth pigments rendered into sweeping savannah landscapes.'
-    },
-    {
-      id: 'art-118',
-      title: 'Lagos Island Rhythm No. 4',
-      artistName: 'Ekele Ojogbe Mercy',
-      category: 'Painters',
-      medium: 'Oil on Canvas',
-      dimensions: '75 × 75 cm',
-      price: 680000, // ₦680K
-      country: 'Nigeria 🇳🇬',
-      image: '/artworks/ebuka-3.svg',
-      description: 'Dynamic urban color palette celebrating the hustle and expressive energy of Lagos market squares.'
-    },
-    {
-      id: 'art-119',
-      title: 'Kigali Dawn Silhouette',
-      artistName: 'Ekele Ojogbe Mercy',
-      category: 'Photographers',
-      medium: 'Fine Art Archival Print',
-      dimensions: '60 × 40 cm',
-      price: 285000, // ₦285K
-      country: 'Nigeria 🇳🇬',
-      image: '/artworks/ebuka-4.svg',
-      description: 'Atmospheric early morning mist rising over the hills, hand-printed on museum cotton rag.'
-    },
-    {
-      id: 'art-120',
-      title: 'Terracotta Harvest Urn',
-      artistName: 'Ekele Ojogbe Mercy',
-      category: 'Sculpture Makers',
-      medium: 'Kiln-Fired Clay & Indigo Glaze',
-      dimensions: '45 × 30 × 30 cm',
-      price: 520000, // ₦520K
-      country: 'Nigeria 🇳🇬',
-      image: '/artworks/ebuka-5.svg',
-      description: 'Functional high-fire stoneware inspired by ancient Nok ceramic traditions with natural indigo tint.'
-    },
-    {
-      id: 'art-121',
-      title: 'Adire Imperial Tapestry Study',
-      artistName: 'Ekele Ojogbe Mercy',
-      category: 'Textile Artists',
-      medium: 'Hand-Dyed Indigo Organic Cotton',
-      dimensions: '140 × 90 cm',
-      price: 340000, // ₦340K
-      country: 'Nigeria 🇳🇬',
-      image: '/artworks/ebuka-6.svg',
-      description: 'Traditional resist-dyed textile artwork bearing ancestral Yoruba proverbs and botanical motifs.'
-    }
-  ];
-
-  const catalogUnder1M = artworks.filter(a => (a.price || 0) <= 1000000 && a.status !== 'sold');
-  const under1MArtworks = catalogUnder1M.length > 0 ? catalogUnder1M : fallbackUnder1M;
+  const realArtworks = (artworks || []).filter(a => a && !a.isDemo && a.status !== 'sold');
+  const catalogUnder1M = realArtworks.filter(a => (a.price || 0) <= 1000000);
+  const under1MArtworks = catalogUnder1M.length > 0 ? catalogUnder1M : realArtworks;
 
   const filteredItems = under1MArtworks.filter(art => {
     const matchesPrice = (art.price || 0) <= selectedMaxPrice;

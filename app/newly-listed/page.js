@@ -8,6 +8,7 @@ import CategoryBar from '@/components/CategoryBar';
 import { useStore } from '@/context/store-context';
 import { isCategoryMatch } from '@/lib/category-utils';
 import { sortArtworksByPriority } from '@/lib/priority-utils';
+import { isDummyArtworkRecord } from '@/lib/uuid-utils';
 import { 
   Sparkles, 
   Search, 
@@ -49,9 +50,10 @@ function NewlyListedContent() {
     setVisibleCount(24);
   }, [searchTerm, selectedMedium, priceFilter, sortBy, categoryParam]);
 
-  // Filter artworks strictly for newly listed / available
+  // Filter artworks strictly for newly listed / available real artworks
   const matchingArtworks = useMemo(() => {
-    return artworks.filter((art) => {
+    return (artworks || []).filter((art) => {
+      if (!art || art.isDemo === true || isDummyArtworkRecord(art)) return false;
       // Exclude sold items from newly listed feed
       if (art.status === 'sold') return false;
 

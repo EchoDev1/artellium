@@ -13,6 +13,7 @@ import CuratorialSpotlightBanner from '@/components/CuratorialSpotlightBanner';
 import { useStore } from '@/context/store-context';
 import { isCategoryMatch } from '@/lib/category-utils';
 import { sortArtworksByPriority, sortExhibitionsByPriority } from '@/lib/priority-utils';
+import { isDummyArtworkRecord, isDummyExhibitionRecord } from '@/lib/uuid-utils';
 import { Sparkles, Flame, Eye, ArrowRight, Award, CheckCircle2, Crown, Zap, ShieldCheck, Tag, Gavel } from 'lucide-react';
 import LuxuryOverlay from '@/components/LuxuryOverlay.jsx';
 import TraditionalHeritageShowcase from '@/components/TraditionalHeritageShowcase.jsx';
@@ -31,14 +32,11 @@ export default function HomePage() {
   } = useStore();
 
   const isLiveOnly = demoTransitionMode === 'live_only';
-  const isMockOrDemo = (a) => !a || a.isDemo === true || String(a.id || '').startsWith('mock-');
+  const isMockOrDemo = (a) => !a || a.isDemo === true || String(a.id || '').startsWith('mock-') || isDummyArtworkRecord(a);
 
-  // In live-only mode, strictly filter out any demo artworks site-wide
+  // Strictly filter out any dummy or demo artworks site-wide
   const activeArtworks = React.useMemo(() => {
-    if (isLiveOnly) {
-      return (artworks || []).filter(a => !isMockOrDemo(a));
-    }
-    return artworks || [];
+    return (artworks || []).filter(a => !isMockOrDemo(a));
   }, [artworks, isLiveOnly]);
 
   const hConfig = heroConfig || { heroType: 'jumia_art_hero' };
@@ -60,65 +58,18 @@ export default function HomePage() {
   });
 
   const getNewlyListed = (limit = 12) => {
-    const realWorks = filteredArtworks.filter(art => (art.isDemo === false || !art.isDemo) && art.status !== 'sold');
-    if (realWorks.length > 0) {
-      return sortArtworksByPriority(realWorks, { sellers, users: usersList, secondarySort: 'newest' }).slice(0, limit);
-    }
-    const otherWorks = filteredArtworks.filter(art => art.isDemo === true && art.status !== 'sold');
-    return sortArtworksByPriority(otherWorks, { sellers, users: usersList, secondarySort: 'newest' }).slice(0, limit);
+    const realWorks = filteredArtworks.filter(art => !isMockOrDemo(art) && art.status !== 'sold');
+    return sortArtworksByPriority(realWorks, { sellers, users: usersList, secondarySort: 'newest' }).slice(0, limit);
   };
 
   const getLiveAuctions = (limit = 6) => {
-    let matching = activeArtworks.filter((art) => art.status === 'auction' || art.isAuction);
-    // NEVER mutate real artist creations into auctions! Only use mock artworks as dummy lots if no real auction exists
-    if (matching.length === 0 && (artworks || []).length > 0) {
-      const demoPool = (artworks || []).filter(a => a.isDemo === true);
-      matching = demoPool.slice(0, 3).map((art, idx) => ({
-        ...art,
-        status: 'auction',
-        isAuction: true,
-        currentBid: art.priceUSD ? Math.round(art.priceUSD * 0.9) : 2500,
-        bidsCount: 14 + idx * 3,
-        auctionEndTime: new Date(Date.now() + (idx + 1) * 3600 * 1000 * 12).toISOString(),
-      }));
-    }
+    const matching = activeArtworks.filter((art) => (art.status === 'auction' || art.isAuction) && !isMockOrDemo(art));
     return sortArtworksByPriority(matching, { sellers, users: usersList }).slice(0, limit);
   };
 
   const getRecentlySold = (limit = 6) => {
-    const matching = (artworks || []).filter((art) => art.status === 'sold');
-    const sorted = sortArtworksByPriority(matching, { sellers, users: usersList, secondarySort: 'sold_date' });
-
-    if (sorted.length >= limit) {
-      return sorted.slice(0, limit);
-    }
-
-    // ONLY take demo pieces as sold placeholders, NEVER turn real artist artworks into "Sold"!
-    const demoPool = (artworks || []).filter(a => a.isDemo === true && a.status !== 'sold');
-    const extra = demoPool.slice(0, limit - sorted.length).map(a => ({
-      ...a,
-      image: '',
-      status: 'sold',
-      soldPrice: a.price,
-      soldTo: 'Private Collector (Provenance Verified)'
-    }));
-    const combined = [...sorted, ...extra];
-    while (combined.length < limit) {
-      const idx = combined.length + 1;
-      combined.push({
-        id: `sold-placeholder-${idx}`,
-        title: `Collector Acquisition Lot #0${idx}`,
-        artistName: 'Verified Master Artist',
-        category: 'Paintings',
-        medium: 'Original Fine Art on Canvas',
-        dimensions: '120 x 100 cm',
-        price: 1250000,
-        status: 'sold',
-        image: '',
-        isDemo: true
-      });
-    }
-    return combined.slice(0, limit);
+    const matching = activeArtworks.filter((art) => art.status === 'sold' && !isMockOrDemo(art));
+    return sortArtworksByPriority(matching, { sellers, users: usersList, secondarySort: 'sold_date' }).slice(0, limit);
   };
 
   // Determine which hero to render based on heroConfig (JumiaArtHero is default)

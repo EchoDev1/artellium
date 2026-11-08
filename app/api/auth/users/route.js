@@ -1,6 +1,7 @@
-﻿import { NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { supabaseServer } from '@/lib/supabaseServer';
 import { INITIAL_USERS } from '@/lib/mock-data';
+import { isDummyUserRecord } from '@/lib/uuid-utils';
 
 export const dynamic = 'force-dynamic';
 
@@ -16,18 +17,19 @@ export async function GET() {
       if (error) {
         console.warn('[Supabase users fetch warning]:', error.message);
       } else if (Array.isArray(data)) {
-        dbUsers = data;
+        dbUsers = data.filter((u) => !isDummyUserRecord(u));
       }
     } catch (e) {
       console.warn('[Supabase users fetch exception]:', e.message);
     }
 
-    // Merge DB users with INITIAL_USERS, prioritizing DB entries
+    // Merge DB users with INITIAL_USERS (Executive Admin), prioritizing DB entries
     const emailMap = new Set();
     const merged = [];
 
     // 1. Add DB users first
     for (const u of dbUsers) {
+      if (isDummyUserRecord(u)) continue;
       const em = (u.email || '').trim().toLowerCase();
       if (em && !emailMap.has(em)) {
         emailMap.add(em);
@@ -36,13 +38,14 @@ export async function GET() {
           status: u.status || 'active',
           statusReason: u.statusReason || '',
           cloudflareVerified: true,
-          securityIncidents: []
+          securityIncidents: [],
         });
       }
     }
 
-    // 2. Add INITIAL_USERS fallback
-    for (const u of (INITIAL_USERS || [])) {
+    // 2. Add INITIAL_USERS fallback (only non-dummy accounts, e.g. Executive Admin)
+    for (const u of INITIAL_USERS || []) {
+      if (isDummyUserRecord(u)) continue;
       const em = (u.email || '').trim().toLowerCase();
       if (em && !emailMap.has(em)) {
         emailMap.add(em);
@@ -51,10 +54,12 @@ export async function GET() {
     }
 
     return NextResponse.json({ success: true, users: merged });
-
   } catch (error) {
     console.error('[Users GET API Error]:', error);
-    return NextResponse.json({ success: true, users: INITIAL_USERS || [] });
+    return NextResponse.json({
+      success: true,
+      users: (INITIAL_USERS || []).filter((u) => !isDummyUserRecord(u)),
+    });
   }
 }
 
@@ -65,12 +70,18 @@ export async function POST(request) {
       return NextResponse.json({ success: true, count: 0 });
     }
 
+    // Filter out any cached dummy users so they are never re-inserted into Supabase
+    const cleanUsers = users.filter((u) => !isDummyUserRecord(u));
+    if (cleanUsers.length === 0) {
+      return NextResponse.json({ success: true, count: 0 });
+    }
+
     // Fetch existing emails to avoid duplicates
     const { data: existing } = await supabaseServer.from('users').select('email');
-    const existingEmails = new Set((existing || []).map(u => (u.email || '').toLowerCase().trim()));
+    const existingEmails = new Set((existing || []).map((u) => (u.email || '').toLowerCase().trim()));
 
     let insertedCount = 0;
-    for (const u of users) {
+    for (const u of cleanUsers) {
       const em = (u.email || '').toLowerCase().trim();
       if (em && em.includes('@') && !existingEmails.has(em)) {
         const toInsert = {
@@ -83,7 +94,7 @@ export async function POST(request) {
           phone: u.phone || null,
           country: u.country || 'Nigeria',
           created_at: u.created_at || new Date().toISOString(),
-          updated_at: new Date().toISOString()
+          updated_at: new Date().toISOString(),
         };
 
         const { error } = await supabaseServer.from('users').insert([toInsert]);

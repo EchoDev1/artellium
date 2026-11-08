@@ -59,12 +59,12 @@ export default function AdminDemoTransitionSuite() {
 
   const [quickArtForm, setQuickArtForm] = useState({
     title: '',
-    artistName: 'Ebuka Eke Echo',
+    artistName: '',
     category: 'Painters',
     medium: 'Oil on Canvas',
     dimensions: '120 x 90 cm',
     price: 1500000,
-    image: '/artworks/ebuka-1.svg',
+    image: '',
     description: 'Masterpiece created with cultural depth and authentic pigments.',
     country: 'Nigeria',
     city: 'Lagos',

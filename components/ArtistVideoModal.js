@@ -4,6 +4,8 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 import { useStore } from '@/context/store-context';
 import { getArtistBriefHistory } from '@/lib/mock-data';
+import { isDummyVideoRecord, generateUuid } from '@/lib/uuid-utils';
+import { uploadVideoFileBulletproof } from '@/lib/video-upload';
 import { Play, Video, Plus, Trash2, X, Sparkles, UserCheck, ShieldCheck, ArrowRight, Film } from 'lucide-react';
 
 export default function ArtistVideoModal() {
@@ -25,9 +27,14 @@ export default function ArtistVideoModal() {
 
   const handleAddVideoSubmit = (e) => {
     e.preventDefault();
-    if (!newVideoForm.artistName || !newVideoForm.videoUrl) return;
+    if (!newVideoForm.videoUrl) return;
 
-    addVideo(newVideoForm);
+    addVideo({
+      ...newVideoForm,
+      id: generateUuid(),
+      artistName: (newVideoForm.artistName || '').trim() || 'Artellium Spotlight',
+      thumbnail: '',
+    });
     setNewVideoForm({
       artistName: '',
       artistTitle: '',
@@ -41,7 +48,9 @@ export default function ArtistVideoModal() {
     setIsAdminAddOpen(false);
   };
 
-  const displayVideos = (activeVideos && activeVideos.length > 0) ? activeVideos : videos;
+  const displayVideos = ((activeVideos && activeVideos.length > 0) ? activeVideos : videos).filter(
+    (v) => !isDummyVideoRecord(v)
+  );
 
   return (
     <section className="relative w-full overflow-hidden">
@@ -290,8 +299,7 @@ export default function ArtistVideoModal() {
                 <label className="block text-slate-300 mb-1 font-medium">Artist Name</label>
                 <input
                   type="text"
-                  required
-                  placeholder="e.g. Chief Bakare Ogundele"
+                  placeholder="e.g. Ebuka Eke"
                   value={newVideoForm.artistName}
                   onChange={(e) => setNewVideoForm({ ...newVideoForm, artistName: e.target.value })}
                   className="w-full bg-art-black border border-white/10 rounded-lg p-2.5 text-white focus:border-art-gold focus:outline-none"
@@ -303,7 +311,7 @@ export default function ArtistVideoModal() {
                   <label className="block text-slate-300 mb-1 font-medium">Title / Discipline</label>
                   <input
                     type="text"
-                    placeholder="e.g. Master Wood Carver"
+                    placeholder="e.g. Master Painter & Mixed Media"
                     value={newVideoForm.artistTitle}
                     onChange={(e) => setNewVideoForm({ ...newVideoForm, artistTitle: e.target.value })}
                     className="w-full bg-art-black border border-white/10 rounded-lg p-2.5 text-white focus:border-art-gold focus:outline-none"
@@ -325,7 +333,7 @@ export default function ArtistVideoModal() {
                 <label className="block text-slate-300 mb-1 font-medium">Artwork Featured</label>
                 <input
                   type="text"
-                  placeholder="e.g. The Solitary Mask of Oyo"
+                  placeholder="e.g. Word painted!"
                   value={newVideoForm.artworkTitle}
                   onChange={(e) => setNewVideoForm({ ...newVideoForm, artworkTitle: e.target.value })}
                   className="w-full bg-art-black border border-white/10 rounded-lg p-2.5 text-white focus:border-art-gold focus:outline-none"
@@ -333,24 +341,34 @@ export default function ArtistVideoModal() {
               </div>
 
               <div>
-                <label className="block text-slate-300 mb-1 font-medium">Video URL / YouTube Embed</label>
+                <label className="block text-slate-300 mb-1 font-medium">Upload Video File</label>
                 <input
-                  type="url"
-                  required
-                  placeholder="e.g. https://www.youtube.com/embed/dQw4w9WgXcQ"
-                  value={newVideoForm.videoUrl}
-                  onChange={(e) => setNewVideoForm({ ...newVideoForm, videoUrl: e.target.value })}
-                  className="w-full bg-art-black border border-white/10 rounded-lg p-2.5 text-white focus:border-art-gold focus:outline-none"
+                  type="file"
+                  accept="video/*"
+                  onChange={async (e) => {
+                    const file = e.target.files?.[0];
+                    if (!file) return;
+                    const res = await uploadVideoFileBulletproof(file);
+                    if (res && res.url) {
+                      setNewVideoForm((prev) => ({
+                        ...prev,
+                        videoUrl: res.url,
+                        artworkTitle: prev.artworkTitle || file.name.replace(/\.[^/.]+$/, ''),
+                      }));
+                    }
+                  }}
+                  className="w-full bg-art-black border border-white/10 rounded-lg p-2 text-slate-300 text-[11px]"
                 />
               </div>
 
               <div>
-                <label className="block text-slate-300 mb-1 font-medium">Thumbnail Image URL (Optional)</label>
+                <label className="block text-slate-300 mb-1 font-medium">Or Paste Video URL / YouTube Embed</label>
                 <input
-                  type="url"
-                  placeholder="e.g. /artworks/ebuka-1.svg"
-                  value={newVideoForm.thumbnail}
-                  onChange={(e) => setNewVideoForm({ ...newVideoForm, thumbnail: e.target.value })}
+                  type="text"
+                  required
+                  placeholder="https://..."
+                  value={newVideoForm.videoUrl}
+                  onChange={(e) => setNewVideoForm({ ...newVideoForm, videoUrl: e.target.value })}
                   className="w-full bg-art-black border border-white/10 rounded-lg p-2.5 text-white focus:border-art-gold focus:outline-none"
                 />
               </div>

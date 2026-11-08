@@ -17,6 +17,7 @@ import {
   Crown
 } from 'lucide-react';
 import { isPriorityArtist } from '@/lib/priority-utils';
+import { isDummyArtworkRecord, isDummyUserRecord } from '@/lib/uuid-utils';
 
 export default function VerifiedMastersPage() {
   const { artworks, currency, usdExchangeRate = 1480, artistVerifications: storeVerifications = [], sellers = [], usersList = [], demoTransitionMode = 'progressive' } = useStore();
@@ -31,95 +32,10 @@ export default function VerifiedMastersPage() {
     return `₦${amount.toLocaleString()}`;
   };
 
-  // Certified master artists with authenticated verification dossier
-  const fallbackVerifiedMasters = [
-    {
-      id: 'artist-1',
-      name: 'Kofi Mensah',
-      title: 'Master Painter & 24K Gold Leaf Specialist',
-      country: 'Ghana',
-      flag: '🇬🇭',
-      city: 'Accra',
-      avatar: '',
-      accreditation: 'National Museum of Ghana Fellow · 25+ Years Atelier Master',
-      verificationBadge: 'Gold Crest Certified',
-      kycHash: 'VERIF-GH-KM-2026-GOLD',
-      biography: 'Renowned globally for his innovative fusing of classical Akan spiritual symbolism with hand-applied 24K gold leaf and indigenous oil pigments. His works are held in premier collections across West Africa, Europe, and North America.',
-      featuredArtwork: {
-        id: 'art-101',
-        title: 'The Ancestral Horizon',
-        medium: 'Oil & Gold Leaf on Canvas',
-        price: 1850000,
-        image: ''
-      }
-    },
-    {
-      id: 'artist-2',
-      name: 'Amina Diallo',
-      title: 'Heritage Bronze Caster & Sculptor',
-      country: 'Nigeria',
-      flag: '🇳🇬',
-      city: 'Benin City',
-      avatar: '',
-      accreditation: 'Royal Guild of Bronzecasters Lineage · Master of Lost-Wax Casting',
-      verificationBadge: 'Heritage Master Certified',
-      kycHash: 'VERIF-NG-AD-88410-HERIT',
-      biography: 'Direct descendant of 16th-century Benin royal foundry casters, continuing half a millennium of lost-wax metallurgical mastery with contemporary aesthetic presence.',
-      featuredArtwork: {
-        id: 'art-102',
-        title: 'Warrior of the Bronze Empire',
-        medium: 'Cast Bronze & Ebony Wood Base',
-        price: 3200000,
-        image: ''
-      }
-    },
-    {
-      id: 'artist-3',
-      name: 'Chief Bakare Ogundele',
-      title: 'Master Wood Carver & Guild Elder',
-      country: 'Nigeria',
-      flag: '🇳🇬',
-      city: 'Oyo',
-      avatar: '',
-      accreditation: 'Yoruba Sacred Sculptors Guild Elder · National Living Treasure',
-      verificationBadge: 'Heritage Master Certified',
-      kycHash: 'VERIF-NG-BO-66102-HERIT',
-      biography: 'Keeper of sacred carving techniques, crafting deeply resonant ceremonial statues and masks using sustainably sourced centuries-old timber with consecrated brass inlays.',
-      featuredArtwork: {
-        id: 'art-107',
-        title: 'Spirit of the Mask',
-        medium: 'Carved Iroko Wood & Brass Inlay',
-        price: 1450000,
-        image: ''
-      }
-    },
-    {
-      id: 'artist-5',
-      name: 'Kenza Belghiti',
-      title: 'Contemporary Maghreb Painter',
-      country: 'Morocco',
-      flag: '🇲🇦',
-      city: 'Marrakech',
-      avatar: '',
-      accreditation: 'Ecole Supérieure des Beaux-Arts · North African Biennial Laureate',
-      verificationBadge: 'Gold Crest Certified',
-      kycHash: 'VERIF-MA-KB-77219-GOLD',
-      biography: 'Exploring the rich geometric and mineral pigments of the Atlas Mountains, creating modern architectural tapestries on raw canvas with 22K gold dust accents.',
-      featuredArtwork: {
-        id: 'art-109',
-        title: 'Children of the Sun',
-        medium: 'Acrylic & Gold Dust on Canvas',
-        price: 1680000,
-        image: ''
-      }
-    }
-  ];
+  const realSellers = (sellers || []).filter(s => !isDummyUserRecord(s));
+  const realArtworks = (artworks || []).filter(a => !isDummyArtworkRecord(a));
 
-  const isMockOrDemo = (a) => !a || a.isDemo === true || String(a.id || '').startsWith('mock-') || a.id === 'art-101' || a.id === 'art-102';
-  const realSellers = (sellers || []).filter(s => s && s.name && !s.name.includes('Kofi Mensah') && !s.name.includes('Amina Diallo'));
-  const realArtworks = (artworks || []).filter(a => !isMockOrDemo(a));
-
-  const realMasters = realSellers.length > 0 ? realSellers.map(s => {
+  const verifiedMastersList = realSellers.length > 0 ? realSellers.map(s => {
     const art = realArtworks.find(a => a.artistId === s.id || a.artistName?.toLowerCase() === s.name?.toLowerCase()) || realArtworks[0];
     const cleanSellerAvatar = s.avatar_url && !s.avatar_url.includes('unsplash.com') ? s.avatar_url : '';
     return {
@@ -132,7 +48,7 @@ export default function VerifiedMastersPage() {
       avatar: cleanSellerAvatar,
       accreditation: 'Artellium Verified Atelier Sovereign Guild',
       verificationBadge: 'Gold Crest Certified',
-      kycHash: `VERIF-NG-${s.id.toUpperCase()}-GOLD`,
+      kycHash: `VERIF-NG-${String(s.id || '').toUpperCase()}-GOLD`,
       biography: s.bio || `${s.name} is an authenticated creator registered with Artellium's Pan-African atelier network.`,
       featuredArtwork: art ? {
         id: art.id,
@@ -142,28 +58,7 @@ export default function VerifiedMastersPage() {
         image: art.image
       } : null
     };
-  }).filter(m => m.featuredArtwork) : (realArtworks.length > 0 ? [{
-    id: 'artist-ebuka-eke',
-    name: 'Ebuka Eke Echo',
-    title: 'Royal Heritage Master Painter',
-    country: 'Nigeria',
-    flag: '🇳🇬',
-    city: 'Lagos',
-    avatar: '',
-    accreditation: 'Pan-African Fine Art Guild Sovereign Fellow',
-    verificationBadge: 'Gold Crest Certified',
-    kycHash: 'VERIF-NG-EEE-2026-SOVEREIGN',
-    biography: 'Renowned for monumental historical compositions with 24K gold leaf, deep indigo pigments, and sacred ancestral iconography.',
-    featuredArtwork: {
-      id: realArtworks[0].id,
-      title: realArtworks[0].title,
-      medium: realArtworks[0].medium,
-      price: realArtworks[0].price,
-      image: realArtworks[0].image
-    }
-  }] : []);
-
-  const verifiedMastersList = demoTransitionMode === 'live_only' ? realMasters : fallbackVerifiedMasters;
+  }).filter(m => m.featuredArtwork) : [];
 
   const filteredMasters = verifiedMastersList.filter(master => {
     if (selectedCountry === 'All') return true;

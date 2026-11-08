@@ -32,6 +32,7 @@ import {
   Crown
 } from 'lucide-react';
 import { isPriorityArtist, sortArtworksByPriority } from '@/lib/priority-utils';
+import { isDummyArtworkRecord } from '@/lib/uuid-utils';
 
 export default function AuctionsPage() {
   const { 
@@ -118,253 +119,18 @@ export default function AuctionsPage() {
   };
 
   // 1. LIVE NOW LOTS (Orderly Arranged by Lot Number)
-  const [liveLots, setLiveLots] = useState([
-    {
-      id: 'lot-801',
-      lotNumber: 'Lot #801',
-      artworkId: 'art-102',
-      title: 'Warrior of the Bronze Empire',
-      artistName: 'Ekele Ojogbe Mercy',
-      artistTier: 'Heritage Master',
-      medium: 'Cast Bronze & Ebony Wood Base',
-      dimensions: '85 × 40 × 35 cm',
-      image: '/artworks/ebuka-1.svg',
-      country: 'Benin City, Nigeria 🇳🇬',
-      estimateMin: 3000000,
-      estimateMax: 4500000,
-      startingBid: 2500000,
-      currentBid: 3400000,
-      reservePrice: 3000000,
-      isReserveMet: true,
-      totalBids: 14,
-      endTimestamp: Date.now() + 1000 * 60 * 60 * 18 + 1000 * 60 * 35, // 18h 35m
-      isHighValue: false,
-      highestBidder: 'Dr. O. Adebayo (Lagos)',
-      bidHistory: [
-        { id: 'bh-1', bidder: 'Dr. O. Adebayo (Lagos)', amount: 3400000, time: '3m ago', isPower: false },
-        { id: 'bh-2', bidder: 'Johannesburg Contemporary', amount: 3300000, time: '12m ago', isPower: true },
-        { id: 'bh-3', bidder: 'Sotheby’s Patron Desk (London)', amount: 3200000, time: '24m ago', isPower: false },
-        { id: 'bh-4', bidder: 'Dr. O. Adebayo (Lagos)', amount: 3100000, time: '1h ago', isPower: false },
-      ]
-    },
-    {
-      id: 'lot-802',
-      lotNumber: 'Lot #802',
-      artworkId: 'art-106',
-      title: 'Daughters of the Nile',
-      artistName: 'Ekele Ojogbe Mercy',
-      artistTier: 'Master Painter',
-      medium: 'Oil on Lined Canvas',
-      dimensions: '200 × 140 cm',
-      image: '/artworks/ebuka-2.svg',
-      country: 'Lagos, Nigeria 🇳🇬',
-      estimateMin: 4500000,
-      estimateMax: 6500000,
-      startingBid: 3800000,
-      currentBid: 4800000,
-      reservePrice: 4200000,
-      isReserveMet: true,
-      totalBids: 22,
-      endTimestamp: Date.now() + 1000 * 60 * 60 * 26 + 1000 * 60 * 12,
-      isHighValue: false,
-      highestBidder: 'Tariq A. (Dubai)',
-      bidHistory: [
-        { id: 'bh-5', bidder: 'Tariq A. (Dubai)', amount: 4800000, time: '1m ago', isPower: true },
-        { id: 'bh-6', bidder: 'Nairobi Heritage Fund', amount: 4700000, time: '15m ago', isPower: false },
-        { id: 'bh-7', bidder: 'Geneva Art Trust', amount: 4600000, time: '30m ago', isPower: false },
-      ]
-    },
-    {
-      id: 'lot-803',
-      lotNumber: 'Lot #803',
-      artworkId: 'art-108',
-      title: 'The Golden Benin Queen',
-      artistName: 'Ekele Ojogbe Mercy',
-      artistTier: 'Royal Foundry Guild',
-      medium: 'Polished Bronze & 24K Gold Filigree',
-      dimensions: '95 × 45 × 40 cm',
-      image: '/artworks/ebuka-3.svg',
-      country: 'Benin City, Nigeria 🇳🇬',
-      estimateMin: 8000000,
-      estimateMax: 12000000,
-      startingBid: 5000000,
-      currentBid: 9100000,
-      reservePrice: 7500000,
-      isReserveMet: true,
-      totalBids: 38,
-      endTimestamp: Date.now() + 1000 * 60 * 60 * 15 + 1000 * 60 * 45,
-      isHighValue: true, // Requires Admin High-Value Approval
-      highestBidder: 'Dr. Folake Davies (Lagos)',
-      bidHistory: [
-        { id: 'bh-8', bidder: 'Dr. Folake Davies (Lagos)', amount: 9100000, time: 'Just now', isPower: true },
-        { id: 'bh-9', bidder: 'Sotheby’s Patron Desk (London)', amount: 9000000, time: '2m ago', isPower: false },
-        { id: 'bh-10', bidder: 'Nairobi Fine Arts Circle', amount: 8900000, time: '5m ago', isPower: false },
-        { id: 'bh-11', bidder: 'Johannesburg Contemporary', amount: 8800000, time: '11m ago', isPower: true },
-      ]
-    },
-    {
-      id: 'lot-804',
-      lotNumber: 'Lot #804',
-      artworkId: 'art-101',
-      title: 'The Ancestral Horizon (Master Canvas)',
-      artistName: 'Ekele Ojogbe Mercy',
-      artistTier: 'Gold Master',
-      medium: 'Oil & 24K Gold Leaf on Linen Canvas',
-      dimensions: '150 × 120 cm',
-      image: '/artworks/ebuka-4.svg',
-      country: 'Abuja, Nigeria 🇳🇬',
-      estimateMin: 2000000,
-      estimateMax: 3200000,
-      startingBid: 1500000,
-      currentBid: 2200000,
-      reservePrice: 2000000,
-      isReserveMet: true,
-      totalBids: 11,
-      endTimestamp: Date.now() + 1000 * 60 * 60 * 32 + 1000 * 60 * 10,
-      isHighValue: false,
-      highestBidder: 'Aliko Dangote Jr. (Lagos)',
-      bidHistory: [
-        { id: 'bh-12', bidder: 'Aliko Dangote Jr. (Lagos)', amount: 2200000, time: '10m ago', isPower: true },
-        { id: 'bh-13', bidder: 'Accra Contemporary Trust', amount: 2100000, time: '45m ago', isPower: false },
-      ]
-    },
-    {
-      id: 'lot-805',
-      lotNumber: 'Lot #805',
-      artworkId: 'art-104',
-      title: 'The Solitary Mask of Oyo',
-      artistName: 'Ekele Ojogbe Mercy',
-      artistTier: 'Heritage Carver',
-      medium: 'Carved Iroko Wood & Brass Inlay',
-      dimensions: '90 × 35 × 25 cm',
-      image: '/artworks/ebuka-5.svg',
-      country: 'Oyo, Nigeria 🇳🇬',
-      estimateMin: 1400000,
-      estimateMax: 2200000,
-      startingBid: 1000000,
-      currentBid: 1350000,
-      reservePrice: 1500000,
-      isReserveMet: false, // Reserve not met yet
-      totalBids: 8,
-      endTimestamp: Date.now() + 1000 * 60 * 60 * 41 + 1000 * 60 * 20,
-      isHighValue: false,
-      highestBidder: 'Chief Adeleke (Ibadan)',
-      bidHistory: [
-        { id: 'bh-14', bidder: 'Chief Adeleke (Ibadan)', amount: 1350000, time: '20m ago', isPower: false },
-        { id: 'bh-15', bidder: 'Dakar Folk Arts', amount: 1300000, time: '1h ago', isPower: false },
-      ]
-    }
-  ]);
+  const [liveLots, setLiveLots] = useState([]);
 
   // 2. UPCOMING AUCTION SESSIONS
-  const upcomingLots = [
-    {
-      id: 'lot-806',
-      lotNumber: 'Lot #806',
-      title: 'Royal Dan Ceremonial Mask',
-      artistName: 'Ekele Ojogbe Mercy',
-      medium: 'Carved Ebony & Polished Cowrie Shells',
-      dimensions: '70 × 30 × 20 cm',
-      image: '/artworks/ebuka-6.svg',
-      country: 'Oyo, Nigeria 🇳🇬',
-      estimateMin: 2200000,
-      estimateMax: 3500000,
-      startingBid: 1800000,
-      startDate: 'Mar 1, 2026 • 12:00 PM WAT',
-      isHighValue: false,
-    },
-    {
-      id: 'lot-807',
-      lotNumber: 'Lot #807',
-      title: 'Nubian Golden Sunburst',
-      artistName: 'Ekele Ojogbe Mercy',
-      medium: 'Oil & Hand-Beaten Copper Leaf on Canvas',
-      dimensions: '180 × 120 cm',
-      image: '/artworks/ebuka-1.svg',
-      country: 'Lagos, Nigeria 🇳🇬',
-      estimateMin: 5000000,
-      estimateMax: 8000000,
-      startingBid: 4200000,
-      startDate: 'Mar 5, 2026 • 02:00 PM WAT',
-      isHighValue: true,
-    },
-    {
-      id: 'lot-808',
-      lotNumber: 'Lot #808',
-      title: 'Great Benin Oba Memorial Relic Head',
-      artistName: 'Ekele Ojogbe Mercy',
-      medium: 'Antique Lost-Wax Bronze Cast & Ebony Pedestal',
-      dimensions: '60 × 40 × 35 cm',
-      image: '/artworks/ebuka-2.svg',
-      country: 'Benin City, Nigeria 🇳🇬',
-      estimateMin: 12000000,
-      estimateMax: 18000000,
-      startingBid: 10000000,
-      startDate: 'Mar 10, 2026 • 04:00 PM WAT',
-      isHighValue: true,
-    }
-  ];
+  const upcomingLots = [];
 
   // 3. PAST AUCTIONS & HAMMER REALIZED PRICES
-  const pastLots = [
-    {
-      id: 'past-790',
-      lotNumber: 'Lot #790',
-      title: 'Oshun Divine River Waters',
-      artistName: 'Ekele Ojogbe Mercy',
-      medium: 'Oil, Indigo & 24K Gold Leaf on Canvas',
-      dimensions: '160 × 130 cm',
-      image: '/artworks/ebuka-3.svg',
-      hammerPrice: 3800000,
-      buyersPremium: 380000, // 10%
-      totalRealized: 4180000,
-      winner: 'Sotheby’s Patron Desk (London)',
-      dateClosed: 'Feb 15, 2026',
-      totalBids: 29,
-      settlementStatus: 'Settled via WEMA Bank Fiduciary',
-      payoutStatus: 'Disbursed to Artist'
-    },
-    {
-      id: 'past-789',
-      lotNumber: 'Lot #789',
-      title: 'Kingdoms of the Niger (Bronze Cast)',
-      artistName: 'Ekele Ojogbe Mercy',
-      medium: 'Cast Lost-Wax Bronze',
-      dimensions: '90 × 45 × 40 cm',
-      image: '/artworks/ebuka-4.svg',
-      hammerPrice: 6500000,
-      buyersPremium: 650000,
-      totalRealized: 7150000,
-      winner: 'Dr. Folake Davies (Lagos)',
-      dateClosed: 'Feb 10, 2026',
-      totalBids: 42,
-      settlementStatus: 'Settled via WEMA Bank Fiduciary',
-      payoutStatus: 'Disbursed to Artist'
-    },
-    {
-      id: 'past-788',
-      lotNumber: 'Lot #788',
-      title: 'Serengeti Twilight Horizon',
-      artistName: 'Ekele Ojogbe Mercy',
-      medium: 'Earth Pigments & Ash on Canvas',
-      dimensions: '180 × 100 cm',
-      image: '/artworks/ebuka-5.svg',
-      hammerPrice: 1900000,
-      buyersPremium: 190000,
-      totalRealized: 2090000,
-      winner: 'Johannesburg Contemporary',
-      dateClosed: 'Jan 28, 2026',
-      totalBids: 18,
-      settlementStatus: 'Settled via WEMA Bank Fiduciary',
-      payoutStatus: 'Disbursed to Artist'
-    }
-  ];
+  const pastLots = [];
 
   // Merge uploaded artworks that are set for Live Auction Arena
   const dynamicLiveLots = useMemo(() => {
-    const isMockOrDemo = (a) => !a || a.isDemo === true || String(a.id || '').startsWith('mock-') || a.id === 'art-102' || a.id === 'art-106';
     const artistAuctionWorks = (artworks || [])
-      .filter(art => (art.status === 'auction' || art.isAuction) && (demoTransitionMode !== 'live_only' || !isMockOrDemo(art)))
+      .filter(art => (art.status === 'auction' || art.isAuction) && !isDummyArtworkRecord(art))
       .map((art, idx) => ({
         id: art.id,
         lotNumber: `Lot #${810 + idx}`,
@@ -389,12 +155,8 @@ export default function AuctionsPage() {
         bidHistory: art.auction?.bidHistory || []
       }));
 
-    if (demoTransitionMode === 'live_only') {
-      return artistAuctionWorks;
-    }
-
-    return [...artistAuctionWorks, ...liveLots.filter(l => !artistAuctionWorks.some(a => a.artworkId === l.artworkId || a.id === l.id))];
-  }, [artworks, liveLots, sellers, usersList, demoTransitionMode]);
+    return [...artistAuctionWorks, ...liveLots.filter(l => !isDummyArtworkRecord(l) && !artistAuctionWorks.some(a => a.artworkId === l.artworkId || a.id === l.id))];
+  }, [artworks, liveLots, sellers, usersList]);
 
   const sortedLiveLots = useMemo(() => {
     return sortArtworksByPriority(dynamicLiveLots, { sellers, users: usersList });

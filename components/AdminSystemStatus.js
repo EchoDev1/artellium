@@ -231,12 +231,12 @@ export default function AdminSystemStatus({ currentUser, triggerDiagnosticsKey =
           description: `Artwork lot has no valid image asset, causing broken renders across the gallery, exhibitions, and auction arena.`,
           fixLabel: 'Restore Verified Masterpiece Image',
           onFix: () => {
-            const fallbackUrl = '/artworks/ebuka-1.svg';
+            const fallbackUrl = '';
             updateArtwork(art.id, {
               imageUrl: fallbackUrl,
-              images: [fallbackUrl]
+              images: []
             });
-            broadcastNotification(`Diagnostics: Verified HD image asset restored for ${art.title || art.id}.`);
+            broadcastNotification(`Diagnostics: Cleared broken image reference for ${art.title || art.id}.`);
           }
         });
       }

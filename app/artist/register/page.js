@@ -257,7 +257,7 @@ export default function ArtistRegisterPage() {
             <input
               type="text"
               required
-              placeholder="e.g. Kofi Mensah"
+              placeholder="Enter your full name or studio name"
               value={formData.fullName}
               onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
               className="w-full bg-art-black border border-white/10 rounded-xl p-3 text-white focus:border-art-gold focus:outline-none"

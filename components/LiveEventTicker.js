@@ -29,7 +29,7 @@ export default function LiveEventTicker() {
       badge: '3D VIRTUAL GALLERY',
       badgeColor: 'bg-emerald-950/80 text-emerald-300 border-emerald-800/60',
       headline: 'Exhibition: "Echoes of Ancestral Royalty"',
-      detail: 'Curator Dr. Evelyn Carter • 🟢 142 Active Collectors in Room',
+      detail: 'Artellium Curatorial Board • 🟢 142 Active Collectors in Room',
       actionText: 'Enter Room',
       link: '/exhibitions',
       pulseColor: 'bg-emerald-400'
@@ -40,7 +40,7 @@ export default function LiveEventTicker() {
       icon: Clock,
       badge: 'CLOSING SOON',
       badgeColor: 'bg-amber-950/80 text-amber-300 border-amber-800/60',
-      headline: 'Lot #806 "Daughters of the Nile"',
+      headline: 'Lot #806 "Sovereign Lineage II"',
       detail: 'Highest Bid: ₦4,800,000 • 22 competitive bids placed',
       actionText: 'View Lot',
       link: '/auctions',
@@ -53,7 +53,7 @@ export default function LiveEventTicker() {
       badge: 'CURATORIAL BROADCAST',
       badgeColor: 'bg-purple-950/80 text-purple-300 border-purple-800/60',
       headline: 'Live 3D Hall: "Afrofuturism & Nsibidi Codes"',
-      detail: 'Interactive 360° virtual tour live with artist Zola Okafor',
+      detail: 'Interactive 360° virtual tour live in Virtual Gallery Rooms',
       actionText: 'Join Tour',
       link: '/exhibitions',
       pulseColor: 'bg-purple-400'

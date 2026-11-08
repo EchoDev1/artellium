@@ -59,13 +59,13 @@ export default function AdminProvenanceLedger() {
   const [selectedArtworkId, setSelectedArtworkId] = useState('');
   const [blockForm, setBlockForm] = useState({
     artworkTitle: '',
-    artistName: 'Kofi Mensah (Ghana)',
-    medium: 'Oil & 24K Gold Leaf on Linen',
+    artistName: '',
+    medium: 'Oil on Canvas',
     dimensions: '150 × 120 cm',
     category: 'Painters',
     settlementPrice: 1850000,
     custodian: '',
-    custodianLocation: 'London, United Kingdom',
+    custodianLocation: 'Lagos, Nigeria',
     settlementBank: 'Wema Bank PLC / Dual Fiduciary Settlement',
     physicalCertificateId: '',
     provenanceHash: '',
@@ -206,13 +206,13 @@ export default function AdminProvenanceLedger() {
     // Reset form
     setBlockForm({
       artworkTitle: '',
-      artistName: 'Kofi Mensah (Ghana)',
-      medium: 'Oil & 24K Gold Leaf on Linen',
+      artistName: '',
+      medium: 'Oil on Canvas',
       dimensions: '150 × 120 cm',
       category: 'Painters',
       settlementPrice: 1850000,
       custodian: '',
-      custodianLocation: 'London, United Kingdom',
+      custodianLocation: 'Lagos, Nigeria',
       settlementBank: 'Wema Bank PLC / Dual Fiduciary Settlement',
       physicalCertificateId: '',
       provenanceHash: '',
@@ -851,7 +851,7 @@ export default function AdminProvenanceLedger() {
                     value={blockForm.artistName}
                     onChange={e => setBlockForm({ ...blockForm, artistName: e.target.value })}
                     className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-medium"
-                    placeholder="e.g. Kofi Mensah (Ghana 🇬🇭)"
+                    placeholder="Enter Artist Name & Country"
                   />
                 </div>
               </div>
@@ -898,7 +898,7 @@ export default function AdminProvenanceLedger() {
                     value={blockForm.custodian}
                     onChange={e => setBlockForm({ ...blockForm, custodian: e.target.value })}
                     className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl"
-                    placeholder="e.g. Dr. Evelyn Carter (London, UK)"
+                    placeholder="Enter Registered Custodian / Collector Name"
                   />
                 </div>
                 <div>
@@ -1139,7 +1139,7 @@ export default function AdminProvenanceLedger() {
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 pt-2 border-t border-art-gold/30 items-end text-[10px] font-mono">
                 <div className="space-y-1">
                   <div className="h-7 border-b border-slate-600 font-serif italic text-xs text-art-gold flex items-end">
-                    Kofi Mensah
+                    {qrModalBlock.artistName || 'Verified Master Artist'}
                   </div>
                   <span className="text-slate-500 uppercase block">Master Atelier Signature</span>
                 </div>

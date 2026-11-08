@@ -34,13 +34,21 @@ import {
   createDbCommission, 
   disburseDbCommission 
 } from '@/lib/db';
-import { safeSetItem, safeGetItem, idbGetItem } from '@/lib/safe-storage';
+import { safeSetItem, safeGetItem, idbGetItem, idbSetItem } from '@/lib/safe-storage';
 import { INITIAL_REAL_ARTWORKS } from '@/lib/real-artworks-seed';
 import { getCategoryFallback, isValidImageSource, DEFAULT_FALLBACK_IMAGE } from '@/lib/image-utils';
 import { normalizeCategory, isCategoryMatch } from '@/lib/category-utils';
 import { isPriorityArtist, sortArtworksByPriority } from '@/lib/priority-utils';
 import { TRACKING_STAGES, createInitialTracking, getStageConfig } from '@/lib/tracking-utils';
 import { broadcastAdminChange, subscribeToAdminChanges } from '@/lib/realtime-sync';
+import {
+  generateUuid,
+  toValidUuid,
+  isDummyUserRecord,
+  isDummyArtworkRecord,
+  isDummyVideoRecord,
+  isDummyExhibitionRecord,
+} from '@/lib/uuid-utils';
 const StoreContext = createContext();
 
 export function StoreProvider({ children }) {
@@ -182,8 +190,7 @@ export function StoreProvider({ children }) {
   // Helper to reliably detect whether an artwork is dummy/mock data
   const isMockOrDemoArtwork = (a) => {
     if (!a) return true;
-    if (a.isDemo === true) return true;
-    if (String(a.id || '').startsWith('mock-')) return true;
+    if (isDummyArtworkRecord(a)) return true;
     if (INITIAL_ARTWORKS.some(ia => ia.id === a.id && ia.isDemo !== false)) return true;
     return false;
   };
@@ -244,7 +251,13 @@ export function StoreProvider({ children }) {
   const isCleanRealPhoto = (url) => {
     if (!url || typeof url !== 'string') return false;
     const trimmed = url.trim();
-    if (!trimmed || trimmed.includes('unsplash.com') || trimmed.includes('pravatar.cc') || trimmed.includes('randomuser.me')) {
+    if (
+      !trimmed ||
+      trimmed.includes('unsplash.com') ||
+      trimmed.includes('pravatar.cc') ||
+      trimmed.includes('randomuser.me') ||
+      trimmed.includes('/artworks/ebuka-')
+    ) {
       return false;
     }
     return true;
@@ -288,7 +301,7 @@ export function StoreProvider({ children }) {
     return isCleanRealPhoto(match) ? match : '';
   };
 
-  const MOCK_VERSION = 'v24-zero-dummy-instant-publish';
+  const MOCK_VERSION = 'v26-100pct-real-zero-dummy-uuid';
 
   // 1. Load from LocalStorage synchronously first
   useEffect(() => {
@@ -297,6 +310,9 @@ export function StoreProvider({ children }) {
       if (storedVersion !== MOCK_VERSION) {
         localStorage.removeItem('artellium_artworks');
         localStorage.removeItem('artellium_real_artworks');
+        localStorage.removeItem('artellium_artist_videos');
+        localStorage.removeItem('artellium_users');
+        localStorage.removeItem('artellium_sellers');
         localStorage.removeItem('artellium_exhibitions');
         localStorage.removeItem('artellium_orders');
         localStorage.removeItem('artellium_payments');
@@ -319,6 +335,13 @@ export function StoreProvider({ children }) {
         localStorage.setItem('artellium_demo_transition_mode', 'live_only');
         localStorage.setItem('artellium_hide_demo_videos', 'true');
         localStorage.setItem('artellium_mock_version', MOCK_VERSION);
+        try {
+          idbSetItem('artellium_real_artworks', INITIAL_REAL_ARTWORKS || []);
+          idbSetItem('artellium_artist_videos', []);
+          idbSetItem('artellium_users', INITIAL_USERS || []);
+          idbSetItem('artellium_sellers', []);
+          idbSetItem('artellium_exhibitions', []);
+        } catch (e) {}
       }
 
       // Build reconciled photo vault from any existing local records before hydrating
@@ -364,7 +387,7 @@ export function StoreProvider({ children }) {
       setDemoTransitionMode(activeMode);
 
       // Load Real Artist Artworks (Seeded with genuine artist uploads, immune to fair-lady corruption)
-      let loadedReal = [...INITIAL_REAL_ARTWORKS];
+      let loadedReal = [...INITIAL_REAL_ARTWORKS].filter(a => !isDummyArtworkRecord(a));
       const savedReal = localStorage.getItem('artellium_real_artworks');
       if (savedReal) {
         try {
@@ -373,7 +396,7 @@ export function StoreProvider({ children }) {
             const map = new Map();
             loadedReal.forEach(a => map.set(a.id, a));
             parsedReal.forEach(a => {
-              if (a && a.id && a.id !== 'art-echo-101') {
+              if (a && a.id && !isDummyArtworkRecord(a)) {
                 const existing = map.get(a.id);
                 const isCorrupted = typeof a.image === 'string' && a.image.includes('photo-1579783900882-c0d3dad7b119');
                 if (existing) {
@@ -388,7 +411,7 @@ export function StoreProvider({ children }) {
               }
             });
             loadedReal = Array.from(map.values())
-              .filter(a => a.id !== 'art-echo-101' && !a.image?.includes('photo-1579783900882-c0d3dad7b119'))
+              .filter(a => !isDummyArtworkRecord(a))
               .sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
           }
         } catch (e) {}
@@ -401,8 +424,7 @@ export function StoreProvider({ children }) {
           const parsed = JSON.parse(savedArtworks);
           if (Array.isArray(parsed)) {
             parsed.forEach(a => {
-              const isDemo = a.isDemo || (INITIAL_ARTWORKS.some(ia => ia.id === a.id && ia.isDemo !== false)) || String(a.id).startsWith('mock-');
-              if (!isDemo && !loadedReal.some(r => r.id === a.id)) {
+              if (!isDummyArtworkRecord(a) && !loadedReal.some(r => r.id === a.id)) {
                 loadedReal.push({
                   ...a,
                   isDemo: false,
@@ -476,11 +498,13 @@ export function StoreProvider({ children }) {
         try {
           const parsedSellers = JSON.parse(savedSellers);
           if (Array.isArray(parsedSellers)) {
-            const sanitizedSellers = parsedSellers.map(s => {
-              const cleanPhoto = resolveReconciledPhoto(s);
-              if (cleanPhoto) savePhotoToVault({ id: s.user_id || s.id, email: s.email, name: s.name }, cleanPhoto);
-              return { ...s, avatar_url: cleanPhoto || '' };
-            });
+            const sanitizedSellers = parsedSellers
+              .filter(s => !isDummyUserRecord(s))
+              .map(s => {
+                const cleanPhoto = resolveReconciledPhoto(s);
+                if (cleanPhoto) savePhotoToVault({ id: s.user_id || s.id, email: s.email, name: s.name }, cleanPhoto);
+                return { ...s, avatar_url: cleanPhoto || '' };
+              });
             setSellers(sanitizedSellers);
             safeSetItem('artellium_sellers', sanitizedSellers);
           }
@@ -532,20 +556,24 @@ export function StoreProvider({ children }) {
 
       const savedExhibitions = safeGetItem('artellium_exhibitions', null);
       if (Array.isArray(savedExhibitions) && savedExhibitions.length > 0) {
-        const sanitizedEx = savedExhibitions.map((ex, idx) => ({
-          ...ex,
-          curatorAvatar: isCleanRealPhoto(ex.curatorAvatar) ? ex.curatorAvatar : '',
-          coverImage: isCleanRealPhoto(ex.coverImage) ? ex.coverImage : `/artworks/ebuka-${(idx % 6) + 1}.svg`,
-          participatingArtists: Array.isArray(ex.participatingArtists)
-            ? ex.participatingArtists.map(pa => ({ ...pa, avatar: isCleanRealPhoto(pa?.avatar) ? pa.avatar : '' }))
-            : [],
-          exhibitedArtworks: Array.isArray(ex.exhibitedArtworks)
-            ? ex.exhibitedArtworks.map((ea, i) => ({
-                ...ea,
-                image: isCleanRealPhoto(ea?.image) ? ea.image : `/artworks/ebuka-${(i % 6) + 1}.svg`
-              }))
-            : []
-        }));
+        const sanitizedEx = savedExhibitions
+          .filter(ex => !isDummyExhibitionRecord(ex))
+          .map((ex) => ({
+            ...ex,
+            curatorAvatar: isCleanRealPhoto(ex.curatorAvatar) ? ex.curatorAvatar : '',
+            coverImage: isCleanRealPhoto(ex.coverImage) ? ex.coverImage : '',
+            participatingArtists: Array.isArray(ex.participatingArtists)
+              ? ex.participatingArtists.map(pa => ({ ...pa, avatar: isCleanRealPhoto(pa?.avatar) ? pa.avatar : '' }))
+              : [],
+            exhibitedArtworks: Array.isArray(ex.exhibitedArtworks)
+              ? ex.exhibitedArtworks
+                  .filter(ea => !isDummyArtworkRecord(ea))
+                  .map((ea) => ({
+                    ...ea,
+                    image: isCleanRealPhoto(ea?.image) ? ea.image : ''
+                  }))
+              : []
+          }));
         setExhibitions(sanitizedEx);
         safeSetItem('artellium_exhibitions', sanitizedEx);
       }
@@ -553,9 +581,10 @@ export function StoreProvider({ children }) {
       const savedVideos = safeGetItem('artellium_artist_videos', null);
       if (Array.isArray(savedVideos)) {
         const sanitized = savedVideos
-          .filter(v => v && v.videoUrl && !isDemoVideoItem(v) && !/\/videos\/artist-(savannah|studio|turtle|nature)\.mp4/i.test(String(v.videoUrl)) && !String(v.videoUrl).includes('mixkit.co'))
+          .filter(v => v && v.videoUrl && !isDummyVideoRecord(v))
           .map(v => ({
             ...v,
+            id: toValidUuid(v.id),
             thumbnail: isCleanRealPhoto(v.thumbnail) ? v.thumbnail : '',
             status: v.status || 'approved',
             featuredOnHero: v.featuredOnHero !== undefined ? v.featuredOnHero : true,
@@ -586,9 +615,9 @@ export function StoreProvider({ children }) {
             ipAddress: '102.89.22.10',
             securityIncidents: []
           };
-          // Upsert current admin and remove legacy admin entry, while reconciling original user photos
+          // Upsert current admin and remove legacy admin / dummy entries, while reconciling original user photos
           const withoutOldAdmins = parsed
-            .filter(u => u.role !== 'admin' && u.email?.toLowerCase() !== 'admin@artellium.com' && u.email?.toLowerCase() !== 'ekpendudakore@gmail.com')
+            .filter(u => !isDummyUserRecord(u) && u.role !== 'admin' && u.email?.toLowerCase() !== 'admin@artellium.com' && u.email?.toLowerCase() !== 'ekpendudakore@gmail.com')
             .map(u => {
               const cleanPhoto = resolveReconciledPhoto(u);
               if (cleanPhoto) savePhotoToVault(u, cleanPhoto);
@@ -610,9 +639,11 @@ export function StoreProvider({ children }) {
         .then(data => {
           if (data && data.success && Array.isArray(data.users) && data.users.length > 0) {
             setUsersList(prev => {
-              const localMap = new Map((prev || []).map(u => [(u.email || '').toLowerCase().trim(), u]));
-              const serverMap = new Map(data.users.map(u => [(u.email || '').toLowerCase().trim(), u]));
-              const localOnly = (prev || []).filter(u => {
+              const cleanPrev = (prev || []).filter(u => !isDummyUserRecord(u));
+              const cleanServer = data.users.filter(u => !isDummyUserRecord(u));
+              const localMap = new Map(cleanPrev.map(u => [(u.email || '').toLowerCase().trim(), u]));
+              const serverMap = new Map(cleanServer.map(u => [(u.email || '').toLowerCase().trim(), u]));
+              const localOnly = cleanPrev.filter(u => {
                 const em = (u.email || '').toLowerCase().trim();
                 return em && !serverMap.has(em);
               });
@@ -623,7 +654,7 @@ export function StoreProvider({ children }) {
                   body: JSON.stringify({ users: localOnly })
                 }).catch(() => {});
               }
-              const mergedServerUsers = data.users.map(su => {
+              const mergedServerUsers = cleanServer.map(su => {
                 const em = (su.email || '').toLowerCase().trim();
                 const localUser = localMap.get(em) || {};
                 const cleanPhoto = resolveReconciledPhoto(localUser) || resolveReconciledPhoto(su) || '';
@@ -647,8 +678,9 @@ export function StoreProvider({ children }) {
           supabase.from('users').select('*').then(({ data: dbUsers }) => {
             if (Array.isArray(dbUsers) && dbUsers.length > 0) {
               setUsersList(prev => {
-                const map = new Map(prev.map(u => [(u.email || '').toLowerCase().trim(), u]));
+                const map = new Map((prev || []).filter(u => !isDummyUserRecord(u)).map(u => [(u.email || '').toLowerCase().trim(), u]));
                 for (const u of dbUsers) {
+                  if (isDummyUserRecord(u)) continue;
                   const em = (u.email || '').toLowerCase().trim();
                   if (em) {
                     const localUser = map.get(em) || {};
@@ -838,14 +870,16 @@ export function StoreProvider({ children }) {
           setVideos((prev) => {
             const map = new Map();
             (prev || []).forEach(v => {
-              if (v && v.id && v.videoUrl && !isDemoVideoItem(v) && !/\/videos\/artist-(savannah|studio|turtle|nature)\.mp4/i.test(String(v.videoUrl))) {
-                map.set(v.id, { ...v, thumbnail: isCleanRealPhoto(v.thumbnail) ? v.thumbnail : '', status: v.status || 'approved', isDemo: false });
+              if (v && v.id && v.videoUrl && !isDummyVideoRecord(v)) {
+                const uid = toValidUuid(v.id);
+                map.set(uid, { ...v, id: uid, thumbnail: isCleanRealPhoto(v.thumbnail) ? v.thumbnail : '', status: v.status || 'approved', isDemo: false });
               }
             });
             idbVids.forEach(v => {
-              if (v && v.id && v.videoUrl && !isDemoVideoItem(v) && !/\/videos\/artist-(savannah|studio|turtle|nature)\.mp4/i.test(String(v.videoUrl))) {
-                if (!map.has(v.id)) {
-                  map.set(v.id, { ...v, thumbnail: isCleanRealPhoto(v.thumbnail) ? v.thumbnail : '', status: v.status || 'approved', isDemo: false });
+              if (v && v.id && v.videoUrl && !isDummyVideoRecord(v)) {
+                const uid = toValidUuid(v.id);
+                if (!map.has(uid)) {
+                  map.set(uid, { ...v, id: uid, thumbnail: isCleanRealPhoto(v.thumbnail) ? v.thumbnail : '', status: v.status || 'approved', isDemo: false });
                 }
               }
             });
@@ -864,10 +898,10 @@ export function StoreProvider({ children }) {
         if (Array.isArray(idbReal) && idbReal.length > 0) {
           setRealArtworks((prev) => {
             const map = new Map();
-            (prev || []).forEach(a => a && a.id && map.set(a.id, a));
-            idbReal.forEach(a => a && a.id && map.set(a.id, a));
+            (prev || []).forEach(a => a && a.id && !isDummyArtworkRecord(a) && map.set(a.id, a));
+            idbReal.forEach(a => a && a.id && !isDummyArtworkRecord(a) && map.set(a.id, a));
             const merged = Array.from(map.values()).sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
-            const currentMode = demoTransitionModeRef.current || 'progressive';
+            const currentMode = demoTransitionModeRef.current || 'live_only';
             setArtworks(assembleCatalog(merged, INITIAL_ARTWORKS, currentMode));
             return merged;
           });
@@ -884,13 +918,13 @@ export function StoreProvider({ children }) {
             return photo && photo !== prev.avatar_url ? { ...prev, avatar_url: photo } : prev;
           });
           setUsersList((prev) =>
-            (prev || []).map((u) => {
+            (prev || []).filter(u => !isDummyUserRecord(u)).map((u) => {
               const photo = resolveReconciledPhoto(u, mergedVault);
               return { ...u, avatar_url: photo || '' };
             })
           );
           setSellers((prev) =>
-            (prev || []).map((s) => {
+            (prev || []).filter(s => !isDummyUserRecord(s)).map((s) => {
               const photo = resolveReconciledPhoto(s, mergedVault);
               return { ...s, avatar_url: photo || '' };
             })
@@ -903,13 +937,13 @@ export function StoreProvider({ children }) {
           setUsersList((prev) => {
             const map = new Map();
             (idbUsers || []).forEach((u) => {
-              if (!u) return;
+              if (!u || isDummyUserRecord(u)) return;
               const cleanPhoto = resolveReconciledPhoto(u);
               if (cleanPhoto) savePhotoToVault(u, cleanPhoto);
               map.set(u.id || u.email, { ...u, avatar_url: cleanPhoto || '' });
             });
             (prev || []).forEach((u) => {
-              if (!u) return;
+              if (!u || isDummyUserRecord(u)) return;
               const existing = map.get(u.id || u.email) || {};
               const cleanPhoto = resolveReconciledPhoto(u) || resolveReconciledPhoto(existing);
               if (cleanPhoto) savePhotoToVault(u, cleanPhoto);
@@ -925,13 +959,13 @@ export function StoreProvider({ children }) {
           setSellers((prev) => {
             const map = new Map();
             (idbSellers || []).forEach((s) => {
-              if (!s) return;
+              if (!s || isDummyUserRecord(s)) return;
               const cleanPhoto = resolveReconciledPhoto(s);
               if (cleanPhoto) savePhotoToVault({ id: s.user_id || s.id, email: s.email, name: s.name }, cleanPhoto);
               map.set(s.id || s.name, { ...s, avatar_url: cleanPhoto || '' });
             });
             (prev || []).forEach((s) => {
-              if (!s) return;
+              if (!s || isDummyUserRecord(s)) return;
               const existing = map.get(s.id || s.name) || {};
               const cleanPhoto = resolveReconciledPhoto(s) || resolveReconciledPhoto(existing);
               if (cleanPhoto) savePhotoToVault({ id: s.user_id || s.id, email: s.email, name: s.name }, cleanPhoto);
@@ -1015,7 +1049,7 @@ export function StoreProvider({ children }) {
         const { data: dbArtworks, error: artError } = await supabase.from('artworks').select('*');
         if (!artError && dbArtworks && dbArtworks.length > 0) {
           const dbReal = dbArtworks
-            .filter(a => !a.isDemo && !INITIAL_ARTWORKS.some(ia => ia.id === a.id) && !String(a.id).startsWith('mock-'))
+            .filter(a => !isDummyArtworkRecord(a))
             .map(a => {
               const isAuction = a.status === 'auction' || Boolean(a.is_auction || a.isAuction);
               const isExhibition = a.status === 'exhibition' || Boolean(a.is_exhibition || a.isExhibition);
@@ -1057,14 +1091,14 @@ export function StoreProvider({ children }) {
           if (dbReal.length > 0) {
             setRealArtworks((prevReal) => {
               const map = new Map();
-              INITIAL_REAL_ARTWORKS.forEach(initA => map.set(initA.id, initA));
+              INITIAL_REAL_ARTWORKS.filter(a => !isDummyArtworkRecord(a)).forEach(initA => map.set(initA.id, initA));
               prevReal.forEach(r => {
-                if (r && r.id && r.id !== 'art-echo-101' && !r.image?.includes('photo-1579783900882-c0d3dad7b119')) {
+                if (r && r.id && !isDummyArtworkRecord(r)) {
                   map.set(r.id, r);
                 }
               });
               dbReal.forEach(dbA => {
-                if (dbA && dbA.id && dbA.id !== 'art-echo-101') {
+                if (dbA && dbA.id && !isDummyArtworkRecord(dbA)) {
                   const existing = map.get(dbA.id) || {};
                   const isCorrupted = typeof dbA.image === 'string' && dbA.image.includes('photo-1579783900882-c0d3dad7b119');
                   map.set(dbA.id, {
@@ -1076,13 +1110,13 @@ export function StoreProvider({ children }) {
                 }
               });
               const mergedReal = Array.from(map.values())
-                .filter(a => a.id !== 'art-echo-101' && !a.image?.includes('photo-1579783900882-c0d3dad7b119'))
+                .filter(a => !isDummyArtworkRecord(a))
                 .sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
 
               safeSetItem('artellium_real_artworks', mergedReal);
 
               setArtworks(() => {
-                const currentMode = demoTransitionModeRef.current || (typeof window !== 'undefined' ? localStorage.getItem('artellium_demo_transition_mode') : null) || 'progressive';
+                const currentMode = demoTransitionModeRef.current || (typeof window !== 'undefined' ? localStorage.getItem('artellium_demo_transition_mode') : null) || 'live_only';
                 const assembled = assembleCatalog(mergedReal, INITIAL_ARTWORKS, currentMode);
                 safeSetItem('artellium_artworks', assembled);
                 return assembled;
@@ -1096,8 +1130,9 @@ export function StoreProvider({ children }) {
         const { data: dbSellers, error: sellError } = await supabase.from('sellers').select('*');
         if (!sellError && dbSellers && dbSellers.length > 0) {
           setSellers(prev => {
-            const map = new Map(prev.map(s => [s.id, s]));
+            const map = new Map((prev || []).filter(s => !isDummyUserRecord(s)).map(s => [s.id, s]));
             dbSellers.forEach(ds => {
+              if (isDummyUserRecord(ds)) return;
               const localS = map.get(ds.id) || {};
               const cleanPhoto = resolveReconciledPhoto(localS) || resolveReconciledPhoto(ds) || '';
               if (cleanPhoto) savePhotoToVault({ id: ds.user_id || ds.id, email: ds.email, name: ds.name }, cleanPhoto);
@@ -1304,9 +1339,9 @@ export function StoreProvider({ children }) {
     // 1. Create Order with Direct Wema Bank Settlement status
     const newOrder = {
       id: orderId,
-      buyer_id: buyerId || currentUser?.id || 'user-buyer-1',
-      buyer_name: buyerName || currentUser?.name || 'Dr. Evelyn Carter',
-      buyer_email: buyerEmail || currentUser?.email || 'evelyn@artellium.com',
+      buyer_id: buyerId || currentUser?.id || `buyer-${Date.now()}`,
+      buyer_name: buyerName || currentUser?.name || 'Verified Collector',
+      buyer_email: buyerEmail || currentUser?.email || '',
       buyer_phone: buyerPhone || '+234 803 123 4567',
       total_amount: parseFloat(totalAmount),
       currency,
@@ -1323,7 +1358,7 @@ export function StoreProvider({ children }) {
         id: item.id,
         title: item.title,
         artistName: item.artistName,
-        artistId: item.artistId || 'artist-1',
+        artistId: item.artistId || 'artist-verified',
         price: item.price,
         image: item.image
       })),
@@ -1335,8 +1370,8 @@ export function StoreProvider({ children }) {
     const newPayment = {
       id: paymentId,
       order_id: orderId,
-      buyer_id: buyerId || currentUser?.id || 'user-buyer-1',
-      buyer_name: buyerName || currentUser?.name || 'Dr. Evelyn Carter',
+      buyer_id: buyerId || currentUser?.id || `buyer-${Date.now()}`,
+      buyer_name: buyerName || currentUser?.name || 'Verified Collector',
       amount: parseFloat(totalAmount),
       currency,
       payment_method: paymentMethod,
@@ -1360,8 +1395,8 @@ export function StoreProvider({ children }) {
         payment_id: paymentId,
         artwork_id: item.id,
         artwork_title: item.title,
-        seller_id: item.artistId || 'artist-1',
-        seller_name: item.artistName || 'Kofi Mensah',
+        seller_id: item.artistId || 'artist-verified',
+        seller_name: item.artistName || 'Verified Artist',
         gross_amount: gross,
         platform_fee_rate: platformFeeRate,
         platform_fee_amount: platformFeeAmount,
@@ -1378,7 +1413,7 @@ export function StoreProvider({ children }) {
     setCommissions(prev => [...newCommissions, ...prev]);
 
     items.forEach(item => {
-      setArtworkStatusSold(item.id, buyerName || currentUser?.name || 'Dr. Evelyn Carter', item.price);
+      setArtworkStatusSold(item.id, buyerName || currentUser?.name || 'Verified Collector', item.price);
     });
 
     items.forEach(item => {
@@ -1387,8 +1422,8 @@ export function StoreProvider({ children }) {
         artworkTitle: item.title,
         artistName: item.artistName,
         price: item.price,
-        buyerName: buyerName || currentUser?.name || 'Dr. Evelyn Carter',
-        buyerEmail: buyerEmail || currentUser?.email || 'evelyn@artellium.com',
+        buyerName: buyerName || currentUser?.name || 'Verified Collector',
+        buyerEmail: buyerEmail || currentUser?.email || '',
         paymentMethod: paymentMethod,
         orderId: orderId,
         paymentReference: paymentReference,
@@ -1697,14 +1732,34 @@ export function StoreProvider({ children }) {
   };
 
   const addSeller = (newSeller) => {
-    const created = { ...newSeller, id: newSeller.id || `artist-${Date.now()}`, created_at: new Date().toISOString() };
+    const normalizedTier = String(newSeller.tier || newSeller.subscription_tier || '').toLowerCase() === 'premium' ? 'Premium' : 'Standard';
+    const created = {
+      ...newSeller,
+      id: newSeller.id || `artist-live-${Date.now()}`,
+      tier: normalizedTier,
+      created_at: new Date().toISOString()
+    };
     setSellers(prev => {
-      const updated = [...prev.filter(s => s.id !== created.id), created];
+      const updated = [...prev.filter(s => s.id !== created.id && !isDummyUserRecord(s)), created];
       safeSetItem('artellium_sellers', updated);
       return updated;
     });
     try {
-      supabase.from('sellers').insert([created]).then(() => {});
+      const dbSeller = {
+        id: created.id,
+        user_id: created.user_id || null,
+        name: created.name || 'Verified Artist',
+        bio: created.bio || 'Verified Contemporary African Artist on Artellium.',
+        country: created.country || 'Nigeria',
+        city: created.city || 'Lagos',
+        country_flag: created.country_flag || '🇳🇬',
+        avatar_url: created.avatar_url || null,
+        tier: normalizedTier,
+        verification_badge: created.verification_badge || 'gold',
+        commission_rate: created.commission_rate || 0.15,
+        updated_at: new Date().toISOString()
+      };
+      supabase.from('sellers').upsert([dbSeller], { onConflict: 'id' }).then(() => {});
     } catch (e) {}
     return created;
   };
@@ -1731,15 +1786,16 @@ export function StoreProvider({ children }) {
     } catch (e) {}
   };
 
-  // Curatorial Exhibitions CRUD with Full Local Storage & Dynamic Re-rendering
+  // Curatorial Exhibitions CRUD with Full Local Storage, Supabase Sync & Dynamic Re-rendering
   const addExhibition = (newEx) => {
     const slug = newEx.slug || (newEx.title || 'curated-exhibition').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
-    const cleanCover = isCleanRealPhoto(newEx.coverImage) ? newEx.coverImage : '/artworks/ebuka-1.svg';
+    const cleanCover = isCleanRealPhoto(newEx.coverImage) ? newEx.coverImage : '';
+    const validId = toValidUuid(newEx.id || generateUuid());
     const exWithDefaults = {
-      id: newEx.id || `ex-${Date.now()}`,
+      id: validId,
       slug,
       title: newEx.title || 'Untitled Exhibition',
-      curator: newEx.curator || 'Curatorial Pavilion',
+      curator: newEx.curator || 'Artellium Curatorial Directorate',
       curatorAvatar: isCleanRealPhoto(newEx.curatorAvatar) ? newEx.curatorAvatar : '',
       format: newEx.format || 'Physical exhibitions',
       timing: newEx.timing || 'current',
@@ -1749,18 +1805,31 @@ export function StoreProvider({ children }) {
       sdg: newEx.sdg || 'SDG 11: Cultural Heritage',
       description: newEx.description || '',
       coverImage: cleanCover,
-      artworksCount: newEx.artworksCount || 12,
+      artworksCount: Number(newEx.artworksCount || 12),
       featuredArtists: Array.isArray(newEx.featuredArtists) ? newEx.featuredArtists : [newEx.curator || 'African Master Creators'],
       isLive3D: Boolean(newEx.isLive3D ?? true),
       status: newEx.status || 'Live Now',
       created_at: new Date().toISOString()
     };
     setExhibitions(prev => {
-      const updated = [exWithDefaults, ...prev.filter(e => e.id !== exWithDefaults.id && e.slug !== exWithDefaults.slug)];
+      const updated = [exWithDefaults, ...prev.filter(e => !isDummyExhibitionRecord(e) && e.id !== exWithDefaults.id && e.slug !== exWithDefaults.slug)];
       safeSetItem('artellium_exhibitions', updated);
       broadcastAdminChange('exhibitions', updated);
       return updated;
     });
+    try {
+      supabase.from('exhibitions').upsert([{
+        id: validId,
+        title: exWithDefaults.title,
+        curator: exWithDefaults.curator,
+        status: exWithDefaults.status === 'Live Now' || exWithDefaults.status === 'Upcoming' || exWithDefaults.status === 'Archived' ? exWithDefaults.status : 'Live Now',
+        start_date: exWithDefaults.dates,
+        end_date: 'Ongoing',
+        cover_image: cleanCover,
+        featured_artworks_count: exWithDefaults.artworksCount,
+        description: exWithDefaults.description
+      }], { onConflict: 'id' }).then(() => {});
+    } catch (e) {}
     return exWithDefaults;
   };
 
@@ -1891,23 +1960,23 @@ export function StoreProvider({ children }) {
 
     const dbPayload = {
       id: created.id,
-      title: created.title,
-      category: created.category,
-      medium: created.medium,
-      dimensions: created.dimensions,
-      price: created.price,
+      title: created.title || 'Untitled Masterpiece',
+      category: created.category || 'Painters',
+      medium: created.medium || 'Mixed Media on Canvas',
+      dimensions: created.dimensions || '100 x 100 cm',
+      price: created.price || 100000,
       // Map exhibition to 'available' with is_featured=true for DB check constraint compliance
       status: created.status === 'exhibition' ? 'available' : (created.status || 'available'),
-      image: created.image,
+      image: created.image || DEFAULT_FALLBACK_IMAGE,
       country: created.country || 'Nigeria',
       city: created.city || 'Lagos',
       description: created.description || '',
       provenance: created.provenance || '',
       year: created.year || '2026',
-      artist_name: created.artistName,
-      artist_type: created.artistType,
+      artist_name: created.artistName || 'Master Artist',
+      artist_type: created.artistType || 'Standard',
       artist_avatar: created.artistAvatar || '',
-      verification_badge: created.verificationBadge,
+      verification_badge: created.verificationBadge || 'verified',
       studio_notes: created.studioNotes || '',
       rating: typeof created.rating === 'number' ? created.rating : 0.0,
       reviews_count: created.reviewsCount || 0,
@@ -1925,9 +1994,9 @@ export function StoreProvider({ children }) {
       dbPayload.auction_end_time = new Date(created.auction.endTimestamp || Date.now() + 1000 * 60 * 60 * 24 * 3).toISOString();
     }
 
-    supabase.from('artworks').insert([dbPayload]).then(({ error }) => {
+    supabase.from('artworks').upsert([dbPayload], { onConflict: 'id' }).then(({ error }) => {
       if (error) {
-        console.warn('Supabase insert notice (stored in local ledger):', error.message);
+        console.warn('Supabase upsert notice (stored in local ledger):', error.message);
       }
     });
 
@@ -2154,13 +2223,7 @@ export function StoreProvider({ children }) {
 
   // Demo Video Removal & Restoration Controls
   const isDemoVideoItem = (video) => {
-    if (!video) return true;
-    if (video.isDemo === true || video.is_demo === true) return true;
-    const demoIds = ['vid-1', 'vid-2', 'vid-3', 'vid-4', 'vid-pending-1', 'vid-pending-2', 'vid-pending-3'];
-    if (demoIds.includes(String(video.id || ''))) return true;
-    const urlStr = String(video.videoUrl || video.video_url || '');
-    if (/\/videos\/artist-(savannah|studio|turtle|nature)\.mp4/i.test(urlStr)) return true;
-    return false;
+    return isDummyVideoRecord(video);
   };
 
   const purgeAllDemoVideos = () => {
@@ -2291,9 +2354,11 @@ export function StoreProvider({ children }) {
   // Artist Video Moderation & Lifecycle Management — Immediate Live Publishing
   const submitArtistVideo = (videoData) => {
     const cleanThumb = isCleanRealPhoto(videoData.thumbnail) ? videoData.thumbnail : '';
+    const validId = toValidUuid(videoData.id || generateUuid());
     const newSubmission = {
       ...videoData,
-      id: videoData.id || `vid-${Date.now()}`,
+      id: validId,
+      artistName: videoData.artistName || currentUser?.name || 'Artellium Spotlight',
       thumbnail: cleanThumb,
       isDemo: false,
       status: 'approved',
@@ -2303,7 +2368,7 @@ export function StoreProvider({ children }) {
     };
     setHideDemoVideos(true);
     setVideos((prev) => {
-      const updated = [newSubmission, ...(prev || []).filter(v => !isDemoVideoItem(v) && v.id !== newSubmission.id)];
+      const updated = [newSubmission, ...(prev || []).filter(v => !isDummyVideoRecord(v) && toValidUuid(v.id) !== validId)];
       safeSetItem('artellium_artist_videos', updated);
       broadcastAdminChange('artist_videos', updated);
       return updated;
@@ -2319,7 +2384,7 @@ export function StoreProvider({ children }) {
         .then(res => {
           if (res.success && res.video) {
             setVideos(prev => {
-              const next = prev.map(v => v.id === newSubmission.id ? { ...v, ...res.video, status: 'approved', featuredOnHero: true, isDemo: false } : v);
+              const next = prev.map(v => toValidUuid(v.id) === validId ? { ...v, ...res.video, id: validId, status: 'approved', featuredOnHero: true, isDemo: false } : v);
               safeSetItem('artellium_artist_videos', next);
               broadcastAdminChange('artist_videos', next);
               return next;
@@ -2335,9 +2400,11 @@ export function StoreProvider({ children }) {
 
   const addVideo = (newVideo) => {
     const cleanThumb = isCleanRealPhoto(newVideo.thumbnail) ? newVideo.thumbnail : '';
+    const validId = toValidUuid(newVideo.id || generateUuid());
     const created = { 
       ...newVideo, 
-      id: newVideo.id || `vid-${Date.now()}`,
+      id: validId,
+      artistName: newVideo.artistName || 'Artellium Spotlight',
       thumbnail: cleanThumb,
       isDemo: false,
       status: 'approved',
@@ -2347,7 +2414,7 @@ export function StoreProvider({ children }) {
     };
     setHideDemoVideos(true);
     setVideos((prev) => {
-      const updated = [created, ...(prev || []).filter(v => !isDemoVideoItem(v) && v.id !== created.id)];
+      const updated = [created, ...(prev || []).filter(v => !isDummyVideoRecord(v) && toValidUuid(v.id) !== validId)];
       safeSetItem('artellium_artist_videos', updated);
       broadcastAdminChange('artist_videos', updated);
       return updated;
@@ -2363,7 +2430,7 @@ export function StoreProvider({ children }) {
         .then(res => {
           if (res.success && res.video) {
             setVideos(prev => {
-              const next = prev.map(v => v.id === created.id ? { ...v, ...res.video, status: 'approved', featuredOnHero: true, isDemo: false } : v);
+              const next = prev.map(v => toValidUuid(v.id) === validId ? { ...v, ...res.video, id: validId, status: 'approved', featuredOnHero: true, isDemo: false } : v);
               safeSetItem('artellium_artist_videos', next);
               broadcastAdminChange('artist_videos', next);
               return next;

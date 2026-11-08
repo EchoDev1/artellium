@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 import { useStore } from '@/context/store-context';
 import { isPriorityArtist, sortArtworksByPriority } from '@/lib/priority-utils';
+import { isDummyArtworkRecord } from '@/lib/uuid-utils';
 import { 
   Sparkles, 
   Award, 
@@ -30,91 +31,25 @@ export default function CuratorPicksPage() {
     return `₦${amount.toLocaleString()}`;
   };
 
-  // Standout curator picks with curatorial review essays
-  const fallbackCuratorPicks = [
-    {
-      id: 'art-101',
-      title: 'The Ancestral Horizon',
-      artistName: 'Ekele Ojogbe Mercy',
-      country: 'Nigeria 🇳🇬',
-      category: 'Painters',
-      medium: 'Oil & 24K Gold Leaf on Canvas',
-      price: 1850000,
-      curatorName: 'Dr. Nana Osei',
-      curatorRole: 'Director of Contemporary African Art, Accra Art Trust',
-      rating: 4.9,
-      image: '/artworks/ebuka-1.svg',
-      curatorCritique: 'An uncommon equilibrium between ancient metaphysical heritage and monumental contemporary abstraction. The 24K gold leaf operates as an active spiritual conduit.',
-      exhibitionHall: 'West African Modernism Pavilion'
-    },
-    {
-      id: 'art-102',
-      title: 'Warrior of the Bronze Empire',
-      artistName: 'Ekele Ojogbe Mercy',
-      country: 'Nigeria 🇳🇬',
-      category: 'Sculpture Makers',
-      medium: 'Cast Bronze & Ebony Wood Base',
-      price: 3200000,
-      curatorName: 'Prof. Folake Adeleke',
-      curatorRole: 'Senior Fellow in African Metallurgy, Royal Heritage Foundation',
-      rating: 5.0,
-      image: '/artworks/ebuka-2.svg',
-      curatorCritique: 'This work resurrects the immortal gravitas of 16th-century Benin foundry artistry while challenging classical forms. A seminal acquisition for institutional archives.',
-      exhibitionHall: 'Imperial Bronzes & Metallurgical Heritage'
-    },
-    {
-      id: 'art-103',
-      title: 'Solitude in the Sahara',
-      artistName: 'Ekele Ojogbe Mercy',
-      country: 'Nigeria 🇳🇬',
-      category: 'Photographers',
-      medium: 'Archival Giclée Fine Art Print',
-      price: 2240000,
-      curatorName: 'Moussa Traoré',
-      curatorRole: 'Chief Curator, Bamako Biennial of Photography',
-      rating: 4.8,
-      image: '/artworks/ebuka-3.svg',
-      curatorCritique: 'Translates the expansive, unforgiving silence of the Sahel into an intimate psychological landscape. The chromogenic depth is flawless.',
-      exhibitionHall: 'North African Saharan Perspectives'
-    },
-    {
-      id: 'art-107',
-      title: 'Spirit of the Mask',
-      artistName: 'Ekele Ojogbe Mercy',
-      country: 'Nigeria 🇳🇬',
-      category: 'Sculpture Makers',
-      medium: 'Carved Iroko Wood & Brass Inlay',
-      price: 1450000,
-      curatorName: 'Dr. Babatunde Lawal',
-      curatorRole: 'Emeritus Curator of African Sacred Arts',
-      rating: 4.9,
-      image: '/artworks/ebuka-4.svg',
-      curatorCritique: 'Breathes ancestral vitality into seasoned Iroko. The minimalist chiseled planes and brass inlays provide a profound dialogue between the sacred realm and fine sculpture.',
-      exhibitionHall: 'Sacred Yoruba Ceremonial Sculpture'
-    }
-  ];
-
-  const isMockOrDemo = (a) => !a || a.isDemo === true || String(a.id || '').startsWith('mock-') || a.id === 'art-101' || a.id === 'art-102';
-  const realArtworks = (artworks || []).filter(a => !isMockOrDemo(a));
-  const curatorPicksList = (storeCuratorPicks && storeCuratorPicks.length > 0)
-    ? (demoTransitionMode === 'live_only' ? storeCuratorPicks.filter(p => !isMockOrDemo(p)) : storeCuratorPicks)
-    : (demoTransitionMode === 'live_only'
-        ? realArtworks.map((art) => ({
-            id: art.id,
-            title: art.title,
-            artistName: art.artistName,
-            country: `${art.country || 'Nigeria'} ${art.countryFlag || '🇳🇬'}`,
-            category: art.category,
-            medium: art.medium,
-            price: art.price,
-            curatorName: 'Dr. Evelyn Carter',
-            curatorRole: 'Chief Senior Curator, Artellium Pan-African Board',
-            rating: 5.0,
-            image: art.image,
-            curatorCritique: art.studioNotes || 'A commanding masterwork embodying authentic African cultural heritage, technical distinction, and archival permanence.',
-            exhibitionHall: 'West African Modernism Pavilion'
-          }))
-        : fallbackCuratorPicks);
+  const realArtworks = (artworks || []).filter(a => !isDummyArtworkRecord(a));
+  const cleanStorePicks = (storeCuratorPicks || []).filter(p => !isDummyArtworkRecord(p));
+  const curatorPicksList = cleanStorePicks.length > 0
+    ? cleanStorePicks
+    : realArtworks.map((art) => ({
+        id: art.id,
+        title: art.title,
+        artistName: art.artistName,
+        country: `${art.country || 'Nigeria'} ${art.countryFlag || '🇳🇬'}`,
+        category: art.category,
+        medium: art.medium,
+        price: art.price,
+        curatorName: 'Artellium Curatorial Directorate',
+        curatorRole: 'Chief Senior Curator, Artellium Pan-African Board',
+        rating: 5.0,
+        image: art.image,
+        curatorCritique: art.studioNotes || art.description || 'A commanding masterwork embodying authentic African cultural heritage, technical distinction, and archival permanence.',
+        exhibitionHall: 'West African Modernism Pavilion'
+      }));
 
   const filteredPicks = curatorPicksList.filter(pick => {
     if (selectedHall === 'All') return true;

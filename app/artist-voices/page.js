@@ -4,6 +4,8 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 import { useStore } from '@/context/store-context';
 import { getArtistBriefHistory } from '@/lib/mock-data';
+import { isDummyVideoRecord, generateUuid } from '@/lib/uuid-utils';
+import { uploadVideoFileBulletproof } from '@/lib/video-upload';
 import { 
   Video, 
   Play, 
@@ -39,13 +41,22 @@ export default function ArtistVoicesPage() {
 
   const handleCreateVideo = (e) => {
     e.preventDefault();
-    if (!newVideoForm.artistName || !newVideoForm.videoUrl) return;
+    if (!newVideoForm.videoUrl) return;
+    const payload = {
+      ...newVideoForm,
+      id: generateUuid(),
+      artistName: (newVideoForm.artistName || '').trim() || 'Artellium Spotlight',
+      thumbnail: '',
+      status: 'approved',
+      featuredOnHero: true,
+      isDemo: false,
+    };
 
     if (currentUser?.role === 'admin') {
-      addVideo({ ...newVideoForm, status: 'approved', featuredOnHero: true, isDemo: false });
-      alert(`Master video for "${newVideoForm.artistName}" published directly!`);
+      addVideo(payload);
+      alert(`Master video for "${payload.artistName}" published directly!`);
     } else {
-      submitArtistVideo({ ...newVideoForm, status: 'approved', featuredOnHero: true, isDemo: false });
+      submitArtistVideo(payload);
       alert('Your 1–2 minute video story has been published immediately to Voices of Master Artists and the Homepage Hero!');
     }
 
@@ -64,6 +75,7 @@ export default function ArtistVoicesPage() {
 
   const videoPool = (currentUser?.role === 'admin') ? (videos || []) : (activeVideos || videos || []);
   const filteredVideos = videoPool
+    .filter(vid => !isDummyVideoRecord(vid))
     .filter(vid => currentUser?.role === 'admin' || vid.status === 'approved')
     .filter(vid => {
       if (selectedCategory === 'All') return true;
@@ -169,22 +181,20 @@ export default function ArtistVoicesPage() {
                 <label className="block text-slate-300 mb-1">Artist Name</label>
                 <input
                   type="text"
-                  required
                   value={newVideoForm.artistName}
                   onChange={e => setNewVideoForm({ ...newVideoForm, artistName: e.target.value })}
                   className="w-full bg-black/60 border border-white/15 rounded-xl p-2.5 text-white focus:outline-none"
-                  placeholder="e.g. Kofi Mensah"
+                  placeholder="e.g. Ebuka Eke"
                 />
               </div>
               <div>
                 <label className="block text-slate-300 mb-1">Artist Title & Craft</label>
                 <input
                   type="text"
-                  required
                   value={newVideoForm.artistTitle}
                   onChange={e => setNewVideoForm({ ...newVideoForm, artistTitle: e.target.value })}
                   className="w-full bg-black/60 border border-white/15 rounded-xl p-2.5 text-white focus:outline-none"
-                  placeholder="e.g. Master Painter & Gold Leaf Specialist"
+                  placeholder="e.g. Master Painter & Mixed Media Creator"
                 />
               </div>
               <div className="grid grid-cols-2 gap-3">
@@ -192,37 +202,45 @@ export default function ArtistVoicesPage() {
                   <label className="block text-slate-300 mb-1">Country</label>
                   <input
                     type="text"
-                    required
                     value={newVideoForm.country}
                     onChange={e => setNewVideoForm({ ...newVideoForm, country: e.target.value })}
                     className="w-full bg-black/60 border border-white/15 rounded-xl p-2.5 text-white focus:outline-none"
-                    placeholder="e.g. Ghana 🇬🇭"
+                    placeholder="e.g. Nigeria 🇳🇬"
                   />
                 </div>
                 <div>
                   <label className="block text-slate-300 mb-1">Discussing Artwork</label>
                   <input
                     type="text"
-                    required
                     value={newVideoForm.artworkTitle}
                     onChange={e => setNewVideoForm({ ...newVideoForm, artworkTitle: e.target.value })}
                     className="w-full bg-black/60 border border-white/15 rounded-xl p-2.5 text-white focus:outline-none"
-                    placeholder="e.g. The Ancestral Horizon"
+                    placeholder="e.g. Word painted!"
                   />
                 </div>
               </div>
               <div>
-                <label className="block text-slate-300 mb-1">Thumbnail Image URL</label>
+                <label className="block text-slate-300 mb-1">Upload Video File from Device</label>
                 <input
-                  type="url"
-                  value={newVideoForm.thumbnail}
-                  onChange={e => setNewVideoForm({ ...newVideoForm, thumbnail: e.target.value })}
-                  className="w-full bg-black/60 border border-white/15 rounded-xl p-2.5 text-white focus:outline-none"
-                  placeholder="https://..."
+                  type="file"
+                  accept="video/*"
+                  onChange={async (e) => {
+                    const file = e.target.files?.[0];
+                    if (!file) return;
+                    const res = await uploadVideoFileBulletproof(file);
+                    if (res && res.url) {
+                      setNewVideoForm(prev => ({
+                        ...prev,
+                        videoUrl: res.url,
+                        artworkTitle: prev.artworkTitle || file.name.replace(/\.[^/.]+$/, ''),
+                      }));
+                    }
+                  }}
+                  className="w-full bg-black/60 border border-white/15 rounded-xl p-2 text-slate-300 text-[11px]"
                 />
               </div>
               <div>
-                <label className="block text-slate-300 mb-1">Video Stream / YouTube URL</label>
+                <label className="block text-slate-300 mb-1">Or Paste Video Stream / YouTube URL</label>
                 <input
                   type="text"
                   required

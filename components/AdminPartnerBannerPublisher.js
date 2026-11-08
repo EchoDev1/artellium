@@ -31,7 +31,7 @@ export default function AdminPartnerBannerPublisher() {
       title: form.title,
       description: form.description,
       mediaType: form.mediaType,
-      image: form.image || '/artworks/ebuka-1.svg',
+      image: form.image || '',
       videoUrl: form.mediaType === 'video' ? form.videoUrl : '',
       price: form.price ? Number(form.price) : undefined,
       ctaText: form.ctaText || 'Explore Partner Offer',
@@ -147,7 +147,7 @@ export default function AdminPartnerBannerPublisher() {
             <input
               type="text"
               required={form.mediaType === 'image'}
-              placeholder="/artworks/ebuka-1.svg or https://..."
+              placeholder="https://..."
               value={form.image}
               onChange={(e) => setForm({ ...form, image: e.target.value })}
               className="w-full bg-white border border-slate-200 rounded-xl p-2.5 text-slate-900 focus:border-amber-500 focus:outline-none"

@@ -19,6 +19,7 @@ import {
   Crown
 } from 'lucide-react';
 import { isPriorityArtist, sortArtworksByPriority } from '@/lib/priority-utils';
+import { isDummyArtworkRecord } from '@/lib/uuid-utils';
 
 export default function FlashDealsPage() {
   const { 
@@ -58,110 +59,11 @@ export default function FlashDealsPage() {
     return `₦${amount.toLocaleString()}`;
   };
 
-  // Flash deal artworks with slashed prices and discount percentages
-  const fallbackFlashDeals = [
-    {
-      id: 'art-107',
-      title: 'Spirit of the Mask',
-      artistName: 'Ekele Ojogbe Mercy',
-      country: 'Nigeria 🇳🇬',
-      category: 'Sculpture Makers',
-      medium: 'Carved Iroko Wood & Brass Inlay',
-      originalPrice: 1950000,
-      discountedPrice: 1450000,
-      discountPercent: 25,
-      availableUnits: 1,
-      claimedPercent: 75,
-      image: '/artworks/ebuka-1.svg',
-      description: 'Sacred Yoruba ceremonial carving with hand-hammered brass inlay, offering exceptional presence and cultural lineage.'
-    },
-    {
-      id: 'art-109',
-      title: 'Children of the Sun',
-      artistName: 'Ekele Ojogbe Mercy',
-      country: 'Nigeria 🇳🇬',
-      category: 'Painters',
-      medium: 'Acrylic & Gold Dust on Canvas',
-      originalPrice: 2100000,
-      discountedPrice: 1680000,
-      discountPercent: 20,
-      availableUnits: 2,
-      claimedPercent: 60,
-      image: '/artworks/ebuka-2.svg',
-      description: 'Atmospheric portraiture exploring light and royal heritage with authentic 22K gold dust accents.'
-    },
-    {
-      id: 'art-110',
-      title: 'Ancestral Geometry',
-      artistName: 'Ekele Ojogbe Mercy',
-      country: 'Nigeria 🇳🇬',
-      category: 'Painters',
-      medium: 'Mixed Media & Natural Pigments',
-      originalPrice: 620000,
-      discountedPrice: 465000,
-      discountPercent: 25,
-      availableUnits: 3,
-      claimedPercent: 70,
-      image: '/artworks/ebuka-3.svg',
-      description: 'Intricate Uli-inspired geometric expressions utilizing organic riverbed minerals and raw linen.'
-    },
-    {
-      id: 'art-112',
-      title: 'Sahara Mirage',
-      artistName: 'Ekele Ojogbe Mercy',
-      country: 'Nigeria 🇳🇬',
-      category: 'Photographers',
-      medium: 'Archival Giclée Print on Fine Art Rag',
-      originalPrice: 2800000,
-      discountedPrice: 2240000,
-      discountPercent: 20,
-      availableUnits: 1,
-      claimedPercent: 85,
-      image: '/artworks/ebuka-4.svg',
-      description: 'Dramatic desert composition capturing nomadic life with master-grade archival preservation.'
-    },
-    {
-      id: 'art-101',
-      title: 'The Ancestral Horizon',
-      artistName: 'Ekele Ojogbe Mercy',
-      country: 'Nigeria 🇳🇬',
-      category: 'Painters',
-      medium: 'Oil & Gold Leaf on Canvas',
-      originalPrice: 2400000,
-      discountedPrice: 1850000,
-      discountPercent: 23,
-      availableUnits: 1,
-      claimedPercent: 90,
-      image: '/artworks/ebuka-5.svg',
-      description: '24K gold leaf masterwork exploring West African royal lineage, exhibited at international biennales.'
-    },
-    {
-      id: 'art-115',
-      title: 'Echoes of Benin Royalty',
-      artistName: 'Ekele Ojogbe Mercy',
-      country: 'Nigeria 🇳🇬',
-      category: 'Sculpture Makers',
-      medium: 'Bronze Casting & Patina',
-      originalPrice: 1800000,
-      discountedPrice: 1350000,
-      discountPercent: 25,
-      availableUnits: 2,
-      claimedPercent: 65,
-      image: '/artworks/ebuka-6.svg',
-      description: 'Traditional lost-wax bronze casting representing imperial court heraldry with certified provenance.'
-    }
-  ];
-
-  const isLiveOnly = demoTransitionMode === 'live_only';
-
-  let flashDealsList = [];
-  if (isLiveOnly) {
-    const realCustomDeals = (flashDeals || []).filter(deal => !deal.id?.toString().startsWith('art-1') && !deal.isDemo);
-    if (realCustomDeals.length > 0) {
-      flashDealsList = realCustomDeals;
-    } else {
-      const realArts = (artworks || []).filter(a => !a.isDemo && !a.id?.toString().startsWith('art-1'));
-      flashDealsList = realArts.map((art, idx) => {
+  const realCustomDeals = (flashDeals || []).filter(deal => !isDummyArtworkRecord(deal));
+  const realArts = (artworks || []).filter(a => !isDummyArtworkRecord(a));
+  const flashDealsList = realCustomDeals.length > 0
+    ? realCustomDeals
+    : realArts.map((art, idx) => {
         const discountPercent = 15 + ((idx * 7) % 25);
         const originalPrice = art.price ? Math.round(art.price * 1.25) : 1200000;
         const discountedPrice = art.price || Math.round(originalPrice * (1 - discountPercent / 100));
@@ -181,10 +83,6 @@ export default function FlashDealsPage() {
           description: art.description || 'Certified authentic masterwork from verified African studio provenance.'
         };
       });
-    }
-  } else {
-    flashDealsList = (flashDeals && flashDeals.length > 0) ? flashDeals : fallbackFlashDeals;
-  }
 
   const rawFilteredDeals = flashDealsList.filter(deal => {
     if (selectedCategory === 'All') return true;

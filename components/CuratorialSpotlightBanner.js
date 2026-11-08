@@ -3,12 +3,13 @@
 import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { useStore } from '@/context/store-context';
+import { isDummyArtworkRecord } from '@/lib/uuid-utils';
 import { ChevronLeft, ChevronRight, ArrowRight, Eye, Sparkles, Volume2, VolumeX, Play, Pause, ExternalLink, Film } from 'lucide-react';
 
 export default function CuratorialSpotlightBanner() {
   const { priorityBannerPlacements = [], artworks = [], currency, demoTransitionMode = 'progressive' } = useStore();
   const isLiveOnly = demoTransitionMode === 'live_only';
-  const isMockOrDemo = (a) => !a || a.isDemo === true || String(a.id || '').startsWith('mock-') || a.id === 'art-101' || a.id === 'art-102';
+  const isMockOrDemo = (a) => !a || a.isDemo === true || String(a.id || '').startsWith('mock-') || isDummyArtworkRecord(a);
 
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
@@ -80,7 +81,7 @@ export default function CuratorialSpotlightBanner() {
 
   if (!slides || slides.length === 0 || !currentSlide) return null;
 
-  const artworkTargetId = currentSlide.artworkId || currentSlide.id || (isLiveOnly ? (realArtworksPool[0]?.id || '') : 'art-101');
+  const artworkTargetId = currentSlide.artworkId || currentSlide.id || (realArtworksPool[0]?.id || '');
   const targetHref = currentSlide.ctaLink || (currentSlide.isPartnerAd ? '/explore' : `/artwork/${artworkTargetId}`);
   const ctaLabel = currentSlide.ctaText || (currentSlide.isPartnerAd ? 'Explore Partner Offer' : 'View Masterpiece');
 

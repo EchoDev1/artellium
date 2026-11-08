@@ -3,6 +3,8 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { useStore } from '@/context/store-context';
+import { uploadVideoFileBulletproof } from '@/lib/video-upload';
+import { generateUuid } from '@/lib/uuid-utils';
 import { 
   Video, 
   Play, 
@@ -90,18 +92,15 @@ export default function AdminVideoModeration() {
     setIsUploadingVideo(true);
 
     try {
-      const formData = new FormData();
-      formData.append('file', file);
-      const res = await fetch('/api/videos/upload', {
-        method: 'POST',
-        body: formData
-      });
-      const data = await res.json();
-      if (data.success && data.url) {
+      const uploaded = await uploadVideoFileBulletproof(file);
+      if (uploaded && uploaded.url) {
+        const cleanTitle = file.name ? file.name.replace(/\.[^/.]+$/, '').replace(/[-_]+/g, ' ') : 'Studio Spotlight';
         setDirectForm(prev => ({
           ...prev,
-          videoUrl: data.url,
-          thumbnail: prev.thumbnail || ''
+          videoUrl: uploaded.url,
+          artistName: prev.artistName || 'Artellium Spotlight',
+          artworkTitle: prev.artworkTitle || cleanTitle,
+          thumbnail: ''
         }));
         setIsUploadingVideo(false);
         return;
@@ -181,15 +180,18 @@ export default function AdminVideoModeration() {
       alert('Please wait a moment for the video file upload to complete.');
       return;
     }
-    if (!directForm.artistName || !directForm.videoUrl) {
-      alert('Please enter the Artist Name and select a video file or URL before publishing.');
+    if (!directForm.videoUrl) {
+      alert('Please select a video file or enter a video URL before publishing.');
       return;
     }
 
+    const finalArtistName = (directForm.artistName || '').trim() || 'Artellium Spotlight';
     addVideo({
       ...directForm,
+      id: generateUuid(),
+      artistName: finalArtistName,
       artworkTitle: directForm.artworkTitle || 'Atelier Masterpiece Showcase',
-      thumbnail: directForm.thumbnail || '',
+      thumbnail: '',
       status: 'approved',
       featuredOnHero: true,
       isDemo: false,
@@ -198,7 +200,7 @@ export default function AdminVideoModeration() {
     });
 
     setActiveTab('all');
-    setActionNotice(`Master video by "${directForm.artistName}" published immediately to the live Hero slider & Voices of Artists!`);
+    setActionNotice(`Master video by "${finalArtistName}" published immediately to the live Hero slider & Voices of Artists!`);
     setDirectVideoFileMeta(null);
     setDirectForm({
       artistName: '',
@@ -715,11 +717,10 @@ export default function AdminVideoModeration() {
 
             <form onSubmit={handleDirectAddSubmit} className="space-y-3 text-xs">
               <div>
-                <label className="block font-semibold text-slate-700 mb-1">Artist Name *</label>
+                <label className="block font-semibold text-slate-700 mb-1">Artist / Studio Name</label>
                 <input
                   type="text"
-                  required
-                  placeholder="e.g. Chief Bakare Ogundele"
+                  placeholder="e.g. Ebuka Eke (or leave blank for Artellium Spotlight)"
                   value={directForm.artistName}
                   onChange={(e) => setDirectForm({ ...directForm, artistName: e.target.value })}
                   className="w-full p-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-amber-500"

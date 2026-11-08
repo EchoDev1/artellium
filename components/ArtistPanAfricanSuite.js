@@ -24,7 +24,7 @@ import {
   Globe
 } from 'lucide-react';
 
-export default function ArtistPanAfricanSuite({ artistName = 'Kofi Mensah' }) {
+export default function ArtistPanAfricanSuite({ artistName = 'Verified Master Artist' }) {
   const { 
     artworks = [], 
     flashDeals = [], 
@@ -91,28 +91,23 @@ export default function ArtistPanAfricanSuite({ artistName = 'Kofi Mensah' }) {
 
   const myArtworks = artworks.filter(a => 
     a.artistName?.toLowerCase().includes(artistName.toLowerCase()) || 
-    a.artistId === currentUser?.id ||
-    artistName === 'Kofi Mensah'
+    a.artistId === currentUser?.id
   );
 
   const myFlashDeals = flashDeals.filter(d => 
-    d.artistName?.toLowerCase().includes(artistName.toLowerCase()) || 
-    artistName === 'Kofi Mensah'
+    d.artistName?.toLowerCase().includes(artistName.toLowerCase())
   );
 
   const myVideos = videos.filter(v => 
-    v.artistName?.toLowerCase().includes(artistName.toLowerCase()) ||
-    artistName === 'Kofi Mensah'
+    v.artistName?.toLowerCase().includes(artistName.toLowerCase())
   );
 
   const myVerif = artistVerifications.find(v => 
-    v.artistName?.toLowerCase().includes(artistName.toLowerCase()) ||
-    artistName === 'Kofi Mensah'
+    v.artistName?.toLowerCase().includes(artistName.toLowerCase())
   );
 
   const myLedgerBlocks = ledgerBlocks.filter(b => 
-    b.artistName?.toLowerCase().includes(artistName.toLowerCase()) ||
-    artistName === 'Kofi Mensah'
+    b.artistName?.toLowerCase().includes(artistName.toLowerCase())
   );
 
   // Handle Flash Deal Submit

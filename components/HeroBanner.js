@@ -17,16 +17,16 @@ export default function HeroBanner() {
     titleLine2: '& Auction House',
     description: 'Connecting elite African painters, bronze sculptors, and digital creators with global collectors, museums, and investors. Structured with verified settlement authenticity and museum-grade freight.',
     mediaType: 'image',
-    mediaUrl: '/artworks/ebuka-1.svg',
+    mediaUrl: '',
     videoUrl: '',
-    videoPoster: '/artworks/ebuka-1.svg',
+    videoPoster: '',
     featuredLot: {
       badge: 'LOT OF THE MONTH',
       title: 'Royal Heritage Masterpiece',
       artist: 'Ekele Ojogbe Mercy (Nigeria)',
       price: '₦1,850,000',
       medium: 'Acrylic & Mixed Media on Canvas',
-      image: '/artworks/ebuka-1.svg',
+      image: '',
       isVisible: true
     },
     primaryCta: { label: 'Explore Catalog', href: '/explore', isVisible: true },
@@ -173,11 +173,13 @@ export default function HeroBanner() {
               ) : (
                 /* High-Res Photo / Artwork Lot Display */
                 <div className="relative aspect-[4/5] rounded-2xl overflow-hidden bg-black">
-                  <img
-                    src={cfg.mediaUrl || lot.image || '/artworks/ebuka-1.svg'}
-                    alt={lot.title || 'Featured Artwork'}
-                    className="w-full h-full object-cover group-hover:scale-105 transition duration-700"
-                  />
+                  {(cfg.mediaUrl || lot.image) && (
+                    <img
+                      src={cfg.mediaUrl || lot.image}
+                      alt={lot.title || 'Featured Artwork'}
+                      className="w-full h-full object-cover group-hover:scale-105 transition duration-700"
+                    />
+                  )}
                   <div className="absolute inset-0 bg-gradient-to-t from-art-black via-art-black/20 to-transparent" />
 
                   {/* Floating Badge */}
@@ -193,10 +195,10 @@ export default function HeroBanner() {
                         {lot.medium || 'Oil & 24K Gold Leaf on Canvas'}
                       </span>
                       <h3 className="font-serif text-xl font-bold text-white mb-0.5">
-                        {lot.title || 'The Ancestral Horizon'}
+                        {lot.title || 'Royal Heritage Masterpiece'}
                       </h3>
                       <div className="flex items-center justify-between text-xs pt-2 border-t border-white/10">
-                        <span className="text-slate-300">By {lot.artist || 'Kofi Mensah (Ghana)'}</span>
+                        <span className="text-slate-300">By {lot.artist || 'Verified Master Artist'}</span>
                         <span className="font-serif text-art-gold font-bold text-sm">{lot.price || '₦1,850,000'}</span>
                       </div>
                     </div>

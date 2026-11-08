@@ -3,6 +3,8 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useStore } from '@/context/store-context';
+import { uploadVideoFileBulletproof } from '@/lib/video-upload';
+import { generateUuid } from '@/lib/uuid-utils';
 import { 
   ShieldCheck, 
   Video, 
@@ -262,7 +264,7 @@ export default function AdminDashboardPage() {
     location: 'Lagos, Nigeria',
     sdg: 'SDG 11: Sustainable Cities & Cultural Heritage',
     description: '',
-    coverImage: '/artworks/ebuka-1.svg',
+    coverImage: '',
     artworksCount: 16,
     status: 'Live Now'
   });
@@ -285,7 +287,7 @@ export default function AdminDashboardPage() {
     shipsTo: ['Africa', 'Europe', 'North America'],
     verificationBadge: 'gold',
     studioNotes: '',
-    image: '/artworks/ebuka-1.svg',
+    image: '',
     status: 'available'
   });
 
@@ -375,27 +377,22 @@ export default function AdminDashboardPage() {
 
     if (isVideo) {
       try {
-        const formData = new FormData();
-        formData.append('file', file);
-        const res = await fetch('/api/videos/upload', {
-          method: 'POST',
-          body: formData,
-        });
-        const data = await res.json();
-        if (res.ok && data.url) {
+        const uploaded = await uploadVideoFileBulletproof(file);
+        if (uploaded && uploaded.url) {
           updateHeroConfig({
-            videoUrl: data.url,
+            videoUrl: uploaded.url,
             mediaType: 'video',
-            mediaUrl: data.url,
+            mediaUrl: uploaded.url,
             bgVideoEnabled: true
           });
           addVideo({
+            id: generateUuid(),
             title: file.name.replace(/\.[^/.]+$/, ''),
             artistName: heroConfig?.featuredLot?.artistName || 'Artellium Master Studio',
             artistTitle: 'Hero Spotlight Feature',
             country: 'Nigeria',
             artworkTitle: heroConfig?.featuredLot?.title || file.name.replace(/\.[^/.]+$/, ''),
-            videoUrl: data.url,
+            videoUrl: uploaded.url,
             thumbnail: '',
             quote: heroConfig?.tagline || 'The future of African art is safe.',
             duration: '1:30',
@@ -560,23 +557,23 @@ export default function AdminDashboardPage() {
     setIsUploadingAdminVideo(true);
     setAdminVideoUploadStatus('Uploading video to Artellium Cloud Storage...');
     try {
-      const formData = new FormData();
-      formData.append('file', file);
-      const res = await fetch('/api/videos/upload', {
-        method: 'POST',
-        body: formData,
-      });
-      const data = await res.json();
-      if (data.success && data.url) {
-        setVideoForm(prev => ({ ...prev, videoUrl: data.url }));
-        setAdminVideoUploadStatus(`✓ Cloud Ready (${data.sizeMB || '0'} MB)`);
+      const result = await uploadVideoFileBulletproof(file);
+      if (result && result.url) {
+        const cleanTitle = file.name ? file.name.replace(/\.[^/.]+$/, '').replace(/[-_]+/g, ' ') : 'Studio Spotlight';
+        setVideoForm(prev => ({
+          ...prev,
+          videoUrl: result.url,
+          artistName: prev.artistName || 'Artellium Spotlight',
+          artworkTitle: prev.artworkTitle || cleanTitle,
+        }));
+        const sizeMB = (file.size / (1024 * 1024)).toFixed(2);
+        setAdminVideoUploadStatus(`✓ Ready to Publish (${sizeMB} MB)`);
       } else {
-        throw new Error(data.error || 'Upload failed');
+        throw new Error('Could not process video file');
       }
     } catch (err) {
       console.error('Admin video upload error:', err);
       setAdminVideoUploadStatus('Upload failed. Please try again.');
-      alert(`Video upload failed: ${err.message}`);
     } finally {
       setIsUploadingAdminVideo(false);
     }
@@ -585,15 +582,9 @@ export default function AdminDashboardPage() {
   const handleAdminThumbnailFileUpload = async (file) => {
     if (!file) return;
     try {
-      const formData = new FormData();
-      formData.append('file', file);
-      const res = await fetch('/api/videos/upload', {
-        method: 'POST',
-        body: formData,
-      });
-      const data = await res.json();
-      if (data.success && data.url) {
-        setVideoForm(prev => ({ ...prev, thumbnail: data.url }));
+      const result = await uploadVideoFileBulletproof(file);
+      if (result && result.url) {
+        setVideoForm(prev => ({ ...prev, thumbnail: result.url }));
       }
     } catch (err) {
       console.warn('Thumbnail upload error:', err);
@@ -628,9 +619,25 @@ export default function AdminDashboardPage() {
 
   const handleVideoSubmit = (e) => {
     e.preventDefault();
-    if (!videoForm.artistName || !videoForm.videoUrl) return;
+    if (!videoForm.videoUrl) {
+      alert('Please select a video file or enter a video URL first.');
+      return;
+    }
 
-    addVideo(videoForm);
+    const payload = {
+      ...videoForm,
+      id: generateUuid(),
+      artistName: (videoForm.artistName || '').trim() || 'Artellium Spotlight',
+      artistTitle: (videoForm.artistTitle || '').trim() || 'Featured Studio Broadcast',
+      country: (videoForm.country || '').trim() || 'Nigeria',
+      artworkTitle: (videoForm.artworkTitle || '').trim() || 'Artellium Spotlight Documentary',
+      thumbnail: '',
+      status: 'approved',
+      featuredOnHero: true,
+      isDemo: false,
+    };
+
+    addVideo(payload);
     setVideoForm({
       artistName: '',
       artistTitle: '',
@@ -641,8 +648,9 @@ export default function AdminDashboardPage() {
       quote: '',
       duration: '3:30',
     });
+    setAdminVideoUploadStatus('');
     setIsVideoModalOpen(false);
-    logSandboxAction(`Spotlight added for artist ${videoForm.artistName}`);
+    logSandboxAction(`Spotlight video published live to Hero page for ${payload.artistName}`);
   };
 
   const handleBroadcast = (e) => {
@@ -3366,12 +3374,16 @@ export default function AdminDashboardPage() {
             {/* Dynamic Exhibitions List */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 text-xs">
               {(exhibitions || []).map((ex) => {
-                const cover = ex.coverImage || '/artworks/ebuka-1.svg';
+                const cover = ex.coverImage || '';
                 return (
                   <div key={ex.id || ex.slug} className="p-4 rounded-2xl bg-slate-50 border border-slate-200 hover:border-emerald-500/40 transition space-y-3 flex flex-col justify-between shadow-xs">
                     <div className="space-y-2">
-                      <div className="relative aspect-[16/9] w-full rounded-xl overflow-hidden bg-black border border-slate-200">
-                        <img src={cover} alt={ex.title} className="w-full h-full object-cover" />
+                      <div className="relative aspect-[16/9] w-full rounded-xl overflow-hidden bg-black border border-slate-200 flex items-center justify-center">
+                        {cover ? (
+                          <img src={cover} alt={ex.title} className="w-full h-full object-cover" />
+                        ) : (
+                          <span className="text-[10px] font-mono text-amber-400 uppercase tracking-widest">Artellium Exhibition</span>
+                        )}
                         <span className="absolute top-2 left-2 px-2 py-0.5 rounded-full text-[9px] font-bold bg-black/80 text-emerald-300 border border-emerald-500/30">
                           {ex.format || 'Physical exhibitions'}
                         </span>
@@ -3476,7 +3488,7 @@ export default function AdminDashboardPage() {
                         location: 'Lagos, Nigeria',
                         sdg: 'SDG 11: Sustainable Cities & Cultural Heritage',
                         description: '',
-                        coverImage: '/artworks/ebuka-1.svg',
+                        coverImage: '',
                         artworksCount: 16,
                         status: 'Live Now'
                       });
@@ -7184,13 +7196,12 @@ export default function AdminDashboardPage() {
               <form onSubmit={handleVideoSubmit} className="space-y-3.5 text-xs">
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-slate-600 mb-1 font-medium">Artist Name</label>
+                    <label className="block text-slate-600 mb-1 font-medium">Artist / Studio Name</label>
                     <input
                       type="text"
-                      required
                       value={videoForm.artistName || ''}
                       onChange={e => setVideoForm({ ...videoForm, artistName: e.target.value })}
-                      placeholder="e.g. Chief Bakare Ogundele"
+                      placeholder="e.g. Ebuka Eke (or leave blank for Artellium Spotlight)"
                       className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-slate-900"
                     />
                   </div>
@@ -7264,29 +7275,6 @@ export default function AdminDashboardPage() {
                     />
                     {isUploadingAdminVideo && <span className="text-[11px] text-amber-600 animate-pulse font-medium">Uploading to cloud...</span>}
                     {!isUploadingAdminVideo && adminVideoUploadStatus && <span className="text-[11px] text-emerald-600 font-semibold">{adminVideoUploadStatus}</span>}
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-slate-600 mb-1 font-medium">Thumbnail Poster Image URL</label>
-                  <input
-                    type="text"
-                    value={videoForm.thumbnail || ''}
-                    onChange={e => setVideoForm({ ...videoForm, thumbnail: e.target.value })}
-                    placeholder="https://images.unsplash.com/... or upload below"
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-slate-900 font-mono text-[11px]"
-                  />
-                  <div className="mt-1 flex items-center gap-2">
-                    <span className="text-[10px] text-slate-500 font-semibold">Or upload poster image:</span>
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={(e) => {
-                        const file = e.target.files?.[0];
-                        if (file) handleAdminThumbnailFileUpload(file);
-                      }}
-                      className="text-[10px] text-slate-500"
-                    />
                   </div>
                 </div>
 

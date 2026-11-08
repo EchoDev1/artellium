@@ -18,7 +18,7 @@ export default function JumiaPromoGrids() {
         badge: 'ROYAL MASTERWORKS',
         title: 'West African Oil Masters',
         subtitle: 'Authentic canvas creations layered with 24K gold leaf, gesso, and raw linen from Accra and Lagos masters.',
-        image: '/artworks/ebuka-1.svg',
+        image: '',
         buttonText: 'Shop Fine Paintings',
         buttonLink: '/categories/paintings',
         bgGradient: 'from-[#1A1105] via-[#100B03] to-[#080501]'
@@ -27,7 +27,7 @@ export default function JumiaPromoGrids() {
         badge: 'ANCIENT GUILD BRONZE',
         title: 'Lost-Wax Bronze Sculptures',
         subtitle: 'Handcrafted by hereditary foundry masters in Benin City and Oyo. Physical provenance ledger certified.',
-        image: '/artworks/ebuka-2.svg',
+        image: '',
         buttonText: 'Shop Bronze Sculptures',
         buttonLink: '/categories/sculptures',
         bgGradient: 'from-[#1B0B0B] via-[#100707] to-[#080303]'

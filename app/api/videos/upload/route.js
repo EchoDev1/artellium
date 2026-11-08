@@ -58,8 +58,8 @@ export async function POST(request) {
       console.warn('Supabase storage execution notice:', storageErr.message);
     }
 
-    // Prefer guaranteed local public URL when written to public/uploads, fallback to cloud CDN URL
-    const finalUrl = localPublicUrl || cloudPublicUrl;
+    // Prefer permanent Supabase Cloud CDN URL so videos work across all browsers and deployments, fallback to local URL
+    const finalUrl = cloudPublicUrl || localPublicUrl;
 
     if (!finalUrl) {
       return NextResponse.json({ success: false, error: 'Failed to process and store video file' }, { status: 500 });

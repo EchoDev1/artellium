@@ -4,6 +4,7 @@ import React, { useState, useEffect, useRef, useMemo } from 'react';
 import Link from 'next/link';
 import { useStore } from '@/context/store-context';
 import { getArtistBriefHistory } from '@/lib/mock-data';
+import { isDummyVideoRecord, isDummyArtworkRecord } from '@/lib/uuid-utils';
 import { 
   Palette, 
   Box, 
@@ -46,12 +47,11 @@ export default function JumiaArtHero() {
 
   // Candidate lots for Card 1 (Live Auction Quick Card)
   const candidateLots = useMemo(() => {
-    const isMockOrDemo = (a) => !a || a.isDemo === true || String(a.id || '').startsWith('mock-');
-    const pool = isLiveOnly ? artworks.filter(a => !isMockOrDemo(a)) : artworks;
+    const pool = (artworks || []).filter(a => !isDummyArtworkRecord(a));
     const auctionLots = pool.filter(a => a.status === 'auction' || a.isAuction);
     if (auctionLots.length > 0) return auctionLots;
     return pool;
-  }, [artworks, isLiveOnly]);
+  }, [artworks]);
 
   const featuredAuctionLot = candidateLots[0] || null;
 
@@ -84,19 +84,12 @@ export default function JumiaArtHero() {
 
   // Approved Artist Videos for the Hero Carousel (bounded by admin maxSlides capacity, zero dummy videos)
   const heroVideos = useMemo(() => {
-    const isDummyVid = (v) => {
-      if (!v || !v.videoUrl) return true;
-      if (v.isDemo === true) return true;
-      if (['vid-1', 'vid-2', 'vid-3', 'vid-4'].includes(String(v.id || ''))) return true;
-      if (/\/videos\/artist-(savannah|studio|turtle|nature)\.mp4/i.test(String(v.videoUrl))) return true;
-      return false;
-    };
     const videoSource = (activeVideos && activeVideos.length > 0) ? activeVideos : videos;
-    const cleanPool = (videoSource || []).filter(v => !isDummyVid(v) && v.status !== 'rejected');
+    const cleanPool = (videoSource || []).filter(v => !isDummyVideoRecord(v) && v.status !== 'rejected');
 
     // If Admin also configured a custom Hero video in heroConfig, include it if not already in cleanPool
     const customHeroVidUrl = heroConfig?.videoUrl || (heroConfig?.mediaType === 'video' ? heroConfig?.mediaUrl : '');
-    if (customHeroVidUrl && !/\/videos\/artist-(savannah|studio|turtle|nature)\.mp4/i.test(customHeroVidUrl)) {
+    if (customHeroVidUrl && !isDummyVideoRecord({ videoUrl: customHeroVidUrl })) {
       if (!cleanPool.some(v => v.videoUrl === customHeroVidUrl)) {
         cleanPool.unshift({
           id: 'hero-custom-vid',
@@ -107,7 +100,7 @@ export default function JumiaArtHero() {
           city: 'Lagos',
           artworkTitle: heroConfig?.featuredLot?.title || 'Sovereign Masterpiece Showcase',
           videoUrl: customHeroVidUrl,
-          thumbnail: heroConfig?.videoPoster && !heroConfig.videoPoster.includes('unsplash.com') ? heroConfig.videoPoster : '',
+          thumbnail: '',
           quote: heroConfig?.description || 'Connecting elite African creators with global collectors.',
           duration: '2:00',
           status: 'approved',
@@ -210,18 +203,18 @@ export default function JumiaArtHero() {
 
   const safeIndex = heroVideos.length > 0 ? currentSlideIndex % heroVideos.length : 0;
   const currentSlide = heroVideos[safeIndex] || {
-    artistName: artworks[0]?.artistName || 'Ebuka Eke Echo',
-    artistTitle: 'Verified Sovereign Master Artist',
-    country: artworks[0]?.country || 'Nigeria',
-    countryFlag: artworks[0]?.countryFlag || '🇳🇬',
-    city: artworks[0]?.city || 'Lagos',
-    artworkTitle: artworks[0]?.title || 'Sovereign African Fine Art',
+    artistName: 'Artellium Spotlight Cinema',
+    artistTitle: 'Pan-African Master Creators',
+    country: 'Nigeria',
+    countryFlag: '🇳🇬',
+    city: 'Lagos',
+    artworkTitle: 'Sovereign African Fine Art',
     videoUrl: '',
-    thumbnail: artworks[0]?.image && !String(artworks[0].image).includes('unsplash.com') ? artworks[0].image : '/artworks/ebuka-1.svg',
+    thumbnail: '',
     quote: 'The future of African art is sovereign, verified, and uncompromised.',
     duration: 'LIVE',
-    priceNGN: artworks[0]?.price || 1850000,
-    priceUSD: artworks[0]?.priceUSD || 1250,
+    priceNGN: 0,
+    priceUSD: 0,
   };
 
   // Auto-advance slides:
@@ -476,7 +469,6 @@ export default function JumiaArtHero() {
                     key={currentSlide.videoUrl}
                     ref={videoRef}
                     src={currentSlide.videoUrl}
-                    poster={currentSlide.thumbnail && !currentSlide.thumbnail.includes('unsplash.com') ? currentSlide.thumbnail : undefined}
                     autoPlay
                     muted={isMuted}
                     loop={heroVideos.length <= 1}
@@ -509,17 +501,16 @@ export default function JumiaArtHero() {
                     onError={() => {
                       setIsVideoBuffering(false);
                     }}
-                    className="w-full h-full object-cover object-center transition-transform duration-1000 scale-100 group-hover:scale-105"
+                    className="w-full h-full object-cover object-center bg-[#06080D] transition-transform duration-1000 scale-100 group-hover:scale-105"
                   />
                 ) : (
-                  <div className="w-full h-full bg-gradient-to-br from-[#0A0D14] via-[#121622] to-[#0A0D14] flex items-center justify-center">
-                    {currentSlide.thumbnail && (
-                      <img
-                        src={currentSlide.thumbnail}
-                        alt={currentSlide.artworkTitle || 'Artellium Showcase'}
-                        className="w-full h-full object-cover object-center opacity-70"
-                      />
-                    )}
+                  <div className="w-full h-full bg-gradient-to-br from-[#06080D] via-[#0B0F17] to-[#06080D] flex flex-col items-center justify-center p-6 text-center">
+                    <div className="w-16 h-16 rounded-full bg-art-gold/10 border border-art-gold/30 flex items-center justify-center text-art-gold mb-3 shadow-2xl">
+                      <Film className="w-7 h-7" />
+                    </div>
+                    <span className="text-[11px] font-mono uppercase tracking-[0.25em] text-art-gold font-bold">
+                      Artellium Spotlight Cinema
+                    </span>
                   </div>
                 )}
 
@@ -863,7 +854,6 @@ export default function JumiaArtHero() {
               ) : (
                 <video
                   src={activeCinemaVideo.videoUrl}
-                  poster={activeCinemaVideo.thumbnail && !activeCinemaVideo.thumbnail.includes('unsplash.com') ? activeCinemaVideo.thumbnail : undefined}
                   controls
                   autoPlay
                   playsInline

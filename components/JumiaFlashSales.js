@@ -36,85 +36,24 @@ export default function JumiaFlashSales() {
     return () => clearInterval(interval);
   }, [flashSaleConfig?.endTime]);
 
-  const defaultFlashItems = [
-    {
-      id: 'flash-1',
-      artworkId: 'art-107',
-      title: 'Spirit of the Mask',
-      artist: 'Ekele Ojogbe Mercy (Nigeria 🇳🇬)',
-      originalPrice: 1950000,
-      dealPrice: 1450000,
-      originalPriceUSD: 1320,
-      dealPriceUSD: 980,
-      discountPercent: 25,
-      itemsLeft: 1,
-      claimedPercent: 75,
-      image: '/artworks/ebuka-1.svg'
-    },
-    {
-      id: 'flash-2',
-      artworkId: 'art-109',
-      title: 'Children of the Sun',
-      artist: 'Ekele Ojogbe Mercy (Nigeria 🇳🇬)',
-      originalPrice: 2100000,
-      dealPrice: 1680000,
-      originalPriceUSD: 1420,
-      dealPriceUSD: 1130,
-      discountPercent: 20,
-      itemsLeft: 2,
-      claimedPercent: 60,
-      image: '/artworks/ebuka-2.svg'
-    },
-    {
-      id: 'flash-3',
-      artworkId: 'art-110',
-      title: 'Ancestral Geometry',
-      artist: 'Ekele Ojogbe Mercy (Nigeria 🇳🇬)',
-      originalPrice: 620000,
-      dealPrice: 465000,
-      originalPriceUSD: 420,
-      dealPriceUSD: 315,
-      discountPercent: 25,
-      itemsLeft: 3,
-      claimedPercent: 70,
-      image: '/artworks/ebuka-3.svg'
-    },
-    {
-      id: 'flash-4',
-      artworkId: 'art-112',
-      title: 'Sahara Mirage',
-      artist: 'Ekele Ojogbe Mercy (Nigeria 🇳🇬)',
-      originalPrice: 2800000,
-      dealPrice: 2240000,
-      originalPriceUSD: 1900,
-      dealPriceUSD: 1520,
-      discountPercent: 20,
-      itemsLeft: 1,
-      claimedPercent: 85,
-      image: '/artworks/ebuka-4.svg'
-    }
-  ];
-
   const isMockOrDemo = (a) => !a || a.isDemo === true || String(a.id || '').startsWith('mock-');
   const realArtworks = (artworks || []).filter(a => !isMockOrDemo(a));
   const rawItems = (flashSaleConfig?.items && flashSaleConfig.items.length > 0)
-    ? (demoTransitionMode === 'live_only' ? flashSaleConfig.items.filter(it => !isMockOrDemo(it)) : flashSaleConfig.items)
-    : (demoTransitionMode === 'live_only'
-        ? realArtworks.slice(0, 4).map((art, idx) => ({
-            id: `flash-live-${art.id}`,
-            artworkId: art.id,
-            title: art.title,
-            artist: `${art.artistName} (${art.country || 'Africa'} ${art.countryFlag || '🌍'})`,
-            originalPrice: Math.round(art.price * 1.25),
-            dealPrice: art.price,
-            originalPriceUSD: Math.round((art.priceUSD || Math.round(art.price / 1480)) * 1.25),
-            dealPriceUSD: art.priceUSD || Math.round(art.price / 1480),
-            discountPercent: 20,
-            itemsLeft: 1,
-            claimedPercent: 75,
-            image: art.image
-          }))
-        : defaultFlashItems);
+    ? flashSaleConfig.items.filter(it => !isMockOrDemo(it))
+    : realArtworks.slice(0, 4).map((art) => ({
+        id: `flash-live-${art.id}`,
+        artworkId: art.id,
+        title: art.title,
+        artist: `${art.artistName} (${art.country || 'Africa'} ${art.countryFlag || '🌍'})`,
+        originalPrice: Math.round(art.price * 1.25),
+        dealPrice: art.price,
+        originalPriceUSD: Math.round((art.priceUSD || Math.round(art.price / 1480)) * 1.25),
+        dealPriceUSD: art.priceUSD || Math.round(art.price / 1480),
+        discountPercent: 20,
+        itemsLeft: 1,
+        claimedPercent: 75,
+        image: art.image
+      }));
 
   const items = sortArtworksByPriority(rawItems, { sellers, users: usersList });
 

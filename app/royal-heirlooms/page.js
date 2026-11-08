@@ -18,6 +18,7 @@ import {
   ChevronRight
 } from 'lucide-react';
 import { isPriorityArtist, sortArtworksByPriority } from '@/lib/priority-utils';
+import { isDummyArtworkRecord } from '@/lib/uuid-utils';
 
 export default function RoyalHeirloomsPage() {
   const { artworks, currency, usdExchangeRate = 1480, royalHeirlooms: storeRoyalHeirlooms = [], submitRoyalInquiry, currentUser, sellers = [], usersList = [] } = useStore();
@@ -33,75 +34,26 @@ export default function RoyalHeirloomsPage() {
     return `₦${amount.toLocaleString()}`;
   };
 
-  // High-value, museum-grade rare royal heirloom masterworks
-  const fallbackRoyalHeirlooms = [
-    {
-      id: 'art-royal-1',
-      title: 'Queen Idia Commemorative Bronze Mask',
-      artistName: 'Guild of Royal Igun Bronzecasters',
-      dynasty: 'Kingdom of Benin (16th Century Lineage Revival)',
-      epoch: '16th Century Lineage',
-      category: 'Imperial Bronzes',
-      medium: 'Hand-Poured Cast Bronze, 24K Gold Inlay & Coral Beads',
-      dimensions: '52 × 28 × 18 cm',
-      valuation: 14500000, // ₦14.5M
-      provenanceHash: 'ROYAL-BEN-IDIA-88942-CERT',
-      status: 'Available for Private Treaty',
-      image: '/artworks/ebuka-1.svg',
-      description: 'An extraordinary royal commemorative masterpiece created by direct descendants of the court casters of Benin, incorporating ritualistic lost-wax metallurgy, coral bead detailing, and 24K leaf.',
-      authenticity: 'Certified by Pan-African Royal Heritage Registry · Dual Physical Hologram Sealed'
-    },
-    {
-      id: 'art-royal-2',
-      title: 'The Golden Stool Regalia Pendant',
-      artistName: 'Ashanti Court Goldsmiths',
-      dynasty: 'Ashanti Empire (Kumasi, Ghana)',
-      epoch: 'Imperial Ashanti Epoch',
-      category: 'Royal Goldwork',
-      medium: 'Solid 22K African Gold & Carved Sacred Cedar',
-      dimensions: '40 × 30 × 12 cm',
-      valuation: 18200000, // ₦18.2M
-      provenanceHash: 'ROYAL-ASH-GOLD-99120-CERT',
-      status: 'Vault Custody Reserved',
-      image: '/artworks/ebuka-2.svg',
-      description: 'Sacred ceremonial gold repoussé honoring the Golden Stool (Sika Dwa Kofi), featuring hand-chiseled solar glyphs, consecrated royal crests, and immutable provenance.',
-      authenticity: 'Kumasi Cultural Centre Certified · Vault Physical Ledger Verified'
-    },
-    {
-      id: 'art-royal-3',
-      title: 'Ceremonial Beaded Throne of the Oba',
-      artistName: 'Royal Yoruba Beaders Guild',
-      dynasty: 'Oyo Empire Lineage (Oyo, Nigeria)',
-      epoch: 'Yoruba Royal Court',
-      category: 'Regalia & Furniture',
-      medium: 'Over 120,000 Micro-Glass Beads over Seasoned Iroko Timber',
-      dimensions: '110 × 65 × 60 cm',
-      valuation: 9800000, // ₦9.8M
-      provenanceHash: 'ROYAL-OYO-THRONE-77215-CERT',
-      status: 'Available for Private Treaty',
-      image: '/artworks/ebuka-3.svg',
-      description: 'An awe-inspiring royal ceremonial seat laden with multi-chromatic micro-beading depicting sacred chameleons, royal leopards, and ancestral crowns.',
-      authenticity: 'Archival Provenance Ledger #77215 · Physical Certificate Included'
-    },
-    {
-      id: 'art-royal-4',
-      title: 'Ife Terracotta Crown Head of Ooni',
-      artistName: 'Ile-Ife Sacred Kiln Masters',
-      dynasty: 'Ancient Ile-Ife Civilization Lineage',
-      epoch: 'Ife Classical Epoch',
-      category: 'Sacred Ceramics',
-      medium: 'High-Fired Sacred Terracotta & Natural Pigment Wash',
-      dimensions: '46 × 24 × 26 cm',
-      valuation: 12000000, // ₦12.0M
-      provenanceHash: 'ROYAL-IFE-OONI-66431-CERT',
-      status: 'Available for Private Treaty',
-      image: '/artworks/ebuka-4.svg',
-      description: 'Classical striated facial contours with royal diadem crown, sculpted in accordance with ancient Ife spiritual geometry and certified physical lineage documentation.',
-      authenticity: 'Ife Heritage Council Approved · Immutable Ledger Certificate'
-    }
-  ];
-
-  const royalHeirlooms = (storeRoyalHeirlooms && storeRoyalHeirlooms.length > 0) ? storeRoyalHeirlooms : fallbackRoyalHeirlooms;
+  const cleanStoreHeirlooms = (storeRoyalHeirlooms || []).filter(item => !isDummyArtworkRecord(item));
+  const realArts = (artworks || []).filter(a => !isDummyArtworkRecord(a));
+  const royalHeirlooms = cleanStoreHeirlooms.length > 0
+    ? cleanStoreHeirlooms
+    : realArts.map((art) => ({
+        id: art.id,
+        title: art.title,
+        artistName: art.artistName || 'Master Creator',
+        dynasty: `${art.city || 'Lagos'}, ${art.country || 'Nigeria'} Lineage`,
+        epoch: 'Contemporary Sovereign Epoch',
+        category: art.category || 'Imperial Masterworks',
+        medium: art.medium || 'Archival Medium',
+        dimensions: art.dimensions || '100 × 100 cm',
+        valuation: art.price || 1500000,
+        provenanceHash: `ROYAL-${String(art.id || '').slice(-6).toUpperCase()}-CERT`,
+        status: 'Available for Private Treaty',
+        image: art.image,
+        description: art.description || 'Authenticated masterwork backed by physical and digital provenance certification.',
+        authenticity: 'Certified by Artellium Provenance Registry · Physical Certificate Included'
+      }));
 
   const filteredHeirlooms = royalHeirlooms.filter(item => {
     if (selectedEpoch === 'All') return true;

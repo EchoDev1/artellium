@@ -62,7 +62,7 @@ export default function AdminLiveAuctionOversight() {
     reservePrice: 1500000,
     estimateMin: 1000000,
     estimateMax: 2500000,
-    image: '/artworks/ebuka-1.svg'
+    image: ''
   });
 
   const liveLots = artworks.filter((art) => art.status === 'auction');
@@ -419,7 +419,7 @@ export default function AdminLiveAuctionOversight() {
                   price: startBid,
                   status: 'auction',
                   isAuction: true,
-                  image: newLotForm.image || '/artworks/ebuka-1.svg',
+                  image: newLotForm.image || '',
                   auction: {
                     startingBid: startBid,
                     currentBid: startBid,
@@ -448,7 +448,7 @@ export default function AdminLiveAuctionOversight() {
                   reservePrice: 1500000,
                   estimateMin: 1000000,
                   estimateMax: 2500000,
-                  image: '/artworks/ebuka-1.svg'
+                  image: ''
                 });
               }}
               className="space-y-3.5"
@@ -472,7 +472,7 @@ export default function AdminLiveAuctionOversight() {
                     required
                     value={newLotForm.artistName}
                     onChange={e => setNewLotForm({ ...newLotForm, artistName: e.target.value })}
-                    placeholder="e.g. Amina Diallo"
+                    placeholder="Enter Artist Name"
                     className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-slate-900"
                   />
                 </div>
@@ -576,7 +576,7 @@ export default function AdminLiveAuctionOversight() {
                   type="text"
                   value={newLotForm.image}
                   onChange={e => setNewLotForm({ ...newLotForm, image: e.target.value })}
-                  placeholder="/artworks/ebuka-1.svg or https://..."
+                  placeholder="https://..."
                   className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-slate-900 font-mono text-[11px]"
                 />
               </div>

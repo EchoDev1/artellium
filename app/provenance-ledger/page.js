@@ -62,13 +62,13 @@ export default function ProvenanceLedgerPage() {
   const [selectedArtworkId, setSelectedArtworkId] = useState('');
   const [blockForm, setBlockForm] = useState({
     artworkTitle: '',
-    artistName: 'Kofi Mensah (Ghana)',
-    medium: 'Oil & 24K Gold Leaf on Linen',
+    artistName: '',
+    medium: 'Oil on Canvas',
     dimensions: '150 × 120 cm',
     category: 'Painters',
     settlementPrice: 1850000,
     custodian: '',
-    custodianLocation: 'London, United Kingdom',
+    custodianLocation: 'Lagos, Nigeria',
     settlementBank: 'Wema Bank PLC / Dual Fiduciary Settlement',
     physicalCertificateId: '',
     provenanceHash: '',
@@ -208,87 +208,7 @@ export default function ProvenanceLedgerPage() {
     setSelectedArtworkId('');
   };
 
-  // Fallback records if store is empty
-  const fallbackLedgerRecords = [
-    {
-      id: 'PL-2026-88914',
-      blockHeight: '#008942',
-      timestamp: '2026-02-14 18:42:10 UTC',
-      artworkTitle: 'The Ancestral Horizon (Atelier Proof No. 1)',
-      artistName: 'Ekele Ojogbe Mercy (Nigeria)',
-      medium: 'Oil & 24K Gold Leaf on Linen',
-      dimensions: '150 × 120 cm',
-      settlementPrice: 1850000,
-      custodian: 'Dr. Evelyn Carter (London, UK)',
-      custodianLocation: 'London, United Kingdom',
-      settlementBank: 'Wema Bank PLC / Dual Fiduciary Settlement',
-      provenanceHash: '0x8f7a9d32b410c8e192f039a48d1c7205e4b99812',
-      physicalCertificateId: 'ART-CERT-NG-88914-SEALED',
-      status: 'Vault Verified & Transferred',
-      hologramType: '24K Gold Emissary Hologram',
-      curatorNotes: 'Sealed with royal master insignia under WEMA fiduciary protocol.',
-      image: '/artworks/ebuka-1.svg'
-    },
-    {
-      id: 'PL-2026-77319',
-      blockHeight: '#008941',
-      timestamp: '2026-02-11 12:15:33 UTC',
-      artworkTitle: 'Warrior of the Bronze Empire (Study Lot)',
-      artistName: 'Ekele Ojogbe Mercy (Nigeria)',
-      medium: 'Cast Bronze & Ebony Base',
-      dimensions: '85 × 40 × 35 cm',
-      settlementPrice: 3400000,
-      custodian: 'Chief T. Adeleke (Lagos, Nigeria)',
-      custodianLocation: 'Lagos, Nigeria',
-      settlementBank: 'Access Bank Fiduciary Vault',
-      provenanceHash: '0x3c99e1208fb4201a4e76c118749a0d819fa62031',
-      physicalCertificateId: 'ART-CERT-NG-77319-SEALED',
-      status: 'Vault Verified & Transferred',
-      hologramType: 'Imperial Bronze Seal',
-      curatorNotes: 'Guild of Benin foundry certification included with physical QR stamp.',
-      image: '/artworks/ebuka-2.svg'
-    },
-    {
-      id: 'PL-2026-66204',
-      blockHeight: '#008940',
-      timestamp: '2026-02-08 09:28:44 UTC',
-      artworkTitle: 'Spirit of the Mask (First Impression)',
-      artistName: 'Ekele Ojogbe Mercy (Nigeria)',
-      medium: 'Carved Iroko Wood & Brass',
-      dimensions: '110 × 60 cm',
-      settlementPrice: 1450000,
-      custodian: 'S. Al-Hassan (Accra, Ghana)',
-      custodianLocation: 'Accra, Ghana',
-      settlementBank: 'Ecobank Ghana Settlement Desk',
-      provenanceHash: '0x12a8849bf04419208ea77103248102a991823bc8',
-      physicalCertificateId: 'ART-CERT-NG-66204-SEALED',
-      status: 'Vault Verified & Transferred',
-      hologramType: 'Pan-African Curatorial Hologram',
-      curatorNotes: 'Archival accession verified by the Pan-African Curatorial Board.',
-      image: '/artworks/ebuka-3.svg'
-    },
-    {
-      id: 'PL-2026-55112',
-      blockHeight: '#008939',
-      timestamp: '2026-02-01 16:50:00 UTC',
-      artworkTitle: 'Children of the Sun (Nocturne Variant)',
-      artistName: 'Ekele Ojogbe Mercy (Nigeria)',
-      medium: 'Acrylic & Gold Dust on Canvas',
-      dimensions: '160 × 130 cm',
-      settlementPrice: 1680000,
-      custodian: 'M. Benkirane (Casablanca, Morocco)',
-      custodianLocation: 'Casablanca, Morocco',
-      settlementBank: 'Attijariwafa Bank Fiduciary Settlement',
-      provenanceHash: '0x77c41908ab2e44018f993021a8d771239c049811',
-      physicalCertificateId: 'ART-CERT-NG-55112-SEALED',
-      status: 'Vault Verified & Transferred',
-      hologramType: 'Sovereign Diamond Stamp',
-      curatorNotes: 'Mineral pigment authenticity certified.',
-      image: '/artworks/ebuka-4.svg'
-    }
-  ];
-
-  const ledgerRecords = (storeLedgerBlocks && storeLedgerBlocks.length > 0) ? storeLedgerBlocks : fallbackLedgerRecords;
+  const ledgerRecords = storeLedgerBlocks || [];
 
   const rawFilteredRecords = ledgerRecords
     .filter(rec => {
@@ -783,7 +703,7 @@ export default function ProvenanceLedgerPage() {
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 pt-2 border-t border-art-gold/30 items-end text-[10px] font-mono">
                 <div className="space-y-1">
                   <div className="h-7 border-b border-slate-600 font-serif italic text-xs text-art-gold flex items-end">
-                    Kofi Mensah
+                    {qrModalBlock.artistName || 'Verified Master Artist'}
                   </div>
                   <span className="text-slate-500 uppercase block">Master Atelier Signature</span>
                 </div>
@@ -1131,7 +1051,7 @@ export default function ProvenanceLedgerPage() {
                     value={blockForm.artistName}
                     onChange={e => setBlockForm({ ...blockForm, artistName: e.target.value })}
                     className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-medium"
-                    placeholder="e.g. Kofi Mensah (Ghana 🇬🇭)"
+                    placeholder="Enter Artist Name & Country"
                   />
                 </div>
               </div>
@@ -1176,7 +1096,7 @@ export default function ProvenanceLedgerPage() {
                     value={blockForm.custodian}
                     onChange={e => setBlockForm({ ...blockForm, custodian: e.target.value })}
                     className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl"
-                    placeholder="e.g. Dr. Evelyn Carter (London, UK)"
+                    placeholder="Enter Registered Custodian / Collector Name"
                   />
                 </div>
                 <div>
