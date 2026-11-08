@@ -1097,6 +1097,23 @@ export function StoreProvider({ children }) {
         if (!commError && dbCommissions && dbCommissions.length > 0) {
           setCommissions(dbCommissions);
         }
+
+        // Load authoritative artist & spotlight videos from Supabase Cloud Database
+        try {
+          const vRes = await fetch('/api/videos');
+          const vData = await vRes.json();
+          if (vData.success && Array.isArray(vData.videos) && vData.videos.length > 0) {
+            setVideos(prev => {
+              const map = new Map(prev.map(v => [v.id, v]));
+              vData.videos.forEach(v => map.set(v.id, { ...(map.get(v.id) || {}), ...v }));
+              const merged = Array.from(map.values());
+              safeSetItem('artellium_artist_videos', merged);
+              return merged;
+            });
+          }
+        } catch (vErr) {
+          console.warn('API /api/videos initial load notice:', vErr.message);
+        }
       } catch (e) {
         console.warn('Supabase sync notice:', e.message);
       }
@@ -2238,6 +2255,23 @@ export function StoreProvider({ children }) {
       broadcastAdminChange('artist_videos', updated);
       return updated;
     });
+
+    // Cloud Database Persistence via Supabase API (Realtime across all phones & devices)
+    try {
+      fetch('/api/videos', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newSubmission)
+      })
+        .then(r => r.json())
+        .then(res => {
+          if (res.success && res.video) {
+            setVideos(prev => prev.map(v => v.id === newSubmission.id ? { ...v, ...res.video } : v));
+          }
+        })
+        .catch(err => console.warn('Supabase artist video sync notice:', err.message));
+    } catch (e) {}
+
     broadcastNotification(`🎬 Voices of Artists video "${newSubmission.title || 'Studio Documentary'}" saved & published live!`);
     return newSubmission;
   };
@@ -2258,6 +2292,23 @@ export function StoreProvider({ children }) {
       broadcastAdminChange('artist_videos', updated);
       return updated;
     });
+
+    // Cloud Database Persistence via Supabase API (Realtime across all phones & devices)
+    try {
+      fetch('/api/videos', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(created)
+      })
+        .then(r => r.json())
+        .then(res => {
+          if (res.success && res.video) {
+            setVideos(prev => prev.map(v => v.id === created.id ? { ...v, ...res.video } : v));
+          }
+        })
+        .catch(err => console.warn('Supabase video sync notice:', err.message));
+    } catch (e) {}
+
     return created;
   };
 
@@ -2277,6 +2328,17 @@ export function StoreProvider({ children }) {
       broadcastAdminChange('artist_videos', updated);
       return updated;
     });
+
+    try {
+      const target = (videos || []).find(v => v.id === id);
+      if (target) {
+        fetch('/api/videos', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ ...target, status: 'approved' })
+        }).catch(() => {});
+      }
+    } catch (e) {}
   };
 
   const rejectVideo = (id, reason = 'Did not meet platform verification guidelines') => {
@@ -2295,6 +2357,17 @@ export function StoreProvider({ children }) {
       broadcastAdminChange('artist_videos', updated);
       return updated;
     });
+
+    try {
+      const target = (videos || []).find(v => v.id === id);
+      if (target) {
+        fetch('/api/videos', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ ...target, status: 'rejected' })
+        }).catch(() => {});
+      }
+    } catch (e) {}
   };
 
   const deleteVideo = (id) => {
@@ -2304,6 +2377,10 @@ export function StoreProvider({ children }) {
       broadcastAdminChange('artist_videos', updated);
       return updated;
     });
+
+    try {
+      fetch(`/api/videos?id=${encodeURIComponent(id)}`, { method: 'DELETE' }).catch(() => {});
+    } catch (e) {}
   };
 
   const updateVideo = (id, updatedFields) => {
@@ -2313,6 +2390,18 @@ export function StoreProvider({ children }) {
       broadcastAdminChange('artist_videos', updated);
       return updated;
     });
+
+    try {
+      const target = (videos || []).find(v => v.id === id);
+      if (target) {
+        fetch('/api/videos', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ ...target, ...updatedFields })
+        }).catch(() => {});
+      }
+    } catch (e) {}
+  };
   };
 
   // Permanent security check: Identify if an account is an Artist or Seller

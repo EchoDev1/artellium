@@ -122,6 +122,8 @@ export default function ArtistDashboardPage() {
   // Artist Story Video (1-2 Min Hero Showcase) Submission State
   const [videoSubmitNotice, setVideoSubmitNotice] = useState('');
   const [videoFileMeta, setVideoFileMeta] = useState(null);
+  const [isUploadingVideo, setIsUploadingVideo] = useState(false);
+  const [videoUploadStatus, setVideoUploadStatus] = useState('');
   const [artistVideoForm, setArtistVideoForm] = useState({
     title: '',
     artistName: currentUser?.name ? currentUser.name.split(' (')[0] : 'Master Artist',
@@ -135,7 +137,7 @@ export default function ArtistDashboardPage() {
     duration: '1:30',
   });
 
-  const handleVideoFileChange = (e) => {
+  const handleVideoFileChange = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
@@ -145,8 +147,8 @@ export default function ArtistDashboardPage() {
     }
 
     const sizeMB = (file.size / (1024 * 1024)).toFixed(1);
-    if (file.size > 150 * 1024 * 1024) {
-      alert(`The selected video is ${sizeMB}MB. Please select a video under 150MB.`);
+    if (file.size > 200 * 1024 * 1024) {
+      alert(`The selected video is ${sizeMB}MB. Please select a video under 200MB.`);
       return;
     }
 
@@ -156,38 +158,64 @@ export default function ArtistDashboardPage() {
       type: file.type
     });
 
-    // Convert to persistent Data URL for seamless cross-refresh persistence in IndexedDB & State
-    if (file.size <= 35 * 1024 * 1024) {
-      const reader = new FileReader();
-      reader.onload = (ev) => {
+    setIsUploadingVideo(true);
+    setVideoUploadStatus('Uploading video to Artellium Cloud Storage...');
+
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      const res = await fetch('/api/videos/upload', {
+        method: 'POST',
+        body: formData,
+      });
+      const data = await res.json();
+      if (data.success && data.url) {
         setArtistVideoForm(prev => ({
           ...prev,
-          videoUrl: ev.target.result,
+          videoUrl: data.url,
           thumbnail: prev.thumbnail || ''
         }));
-      };
-      reader.onerror = () => {
-        const objectUrl = URL.createObjectURL(file);
-        setArtistVideoForm(prev => ({
-          ...prev,
-          videoUrl: objectUrl,
-          thumbnail: prev.thumbnail || ''
-        }));
-      };
-      reader.readAsDataURL(file);
-    } else {
+        setVideoUploadStatus(`✓ Uploaded to Cloud (${data.sizeMB || sizeMB} MB)`);
+      } else {
+        throw new Error(data.error || 'Cloud upload failed');
+      }
+    } catch (uploadErr) {
+      console.warn('Video cloud upload fallback:', uploadErr.message);
+      setVideoUploadStatus('⚠️ Upload notice — using local preview');
       const objectUrl = URL.createObjectURL(file);
       setArtistVideoForm(prev => ({
         ...prev,
         videoUrl: objectUrl,
         thumbnail: prev.thumbnail || ''
       }));
+    } finally {
+      setIsUploadingVideo(false);
     }
   };
 
-  const handleVideoThumbnailFileChange = (e) => {
+  const handleVideoThumbnailFileChange = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
+
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      const res = await fetch('/api/videos/upload', {
+        method: 'POST',
+        body: formData,
+      });
+      const data = await res.json();
+      if (data.success && data.url) {
+        setArtistVideoForm(prev => ({
+          ...prev,
+          thumbnail: data.url
+        }));
+        return;
+      }
+    } catch (thumbErr) {
+      console.warn('Thumbnail upload notice:', thumbErr.message);
+    }
+
     const reader = new FileReader();
     reader.onload = (ev) => {
       setArtistVideoForm(prev => ({
@@ -979,15 +1007,16 @@ export default function ArtistDashboardPage() {
                               🎬 {videoFileMeta?.name || 'Selected Video from Gallery'}
                             </span>
                             <span className="text-[11px] text-slate-400">
-                              {videoFileMeta?.sizeMB ? `${videoFileMeta.sizeMB} MB` : 'Gallery Video Ready'} · Ready for instant publication
+                              {videoUploadStatus || (videoFileMeta?.sizeMB ? `${videoFileMeta.sizeMB} MB` : 'Gallery Video Ready')}
                             </span>
                           </div>
 
                           <label className="px-3.5 py-2 rounded-lg bg-art-gold/20 hover:bg-art-gold/30 text-art-gold border border-art-gold/50 cursor-pointer font-bold transition text-xs flex items-center justify-center gap-1.5 shrink-0">
-                            <span>Change Gallery Video</span>
+                            <span>{isUploadingVideo ? 'Uploading...' : 'Change Gallery Video'}</span>
                             <input
                               type="file"
                               accept="video/*"
+                              disabled={isUploadingVideo}
                               onChange={handleVideoFileChange}
                               className="hidden"
                             />
@@ -1001,17 +1030,18 @@ export default function ArtistDashboardPage() {
                             <Video className="w-7 h-7" />
                           </div>
                           <span className="font-bold text-slate-800 text-sm mb-1 text-center">
-                            Tap to Select Video from Device Gallery
+                            {isUploadingVideo ? 'Uploading Video to Cloud...' : 'Tap to Select Video from Device Gallery'}
                           </span>
                           <span className="text-xs text-slate-500 text-center max-w-xs">
-                            Choose 1–2 minute video directly from your phone or computer storage (MP4, WebM, MOV)
+                            {isUploadingVideo ? (videoUploadStatus || 'Please wait a moment...') : 'Choose 1–2 minute video directly from your phone or computer storage (MP4, WebM, MOV)'}
                           </span>
                           <span className="mt-3 px-3 py-1 rounded-full bg-slate-900 text-art-gold text-[11px] font-mono font-bold">
-                            Saves Immediately & Persists Across Reloads
+                            {isUploadingVideo ? 'Uploading to Supabase CDN...' : 'Saves Immediately to Cloud Database'}
                           </span>
                           <input
                             type="file"
                             accept="video/*"
+                            disabled={isUploadingVideo}
                             onChange={handleVideoFileChange}
                             className="hidden"
                           />
@@ -1072,10 +1102,11 @@ export default function ArtistDashboardPage() {
 
                   <button
                     type="submit"
-                    className="w-full py-3.5 rounded-xl bg-gradient-to-r from-art-gold via-[#9E7720] to-art-gold-dark hover:brightness-110 text-white font-bold text-xs uppercase tracking-wider transition shadow-gold-glow flex items-center justify-center gap-2 cursor-pointer"
+                    disabled={isUploadingVideo}
+                    className="w-full py-3.5 rounded-xl bg-gradient-to-r from-art-gold via-[#9E7720] to-art-gold-dark hover:brightness-110 text-white font-bold text-xs uppercase tracking-wider transition shadow-gold-glow flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
                   >
                     <ShieldCheck className="w-4 h-4" />
-                    <span>Save & Publish Voices of Artists Video Immediately</span>
+                    <span>{isUploadingVideo ? 'Uploading Video to Cloud...' : 'Save & Publish Voices of Artists Video Immediately'}</span>
                   </button>
                 </form>
               </div>

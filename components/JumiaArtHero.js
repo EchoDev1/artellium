@@ -90,7 +90,7 @@ export default function JumiaArtHero() {
     return pool.slice(0, Math.max(1, maxSlides));
   }, [activeVideos, videos, maxSlides]);
 
-  const [isMuted, setIsMuted] = useState(false);
+  const [isMuted, setIsMuted] = useState(true); // Always start muted on initial entry to guarantee 100% instant mobile autoplay without getting stuck
   const [isPlaying, setIsPlaying] = useState(true);
   const [activeCinemaVideo, setActiveCinemaVideo] = useState(null);
   const [clickFeedback, setClickFeedback] = useState(null); // 'play' | 'pause' | null
@@ -224,12 +224,6 @@ export default function JumiaArtHero() {
   useEffect(() => {
     if (!videoRef.current) return;
 
-    const targetUrl = currentSlide.videoUrl || '/videos/artist-savannah.mp4';
-    if (videoRef.current.currentSrc !== targetUrl && !videoRef.current.src.endsWith(targetUrl)) {
-      videoRef.current.src = targetUrl;
-      videoRef.current.load();
-    }
-
     // Scrolled past hero section or cinema modal open: immediately pause and silence
     if (!isHeroVisible || activeCinemaVideo) {
       try {
@@ -244,12 +238,11 @@ export default function JumiaArtHero() {
       const playPromise = videoRef.current.play();
       if (playPromise !== undefined) {
         playPromise.catch((err) => {
-          // If browser restricts unmuted autoplay before user gesture, fallback to muted
-          if (err.name === 'NotAllowedError' && !isMuted) {
-            if (videoRef.current && isHeroVisible) {
-              videoRef.current.muted = true;
-              videoRef.current.play().catch(() => {});
-            }
+          // If browser restricts unmuted autoplay before user gesture, fallback to muted immediately
+          if (videoRef.current && isHeroVisible) {
+            videoRef.current.muted = true;
+            setIsMuted(true);
+            videoRef.current.play().catch(() => {});
           }
         });
       }
@@ -258,35 +251,19 @@ export default function JumiaArtHero() {
         videoRef.current.pause();
       } catch (err) {}
     }
-  }, [safeIndex, isPlaying, isMuted, isHeroVisible, activeCinemaVideo, currentSlide.videoUrl]);
-
-  // Unlock unmuted sound on user's first document interaction if still unmuted and in hero view
-  useEffect(() => {
-    const handleFirstInteraction = () => {
-      if (videoRef.current && !isMuted && isHeroVisible && !userManuallyPaused.current && !activeCinemaVideo) {
-        videoRef.current.muted = false;
-        videoRef.current.play().catch(() => {});
-      }
-    };
-
-    window.addEventListener('click', handleFirstInteraction, { once: true });
-    window.addEventListener('touchstart', handleFirstInteraction, { once: true });
-    window.addEventListener('keydown', handleFirstInteraction, { once: true });
-
-    return () => {
-      window.removeEventListener('click', handleFirstInteraction);
-      window.removeEventListener('touchstart', handleFirstInteraction);
-      window.removeEventListener('keydown', handleFirstInteraction);
-    };
-  }, [isMuted, isHeroVisible, activeCinemaVideo]);
+  }, [safeIndex, isPlaying, isMuted, isHeroVisible, activeCinemaVideo]);
 
   const toggleMute = (e) => {
     if (e) e.stopPropagation();
     const nextMuted = !isMuted;
+    setIsMuted(nextMuted);
     if (videoRef.current) {
       videoRef.current.muted = nextMuted;
+      if (!nextMuted) {
+        // User explicitly tapped unmute button: play with audio immediately
+        videoRef.current.play().catch(() => {});
+      }
     }
-    setIsMuted(nextMuted);
   };
 
   const togglePlayPause = (e) => {
@@ -479,9 +456,22 @@ export default function JumiaArtHero() {
                     muted={isMuted}
                     loop={heroVideos.length <= 1}
                     playsInline
+                    webkit-playsinline="true"
+                    x5-playsinline="true"
                     preload="auto"
+                    onLoadedData={() => {
+                      setIsVideoBuffering(false);
+                      if (isHeroVisible && isPlaying && !userManuallyPaused.current && videoRef.current) {
+                        videoRef.current.play().catch(() => {});
+                      }
+                    }}
+                    onCanPlay={() => {
+                      setIsVideoBuffering(false);
+                      if (isHeroVisible && isPlaying && !userManuallyPaused.current && videoRef.current) {
+                        videoRef.current.play().catch(() => {});
+                      }
+                    }}
                     onWaiting={() => setIsVideoBuffering(true)}
-                    onCanPlay={() => setIsVideoBuffering(false)}
                     onPlaying={() => setIsVideoBuffering(false)}
                     onEnded={() => {
                       if (heroVideos.length > 1) {
@@ -545,13 +535,13 @@ export default function JumiaArtHero() {
                     onClick={toggleMute}
                     className={`px-2.5 py-1 rounded-full text-[11px] font-mono font-bold flex items-center gap-1.5 transition backdrop-blur-md border cursor-pointer ${
                       isMuted 
-                        ? 'bg-black/70 text-slate-300 border-white/20 hover:border-art-gold hover:text-white' 
+                        ? 'bg-black/80 text-amber-300 border-amber-400/40 hover:border-art-gold hover:text-white shadow-sm' 
                         : 'bg-art-gold text-white border-art-gold shadow-gold-glow'
                     }`}
-                    title={isMuted ? 'Unmute video sound' : 'Mute video'}
+                    title={isMuted ? 'Tap to unmute sound' : 'Mute sound'}
                   >
-                    {isMuted ? <VolumeX className="w-3.5 h-3.5" /> : <Volume2 className="w-3.5 h-3.5 animate-pulse text-white" />}
-                    <span className="hidden sm:inline text-white">{isMuted ? 'Muted' : 'Sound On'}</span>
+                    {isMuted ? <VolumeX className="w-3.5 h-3.5 text-amber-300" /> : <Volume2 className="w-3.5 h-3.5 animate-pulse text-white" />}
+                    <span className="text-[10px] sm:text-xs font-bold">{isMuted ? 'Tap for Sound' : 'Sound On'}</span>
                   </button>
 
                   <button

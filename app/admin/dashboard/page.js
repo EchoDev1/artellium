@@ -497,6 +497,53 @@ export default function AdminDashboardPage() {
     quote: '',
     duration: '3:30',
   });
+  const [isUploadingAdminVideo, setIsUploadingAdminVideo] = useState(false);
+  const [adminVideoUploadStatus, setAdminVideoUploadStatus] = useState('');
+
+  const handleAdminVideoFileUpload = async (file) => {
+    if (!file) return;
+    setIsUploadingAdminVideo(true);
+    setAdminVideoUploadStatus('Uploading video to Artellium Cloud Storage...');
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      const res = await fetch('/api/videos/upload', {
+        method: 'POST',
+        body: formData,
+      });
+      const data = await res.json();
+      if (data.success && data.url) {
+        setVideoForm(prev => ({ ...prev, videoUrl: data.url }));
+        setAdminVideoUploadStatus(`✓ Cloud Ready (${data.sizeMB || '0'} MB)`);
+      } else {
+        throw new Error(data.error || 'Upload failed');
+      }
+    } catch (err) {
+      console.error('Admin video upload error:', err);
+      setAdminVideoUploadStatus('Upload failed. Please try again.');
+      alert(`Video upload failed: ${err.message}`);
+    } finally {
+      setIsUploadingAdminVideo(false);
+    }
+  };
+
+  const handleAdminThumbnailFileUpload = async (file) => {
+    if (!file) return;
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      const res = await fetch('/api/videos/upload', {
+        method: 'POST',
+        body: formData,
+      });
+      const data = await res.json();
+      if (data.success && data.url) {
+        setVideoForm(prev => ({ ...prev, thumbnail: data.url }));
+      }
+    } catch (err) {
+      console.warn('Thumbnail upload error:', err);
+    }
+  };
 
   const [paymentSettingsLocal, setPaymentSettingsLocal] = useState({
     wemaBankName: 'Wema Bank PLC',
@@ -7170,31 +7217,23 @@ export default function AdminDashboardPage() {
                     required
                     value={videoForm.videoUrl || ''}
                     onChange={e => setVideoForm({ ...videoForm, videoUrl: e.target.value })}
-                    placeholder="https://cdn.example.com/artist-spotlight.mp4 or YouTube link"
+                    placeholder="https://cdn.example.com/artist-spotlight.mp4 or select file below"
                     className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-slate-900 font-mono text-[11px]"
                   />
-                  <div className="mt-1 flex items-center gap-2">
-                    <span className="text-[10px] text-slate-400">Or select local MP4 video:</span>
+                  <div className="mt-1 flex flex-wrap items-center gap-2">
+                    <span className="text-[10px] text-slate-500 font-semibold">Or upload video to Cloud Storage:</span>
                     <input
                       type="file"
                       accept="video/*"
+                      disabled={isUploadingAdminVideo}
                       onChange={(e) => {
                         const file = e.target.files?.[0];
-                        if (file) {
-                          if (file.size <= 40 * 1024 * 1024) {
-                            const reader = new FileReader();
-                            reader.onload = (ev) => {
-                              setVideoForm(prev => ({ ...prev, videoUrl: ev.target.result }));
-                            };
-                            reader.readAsDataURL(file);
-                          } else {
-                            const objUrl = URL.createObjectURL(file);
-                            setVideoForm(prev => ({ ...prev, videoUrl: objUrl }));
-                          }
-                        }
+                        if (file) handleAdminVideoFileUpload(file);
                       }}
                       className="text-[10px] text-slate-500"
                     />
+                    {isUploadingAdminVideo && <span className="text-[11px] text-amber-600 animate-pulse font-medium">Uploading to cloud...</span>}
+                    {!isUploadingAdminVideo && adminVideoUploadStatus && <span className="text-[11px] text-emerald-600 font-semibold">{adminVideoUploadStatus}</span>}
                   </div>
                 </div>
 
@@ -7204,9 +7243,21 @@ export default function AdminDashboardPage() {
                     type="text"
                     value={videoForm.thumbnail || ''}
                     onChange={e => setVideoForm({ ...videoForm, thumbnail: e.target.value })}
-                    placeholder="https://images.unsplash.com/..."
+                    placeholder="https://images.unsplash.com/... or upload below"
                     className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-slate-900 font-mono text-[11px]"
                   />
+                  <div className="mt-1 flex items-center gap-2">
+                    <span className="text-[10px] text-slate-500 font-semibold">Or upload poster image:</span>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) handleAdminThumbnailFileUpload(file);
+                      }}
+                      className="text-[10px] text-slate-500"
+                    />
+                  </div>
                 </div>
 
                 <div>
@@ -7230,9 +7281,10 @@ export default function AdminDashboardPage() {
                   </button>
                   <button
                     type="submit"
-                    className="px-5 py-2 bg-art-gold hover:brightness-110 text-art-black font-bold uppercase rounded-xl transition shadow"
+                    disabled={isUploadingAdminVideo}
+                    className="px-5 py-2 bg-art-gold hover:brightness-110 text-art-black font-bold uppercase rounded-xl transition shadow disabled:opacity-50"
                   >
-                    Publish Spotlight Video
+                    {isUploadingAdminVideo ? 'Uploading...' : 'Publish Spotlight Video'}
                   </button>
                 </div>
               </form>
