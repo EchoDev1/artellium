@@ -63,7 +63,7 @@ export default function FlashDealsPage() {
     {
       id: 'art-107',
       title: 'Spirit of the Mask',
-      artistName: 'Chief Bakare Ogundele',
+      artistName: 'Ekele Ojogbe Mercy',
       country: 'Nigeria 🇳🇬',
       category: 'Sculpture Makers',
       medium: 'Carved Iroko Wood & Brass Inlay',
@@ -72,14 +72,14 @@ export default function FlashDealsPage() {
       discountPercent: 25,
       availableUnits: 1,
       claimedPercent: 75,
-      image: 'https://images.unsplash.com/photo-1561214115-f2f134cc4912?auto=format&fit=crop&q=95&w=2400',
+      image: '/artworks/ebuka-1.svg',
       description: 'Sacred Yoruba ceremonial carving with hand-hammered brass inlay, offering exceptional presence and cultural lineage.'
     },
     {
       id: 'art-109',
       title: 'Children of the Sun',
-      artistName: 'Kenza Belghiti',
-      country: 'Morocco 🇲🇦',
+      artistName: 'Ekele Ojogbe Mercy',
+      country: 'Nigeria 🇳🇬',
       category: 'Painters',
       medium: 'Acrylic & Gold Dust on Canvas',
       originalPrice: 2100000,
@@ -87,13 +87,13 @@ export default function FlashDealsPage() {
       discountPercent: 20,
       availableUnits: 2,
       claimedPercent: 60,
-      image: 'https://images.unsplash.com/photo-1579783902614-a3fb3927b675?auto=format&fit=crop&q=95&w=2400&dpr=2',
-      description: 'Atmospheric North African portraiture exploring light and Berber heritage with authentic 22K gold dust accents.'
+      image: '/artworks/ebuka-2.svg',
+      description: 'Atmospheric portraiture exploring light and royal heritage with authentic 22K gold dust accents.'
     },
     {
       id: 'art-110',
       title: 'Ancestral Geometry',
-      artistName: 'Chidi Nwosu',
+      artistName: 'Ekele Ojogbe Mercy',
       country: 'Nigeria 🇳🇬',
       category: 'Painters',
       medium: 'Mixed Media & Natural Pigments',
@@ -102,14 +102,14 @@ export default function FlashDealsPage() {
       discountPercent: 25,
       availableUnits: 3,
       claimedPercent: 70,
-      image: 'https://images.unsplash.com/photo-1541701494587-cb58502866ab?auto=format&fit=crop&q=95&w=2400',
+      image: '/artworks/ebuka-3.svg',
       description: 'Intricate Uli-inspired geometric expressions utilizing organic riverbed minerals and raw linen.'
     },
     {
       id: 'art-112',
       title: 'Sahara Mirage',
-      artistName: 'Fatoumata Diabaté',
-      country: 'Mali 🇲🇱',
+      artistName: 'Ekele Ojogbe Mercy',
+      country: 'Nigeria 🇳🇬',
       category: 'Photographers',
       medium: 'Archival Giclée Print on Fine Art Rag',
       originalPrice: 2800000,
@@ -117,14 +117,14 @@ export default function FlashDealsPage() {
       discountPercent: 20,
       availableUnits: 1,
       claimedPercent: 85,
-      image: 'https://images.unsplash.com/photo-1518998053901-5348d3961a04?auto=format&fit=crop&q=95&w=2400',
-      description: 'Dramatic desert composition capturing Tuareg nomadic life with master-grade archival preservation.'
+      image: '/artworks/ebuka-4.svg',
+      description: 'Dramatic desert composition capturing nomadic life with master-grade archival preservation.'
     },
     {
       id: 'art-101',
       title: 'The Ancestral Horizon',
-      artistName: 'Kofi Mensah',
-      country: 'Ghana 🇬🇭',
+      artistName: 'Ekele Ojogbe Mercy',
+      country: 'Nigeria 🇳🇬',
       category: 'Painters',
       medium: 'Oil & Gold Leaf on Canvas',
       originalPrice: 2400000,
@@ -132,13 +132,13 @@ export default function FlashDealsPage() {
       discountPercent: 23,
       availableUnits: 1,
       claimedPercent: 90,
-      image: 'https://images.unsplash.com/photo-1579783902614-a3fb3927b675?auto=format&fit=crop&q=95&w=2400',
+      image: '/artworks/ebuka-5.svg',
       description: '24K gold leaf masterwork exploring West African royal lineage, exhibited at international biennales.'
     },
     {
       id: 'art-115',
       title: 'Echoes of Benin Royalty',
-      artistName: 'Osahon Idehen',
+      artistName: 'Ekele Ojogbe Mercy',
       country: 'Nigeria 🇳🇬',
       category: 'Sculpture Makers',
       medium: 'Bronze Casting & Patina',
@@ -147,7 +147,7 @@ export default function FlashDealsPage() {
       discountPercent: 25,
       availableUnits: 2,
       claimedPercent: 65,
-      image: 'https://images.unsplash.com/photo-1544717305-2782549b5136?auto=format&fit=crop&q=95&w=2400',
+      image: '/artworks/ebuka-6.svg',
       description: 'Traditional lost-wax bronze casting representing imperial court heraldry with certified provenance.'
     }
   ];

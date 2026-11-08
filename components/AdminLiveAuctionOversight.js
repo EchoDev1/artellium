@@ -62,7 +62,7 @@ export default function AdminLiveAuctionOversight() {
     reservePrice: 1500000,
     estimateMin: 1000000,
     estimateMax: 2500000,
-    image: 'https://images.unsplash.com/photo-1579783902614-a3fb3927b675?auto=format&fit=crop&q=95&w=2400'
+    image: '/artworks/ebuka-1.svg'
   });
 
   const liveLots = artworks.filter((art) => art.status === 'auction');
@@ -419,7 +419,7 @@ export default function AdminLiveAuctionOversight() {
                   price: startBid,
                   status: 'auction',
                   isAuction: true,
-                  image: newLotForm.image || 'https://images.unsplash.com/photo-1579783902614-a3fb3927b675?auto=format&fit=crop&q=95&w=2400',
+                  image: newLotForm.image || '/artworks/ebuka-1.svg',
                   auction: {
                     startingBid: startBid,
                     currentBid: startBid,
@@ -448,7 +448,7 @@ export default function AdminLiveAuctionOversight() {
                   reservePrice: 1500000,
                   estimateMin: 1000000,
                   estimateMax: 2500000,
-                  image: 'https://images.unsplash.com/photo-1579783902614-a3fb3927b675?auto=format&fit=crop&q=95&w=2400'
+                  image: '/artworks/ebuka-1.svg'
                 });
               }}
               className="space-y-3.5"
@@ -576,7 +576,7 @@ export default function AdminLiveAuctionOversight() {
                   type="text"
                   value={newLotForm.image}
                   onChange={e => setNewLotForm({ ...newLotForm, image: e.target.value })}
-                  placeholder="https://images.unsplash.com/..."
+                  placeholder="/artworks/ebuka-1.svg or https://..."
                   className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-slate-900 font-mono text-[11px]"
                 />
               </div>

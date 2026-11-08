@@ -262,7 +262,7 @@ export default function AdminDashboardPage() {
     location: 'Lagos, Nigeria',
     sdg: 'SDG 11: Sustainable Cities & Cultural Heritage',
     description: '',
-    coverImage: 'https://images.unsplash.com/photo-1579783902614-a3fb3927b675?auto=format&fit=crop&q=95&w=2400',
+    coverImage: '/artworks/ebuka-1.svg',
     artworksCount: 16,
     status: 'Live Now'
   });
@@ -273,19 +273,19 @@ export default function AdminDashboardPage() {
   const [isAddArtModalOpen, setIsAddArtModalOpen] = useState(false);
   const [newArtForm, setNewArtForm] = useState({
     title: '',
-    artistName: 'Kofi Mensah',
-    artistId: 'artist-1',
+    artistName: 'Ekele Ojogbe Mercy',
+    artistId: 'artist-real-ekele-ojogbe-mercy',
     category: 'Painters',
-    medium: 'Oil & Gold Leaf on Canvas',
+    medium: 'Acrylic & Mixed Media on Canvas',
     dimensions: '120 x 100 cm',
     price: 1500000,
-    country: 'Ghana',
-    city: 'Accra',
-    countryFlag: '🇬🇭',
+    country: 'Nigeria',
+    city: 'Abuja',
+    countryFlag: '🇳🇬',
     shipsTo: ['Africa', 'Europe', 'North America'],
     verificationBadge: 'gold',
     studioNotes: '',
-    image: 'https://images.unsplash.com/photo-1579783902614-a3fb3927b675?auto=format&fit=crop&q=95&w=2400',
+    image: '/artworks/ebuka-1.svg',
     status: 'available'
   });
 
@@ -359,7 +359,7 @@ export default function AdminDashboardPage() {
   const heroVideoInputRef = React.useRef(null);
   const [heroVideoUploading, setHeroVideoUploading] = useState(false);
 
-  const handleHeroVideoUpload = (e) => {
+  const handleHeroVideoUpload = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
@@ -372,6 +372,47 @@ export default function AdminDashboardPage() {
     }
 
     setHeroVideoUploading(true);
+
+    if (isVideo) {
+      try {
+        const formData = new FormData();
+        formData.append('file', file);
+        const res = await fetch('/api/videos/upload', {
+          method: 'POST',
+          body: formData,
+        });
+        const data = await res.json();
+        if (res.ok && data.url) {
+          updateHeroConfig({
+            videoUrl: data.url,
+            mediaType: 'video',
+            mediaUrl: data.url,
+            bgVideoEnabled: true
+          });
+          addVideo({
+            title: file.name.replace(/\.[^/.]+$/, ''),
+            artistName: heroConfig?.featuredLot?.artistName || 'Artellium Master Studio',
+            artistTitle: 'Hero Spotlight Feature',
+            country: 'Nigeria',
+            artworkTitle: heroConfig?.featuredLot?.title || file.name.replace(/\.[^/.]+$/, ''),
+            videoUrl: data.url,
+            thumbnail: '',
+            quote: heroConfig?.tagline || 'The future of African art is safe.',
+            duration: '1:30',
+            status: 'approved',
+            featuredOnHero: true,
+            isDemo: false
+          });
+          logSandboxAction(`Admin uploaded full-page Hero background video: "${file.name}"`);
+          alert(`Hero cinematic video "${file.name}" uploaded and published immediately!`);
+          setHeroVideoUploading(false);
+          return;
+        }
+      } catch (uploadErr) {
+        console.warn('Hero video API upload fallback:', uploadErr.message);
+      }
+    }
+
     const reader = new FileReader();
     reader.onload = (event) => {
       const dataUrl = event.target?.result;
@@ -381,6 +422,20 @@ export default function AdminDashboardPage() {
           mediaType: 'video',
           mediaUrl: dataUrl,
           bgVideoEnabled: true
+        });
+        addVideo({
+          title: file.name.replace(/\.[^/.]+$/, ''),
+          artistName: heroConfig?.featuredLot?.artistName || 'Artellium Master Studio',
+          artistTitle: 'Hero Spotlight Feature',
+          country: 'Nigeria',
+          artworkTitle: heroConfig?.featuredLot?.title || file.name.replace(/\.[^/.]+$/, ''),
+          videoUrl: dataUrl,
+          thumbnail: '',
+          quote: heroConfig?.tagline || 'The future of African art is safe.',
+          duration: '1:30',
+          status: 'approved',
+          featuredOnHero: true,
+          isDemo: false
         });
         logSandboxAction(`Admin uploaded full-page Hero background video: "${file.name}"`);
         alert(`Hero cinematic video "${file.name}" uploaded successfully and applied to the full page!`);
@@ -2270,37 +2325,12 @@ export default function AdminDashboardPage() {
                     </div>
                   </div>
 
-                  {/* Quick Video Presets */}
+                  {/* Video Status Info */}
                   <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 space-y-2">
-                    <span className="font-bold text-slate-800 text-xs block">Curated African Fine Art Video Presets</span>
-                    <div className="grid grid-cols-2 gap-2">
-                      <button
-                        type="button"
-                        onClick={() => {
-                          updateHeroConfig({
-                            videoUrl: '/videos/artist-savannah.mp4',
-                            mediaType: 'video'
-                          });
-                          alert('African Savannah Video Preset Applied!');
-                        }}
-                        className="p-2 rounded-xl bg-white border border-slate-200 hover:border-art-gold text-left text-[11px] font-medium text-slate-700"
-                      >
-                        🌟 African Savannah Master Reel (MP4)
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          updateHeroConfig({
-                            videoUrl: '/videos/artist-studio.mp4',
-                            mediaType: 'video'
-                          });
-                          alert('Master Atelier Studio Reel Preset Applied!');
-                        }}
-                        className="p-2 rounded-xl bg-white border border-slate-200 hover:border-art-gold text-left text-[11px] font-medium text-slate-700"
-                      >
-                        🎨 Master Atelier Painting Reel (MP4)
-                      </button>
-                    </div>
+                    <span className="font-bold text-slate-800 text-xs block">Instant Hero Video Publishing</span>
+                    <p className="text-[11px] text-slate-600">
+                      Videos uploaded above or in the Video Moderation portal are published immediately to the Homepage Hero and Voices of Master Artists section without any dummy fallbacks.
+                    </p>
                   </div>
 
                 </div>
@@ -3336,7 +3366,7 @@ export default function AdminDashboardPage() {
             {/* Dynamic Exhibitions List */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 text-xs">
               {(exhibitions || []).map((ex) => {
-                const cover = ex.coverImage || 'https://images.unsplash.com/photo-1579783902614-a3fb3927b675?auto=format&fit=crop&q=95&w=2400';
+                const cover = ex.coverImage || '/artworks/ebuka-1.svg';
                 return (
                   <div key={ex.id || ex.slug} className="p-4 rounded-2xl bg-slate-50 border border-slate-200 hover:border-emerald-500/40 transition space-y-3 flex flex-col justify-between shadow-xs">
                     <div className="space-y-2">
@@ -3446,7 +3476,7 @@ export default function AdminDashboardPage() {
                         location: 'Lagos, Nigeria',
                         sdg: 'SDG 11: Sustainable Cities & Cultural Heritage',
                         description: '',
-                        coverImage: 'https://images.unsplash.com/photo-1579783902614-a3fb3927b675?auto=format&fit=crop&q=95&w=2400',
+                        coverImage: '/artworks/ebuka-1.svg',
                         artworksCount: 16,
                         status: 'Live Now'
                       });

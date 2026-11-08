@@ -228,7 +228,11 @@ export default function ArtistDashboardPage() {
 
   const handleArtistVideoSubmit = (e) => {
     e.preventDefault();
-    const resolvedVideoUrl = artistVideoForm.videoUrl || '/videos/artist-savannah.mp4';
+    if (!artistVideoForm.videoUrl) {
+      alert('Please upload a video file from your device or paste a valid video URL before submitting.');
+      return;
+    }
+    const resolvedVideoUrl = artistVideoForm.videoUrl;
     const resolvedArtistName = artistVideoForm.artistName || currentUser?.name?.split(' (')[0] || 'Master Artist';
 
     submitArtistVideo({
@@ -1046,26 +1050,6 @@ export default function ArtistDashboardPage() {
                             className="hidden"
                           />
                         </label>
-                        <div className="flex flex-wrap items-center gap-2 pt-1">
-                          <span className="text-[10px] text-slate-500 font-semibold">Or select a Studio Footage Sample:</span>
-                          {[
-                            { label: 'Foundry Casting Studio', url: '/videos/artist-foundry.mp4' },
-                            { label: 'Savannah Atelier', url: '/videos/artist-savannah.mp4' },
-                            { label: 'Loom & Textile Guild', url: '/videos/artist-loom.mp4' },
-                          ].map((sample) => (
-                            <button
-                              key={sample.url}
-                              type="button"
-                              onClick={() => {
-                                setVideoFileMeta({ name: `${sample.label}.mp4`, sizeMB: '4.2', type: 'video/mp4' });
-                                setArtistVideoForm(prev => ({ ...prev, videoUrl: sample.url }));
-                              }}
-                              className="px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-amber-100 text-slate-700 hover:text-amber-900 border border-slate-200 text-[10px] font-bold transition cursor-pointer"
-                            >
-                              🎬 {sample.label}
-                            </button>
-                          ))}
-                        </div>
                       </div>
                     )}
                   </div>

@@ -57,17 +57,9 @@ export async function POST(request) {
     } catch (storageErr) {
       console.warn('Supabase storage execution notice:', storageErr.message);
     }
-          .getPublicUrl(uniqueFileName);
-        cloudPublicUrl = urlData?.publicUrl || null;
-      } else if (uploadErr) {
-        console.warn('Supabase videos bucket upload notice:', uploadErr.message);
-      }
-    } catch (storageErr) {
-      console.warn('Supabase storage execution notice:', storageErr.message);
-    }
 
-    // Prefer cloud CDN URL, fallback to local URL
-    const finalUrl = cloudPublicUrl || localPublicUrl;
+    // Prefer guaranteed local public URL when written to public/uploads, fallback to cloud CDN URL
+    const finalUrl = localPublicUrl || cloudPublicUrl;
 
     if (!finalUrl) {
       return NextResponse.json({ success: false, error: 'Failed to process and store video file' }, { status: 500 });

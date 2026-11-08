@@ -67,14 +67,14 @@ export default function LiveAuctionExhibitionHub() {
   // Active Live Lots data
   const liveAuctionLots = [
     {
-      id: 'art-108',
+      id: 'art-real-ekele-1',
       lotNumber: '808',
-      title: 'The Golden Benin Queen',
-      artistName: 'Amina Diallo',
-      artistAvatar: 'https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?auto=format&fit=crop&q=80&w=300',
-      image: 'https://images.unsplash.com/photo-1605721911519-3dfeb3be25e7?auto=format&fit=crop&q=80&w=1000',
-      medium: 'Polished Bronze and Gold Filigree',
-      country: 'Benin City, Nigeria 🇳🇬',
+      title: 'Royal Heritage Canvas I',
+      artistName: 'Ekele Ojogbe Mercy',
+      artistAvatar: '',
+      image: '/artworks/ebuka-1.svg',
+      medium: 'Acrylic & Mixed Media on Canvas',
+      country: 'Abuja, Nigeria 🇳🇬',
       currentBid: 4900000,
       totalBids: 19,
       endTimeHours: 15,
@@ -85,14 +85,14 @@ export default function LiveAuctionExhibitionHub() {
       ]
     },
     {
-      id: 'art-106',
+      id: 'art-real-ekele-2',
       lotNumber: '806',
-      title: 'Daughters of the Nile',
-      artistName: 'Nour El-Din',
-      artistAvatar: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&q=80&w=300',
-      image: 'https://images.unsplash.com/photo-1582562124811-c09040d0a901?auto=format&fit=crop&q=80&w=1000',
-      medium: 'Oil on Lined Canvas',
-      country: 'Cairo, Egypt 🇪🇬',
+      title: 'Sovereign Lineage II',
+      artistName: 'Ekele Ojogbe Mercy',
+      artistAvatar: '',
+      image: '/artworks/ebuka-2.svg',
+      medium: 'Oil & Mixed Media on Canvas',
+      country: 'Lagos, Nigeria 🇳🇬',
       currentBid: 4800000,
       totalBids: 22,
       endTimeHours: 52,
@@ -105,34 +105,48 @@ export default function LiveAuctionExhibitionHub() {
   ];
 
   // Active Exhibitions data
-  const liveExhibitions = [
-    {
-      id: 'ex-1',
-      hall: 'HALL 01',
-      title: 'Echoes of Ancestral Royalty',
-      theme: 'Pre-colonial Benin bronzes & terra cotta artifacts',
-      curator: 'Dr. Evelyn Carter',
-      curatorRole: 'Chief Conservator',
-      coverImage: 'https://images.unsplash.com/photo-1579783902614-a3fb3927b675?auto=format&fit=crop&q=80&w=1200',
-      activeVisitors: 142,
-      artworksCount: 16,
-      audioGuideTitle: 'Curator Commentary (Dr. Carter)',
-      status: '🟢 LIVE 3D ROOM'
-    },
-    {
-      id: 'ex-2',
-      hall: 'HALL 02',
-      title: 'Afrofuturism: The Digital Frontier',
-      theme: 'Nsibidi cryptograms & 3D speculative visions',
-      curator: 'Kofi Mensah',
-      curatorRole: 'Biennial Fellow',
-      coverImage: 'https://images.unsplash.com/photo-1634017839464-5c339ebe3cb4?auto=format&fit=crop&q=80&w=1200',
-      activeVisitors: 98,
-      artworksCount: 12,
-      audioGuideTitle: 'Atelier Soundscapes',
-      status: '🟢 LIVE 3D ROOM'
-    }
-  ];
+  const liveExhibitions = (exhibitions && exhibitions.length > 0)
+    ? exhibitions.slice(0, 2).map((ex, i) => ({
+        id: ex.id || `ex-${i + 1}`,
+        hall: `HALL 0${i + 1}`,
+        title: ex.title,
+        theme: ex.subtitle || ex.description || 'Pan-African Curatorial Exhibition',
+        curator: ex.curator || 'Artellium Curatorial Board',
+        curatorRole: ex.curatorRole || 'Chief Conservator',
+        coverImage: (ex.coverImage && !ex.coverImage.includes('unsplash.com')) ? ex.coverImage : `/artworks/ebuka-${(i % 5) + 1}.svg`,
+        activeVisitors: ex.liveVisitors || 120,
+        artworksCount: ex.artworksCount || (ex.artworks ? ex.artworks.length : 12),
+        audioGuideTitle: `Curator Commentary (${ex.curator || 'Curatorial Board'})`,
+        status: '🟢 LIVE 3D ROOM'
+      }))
+    : [
+        {
+          id: 'ex-1',
+          hall: 'HALL 01',
+          title: 'Echoes of Ancestral Royalty',
+          theme: 'Pre-colonial Benin bronzes & terra cotta artifacts',
+          curator: 'Artellium Curatorial Board',
+          curatorRole: 'Chief Conservator',
+          coverImage: '/artworks/ebuka-1.svg',
+          activeVisitors: 142,
+          artworksCount: 16,
+          audioGuideTitle: 'Curator Commentary',
+          status: '🟢 LIVE 3D ROOM'
+        },
+        {
+          id: 'ex-2',
+          hall: 'HALL 02',
+          title: 'Afrofuturism: The Digital Frontier',
+          theme: 'Nsibidi cryptograms & 3D speculative visions',
+          curator: 'Artellium Curatorial Archive',
+          curatorRole: 'Biennial Fellow',
+          coverImage: '/artworks/ebuka-2.svg',
+          activeVisitors: 98,
+          artworksCount: 12,
+          audioGuideTitle: 'Atelier Soundscapes',
+          status: '🟢 LIVE 3D ROOM'
+        }
+      ];
 
   const artistAuctionLots = (artworks || [])
     .filter(a => (a.status === 'auction' || a.isAuction) && !liveAuctionLots.some(l => l.id === a.id))
@@ -141,7 +155,7 @@ export default function LiveAuctionExhibitionHub() {
       lotNumber: `81${idx}`,
       title: art.title,
       artistName: art.artistName,
-      artistAvatar: art.artistAvatar || 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=300',
+      artistAvatar: (art.artistAvatar && !art.artistAvatar.includes('unsplash.com')) ? art.artistAvatar : '',
       image: art.image,
       medium: art.medium,
       country: `${art.city || 'Lagos'}, ${art.country || 'Nigeria'} ${art.countryFlag || '🇳🇬'}`,

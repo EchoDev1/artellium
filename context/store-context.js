@@ -49,7 +49,7 @@ export function StoreProvider({ children }) {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [usersList, setUsersList] = useState(INITIAL_USERS || []);
   const [sellers, setSellers] = useState(INITIAL_SELLERS || []);
-  const [demoTransitionMode, setDemoTransitionMode] = useState('progressive');
+  const [demoTransitionMode, setDemoTransitionMode] = useState('live_only');
 
   const demoTransitionModeRef = useRef(demoTransitionMode);
   useEffect(() => {
@@ -57,13 +57,13 @@ export function StoreProvider({ children }) {
   }, [demoTransitionMode]);
 
   const [realArtworks, setRealArtworks] = useState(() => INITIAL_REAL_ARTWORKS || []);
-  const [artworks, setArtworks] = useState(() => [...(INITIAL_REAL_ARTWORKS || []), ...INITIAL_ARTWORKS]);
+  const [artworks, setArtworks] = useState(() => [...(INITIAL_REAL_ARTWORKS || [])]);
   const [orders, setOrders] = useState(INITIAL_ORDERS || []);
   const [payments, setPayments] = useState(INITIAL_PAYMENTS || []);
   const [commissions, setCommissions] = useState(INITIAL_COMMISSIONS || []);
 
-  const [videos, setVideos] = useState(ARTIST_VIDEOS);
-  const [exhibitions, setExhibitions] = useState(() => safeGetItem('artellium_exhibitions', VIRTUAL_EXHIBITIONS));
+  const [videos, setVideos] = useState([]);
+  const [exhibitions, setExhibitions] = useState(VIRTUAL_EXHIBITIONS);
 
   // Cart & Checkout State
   const [cart, setCart] = useState([]);
@@ -142,7 +142,7 @@ export function StoreProvider({ children }) {
   const [usdRateLastUpdated, setUsdRateLastUpdated] = useState('Oct 21, 2026');
 
   // Demo Video Removal / Live Mode State
-  const [hideDemoVideos, setHideDemoVideos] = useState(false);
+  const [hideDemoVideos, setHideDemoVideos] = useState(true);
 
   // Auction Bidders & Patron Lead Directory (for Admin and Notification Broadcasts)
   const [auctionBidders, setAuctionBidders] = useState([]);
@@ -288,7 +288,7 @@ export function StoreProvider({ children }) {
     return isCleanRealPhoto(match) ? match : '';
   };
 
-  const MOCK_VERSION = 'v23-artist-zero-rating-and-role-separation';
+  const MOCK_VERSION = 'v24-zero-dummy-instant-publish';
 
   // 1. Load from LocalStorage synchronously first
   useEffect(() => {
@@ -297,6 +297,7 @@ export function StoreProvider({ children }) {
       if (storedVersion !== MOCK_VERSION) {
         localStorage.removeItem('artellium_artworks');
         localStorage.removeItem('artellium_real_artworks');
+        localStorage.removeItem('artellium_exhibitions');
         localStorage.removeItem('artellium_orders');
         localStorage.removeItem('artellium_payments');
         localStorage.removeItem('artellium_commissions');
@@ -315,6 +316,8 @@ export function StoreProvider({ children }) {
         localStorage.removeItem('artellium_curator_picks');
         localStorage.removeItem('artellium_ledger_blocks');
         localStorage.removeItem('artellium_artist_verifications');
+        localStorage.setItem('artellium_demo_transition_mode', 'live_only');
+        localStorage.setItem('artellium_hide_demo_videos', 'true');
         localStorage.setItem('artellium_mock_version', MOCK_VERSION);
       }
 
@@ -355,9 +358,9 @@ export function StoreProvider({ children }) {
         }
       } catch (e) {}
 
-      // Load Demo Transition Mode
+      // Load Demo Transition Mode (default to live_only to guarantee zero dummy profiles/images)
       const savedMode = localStorage.getItem('artellium_demo_transition_mode');
-      const activeMode = (savedMode === 'live_only' || savedMode === 'hybrid' || savedMode === 'progressive') ? savedMode : 'progressive';
+      const activeMode = (savedMode === 'live_only' || savedMode === 'hybrid' || savedMode === 'progressive') ? savedMode : 'live_only';
       setDemoTransitionMode(activeMode);
 
       // Load Real Artist Artworks (Seeded with genuine artist uploads, immune to fair-lady corruption)
@@ -527,26 +530,39 @@ export function StoreProvider({ children }) {
         try { setArtistSignatures(JSON.parse(savedSignatures)); } catch (e) {}
       }
 
-      const savedVideos = localStorage.getItem('artellium_artist_videos');
-      if (savedVideos) {
-        try {
-          const parsed = JSON.parse(savedVideos);
-          if (Array.isArray(parsed) && parsed.length > 0) {
-            // Self-heal and migrate any old mixkit URLs to guaranteed working local MP4s
-            const sanitized = parsed.map(v => {
-              const matched = ARTIST_VIDEOS.find(init => init.id === v.id);
-              if (matched && (!v.videoUrl || v.videoUrl.includes('mixkit.co'))) {
-                return { ...v, videoUrl: matched.videoUrl };
-              }
-              if (!v.videoUrl || v.videoUrl.includes('mixkit.co')) {
-                return { ...v, videoUrl: '/videos/artist-savannah.mp4' };
-              }
-              return v;
-            });
-            setVideos(sanitized);
-            try { localStorage.setItem('artellium_artist_videos', JSON.stringify(sanitized)); } catch (e) {}
-          }
-        } catch (e) {}
+      const savedExhibitions = safeGetItem('artellium_exhibitions', null);
+      if (Array.isArray(savedExhibitions) && savedExhibitions.length > 0) {
+        const sanitizedEx = savedExhibitions.map((ex, idx) => ({
+          ...ex,
+          curatorAvatar: isCleanRealPhoto(ex.curatorAvatar) ? ex.curatorAvatar : '',
+          coverImage: isCleanRealPhoto(ex.coverImage) ? ex.coverImage : `/artworks/ebuka-${(idx % 6) + 1}.svg`,
+          participatingArtists: Array.isArray(ex.participatingArtists)
+            ? ex.participatingArtists.map(pa => ({ ...pa, avatar: isCleanRealPhoto(pa?.avatar) ? pa.avatar : '' }))
+            : [],
+          exhibitedArtworks: Array.isArray(ex.exhibitedArtworks)
+            ? ex.exhibitedArtworks.map((ea, i) => ({
+                ...ea,
+                image: isCleanRealPhoto(ea?.image) ? ea.image : `/artworks/ebuka-${(i % 6) + 1}.svg`
+              }))
+            : []
+        }));
+        setExhibitions(sanitizedEx);
+        safeSetItem('artellium_exhibitions', sanitizedEx);
+      }
+
+      const savedVideos = safeGetItem('artellium_artist_videos', null);
+      if (Array.isArray(savedVideos)) {
+        const sanitized = savedVideos
+          .filter(v => v && v.videoUrl && !isDemoVideoItem(v) && !/\/videos\/artist-(savannah|studio|turtle|nature)\.mp4/i.test(String(v.videoUrl)) && !String(v.videoUrl).includes('mixkit.co'))
+          .map(v => ({
+            ...v,
+            thumbnail: isCleanRealPhoto(v.thumbnail) ? v.thumbnail : '',
+            status: v.status || 'approved',
+            featuredOnHero: v.featuredOnHero !== undefined ? v.featuredOnHero : true,
+            isDemo: false
+          }));
+        setVideos(sanitized);
+        safeSetItem('artellium_artist_videos', sanitized);
       }
 
       const savedUsers = localStorage.getItem('artellium_users');
@@ -821,8 +837,18 @@ export function StoreProvider({ children }) {
         if (Array.isArray(idbVids) && idbVids.length > 0) {
           setVideos((prev) => {
             const map = new Map();
-            (prev || []).forEach(v => v && v.id && map.set(v.id, v));
-            idbVids.forEach(v => v && v.id && map.set(v.id, v));
+            (prev || []).forEach(v => {
+              if (v && v.id && v.videoUrl && !isDemoVideoItem(v) && !/\/videos\/artist-(savannah|studio|turtle|nature)\.mp4/i.test(String(v.videoUrl))) {
+                map.set(v.id, { ...v, thumbnail: isCleanRealPhoto(v.thumbnail) ? v.thumbnail : '', status: v.status || 'approved', isDemo: false });
+              }
+            });
+            idbVids.forEach(v => {
+              if (v && v.id && v.videoUrl && !isDemoVideoItem(v) && !/\/videos\/artist-(savannah|studio|turtle|nature)\.mp4/i.test(String(v.videoUrl))) {
+                if (!map.has(v.id)) {
+                  map.set(v.id, { ...v, thumbnail: isCleanRealPhoto(v.thumbnail) ? v.thumbnail : '', status: v.status || 'approved', isDemo: false });
+                }
+              }
+            });
             return Array.from(map.values());
           });
         }
@@ -1098,15 +1124,29 @@ export function StoreProvider({ children }) {
           setCommissions(dbCommissions);
         }
 
-        // Load authoritative artist & spotlight videos from Supabase Cloud Database
+        // Load authoritative artist & spotlight videos from Server Registry & Supabase Cloud Database
         try {
           const vRes = await fetch('/api/videos');
           const vData = await vRes.json();
-          if (vData.success && Array.isArray(vData.videos) && vData.videos.length > 0) {
+          if (vData.success && Array.isArray(vData.videos)) {
             setVideos(prev => {
-              const map = new Map(prev.map(v => [v.id, v]));
-              vData.videos.forEach(v => map.set(v.id, { ...(map.get(v.id) || {}), ...v }));
-              const merged = Array.from(map.values());
+              const seenIds = new Set();
+              const seenUrls = new Set();
+              const merged = [];
+              const combined = [...vData.videos, ...(prev || [])];
+              for (const v of combined) {
+                if (!v || !v.videoUrl || isDemoVideoItem(v) || /\/videos\/artist-(savannah|studio|turtle|nature)\.mp4/i.test(String(v.videoUrl))) continue;
+                if (seenIds.has(v.id) || seenUrls.has(v.videoUrl)) continue;
+                seenIds.add(v.id);
+                seenUrls.add(v.videoUrl);
+                merged.push({
+                  ...v,
+                  thumbnail: isCleanRealPhoto(v.thumbnail) ? v.thumbnail : '',
+                  status: 'approved',
+                  featuredOnHero: v.featuredOnHero !== undefined ? v.featuredOnHero : true,
+                  isDemo: false
+                });
+              }
               safeSetItem('artellium_artist_videos', merged);
               return merged;
             });
@@ -1189,6 +1229,16 @@ export function StoreProvider({ children }) {
         setVideos(event.payload);
       } else if (event.type === 'real_artworks') {
         setRealArtworks(event.payload);
+        const activeMode = demoTransitionModeRef.current || 'live_only';
+        setArtworks(assembleCatalog(event.payload, INITIAL_ARTWORKS, activeMode));
+      } else if (event.type === 'exhibitions') {
+        setExhibitions(event.payload);
+      } else if (event.type === 'flash_deals') {
+        setFlashDeals(event.payload);
+      } else if (event.type === 'royal_heirlooms') {
+        setRoyalHeirlooms(event.payload);
+      } else if (event.type === 'curator_picks') {
+        setCuratorPicks(event.payload);
       } else if (event.type === 'contact_config') {
         setContactConfig(event.payload);
       }
@@ -1684,18 +1734,21 @@ export function StoreProvider({ children }) {
   // Curatorial Exhibitions CRUD with Full Local Storage & Dynamic Re-rendering
   const addExhibition = (newEx) => {
     const slug = newEx.slug || (newEx.title || 'curated-exhibition').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+    const cleanCover = isCleanRealPhoto(newEx.coverImage) ? newEx.coverImage : '/artworks/ebuka-1.svg';
     const exWithDefaults = {
       id: newEx.id || `ex-${Date.now()}`,
       slug,
       title: newEx.title || 'Untitled Exhibition',
       curator: newEx.curator || 'Curatorial Pavilion',
+      curatorAvatar: isCleanRealPhoto(newEx.curatorAvatar) ? newEx.curatorAvatar : '',
       format: newEx.format || 'Physical exhibitions',
       timing: newEx.timing || 'current',
+      timingCategory: newEx.timingCategory || newEx.timing || 'current',
       dates: newEx.dates || 'Ongoing • 2026',
       location: newEx.location || 'Lagos, Nigeria',
       sdg: newEx.sdg || 'SDG 11: Cultural Heritage',
       description: newEx.description || '',
-      coverImage: newEx.coverImage || 'https://images.unsplash.com/photo-1579783902614-a3fb3927b675?auto=format&fit=crop&q=95&w=2400',
+      coverImage: cleanCover,
       artworksCount: newEx.artworksCount || 12,
       featuredArtists: Array.isArray(newEx.featuredArtists) ? newEx.featuredArtists : [newEx.curator || 'African Master Creators'],
       isLive3D: Boolean(newEx.isLive3D ?? true),
@@ -1705,6 +1758,7 @@ export function StoreProvider({ children }) {
     setExhibitions(prev => {
       const updated = [exWithDefaults, ...prev.filter(e => e.id !== exWithDefaults.id && e.slug !== exWithDefaults.slug)];
       safeSetItem('artellium_exhibitions', updated);
+      broadcastAdminChange('exhibitions', updated);
       return updated;
     });
     return exWithDefaults;
@@ -1719,6 +1773,7 @@ export function StoreProvider({ children }) {
         return ex;
       });
       safeSetItem('artellium_exhibitions', updated);
+      broadcastAdminChange('exhibitions', updated);
       return updated;
     });
   };
@@ -1727,6 +1782,7 @@ export function StoreProvider({ children }) {
     setExhibitions(prev => {
       const updated = prev.filter(ex => ex.id !== idOrSlug && ex.slug !== idOrSlug);
       safeSetItem('artellium_exhibitions', updated);
+      broadcastAdminChange('exhibitions', updated);
       return updated;
     });
   };
@@ -1795,9 +1851,10 @@ export function StoreProvider({ children }) {
       const updatedReal = [created, ...prevReal.filter(r => r.id !== created.id)];
       try {
         safeSetItem('artellium_real_artworks', updatedReal);
+        broadcastAdminChange('real_artworks', updatedReal);
       } catch (e) {}
 
-      const activeMode = demoTransitionModeRef.current || demoTransitionMode || 'progressive';
+      const activeMode = demoTransitionModeRef.current || demoTransitionMode || 'live_only';
       const assembled = assembleCatalog(updatedReal, INITIAL_ARTWORKS, activeMode);
       setArtworks(assembled);
       try {
@@ -2097,15 +2154,23 @@ export function StoreProvider({ children }) {
 
   // Demo Video Removal & Restoration Controls
   const isDemoVideoItem = (video) => {
-    if (!video) return false;
-    if (video.isDemo === true) return true;
-    if (video.isDemo === false) return false;
+    if (!video) return true;
+    if (video.isDemo === true || video.is_demo === true) return true;
     const demoIds = ['vid-1', 'vid-2', 'vid-3', 'vid-4', 'vid-pending-1', 'vid-pending-2', 'vid-pending-3'];
-    return demoIds.includes(video.id);
+    if (demoIds.includes(String(video.id || ''))) return true;
+    const urlStr = String(video.videoUrl || video.video_url || '');
+    if (/\/videos\/artist-(savannah|studio|turtle|nature)\.mp4/i.test(urlStr)) return true;
+    return false;
   };
 
   const purgeAllDemoVideos = () => {
     setHideDemoVideos(true);
+    setVideos(prev => {
+      const cleaned = (prev || []).filter(v => !isDemoVideoItem(v));
+      safeSetItem('artellium_artist_videos', cleaned);
+      broadcastAdminChange('artist_videos', cleaned);
+      return cleaned;
+    });
     if (typeof window !== 'undefined') {
       localStorage.setItem('artellium_hide_demo_videos', 'true');
     }
@@ -2113,11 +2178,10 @@ export function StoreProvider({ children }) {
   };
 
   const restoreDemoVideos = () => {
-    setHideDemoVideos(false);
+    setHideDemoVideos(true);
     if (typeof window !== 'undefined') {
-      localStorage.setItem('artellium_hide_demo_videos', 'false');
+      localStorage.setItem('artellium_hide_demo_videos', 'true');
     }
-    broadcastNotification('🔄 Sample artist story videos restored to library.');
   };
 
   // 1-Click Complete Platform Launch & Clean State
@@ -2129,8 +2193,6 @@ export function StoreProvider({ children }) {
 
   const restoreAllDemoContent = () => {
     restoreDemoArtworks();
-    restoreDemoVideos();
-    broadcastNotification('📦 Sample demo artworks and videos restored for evaluation.');
   };
 
   // FX Rate Fixing Controls (Admin Daily Volatility Shield)
@@ -2173,25 +2235,13 @@ export function StoreProvider({ children }) {
     broadcastNotification(`🌍 Exchange rate for ${currencyCode} updated to 1 ${currencyCode} = ₦${parsed.toLocaleString()} NGN.`);
   };
 
-  // Progressive Video Assembler: Hero page Artist Story strictly shows short artist videos (retains dummy videos until artists upload short videos)
+  // Strict Real Video Assembler: Never show dummy videos
   const activeVideos = useMemo(() => {
-    const realUploadedVideos = (videos || []).filter(v => !isDemoVideoItem(v));
-    const demoVideos = (videos || []).filter(v => isDemoVideoItem(v));
-
-    if (hideDemoVideos || demoTransitionMode === 'live_only') {
-      return realUploadedVideos.length > 0 ? realUploadedVideos : demoVideos;
-    }
-
-    // When artists upload real short videos for the Hero story, automatically fill the Hero and eliminate dummy videos
-    if (realUploadedVideos.length > 0) {
-      return realUploadedVideos;
-    }
-
-    return demoVideos;
-  }, [videos, hideDemoVideos, demoTransitionMode]);
+    return (videos || []).filter(v => v && v.videoUrl && !isDemoVideoItem(v));
+  }, [videos]);
 
   const activeApprovedVideos = useMemo(() => {
-    return (activeVideos || []).filter(v => v.status === 'approved');
+    return (activeVideos || []).filter(v => v.status !== 'rejected');
   }, [activeVideos]);
 
   // Helper Selectors for Dynamic Feeds with Subscribed Priority Placement
@@ -2238,25 +2288,27 @@ export function StoreProvider({ children }) {
     );
   };
 
-  // Artist Video Moderation & Lifecycle Management
+  // Artist Video Moderation & Lifecycle Management — Immediate Live Publishing
   const submitArtistVideo = (videoData) => {
+    const cleanThumb = isCleanRealPhoto(videoData.thumbnail) ? videoData.thumbnail : '';
     const newSubmission = {
       ...videoData,
       id: videoData.id || `vid-${Date.now()}`,
+      thumbnail: cleanThumb,
       isDemo: false,
-      status: videoData.status || 'approved',
+      status: 'approved',
       submittedAt: new Date().toISOString(),
       reviewedAt: new Date().toISOString(),
-      featuredOnHero: videoData.featuredOnHero !== undefined ? videoData.featuredOnHero : true,
+      featuredOnHero: true,
     };
+    setHideDemoVideos(true);
     setVideos((prev) => {
-      const updated = [newSubmission, ...prev];
+      const updated = [newSubmission, ...(prev || []).filter(v => !isDemoVideoItem(v) && v.id !== newSubmission.id)];
       safeSetItem('artellium_artist_videos', updated);
       broadcastAdminChange('artist_videos', updated);
       return updated;
     });
 
-    // Cloud Database Persistence via Supabase API (Realtime across all phones & devices)
     try {
       fetch('/api/videos', {
         method: 'POST',
@@ -2266,34 +2318,41 @@ export function StoreProvider({ children }) {
         .then(r => r.json())
         .then(res => {
           if (res.success && res.video) {
-            setVideos(prev => prev.map(v => v.id === newSubmission.id ? { ...v, ...res.video } : v));
+            setVideos(prev => {
+              const next = prev.map(v => v.id === newSubmission.id ? { ...v, ...res.video, status: 'approved', featuredOnHero: true, isDemo: false } : v);
+              safeSetItem('artellium_artist_videos', next);
+              broadcastAdminChange('artist_videos', next);
+              return next;
+            });
           }
         })
         .catch(err => console.warn('Supabase artist video sync notice:', err.message));
     } catch (e) {}
 
-    broadcastNotification(`🎬 Voices of Artists video "${newSubmission.title || 'Studio Documentary'}" saved & published live!`);
+    broadcastNotification(`🎬 Voices of Artists video "${newSubmission.artworkTitle || newSubmission.title || 'Studio Documentary'}" saved & published live immediately!`);
     return newSubmission;
   };
 
   const addVideo = (newVideo) => {
+    const cleanThumb = isCleanRealPhoto(newVideo.thumbnail) ? newVideo.thumbnail : '';
     const created = { 
       ...newVideo, 
       id: newVideo.id || `vid-${Date.now()}`,
+      thumbnail: cleanThumb,
       isDemo: false,
-      status: newVideo.status || 'approved',
+      status: 'approved',
       submittedAt: newVideo.submittedAt || new Date().toISOString(),
       reviewedAt: new Date().toISOString(),
-      featuredOnHero: newVideo.featuredOnHero !== undefined ? newVideo.featuredOnHero : true,
+      featuredOnHero: true,
     };
+    setHideDemoVideos(true);
     setVideos((prev) => {
-      const updated = [created, ...prev];
+      const updated = [created, ...(prev || []).filter(v => !isDemoVideoItem(v) && v.id !== created.id)];
       safeSetItem('artellium_artist_videos', updated);
       broadcastAdminChange('artist_videos', updated);
       return updated;
     });
 
-    // Cloud Database Persistence via Supabase API (Realtime across all phones & devices)
     try {
       fetch('/api/videos', {
         method: 'POST',
@@ -2303,12 +2362,18 @@ export function StoreProvider({ children }) {
         .then(r => r.json())
         .then(res => {
           if (res.success && res.video) {
-            setVideos(prev => prev.map(v => v.id === created.id ? { ...v, ...res.video } : v));
+            setVideos(prev => {
+              const next = prev.map(v => v.id === created.id ? { ...v, ...res.video, status: 'approved', featuredOnHero: true, isDemo: false } : v);
+              safeSetItem('artellium_artist_videos', next);
+              broadcastAdminChange('artist_videos', next);
+              return next;
+            });
           }
         })
         .catch(err => console.warn('Supabase video sync notice:', err.message));
     } catch (e) {}
 
+    broadcastNotification(`🎬 Video "${created.artworkTitle || created.artistName || 'Spotlight'}" published live immediately!`);
     return created;
   };
 
@@ -2401,7 +2466,6 @@ export function StoreProvider({ children }) {
         }).catch(() => {});
       }
     } catch (e) {}
-  };
   };
 
   // Permanent security check: Identify if an account is an Artist or Seller
@@ -4504,27 +4568,47 @@ export function StoreProvider({ children }) {
       endsAt: Date.now() + 1000 * 60 * 60 * 24,
       ...dealData
     };
-    setFlashDeals(prev => [newDeal, ...prev]);
+    setFlashDeals(prev => {
+      const updated = [newDeal, ...prev];
+      safeSetItem('artellium_flash_deals', updated);
+      broadcastAdminChange('flash_deals', updated);
+      return updated;
+    });
     broadcastNotification(`⚡ New Flash Deal launched: "${newDeal.title}" at ${newDeal.discountPercent}% discount!`);
     return newDeal;
   };
 
   const updateFlashDeal = (id, updates) => {
-    setFlashDeals(prev => prev.map(d => d.id === id ? { ...d, ...updates } : d));
+    setFlashDeals(prev => {
+      const updated = prev.map(d => d.id === id ? { ...d, ...updates } : d);
+      safeSetItem('artellium_flash_deals', updated);
+      broadcastAdminChange('flash_deals', updated);
+      return updated;
+    });
   };
 
   const deleteFlashDeal = (id) => {
-    setFlashDeals(prev => prev.filter(d => d.id !== id));
+    setFlashDeals(prev => {
+      const updated = prev.filter(d => d.id !== id);
+      safeSetItem('artellium_flash_deals', updated);
+      broadcastAdminChange('flash_deals', updated);
+      return updated;
+    });
   };
 
   const claimFlashDeal = (dealId, collectorName = 'Collector') => {
-    setFlashDeals(prev => prev.map(d => {
-      if (d.id === dealId) {
-        const nextClaimed = Math.min(100, (d.claimedPercent || 0) + 15);
-        return { ...d, claimedPercent: nextClaimed };
-      }
-      return d;
-    }));
+    setFlashDeals(prev => {
+      const updated = prev.map(d => {
+        if (d.id === dealId) {
+          const nextClaimed = Math.min(100, (d.claimedPercent || 0) + 15);
+          return { ...d, claimedPercent: nextClaimed };
+        }
+        return d;
+      });
+      safeSetItem('artellium_flash_deals', updated);
+      broadcastAdminChange('flash_deals', updated);
+      return updated;
+    });
     broadcastNotification(`⚡ Flash deal reserved by ${collectorName}.`);
   };
 
@@ -4536,17 +4620,32 @@ export function StoreProvider({ children }) {
       provenanceHash: `ROYAL-${Math.floor(10000 + Math.random() * 90000)}-CERT`,
       ...heirloomData
     };
-    setRoyalHeirlooms(prev => [newHeirloom, ...prev]);
+    setRoyalHeirlooms(prev => {
+      const updated = [newHeirloom, ...prev];
+      safeSetItem('artellium_royal_heirlooms', updated);
+      broadcastAdminChange('royal_heirlooms', updated);
+      return updated;
+    });
     broadcastNotification(`👑 Royal Heirloom archived: "${newHeirloom.title}".`);
     return newHeirloom;
   };
 
   const updateRoyalHeirloom = (id, updates) => {
-    setRoyalHeirlooms(prev => prev.map(h => h.id === id ? { ...h, ...updates } : h));
+    setRoyalHeirlooms(prev => {
+      const updated = prev.map(h => h.id === id ? { ...h, ...updates } : h);
+      safeSetItem('artellium_royal_heirlooms', updated);
+      broadcastAdminChange('royal_heirlooms', updated);
+      return updated;
+    });
   };
 
   const deleteRoyalHeirloom = (id) => {
-    setRoyalHeirlooms(prev => prev.filter(h => h.id !== id));
+    setRoyalHeirlooms(prev => {
+      const updated = prev.filter(h => h.id !== id);
+      safeSetItem('artellium_royal_heirlooms', updated);
+      broadcastAdminChange('royal_heirlooms', updated);
+      return updated;
+    });
   };
 
   const submitRoyalInquiry = (inquiryData) => {
@@ -4573,17 +4672,32 @@ export function StoreProvider({ children }) {
       rating: 5.0,
       ...pickData
     };
-    setCuratorPicks(prev => [newPick, ...prev]);
+    setCuratorPicks(prev => {
+      const updated = [newPick, ...prev];
+      safeSetItem('artellium_curator_picks', updated);
+      broadcastAdminChange('curator_picks', updated);
+      return updated;
+    });
     broadcastNotification(`✨ Curator Pick published: "${newPick.title}" by ${newPick.curatorName}.`);
     return newPick;
   };
 
   const updateCuratorPick = (id, updates) => {
-    setCuratorPicks(prev => prev.map(p => p.id === id ? { ...p, ...updates } : p));
+    setCuratorPicks(prev => {
+      const updated = prev.map(p => p.id === id ? { ...p, ...updates } : p);
+      safeSetItem('artellium_curator_picks', updated);
+      broadcastAdminChange('curator_picks', updated);
+      return updated;
+    });
   };
 
   const deleteCuratorPick = (id) => {
-    setCuratorPicks(prev => prev.filter(p => p.id !== id));
+    setCuratorPicks(prev => {
+      const updated = prev.filter(p => p.id !== id);
+      safeSetItem('artellium_curator_picks', updated);
+      broadcastAdminChange('curator_picks', updated);
+      return updated;
+    });
   };
 
   // 4. Provenance Ledger Blocks Minting

@@ -31,7 +31,7 @@ export default function AdminPartnerBannerPublisher() {
       title: form.title,
       description: form.description,
       mediaType: form.mediaType,
-      image: form.image || 'https://images.unsplash.com/photo-1579783902614-a3fb3927b675?auto=format&fit=crop&q=80&w=1400',
+      image: form.image || '/artworks/ebuka-1.svg',
       videoUrl: form.mediaType === 'video' ? form.videoUrl : '',
       price: form.price ? Number(form.price) : undefined,
       ctaText: form.ctaText || 'Explore Partner Offer',
@@ -147,7 +147,7 @@ export default function AdminPartnerBannerPublisher() {
             <input
               type="text"
               required={form.mediaType === 'image'}
-              placeholder="https://images.unsplash.com/..."
+              placeholder="/artworks/ebuka-1.svg or https://..."
               value={form.image}
               onChange={(e) => setForm({ ...form, image: e.target.value })}
               className="w-full bg-white border border-slate-200 rounded-xl p-2.5 text-slate-900 focus:border-amber-500 focus:outline-none"
@@ -160,7 +160,7 @@ export default function AdminPartnerBannerPublisher() {
               <input
                 type="text"
                 required
-                placeholder="/videos/artist-savannah.mp4 or https://..."
+                placeholder="/uploads/videos/... or https://..."
                 value={form.videoUrl}
                 onChange={(e) => setForm({ ...form, videoUrl: e.target.value })}
                 className="w-full bg-amber-50 border border-amber-300 rounded-xl p-2.5 text-slate-900 focus:border-amber-600 focus:outline-none"

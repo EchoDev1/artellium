@@ -82,13 +82,52 @@ export default function JumiaArtHero() {
     return () => clearInterval(interval);
   }, []);
 
-  // Approved Artist Videos for the Hero Carousel (bounded by admin maxSlides capacity)
+  // Approved Artist Videos for the Hero Carousel (bounded by admin maxSlides capacity, zero dummy videos)
   const heroVideos = useMemo(() => {
+    const isDummyVid = (v) => {
+      if (!v || !v.videoUrl) return true;
+      if (v.isDemo === true) return true;
+      if (['vid-1', 'vid-2', 'vid-3', 'vid-4'].includes(String(v.id || ''))) return true;
+      if (/\/videos\/artist-(savannah|studio|turtle|nature)\.mp4/i.test(String(v.videoUrl))) return true;
+      return false;
+    };
     const videoSource = (activeVideos && activeVideos.length > 0) ? activeVideos : videos;
-    const list = (videoSource || []).filter(v => v.status === 'approved');
-    const pool = list.length > 0 ? list : (videoSource || []);
-    return pool.slice(0, Math.max(1, maxSlides));
-  }, [activeVideos, videos, maxSlides]);
+    const cleanPool = (videoSource || []).filter(v => !isDummyVid(v) && v.status !== 'rejected');
+
+    // If Admin also configured a custom Hero video in heroConfig, include it if not already in cleanPool
+    const customHeroVidUrl = heroConfig?.videoUrl || (heroConfig?.mediaType === 'video' ? heroConfig?.mediaUrl : '');
+    if (customHeroVidUrl && !/\/videos\/artist-(savannah|studio|turtle|nature)\.mp4/i.test(customHeroVidUrl)) {
+      if (!cleanPool.some(v => v.videoUrl === customHeroVidUrl)) {
+        cleanPool.unshift({
+          id: 'hero-custom-vid',
+          artistName: heroConfig?.featuredLot?.artist?.split(' (')[0] || 'Artellium Featured Atelier',
+          artistTitle: 'Master Artist Showcase',
+          country: 'Nigeria',
+          countryFlag: '🇳🇬',
+          city: 'Lagos',
+          artworkTitle: heroConfig?.featuredLot?.title || 'Sovereign Masterpiece Showcase',
+          videoUrl: customHeroVidUrl,
+          thumbnail: heroConfig?.videoPoster && !heroConfig.videoPoster.includes('unsplash.com') ? heroConfig.videoPoster : '',
+          quote: heroConfig?.description || 'Connecting elite African creators with global collectors.',
+          duration: '2:00',
+          status: 'approved',
+          isDemo: false
+        });
+      }
+    }
+
+    return cleanPool.slice(0, Math.max(1, maxSlides));
+  }, [activeVideos, videos, maxSlides, heroConfig]);
+
+  // Whenever a new video is published at index 0, immediately jump to slide 0 and play it
+  const firstVideoIdentity = heroVideos[0]?.id || heroVideos[0]?.videoUrl || '';
+  useEffect(() => {
+    if (firstVideoIdentity) {
+      setCurrentSlideIndex(0);
+      userManuallyPaused.current = false;
+      setIsPlaying(true);
+    }
+  }, [firstVideoIdentity]);
 
   const [isMuted, setIsMuted] = useState(true); // Always start muted on initial entry to guarantee 100% instant mobile autoplay without getting stuck
   const [isPlaying, setIsPlaying] = useState(true);
@@ -170,35 +209,20 @@ export default function JumiaArtHero() {
   };
 
   const safeIndex = heroVideos.length > 0 ? currentSlideIndex % heroVideos.length : 0;
-  const currentSlide = heroVideos[safeIndex] || (
-    isLiveOnly ? {
-      artistName: artworks[0]?.artistName || 'Ebuka Eke Echo',
-      artistTitle: 'Verified Sovereign Master Artist',
-      country: artworks[0]?.country || 'Nigeria',
-      countryFlag: artworks[0]?.countryFlag || '🇳🇬',
-      city: artworks[0]?.city || 'Lagos',
-      artworkTitle: artworks[0]?.title || 'The Golden Crown of Benin (Echo of Eternity)',
-      videoUrl: '/videos/artist-savannah.mp4',
-      thumbnail: '',
-      quote: 'The future of African art is sovereign, verified, and uncompromised.',
-      duration: '1:45',
-      priceNGN: artworks[0]?.price || 2800000,
-      priceUSD: artworks[0]?.priceUSD || 1890,
-    } : {
-      artistName: 'Kofi Mensah',
-      artistTitle: 'Master Painter & Gold Leaf Specialist',
-      country: 'Ghana',
-      countryFlag: '🇬🇭',
-      city: 'Accra',
-      artworkTitle: 'The Ancestral Horizon',
-      videoUrl: '/videos/artist-savannah.mp4',
-      thumbnail: '',
-      quote: 'Every stroke of gold leaf represents a prayer for our forebears.',
-      duration: '1:45',
-      priceNGN: 1850000,
-      priceUSD: 1250,
-    }
-  );
+  const currentSlide = heroVideos[safeIndex] || {
+    artistName: artworks[0]?.artistName || 'Ebuka Eke Echo',
+    artistTitle: 'Verified Sovereign Master Artist',
+    country: artworks[0]?.country || 'Nigeria',
+    countryFlag: artworks[0]?.countryFlag || '🇳🇬',
+    city: artworks[0]?.city || 'Lagos',
+    artworkTitle: artworks[0]?.title || 'Sovereign African Fine Art',
+    videoUrl: '',
+    thumbnail: artworks[0]?.image && !String(artworks[0].image).includes('unsplash.com') ? artworks[0].image : '/artworks/ebuka-1.svg',
+    quote: 'The future of African art is sovereign, verified, and uncompromised.',
+    duration: 'LIVE',
+    priceNGN: artworks[0]?.price || 1850000,
+    priceUSD: artworks[0]?.priceUSD || 1250,
+  };
 
   // Auto-advance slides:
   // If an HTML5 video is actively playing, DO NOT cut it off mid-sentence!
@@ -251,7 +275,7 @@ export default function JumiaArtHero() {
         videoRef.current.pause();
       } catch (err) {}
     }
-  }, [safeIndex, isPlaying, isMuted, isHeroVisible, activeCinemaVideo]);
+  }, [safeIndex, currentSlide.videoUrl, isPlaying, isMuted, isHeroVisible, activeCinemaVideo]);
 
   const toggleMute = (e) => {
     if (e) e.stopPropagation();
@@ -447,11 +471,12 @@ export default function JumiaArtHero() {
                   ) : (
                     <div className="w-full h-full bg-black/80" />
                   )
-                ) : (
+                ) : currentSlide.videoUrl ? (
                   <video
+                    key={currentSlide.videoUrl}
                     ref={videoRef}
-                    src={currentSlide.videoUrl || '/videos/artist-savannah.mp4'}
-                    poster={currentSlide.thumbnail}
+                    src={currentSlide.videoUrl}
+                    poster={currentSlide.thumbnail && !currentSlide.thumbnail.includes('unsplash.com') ? currentSlide.thumbnail : undefined}
                     autoPlay
                     muted={isMuted}
                     loop={heroVideos.length <= 1}
@@ -481,17 +506,21 @@ export default function JumiaArtHero() {
                         videoRef.current.play().catch(() => {});
                       }
                     }}
-                    onError={(e) => {
+                    onError={() => {
                       setIsVideoBuffering(false);
-                      if (e.currentTarget && !e.currentTarget.src.includes('/videos/artist-savannah.mp4')) {
-                        e.currentTarget.src = '/videos/artist-savannah.mp4';
-                        if (isHeroVisible && isPlaying && !userManuallyPaused.current) {
-                          e.currentTarget.play().catch(() => {});
-                        }
-                      }
                     }}
                     className="w-full h-full object-cover object-center transition-transform duration-1000 scale-100 group-hover:scale-105"
                   />
+                ) : (
+                  <div className="w-full h-full bg-gradient-to-br from-[#0A0D14] via-[#121622] to-[#0A0D14] flex items-center justify-center">
+                    {currentSlide.thumbnail && (
+                      <img
+                        src={currentSlide.thumbnail}
+                        alt={currentSlide.artworkTitle || 'Artellium Showcase'}
+                        className="w-full h-full object-cover object-center opacity-70"
+                      />
+                    )}
+                  </div>
                 )}
 
                 {/* Instant Play/Pause Pulse Feedback */}
@@ -833,17 +862,12 @@ export default function JumiaArtHero() {
                 />
               ) : (
                 <video
-                  src={activeCinemaVideo.videoUrl || '/videos/artist-savannah.mp4'}
-                  poster={activeCinemaVideo.thumbnail}
+                  src={activeCinemaVideo.videoUrl}
+                  poster={activeCinemaVideo.thumbnail && !activeCinemaVideo.thumbnail.includes('unsplash.com') ? activeCinemaVideo.thumbnail : undefined}
                   controls
                   autoPlay
                   playsInline
                   preload="auto"
-                  onError={(e) => {
-                    if (e.currentTarget && !e.currentTarget.src.includes('/videos/artist-savannah.mp4')) {
-                      e.currentTarget.src = '/videos/artist-savannah.mp4';
-                    }
-                  }}
                   className="w-full h-full object-contain bg-black"
                 />
               )}

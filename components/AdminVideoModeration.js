@@ -41,18 +41,20 @@ export default function AdminVideoModeration() {
 
   const maxSlides = typeof heroConfig?.maxHeroSlides === 'number' ? heroConfig.maxHeroSlides : 4;
 
-  const [activeTab, setActiveTab] = useState('pending'); // 'pending' | 'approved' | 'rejected' | 'all'
+  const [activeTab, setActiveTab] = useState('all'); // 'pending' | 'approved' | 'rejected' | 'all'
   const [selectedPreviewVideo, setSelectedPreviewVideo] = useState(null);
   const [isDirectAddOpen, setIsDirectAddOpen] = useState(false);
   const [rejectingId, setRejectingId] = useState(null);
   const [rejectionReason, setRejectionReason] = useState('Unverified identity or did not meet platform guidelines');
   const [actionNotice, setActionNotice] = useState('');
   const [directVideoFileMeta, setDirectVideoFileMeta] = useState(null);
+  const [isUploadingVideo, setIsUploadingVideo] = useState(false);
 
   // Form state for direct admin add
   const [directForm, setDirectForm] = useState({
     artistName: '',
-    artistTitle: '',
+    artistTitle: 'Master Artist',
+    artworkTitle: '',
     country: 'Nigeria',
     countryFlag: '🇳🇬',
     city: 'Lagos',
@@ -70,7 +72,7 @@ export default function AdminVideoModeration() {
     setTimeout(() => setActionNotice(''), 5000);
   };
 
-  const handleDirectVideoFileChange = (e) => {
+  const handleDirectVideoFileChange = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
@@ -85,33 +87,66 @@ export default function AdminVideoModeration() {
       sizeMB,
       type: file.type
     });
+    setIsUploadingVideo(true);
 
-    if (file.size <= 35 * 1024 * 1024) {
-      const reader = new FileReader();
-      reader.onload = (ev) => {
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      const res = await fetch('/api/videos/upload', {
+        method: 'POST',
+        body: formData
+      });
+      const data = await res.json();
+      if (data.success && data.url) {
         setDirectForm(prev => ({
           ...prev,
-          videoUrl: ev.target.result,
-          thumbnail: prev.thumbnail || 'https://images.unsplash.com/photo-1579783902614-a3fb3927b675?auto=format&fit=crop&q=80&w=600'
+          videoUrl: data.url,
+          thumbnail: prev.thumbnail || ''
         }));
-      };
-      reader.onerror = () => {
-        const objectUrl = URL.createObjectURL(file);
-        setDirectForm(prev => ({
-          ...prev,
-          videoUrl: objectUrl,
-          thumbnail: prev.thumbnail || 'https://images.unsplash.com/photo-1579783902614-a3fb3927b675?auto=format&fit=crop&q=80&w=600'
-        }));
-      };
-      reader.readAsDataURL(file);
-    } else {
-      const objectUrl = URL.createObjectURL(file);
+        setIsUploadingVideo(false);
+        return;
+      }
+    } catch (uploadErr) {
+      console.warn('Direct video upload fallback notice:', uploadErr);
+    }
+
+    const reader = new FileReader();
+    reader.onload = (ev) => {
       setDirectForm(prev => ({
         ...prev,
-        videoUrl: objectUrl,
-        thumbnail: prev.thumbnail || 'https://images.unsplash.com/photo-1579783902614-a3fb3927b675?auto=format&fit=crop&q=80&w=600'
+        videoUrl: ev.target.result,
+        thumbnail: prev.thumbnail || ''
       }));
-    }
+      setIsUploadingVideo(false);
+    };
+    reader.onerror = () => {
+      setIsUploadingVideo(false);
+      alert('Could not read video file. Please try another MP4/WebM file.');
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleDirectThumbFileChange = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      const res = await fetch('/api/videos/upload', {
+        method: 'POST',
+        body: formData
+      });
+      const data = await res.json();
+      if (data.success && data.url) {
+        setDirectForm(prev => ({ ...prev, thumbnail: data.url }));
+        return;
+      }
+    } catch (err) {}
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      setDirectForm(prev => ({ ...prev, thumbnail: ev.target?.result || '' }));
+    };
+    reader.readAsDataURL(file);
   };
 
   const pendingVideos = videos.filter((v) => v.status === 'pending');
@@ -142,23 +177,33 @@ export default function AdminVideoModeration() {
 
   const handleDirectAddSubmit = (e) => {
     e.preventDefault();
+    if (isUploadingVideo) {
+      alert('Please wait a moment for the video file upload to complete.');
+      return;
+    }
     if (!directForm.artistName || !directForm.videoUrl) {
-      alert('Please select a video file from your device gallery before publishing.');
+      alert('Please enter the Artist Name and select a video file or URL before publishing.');
       return;
     }
 
     addVideo({
       ...directForm,
+      artworkTitle: directForm.artworkTitle || 'Atelier Masterpiece Showcase',
+      thumbnail: directForm.thumbnail || '',
       status: 'approved',
+      featuredOnHero: true,
+      isDemo: false,
       videoFileName: directVideoFileMeta?.name || 'admin_video.mp4',
       videoSizeMB: directVideoFileMeta?.sizeMB || '0',
     });
 
-    setActionNotice(`Master video by "${directForm.artistName}" published directly from gallery to the Hero slider!`);
+    setActiveTab('all');
+    setActionNotice(`Master video by "${directForm.artistName}" published immediately to the live Hero slider & Voices of Artists!`);
     setDirectVideoFileMeta(null);
     setDirectForm({
       artistName: '',
-      artistTitle: '',
+      artistTitle: 'Master Artist',
+      artworkTitle: '',
       country: 'Nigeria',
       countryFlag: '🇳🇬',
       city: 'Lagos',
@@ -704,18 +749,34 @@ export default function AdminVideoModeration() {
                 </div>
               </div>
 
-              {/* Video Upload from Gallery Only (No External Links) */}
               <div>
+                <label className="block font-semibold text-slate-700 mb-1">Featured Artwork / Video Title</label>
+                <input
+                  type="text"
+                  placeholder="e.g. Atelier Masterpiece Showcase"
+                  value={directForm.artworkTitle || ''}
+                  onChange={(e) => setDirectForm({ ...directForm, artworkTitle: e.target.value })}
+                  className="w-full p-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-amber-500"
+                />
+              </div>
+
+              {/* Video Upload from Gallery or Direct Video URL */}
+              <div className="space-y-2">
                 <label className="block font-semibold text-slate-700 mb-1">
-                  Upload Artist Video from Gallery (No Links Allowed) *
+                  Upload Artist Video from Device Gallery *
                 </label>
 
-                {directForm.videoUrl ? (
+                {isUploadingVideo ? (
+                  <div className="p-6 rounded-xl bg-amber-50 border border-amber-300 text-amber-900 text-center font-bold text-xs animate-pulse">
+                    ⏳ Uploading video file to server... Please wait.
+                  </div>
+                ) : directForm.videoUrl ? (
                   <div className="p-3 rounded-xl bg-slate-900 text-white border border-art-gold/40 space-y-2">
                     <div className="relative aspect-video w-full rounded-lg overflow-hidden bg-black border border-white/10">
                       <video
                         src={directForm.videoUrl}
                         controls
+                        preload="metadata"
                         className="w-full h-full object-contain"
                       />
                     </div>
@@ -723,10 +784,10 @@ export default function AdminVideoModeration() {
                     <div className="flex items-center justify-between text-xs">
                       <div className="space-y-0.5">
                         <span className="font-mono text-art-gold font-bold block truncate max-w-[200px]">
-                          🎬 {directVideoFileMeta?.name || 'Selected Video File'}
+                          🎬 {directVideoFileMeta?.name || 'Video Ready to Publish'}
                         </span>
                         <span className="text-[10px] text-slate-400">
-                          {directVideoFileMeta?.sizeMB ? `${directVideoFileMeta.sizeMB} MB` : 'Gallery Video Ready'}
+                          {directVideoFileMeta?.sizeMB ? `${directVideoFileMeta.sizeMB} MB` : 'Uploaded & Verified'}
                         </span>
                       </div>
 
@@ -748,28 +809,41 @@ export default function AdminVideoModeration() {
                       Click to Select Video from Device Gallery
                     </span>
                     <span className="text-[10px] text-slate-500 text-center">
-                      MP4, WebM, MOV (Max 150MB) · Gallery Upload Only
+                      MP4, WebM, MOV · Publishes Immediately
                     </span>
                     <input
                       type="file"
                       accept="video/*"
-                      required
                       onChange={handleDirectVideoFileChange}
                       className="hidden"
                     />
                   </label>
                 )}
+
+                <input
+                  type="text"
+                  placeholder="Or paste direct MP4 / video URL (optional)"
+                  value={directForm.videoUrl}
+                  onChange={(e) => setDirectForm({ ...directForm, videoUrl: e.target.value })}
+                  className="w-full p-2 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-amber-500 text-xs font-mono"
+                />
               </div>
 
               <div>
-                <label className="block font-semibold text-slate-700 mb-1">Thumbnail / Poster Image URL (Optional)</label>
-                <input
-                  type="url"
-                  placeholder="https://images.unsplash.com/... or leave blank"
-                  value={directForm.thumbnail}
-                  onChange={(e) => setDirectForm({ ...directForm, thumbnail: e.target.value })}
-                  className="w-full p-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-amber-500 text-xs"
-                />
+                <label className="block font-semibold text-slate-700 mb-1">Thumbnail / Poster Image (Optional)</label>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="text"
+                    placeholder="Upload image or leave blank to use video frame"
+                    value={directForm.thumbnail}
+                    onChange={(e) => setDirectForm({ ...directForm, thumbnail: e.target.value })}
+                    className="flex-1 p-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-amber-500 text-xs"
+                  />
+                  <label className="px-3 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs cursor-pointer shrink-0 border border-slate-200">
+                    Upload Cover
+                    <input type="file" accept="image/*" onChange={handleDirectThumbFileChange} className="hidden" />
+                  </label>
+                </div>
               </div>
 
               <div>

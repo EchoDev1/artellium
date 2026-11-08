@@ -231,7 +231,7 @@ export default function AdminSystemStatus({ currentUser, triggerDiagnosticsKey =
           description: `Artwork lot has no valid image asset, causing broken renders across the gallery, exhibitions, and auction arena.`,
           fixLabel: 'Restore Verified Masterpiece Image',
           onFix: () => {
-            const fallbackUrl = 'https://images.unsplash.com/photo-1579783900882-c0d3dad7b119?auto=format&fit=crop&w=1200&q=80';
+            const fallbackUrl = '/artworks/ebuka-1.svg';
             updateArtwork(art.id, {
               imageUrl: fallbackUrl,
               images: [fallbackUrl]

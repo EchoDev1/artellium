@@ -41,7 +41,7 @@ export default function JumiaFlashSales() {
       id: 'flash-1',
       artworkId: 'art-107',
       title: 'Spirit of the Mask',
-      artist: 'Chief Bakare Ogundele (Nigeria 🇳🇬)',
+      artist: 'Ekele Ojogbe Mercy (Nigeria 🇳🇬)',
       originalPrice: 1950000,
       dealPrice: 1450000,
       originalPriceUSD: 1320,
@@ -49,13 +49,13 @@ export default function JumiaFlashSales() {
       discountPercent: 25,
       itemsLeft: 1,
       claimedPercent: 75,
-      image: 'https://images.unsplash.com/photo-1549887534-1541e9326642?auto=format&fit=crop&q=80&w=600'
+      image: '/artworks/ebuka-1.svg'
     },
     {
       id: 'flash-2',
       artworkId: 'art-109',
       title: 'Children of the Sun',
-      artist: 'Kenza Belghiti (Morocco 🇲🇦)',
+      artist: 'Ekele Ojogbe Mercy (Nigeria 🇳🇬)',
       originalPrice: 2100000,
       dealPrice: 1680000,
       originalPriceUSD: 1420,
@@ -63,13 +63,13 @@ export default function JumiaFlashSales() {
       discountPercent: 20,
       itemsLeft: 2,
       claimedPercent: 60,
-      image: 'https://images.unsplash.com/photo-1579783928621-7a13d66a62d1?auto=format&fit=crop&q=80&w=600'
+      image: '/artworks/ebuka-2.svg'
     },
     {
       id: 'flash-3',
       artworkId: 'art-110',
       title: 'Ancestral Geometry',
-      artist: 'Chidi Nwosu (Nigeria 🇳🇬)',
+      artist: 'Ekele Ojogbe Mercy (Nigeria 🇳🇬)',
       originalPrice: 620000,
       dealPrice: 465000,
       originalPriceUSD: 420,
@@ -77,13 +77,13 @@ export default function JumiaFlashSales() {
       discountPercent: 25,
       itemsLeft: 3,
       claimedPercent: 70,
-      image: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&q=80&w=600'
+      image: '/artworks/ebuka-3.svg'
     },
     {
       id: 'flash-4',
       artworkId: 'art-112',
       title: 'Sahara Mirage',
-      artist: 'Fatoumata Diabaté (Mali 🇲🇱)',
+      artist: 'Ekele Ojogbe Mercy (Nigeria 🇳🇬)',
       originalPrice: 2800000,
       dealPrice: 2240000,
       originalPriceUSD: 1900,
@@ -91,7 +91,7 @@ export default function JumiaFlashSales() {
       discountPercent: 20,
       itemsLeft: 1,
       claimedPercent: 85,
-      image: 'https://images.unsplash.com/photo-1536924940846-227afb31e2a5?auto=format&fit=crop&q=80&w=600'
+      image: '/artworks/ebuka-4.svg'
     }
   ];
 

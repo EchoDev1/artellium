@@ -303,7 +303,7 @@ export default function JumiaQuickShortcuts() {
       id: 'sc-deals',
       label: 'Flash Deals',
       sublabel: 'Shop Now',
-      image: 'https://images.unsplash.com/photo-1524592094714-0f0654e20314?auto=format&fit=crop&q=80&w=600',
+      image: '/artworks/ebuka-1.svg',
       href: '/flash-deals',
       tag: 'HOT DEAL',
       tagBg: 'bg-red-600',
@@ -313,7 +313,7 @@ export default function JumiaQuickShortcuts() {
       id: 'sc-live',
       label: 'Live Auctions',
       sublabel: 'Join Now',
-      image: 'https://images.unsplash.com/photo-1589829545856-d10d557cf95f?auto=format&fit=crop&q=80&w=600',
+      image: '/artworks/ebuka-2.svg',
       href: '/auctions',
       tag: 'LIVE LOTS',
       tagBg: 'bg-amber-600',
@@ -323,7 +323,7 @@ export default function JumiaQuickShortcuts() {
       id: 'sc-rare',
       label: 'Royal Heirlooms',
       sublabel: 'Shop Now',
-      image: 'https://images.unsplash.com/photo-1569683795645-b62e50fbf103?auto=format&fit=crop&q=80&w=600',
+      image: '/artworks/ebuka-3.svg',
       href: '/royal-heirlooms',
       tag: 'HERITAGE',
       tagBg: 'bg-yellow-700'
@@ -332,7 +332,7 @@ export default function JumiaQuickShortcuts() {
       id: 'sc-verified',
       label: 'Verified Masters',
       sublabel: 'Certified Authentic',
-      image: 'https://images.unsplash.com/photo-1513364776144-60967b0f800f?auto=format&fit=crop&q=80&w=600',
+      image: '/artworks/ebuka-4.svg',
       href: '/verified-masters',
       tag: 'MASTERS',
       tagBg: 'bg-emerald-700'
@@ -341,7 +341,7 @@ export default function JumiaQuickShortcuts() {
       id: 'sc-under1m',
       label: 'Under ₦1M Deals',
       sublabel: 'Shop Now',
-      image: 'https://images.unsplash.com/photo-1536924940846-227afb31e2a5?auto=format&fit=crop&q=80&w=600',
+      image: '/artworks/ebuka-5.svg',
       href: '/under-1m',
       tag: 'VALUE',
       tagBg: 'bg-blue-700'
@@ -350,7 +350,7 @@ export default function JumiaQuickShortcuts() {
       id: 'sc-provenance',
       label: 'Provenance Ledger',
       sublabel: 'View Registry',
-      image: 'https://images.unsplash.com/photo-1455390582262-044cdead277a?auto=format&fit=crop&q=80&w=600',
+      image: '/artworks/ebuka-6.svg',
       href: '/provenance-ledger',
       tag: 'ARCHIVE',
       tagBg: 'bg-stone-700'
@@ -359,7 +359,7 @@ export default function JumiaQuickShortcuts() {
       id: 'sc-curator',
       label: 'Curator Picks',
       sublabel: 'Shop Now',
-      image: 'https://images.unsplash.com/photo-1500051638674-ff996a0ec29e?auto=format&fit=crop&q=80&w=600',
+      image: '/artworks/ebuka-1.svg',
       href: '/curator-picks',
       tag: 'CURATED',
       tagBg: 'bg-purple-700'

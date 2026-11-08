@@ -64,7 +64,7 @@ export default function AdminDemoTransitionSuite() {
     medium: 'Oil on Canvas',
     dimensions: '120 x 90 cm',
     price: 1500000,
-    image: 'https://images.unsplash.com/photo-1579783902614-a3fb3927b675?auto=format&fit=crop&q=80&w=1000',
+    image: '/artworks/ebuka-1.svg',
     description: 'Masterpiece created with cultural depth and authentic pigments.',
     country: 'Nigeria',
     city: 'Lagos',

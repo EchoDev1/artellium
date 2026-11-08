@@ -88,11 +88,25 @@ export default function ArtistVideoModal() {
             >
               {/* Thumbnail Container */}
               <div className="relative aspect-video w-full overflow-hidden bg-black">
-                <img
-                  src={vid.thumbnail || 'https://images.unsplash.com/photo-1579783902614-a3fb3927b675?auto=format&fit=crop&q=80&w=600'}
-                  alt={vid.artistName}
-                  className="w-full h-full object-cover group-hover:scale-105 transition duration-500 opacity-80 group-hover:opacity-100"
-                />
+                {vid.thumbnail && !vid.thumbnail.includes('unsplash.com') ? (
+                  <img
+                    src={vid.thumbnail}
+                    alt={vid.artistName}
+                    className="w-full h-full object-cover group-hover:scale-105 transition duration-500 opacity-80 group-hover:opacity-100"
+                  />
+                ) : vid.videoUrl && !vid.videoUrl.includes('youtube.com') && !vid.videoUrl.includes('youtu.be') ? (
+                  <video
+                    src={vid.videoUrl}
+                    muted
+                    playsInline
+                    preload="metadata"
+                    className="w-full h-full object-cover group-hover:scale-105 transition duration-500 opacity-85 group-hover:opacity-100"
+                  />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-[#1C1405] to-black">
+                    <Film className="w-10 h-10 text-art-gold/50" />
+                  </div>
+                )}
                 <div className="absolute inset-0 bg-gradient-to-t from-art-black via-art-black/30 to-transparent" />
 
                 {/* Play Button Overlay */}
@@ -331,10 +345,10 @@ export default function ArtistVideoModal() {
               </div>
 
               <div>
-                <label className="block text-slate-300 mb-1 font-medium">Thumbnail Image URL</label>
+                <label className="block text-slate-300 mb-1 font-medium">Thumbnail Image URL (Optional)</label>
                 <input
                   type="url"
-                  placeholder="e.g. https://images.unsplash.com/photo-..."
+                  placeholder="e.g. /artworks/ebuka-1.svg"
                   value={newVideoForm.thumbnail}
                   onChange={(e) => setNewVideoForm({ ...newVideoForm, thumbnail: e.target.value })}
                   className="w-full bg-art-black border border-white/10 rounded-lg p-2.5 text-white focus:border-art-gold focus:outline-none"

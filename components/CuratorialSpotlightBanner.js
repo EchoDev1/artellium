@@ -28,60 +28,7 @@ export default function CuratorialSpotlightBanner() {
 
   const realFallbacks = fallbackArtworks.length > 0 ? fallbackArtworks : realArtworksPool.slice(0, 4);
 
-  const slides = eligiblePlacements.length > 0 ? eligiblePlacements : (realFallbacks.length > 0 ? realFallbacks : (isLiveOnly ? [] : [
-    {
-      id: 'art-101',
-      title: 'The Ancestral Horizon',
-      artistName: 'Kofi Mensah',
-      country: 'Ghana',
-      countryFlag: '🇬🇭',
-      city: 'Accra',
-      medium: 'Oil & 24K Gold Leaf on Canvas',
-      dimensions: '150 x 120 cm',
-      price: 1850000,
-      priceUSD: 1250,
-      image: 'https://images.unsplash.com/photo-1579783902614-a3fb3927b675?auto=format&fit=crop&q=80&w=1400',
-    },
-    {
-      id: 'art-102',
-      title: 'Warrior of the Bronze Empire',
-      artistName: 'Amina Diallo',
-      country: 'Nigeria',
-      countryFlag: '🇳🇬',
-      city: 'Benin City',
-      medium: 'Cast Bronze & Ebony Wood Base',
-      dimensions: '85 x 40 x 35 cm',
-      price: 3200000,
-      priceUSD: 2150,
-      image: 'https://images.unsplash.com/photo-1544717305-2782549b5136?auto=format&fit=crop&q=80&w=1400',
-    },
-    {
-      id: 'art-104',
-      title: 'The Solitary Mask of Oyo',
-      artistName: 'Chief Bakare Ogundele',
-      country: 'Nigeria',
-      countryFlag: '🇳🇬',
-      city: 'Oyo',
-      medium: 'Carved Iroko Wood & Brass Inlay',
-      dimensions: '90 x 35 x 25 cm',
-      price: 1450000,
-      priceUSD: 980,
-      image: 'https://images.unsplash.com/photo-1561214115-f2f134cc4912?auto=format&fit=crop&q=80&w=1400',
-    },
-    {
-      id: 'art-121',
-      title: 'Rivers of the Great Rift',
-      artistName: 'Nour El-Din',
-      country: 'Egypt',
-      countryFlag: '🇪🇬',
-      city: 'Cairo',
-      medium: 'Oil on Raw Linen',
-      dimensions: '165 x 130 cm',
-      price: 2650000,
-      priceUSD: 1790,
-      image: 'https://images.unsplash.com/photo-1470770903676-69b98201ea1c?auto=format&fit=crop&q=80&w=1400',
-    }
-  ]));
+  const slides = eligiblePlacements.length > 0 ? eligiblePlacements : realFallbacks;
 
   const safeIndex = slides.length > 0 ? currentIndex % slides.length : 0;
   const currentSlide = slides[safeIndex] || slides[0];
@@ -188,12 +135,6 @@ export default function CuratorialSpotlightBanner() {
                     } else if (videoRef.current) {
                       videoRef.current.currentTime = 0;
                       videoRef.current.play().catch(() => {});
-                    }
-                  }}
-                  onError={(e) => {
-                    if (e.currentTarget && !e.currentTarget.src.includes('/videos/artist-savannah.mp4')) {
-                      e.currentTarget.src = '/videos/artist-savannah.mp4';
-                      if (isPlaying) e.currentTarget.play().catch(() => {});
                     }
                   }}
                   className="w-full h-full object-cover object-center transition-transform duration-1000 group-hover:scale-[1.02]"

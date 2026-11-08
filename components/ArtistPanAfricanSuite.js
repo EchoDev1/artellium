@@ -158,7 +158,7 @@ export default function ArtistPanAfricanSuite({ artistName = 'Kofi Mensah' }) {
       artistTitle: 'Master Creator & Visual Storyteller',
       country: 'Ghana 🇬🇭',
       artworkTitle: videoForm.artworkTitle,
-      thumbnail: videoForm.thumbnail || myArtworks[0]?.image || 'https://images.unsplash.com/photo-1579783902614-a3fb3927b675?auto=format&fit=crop&q=80&w=600',
+      thumbnail: videoForm.thumbnail || myArtworks[0]?.image || '',
       videoUrl: videoForm.videoUrl,
       quote: videoForm.quote || 'The spiritual origins behind this masterwork.',
       duration: videoForm.duration || '3:45'

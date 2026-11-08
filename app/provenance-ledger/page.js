@@ -215,7 +215,7 @@ export default function ProvenanceLedgerPage() {
       blockHeight: '#008942',
       timestamp: '2026-02-14 18:42:10 UTC',
       artworkTitle: 'The Ancestral Horizon (Atelier Proof No. 1)',
-      artistName: 'Kofi Mensah (Ghana)',
+      artistName: 'Ekele Ojogbe Mercy (Nigeria)',
       medium: 'Oil & 24K Gold Leaf on Linen',
       dimensions: '150 × 120 cm',
       settlementPrice: 1850000,
@@ -223,18 +223,18 @@ export default function ProvenanceLedgerPage() {
       custodianLocation: 'London, United Kingdom',
       settlementBank: 'Wema Bank PLC / Dual Fiduciary Settlement',
       provenanceHash: '0x8f7a9d32b410c8e192f039a48d1c7205e4b99812',
-      physicalCertificateId: 'ART-CERT-GH-88914-SEALED',
+      physicalCertificateId: 'ART-CERT-NG-88914-SEALED',
       status: 'Vault Verified & Transferred',
       hologramType: '24K Gold Emissary Hologram',
-      curatorNotes: 'Sealed with royal Akan master insignia under WEMA fiduciary protocol.',
-      image: 'https://images.unsplash.com/photo-1579783902614-a3fb3927b675?auto=format&fit=crop&q=95&w=2400'
+      curatorNotes: 'Sealed with royal master insignia under WEMA fiduciary protocol.',
+      image: '/artworks/ebuka-1.svg'
     },
     {
       id: 'PL-2026-77319',
       blockHeight: '#008941',
       timestamp: '2026-02-11 12:15:33 UTC',
       artworkTitle: 'Warrior of the Bronze Empire (Study Lot)',
-      artistName: 'Amina Diallo (Benin City, Nigeria)',
+      artistName: 'Ekele Ojogbe Mercy (Nigeria)',
       medium: 'Cast Bronze & Ebony Base',
       dimensions: '85 × 40 × 35 cm',
       settlementPrice: 3400000,
@@ -246,14 +246,14 @@ export default function ProvenanceLedgerPage() {
       status: 'Vault Verified & Transferred',
       hologramType: 'Imperial Bronze Seal',
       curatorNotes: 'Guild of Benin foundry certification included with physical QR stamp.',
-      image: 'https://images.unsplash.com/photo-1544717305-2782549b5136?auto=format&fit=crop&q=95&w=2400'
+      image: '/artworks/ebuka-2.svg'
     },
     {
       id: 'PL-2026-66204',
       blockHeight: '#008940',
       timestamp: '2026-02-08 09:28:44 UTC',
       artworkTitle: 'Spirit of the Mask (First Impression)',
-      artistName: 'Chief Bakare Ogundele (Nigeria)',
+      artistName: 'Ekele Ojogbe Mercy (Nigeria)',
       medium: 'Carved Iroko Wood & Brass',
       dimensions: '110 × 60 cm',
       settlementPrice: 1450000,
@@ -265,14 +265,14 @@ export default function ProvenanceLedgerPage() {
       status: 'Vault Verified & Transferred',
       hologramType: 'Pan-African Curatorial Hologram',
       curatorNotes: 'Archival accession verified by the Pan-African Curatorial Board.',
-      image: 'https://images.unsplash.com/photo-1561214115-f2f134cc4912?auto=format&fit=crop&q=95&w=2400'
+      image: '/artworks/ebuka-3.svg'
     },
     {
       id: 'PL-2026-55112',
       blockHeight: '#008939',
       timestamp: '2026-02-01 16:50:00 UTC',
       artworkTitle: 'Children of the Sun (Nocturne Variant)',
-      artistName: 'Kenza Belghiti (Marrakech, Morocco)',
+      artistName: 'Ekele Ojogbe Mercy (Nigeria)',
       medium: 'Acrylic & Gold Dust on Canvas',
       dimensions: '160 × 130 cm',
       settlementPrice: 1680000,
@@ -280,11 +280,11 @@ export default function ProvenanceLedgerPage() {
       custodianLocation: 'Casablanca, Morocco',
       settlementBank: 'Attijariwafa Bank Fiduciary Settlement',
       provenanceHash: '0x77c41908ab2e44018f993021a8d771239c049811',
-      physicalCertificateId: 'ART-CERT-MA-55112-SEALED',
+      physicalCertificateId: 'ART-CERT-NG-55112-SEALED',
       status: 'Vault Verified & Transferred',
       hologramType: 'Sovereign Diamond Stamp',
-      curatorNotes: 'Atlas Mountain mineral pigment authenticity certified.',
-      image: 'https://images.unsplash.com/photo-1579783902614-a3fb3927b675?auto=format&fit=crop&q=95&w=2400&dpr=2'
+      curatorNotes: 'Mineral pigment authenticity certified.',
+      image: '/artworks/ebuka-4.svg'
     }
   ];
 

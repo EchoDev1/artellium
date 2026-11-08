@@ -42,11 +42,11 @@ export default function ArtistVoicesPage() {
     if (!newVideoForm.artistName || !newVideoForm.videoUrl) return;
 
     if (currentUser?.role === 'admin') {
-      addVideo({ ...newVideoForm, status: 'approved' });
+      addVideo({ ...newVideoForm, status: 'approved', featuredOnHero: true, isDemo: false });
       alert(`Master video for "${newVideoForm.artistName}" published directly!`);
     } else {
-      submitArtistVideo({ ...newVideoForm, status: 'pending' });
-      alert('Your 1–2 minute video story has been submitted for Admin Review! Once approved, it will be published to the Homepage Hero.');
+      submitArtistVideo({ ...newVideoForm, status: 'approved', featuredOnHero: true, isDemo: false });
+      alert('Your 1–2 minute video story has been published immediately to Voices of Master Artists and the Homepage Hero!');
     }
 
     setNewVideoForm({
@@ -321,11 +321,25 @@ export default function ArtistVoicesPage() {
             >
               {/* Thumbnail Container */}
               <div className="relative aspect-video w-full overflow-hidden bg-black">
-                <img
-                  src={vid.thumbnail || 'https://images.unsplash.com/photo-1579783902614-a3fb3927b675?auto=format&fit=crop&q=95&w=2400'}
-                  alt={vid.artistName}
-                  className="w-full h-full object-cover group-hover:scale-105 transition duration-500 opacity-80 group-hover:opacity-100"
-                />
+                {vid.thumbnail && !vid.thumbnail.includes('unsplash.com') ? (
+                  <img
+                    src={vid.thumbnail}
+                    alt={vid.artistName}
+                    className="w-full h-full object-cover group-hover:scale-105 transition duration-500 opacity-80 group-hover:opacity-100"
+                  />
+                ) : vid.videoUrl && !vid.videoUrl.includes('youtube') && !vid.videoUrl.includes('youtu.be') ? (
+                  <video
+                    src={vid.videoUrl}
+                    muted
+                    playsInline
+                    preload="metadata"
+                    className="w-full h-full object-cover group-hover:scale-105 transition duration-500 opacity-85 group-hover:opacity-100"
+                  />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-[#1C1404] to-black">
+                    <Film className="w-10 h-10 text-art-gold/50" />
+                  </div>
+                )}
                 <div className="absolute inset-0 bg-gradient-to-t from-[#0D1017] via-black/30 to-transparent" />
 
                 {/* Play Button Overlay */}

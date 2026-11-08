@@ -17,16 +17,16 @@ export default function HeroBanner() {
     titleLine2: '& Auction House',
     description: 'Connecting elite African painters, bronze sculptors, and digital creators with global collectors, museums, and investors. Structured with verified settlement authenticity and museum-grade freight.',
     mediaType: 'image',
-    mediaUrl: 'https://images.unsplash.com/photo-1579783902614-a3fb3927b675?auto=format&fit=crop&q=80&w=1000',
-    videoUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ',
-    videoPoster: 'https://images.unsplash.com/photo-1579783902614-a3fb3927b675?auto=format&fit=crop&q=80&w=1000',
+    mediaUrl: '/artworks/ebuka-1.svg',
+    videoUrl: '',
+    videoPoster: '/artworks/ebuka-1.svg',
     featuredLot: {
       badge: 'LOT OF THE MONTH',
-      title: 'The Ancestral Horizon',
-      artist: 'Kofi Mensah (Ghana)',
+      title: 'Royal Heritage Masterpiece',
+      artist: 'Ekele Ojogbe Mercy (Nigeria)',
       price: '₦1,850,000',
-      medium: 'Oil & 24K Gold Leaf on Canvas',
-      image: 'https://images.unsplash.com/photo-1579783902614-a3fb3927b675?auto=format&fit=crop&q=80&w=1000',
+      medium: 'Acrylic & Mixed Media on Canvas',
+      image: '/artworks/ebuka-1.svg',
       isVisible: true
     },
     primaryCta: { label: 'Explore Catalog', href: '/explore', isVisible: true },
@@ -174,7 +174,7 @@ export default function HeroBanner() {
                 /* High-Res Photo / Artwork Lot Display */
                 <div className="relative aspect-[4/5] rounded-2xl overflow-hidden bg-black">
                   <img
-                    src={cfg.mediaUrl || lot.image || 'https://images.unsplash.com/photo-1579783902614-a3fb3927b675?auto=format&fit=crop&q=80&w=1000'}
+                    src={cfg.mediaUrl || lot.image || '/artworks/ebuka-1.svg'}
                     alt={lot.title || 'Featured Artwork'}
                     className="w-full h-full object-cover group-hover:scale-105 transition duration-700"
                   />
