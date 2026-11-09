@@ -70,7 +70,22 @@ export function StoreProvider({ children }) {
   const [payments, setPayments] = useState(INITIAL_PAYMENTS || []);
   const [commissions, setCommissions] = useState(INITIAL_COMMISSIONS || []);
 
-  const [videos, setVideos] = useState([]);
+  const [videos, setVideos] = useState(() => {
+    const seed = Array.isArray(ARTIST_VIDEOS) ? ARTIST_VIDEOS.filter(v => v && v.videoUrl && !isDummyVideoRecord(v)) : [];
+    if (typeof window !== 'undefined') {
+      try {
+        const raw = localStorage.getItem('artellium_artist_videos');
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          if (Array.isArray(parsed)) {
+            const cleanLocal = parsed.filter(v => v && v.videoUrl && !isDummyVideoRecord(v));
+            if (cleanLocal.length > 0) return cleanLocal;
+          }
+        }
+      } catch (e) {}
+    }
+    return seed;
+  });
   const [exhibitions, setExhibitions] = useState(VIRTUAL_EXHIBITIONS);
 
   // Cart & Checkout State
@@ -310,7 +325,6 @@ export function StoreProvider({ children }) {
       if (storedVersion !== MOCK_VERSION) {
         localStorage.removeItem('artellium_artworks');
         localStorage.removeItem('artellium_real_artworks');
-        localStorage.removeItem('artellium_artist_videos');
         localStorage.removeItem('artellium_users');
         localStorage.removeItem('artellium_sellers');
         localStorage.removeItem('artellium_exhibitions');
@@ -337,7 +351,6 @@ export function StoreProvider({ children }) {
         localStorage.setItem('artellium_mock_version', MOCK_VERSION);
         try {
           idbSetItem('artellium_real_artworks', INITIAL_REAL_ARTWORKS || []);
-          idbSetItem('artellium_artist_videos', []);
           idbSetItem('artellium_users', INITIAL_USERS || []);
           idbSetItem('artellium_sellers', []);
           idbSetItem('artellium_exhibitions', []);
@@ -574,7 +587,14 @@ export function StoreProvider({ children }) {
                   }))
               : []
           }));
-        const finalEx = sanitizedEx.length > 0 ? sanitizedEx : VIRTUAL_EXHIBITIONS;
+        const exMap = new Map();
+        sanitizedEx.forEach(ex => ex && ex.id && exMap.set(ex.id, ex));
+        (VIRTUAL_EXHIBITIONS || []).forEach(vex => {
+          if (vex && vex.id && !exMap.has(vex.id)) {
+            exMap.set(vex.id, vex);
+          }
+        });
+        const finalEx = exMap.size > 0 ? Array.from(exMap.values()) : VIRTUAL_EXHIBITIONS;
         setExhibitions(finalEx);
         safeSetItem('artellium_exhibitions', finalEx);
       }
@@ -591,8 +611,10 @@ export function StoreProvider({ children }) {
             featuredOnHero: v.featuredOnHero !== undefined ? v.featuredOnHero : true,
             isDemo: false
           }));
-        setVideos(sanitized);
-        safeSetItem('artellium_artist_videos', sanitized);
+        const fallbackSeed = Array.isArray(ARTIST_VIDEOS) ? ARTIST_VIDEOS.filter(v => v && v.videoUrl && !isDummyVideoRecord(v)) : [];
+        const finalVids = sanitized.length > 0 ? sanitized : fallbackSeed;
+        setVideos(finalVids);
+        safeSetItem('artellium_artist_videos', finalVids);
       }
 
       const savedUsers = localStorage.getItem('artellium_users');
@@ -729,7 +751,11 @@ export function StoreProvider({ children }) {
           if (parsed && Array.isArray(parsed.sections)) {
             const mergedSections = INITIAL_HOMEPAGE_CONFIG.sections.map(initSec => {
               const existing = parsed.sections.find(s => s.id === initSec.id || s.type === initSec.type);
-              return existing ? { ...initSec, ...existing, isVisible: existing.isVisible !== false } : initSec;
+              const base = existing ? { ...initSec, ...existing, isVisible: existing.isVisible !== false } : initSec;
+              if (base.type === 'auctions' || base.type === 'exhibitions') {
+                return { ...base, maxItems: 4 };
+              }
+              return base;
             });
             const customSections = parsed.sections.filter(s => 
               !INITIAL_HOMEPAGE_CONFIG.sections.some(init => init.id === s.id || init.type === s.type)
@@ -1043,9 +1069,42 @@ export function StoreProvider({ children }) {
     }
   }, []);
 
-  // 2. Async sync with Supabase tables
+  // 2. Async sync with Supabase tables (fetch artist videos immediately first so hero video plays with zero delay)
   useEffect(() => {
+    async function loadHeroVideosImmediate() {
+      try {
+        const vRes = await fetch('/api/videos');
+        const vData = await vRes.json();
+        if (vData.success && Array.isArray(vData.videos)) {
+          setVideos(prev => {
+            const seenIds = new Set();
+            const seenUrls = new Set();
+            const merged = [];
+            const combined = [...vData.videos, ...(prev || [])];
+            for (const v of combined) {
+              if (!v || !v.videoUrl || isDemoVideoItem(v) || /\/videos\/artist-(savannah|studio|turtle|nature)\.mp4/i.test(String(v.videoUrl))) continue;
+              if (seenIds.has(v.id) || seenUrls.has(v.videoUrl)) continue;
+              seenIds.add(v.id);
+              seenUrls.add(v.videoUrl);
+              merged.push({
+                ...v,
+                thumbnail: isCleanRealPhoto(v.thumbnail) ? v.thumbnail : '',
+                status: 'approved',
+                featuredOnHero: v.featuredOnHero !== undefined ? v.featuredOnHero : true,
+                isDemo: false
+              });
+            }
+            safeSetItem('artellium_artist_videos', merged);
+            return merged;
+          });
+        }
+      } catch (vErr) {
+        console.warn('API /api/videos initial load notice:', vErr.message);
+      }
+    }
+
     async function loadSupabaseData() {
+      loadHeroVideosImmediate();
       try {
         const { data: dbArtworks, error: artError } = await supabase.from('artworks').select('*');
         if (!artError && dbArtworks && dbArtworks.length > 0) {

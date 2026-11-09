@@ -34,11 +34,13 @@ import {
   VolumeX,
   Video,
   X,
-  Film
+  Film,
+  Lock
 } from 'lucide-react';
 
 export default function JumiaArtHero() {
-  const { videos = [], activeVideos = [], artworks = [], heroConfig, currency, formatPrice, setSelectedCategory, demoTransitionMode = 'progressive', currentUser } = useStore();
+  const { videos = [], activeVideos = [], artworks = [], heroConfig, currency, formatPrice, setSelectedCategory, demoTransitionMode = 'progressive', currentUser, isArtistUser } = useStore();
+  const isArtist = currentUser?.role === 'artist' || currentUser?.role === 'seller' || Boolean(isArtistUser && isArtistUser(currentUser));
   const maxSlides = typeof heroConfig?.maxHeroSlides === 'number' ? heroConfig.maxHeroSlides : 4;
   const isLiveOnly = demoTransitionMode === 'live_only';
 
@@ -122,7 +124,7 @@ export default function JumiaArtHero() {
     }
   }, [firstVideoIdentity]);
 
-  const [isMuted, setIsMuted] = useState(true); // Always start muted on initial entry to guarantee 100% instant mobile autoplay without getting stuck
+  const [isMuted, setIsMuted] = useState(false); // Start unmuted so video plays automatically with sound, which users can mute
   const [isPlaying, setIsPlaying] = useState(true);
   const [activeCinemaVideo, setActiveCinemaVideo] = useState(null);
   const [clickFeedback, setClickFeedback] = useState(null); // 'play' | 'pause' | null
@@ -131,6 +133,34 @@ export default function JumiaArtHero() {
   const heroSectionRef = useRef(null);
   const [isHeroVisible, setIsHeroVisible] = useState(true);
   const userManuallyPaused = useRef(false);
+  const userManuallyMuted = useRef(false);
+  const needsAudioUnlockRef = useRef(false);
+
+  // Unlock audio automatically on first user gesture if browser initially blocked unmuted autoplay
+  useEffect(() => {
+    const unlockAudio = () => {
+      if (userManuallyMuted.current) return;
+      if (videoRef.current && needsAudioUnlockRef.current && isHeroVisible && !activeCinemaVideo) {
+        try {
+          videoRef.current.muted = false;
+          videoRef.current.volume = 1.0;
+          needsAudioUnlockRef.current = false;
+          setIsMuted(false);
+          if (!userManuallyPaused.current) {
+            videoRef.current.play().catch(() => {});
+          }
+        } catch (e) {}
+      }
+    };
+    window.addEventListener('pointerdown', unlockAudio, { passive: true });
+    window.addEventListener('touchstart', unlockAudio, { passive: true });
+    window.addEventListener('keydown', unlockAudio, { passive: true });
+    return () => {
+      window.removeEventListener('pointerdown', unlockAudio);
+      window.removeEventListener('touchstart', unlockAudio);
+      window.removeEventListener('keydown', unlockAudio);
+    };
+  }, [isHeroVisible, activeCinemaVideo]);
 
   // Viewport intersection observer: automatically stops video and sound when scrolled past the hero page
   useEffect(() => {
@@ -239,33 +269,40 @@ export default function JumiaArtHero() {
 
   // Video element playback synchronization: smoothly handles new slides without remounting DOM
   useEffect(() => {
-    if (!videoRef.current) return;
+    const vid = videoRef.current;
+    if (!vid) return;
 
     // Scrolled past hero section or cinema modal open: immediately pause and silence
     if (!isHeroVisible || activeCinemaVideo) {
       try {
-        videoRef.current.pause();
+        vid.pause();
       } catch (err) {}
       return;
     }
 
-    // In hero view and user has not manually paused: play smoothly
+    // In hero view and user has not manually paused: play immediately with sound (unless user muted)
     if (isPlaying && !userManuallyPaused.current) {
-      videoRef.current.muted = isMuted;
-      const playPromise = videoRef.current.play();
+      const desiredMuted = userManuallyMuted.current || isMuted;
+      vid.muted = desiredMuted;
+      if (!desiredMuted) vid.volume = 1.0;
+      const playPromise = vid.play();
       if (playPromise !== undefined) {
-        playPromise.catch((err) => {
-          // If browser restricts unmuted autoplay before user gesture, fallback to muted immediately
+        playPromise.then(() => {
+          if (!desiredMuted) {
+            needsAudioUnlockRef.current = false;
+          }
+        }).catch(() => {
+          // If browser blocks unmuted autoplay before gesture, play video frames immediately and unlock sound on first touch/click
           if (videoRef.current && isHeroVisible) {
+            needsAudioUnlockRef.current = !userManuallyMuted.current;
             videoRef.current.muted = true;
-            setIsMuted(true);
             videoRef.current.play().catch(() => {});
           }
         });
       }
     } else {
       try {
-        videoRef.current.pause();
+        vid.pause();
       } catch (err) {}
     }
   }, [safeIndex, currentSlide.videoUrl, isPlaying, isMuted, isHeroVisible, activeCinemaVideo]);
@@ -273,11 +310,13 @@ export default function JumiaArtHero() {
   const toggleMute = (e) => {
     if (e) e.stopPropagation();
     const nextMuted = !isMuted;
+    userManuallyMuted.current = nextMuted;
+    needsAudioUnlockRef.current = false;
     setIsMuted(nextMuted);
     if (videoRef.current) {
       videoRef.current.muted = nextMuted;
       if (!nextMuted) {
-        // User explicitly tapped unmute button: play with audio immediately
+        videoRef.current.volume = 1.0;
         videoRef.current.play().catch(() => {});
       }
     }
@@ -476,6 +515,20 @@ export default function JumiaArtHero() {
                     webkit-playsinline="true"
                     x5-playsinline="true"
                     preload="auto"
+                    onLoadedMetadata={() => {
+                      setIsVideoBuffering(false);
+                      if (isHeroVisible && isPlaying && !userManuallyPaused.current && videoRef.current) {
+                        const desiredMuted = userManuallyMuted.current || isMuted;
+                        videoRef.current.muted = desiredMuted;
+                        videoRef.current.play().catch(() => {
+                          if (videoRef.current) {
+                            needsAudioUnlockRef.current = !userManuallyMuted.current;
+                            videoRef.current.muted = true;
+                            videoRef.current.play().catch(() => {});
+                          }
+                        });
+                      }
+                    }}
                     onLoadedData={() => {
                       setIsVideoBuffering(false);
                       if (isHeroVisible && isPlaying && !userManuallyPaused.current && videoRef.current) {
@@ -553,15 +606,15 @@ export default function JumiaArtHero() {
                   <button
                     type="button"
                     onClick={toggleMute}
-                    className={`px-2.5 py-1 rounded-full text-[11px] font-mono font-bold flex items-center gap-1.5 transition backdrop-blur-md border cursor-pointer ${
+                    className={`p-1.5 rounded-full transition backdrop-blur-md border cursor-pointer ${
                       isMuted 
-                        ? 'bg-black/80 text-amber-300 border-amber-400/40 hover:border-art-gold hover:text-white shadow-sm' 
-                        : 'bg-art-gold text-white border-art-gold shadow-gold-glow'
+                        ? 'bg-black/70 hover:bg-art-gold text-amber-300 hover:text-art-black border-white/20 hover:border-art-gold' 
+                        : 'bg-art-gold text-art-black border-art-gold shadow-gold-glow'
                     }`}
-                    title={isMuted ? 'Tap to unmute sound' : 'Mute sound'}
+                    title={isMuted ? 'Unmute video' : 'Mute video'}
+                    aria-label={isMuted ? 'Unmute video' : 'Mute video'}
                   >
-                    {isMuted ? <VolumeX className="w-3.5 h-3.5 text-amber-300" /> : <Volume2 className="w-3.5 h-3.5 animate-pulse text-white" />}
-                    <span className="text-[10px] sm:text-xs font-bold">{isMuted ? 'Tap for Sound' : 'Sound On'}</span>
+                    {isMuted ? <VolumeX className="w-3.5 h-3.5" /> : <Volume2 className="w-3.5 h-3.5" />}
                   </button>
 
                   <button
@@ -679,17 +732,31 @@ export default function JumiaArtHero() {
                 {/* Artwork Thumbnail & Details */}
                 {featuredAuctionLot ? (
                   <div className="flex items-center gap-2.5">
-                    <Link href={`/artwork/${featuredAuctionLot.id}`} className="w-14 h-14 rounded-xl overflow-hidden bg-[#0A0505] shrink-0 border border-red-800/40 flex items-center justify-center p-1 text-center cursor-pointer">
-                      <span className="font-serif text-[8px] font-bold tracking-widest uppercase text-white/20 leading-tight select-none">
-                        Coming Soon
-                      </span>
-                    </Link>
+                    {isArtist ? (
+                      <div className="w-14 h-14 rounded-xl overflow-hidden bg-[#0A0505] shrink-0 border border-red-800/40 flex items-center justify-center p-1 text-center select-none cursor-not-allowed">
+                        <span className="font-serif text-[8px] font-bold tracking-widest uppercase text-white/20 leading-tight select-none">
+                          Coming Soon
+                        </span>
+                      </div>
+                    ) : (
+                      <Link href={`/artwork/${featuredAuctionLot.id}`} className="w-14 h-14 rounded-xl overflow-hidden bg-[#0A0505] shrink-0 border border-red-800/40 flex items-center justify-center p-1 text-center cursor-pointer">
+                        <span className="font-serif text-[8px] font-bold tracking-widest uppercase text-white/20 leading-tight select-none">
+                          Coming Soon
+                        </span>
+                      </Link>
+                    )}
                     <div className="min-w-0 flex-1">
-                      <Link href={`/artwork/${featuredAuctionLot.id}`}>
-                        <h4 className="font-serif font-bold text-white text-xs line-clamp-1 hover:text-red-300 transition cursor-pointer">
+                      {isArtist ? (
+                        <h4 className="font-serif font-bold text-white text-xs line-clamp-1 select-none">
                           {featuredAuctionLot.title}
                         </h4>
-                      </Link>
+                      ) : (
+                        <Link href={`/artwork/${featuredAuctionLot.id}`}>
+                          <h4 className="font-serif font-bold text-white text-xs line-clamp-1 hover:text-red-300 transition cursor-pointer">
+                            {featuredAuctionLot.title}
+                          </h4>
+                        </Link>
+                      )}
                       <span className="text-[10px] text-slate-400 font-sans block truncate">
                         {featuredAuctionLot.artistName} · {featuredAuctionLot.medium || 'Fine Art'}
                       </span>
@@ -710,14 +777,25 @@ export default function JumiaArtHero() {
                 )}
               </div>
 
-              {/* Action Button */}
-              <Link
-                href="/auctions"
-                className="mt-2.5 w-full py-2 bg-gradient-to-r from-red-600 to-amber-600 hover:brightness-110 text-white font-bold text-[11px] uppercase tracking-wider rounded-xl transition shadow-crimson-glow flex items-center justify-center gap-1.5 text-center relative z-10"
-              >
-                <Flame className="w-3.5 h-3.5 fill-current animate-pulse" />
-                <span>Place Live Bid Now</span>
-              </Link>
+              {/* Action Button — Completely blocked for all artists */}
+              {isArtist ? (
+                <div
+                  aria-disabled="true"
+                  title="Artist accounts are restricted from placing bids"
+                  className="mt-2.5 w-full py-2 bg-slate-900/90 border border-red-500/30 text-slate-400 font-bold text-[10px] uppercase tracking-wider rounded-xl flex items-center justify-center gap-1.5 text-center relative z-10 cursor-not-allowed pointer-events-none select-none opacity-80"
+                >
+                  <Lock className="w-3.5 h-3.5 text-red-400 shrink-0" />
+                  <span>Artist Account: Bidding Restricted</span>
+                </div>
+              ) : (
+                <Link
+                  href="/auctions"
+                  className="mt-2.5 w-full py-2 bg-gradient-to-r from-red-600 to-amber-600 hover:brightness-110 text-white font-bold text-[11px] uppercase tracking-wider rounded-xl transition shadow-crimson-glow flex items-center justify-center gap-1.5 text-center relative z-10"
+                >
+                  <Flame className="w-3.5 h-3.5 fill-current animate-pulse" />
+                  <span>Place Live Bid Now</span>
+                </Link>
+              )}
             </div>
 
             {/* CARD 2: ARTIST ONBOARDING OR COLLECTOR VAULT */}

@@ -3,10 +3,11 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { useStore } from '@/context/store-context';
-import { Sparkles, Flame, ArrowRight, ShieldCheck, Award, Crown, Play, Pause, Volume2, VolumeX, Video as VideoIcon, Image as ImageIcon } from 'lucide-react';
+import { Sparkles, Flame, ArrowRight, ShieldCheck, Award, Crown, Play, Pause, Volume2, VolumeX, Video as VideoIcon, Image as ImageIcon, Lock } from 'lucide-react';
 
 export default function HeroBanner() {
-  const { heroConfig } = useStore();
+  const { heroConfig, currentUser, isArtistUser } = useStore();
+  const isArtist = currentUser?.role === 'artist' || currentUser?.role === 'seller' || Boolean(isArtistUser && isArtistUser(currentUser));
   const [isPlaying, setIsPlaying] = useState(true);
   const [isMuted, setIsMuted] = useState(true);
 
@@ -85,7 +86,7 @@ export default function HeroBanner() {
                 </Link>
               )}
 
-              {cfg.secondaryCta?.isVisible !== false && cfg.secondaryCta?.label && (
+              {cfg.secondaryCta?.isVisible !== false && cfg.secondaryCta?.label && !isArtist && (
                 <Link
                   href={cfg.secondaryCta.href || '/auctions'}
                   className="px-6 py-3.5 rounded-xl bg-art-black-card hover:bg-art-black border border-art-red/50 text-red-400 font-bold text-xs uppercase tracking-wider transition shadow-crimson-glow flex items-center gap-2"

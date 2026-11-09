@@ -67,26 +67,26 @@ export default function LiveAuctionExhibitionHub() {
   // Active Live Lots data
   const liveAuctionLots = [
     {
-      id: 'art-real-ekele-1',
-      lotNumber: '808',
+      id: 'lot-live-801',
+      lotNumber: '801',
       title: 'Royal Heritage Canvas I',
       artistName: 'Ekele Ojogbe Mercy',
       artistAvatar: '',
       image: '',
       medium: 'Acrylic & Mixed Media on Canvas',
       country: 'Abuja, Nigeria 🇳🇬',
-      currentBid: 4900000,
-      totalBids: 19,
+      currentBid: 3400000,
+      totalBids: 14,
       endTimeHours: 15,
       activeViewers: 68,
       recentBids: [
-        { id: 'b-1', bidder: 'Dr. O. Adebayo (Lagos)', amount: 4900000, time: '2m ago', verified: true },
-        { id: 'b-2', bidder: 'Geneva Art Trust (Zurich)', amount: 4700000, time: '8m ago', verified: true }
+        { id: 'b-1', bidder: 'Verified Collector (Lagos)', amount: 3400000, time: '2m ago', verified: true },
+        { id: 'b-2', bidder: 'Geneva Art Trust (Zurich)', amount: 3200000, time: '8m ago', verified: true }
       ]
     },
     {
-      id: 'art-real-ekele-2',
-      lotNumber: '806',
+      id: 'lot-live-802',
+      lotNumber: '802',
       title: 'Sovereign Lineage II',
       artistName: 'Ekele Ojogbe Mercy',
       artistAvatar: '',
@@ -95,18 +95,52 @@ export default function LiveAuctionExhibitionHub() {
       country: 'Lagos, Nigeria 🇳🇬',
       currentBid: 4800000,
       totalBids: 22,
-      endTimeHours: 52,
+      endTimeHours: 28,
       activeViewers: 84,
       recentBids: [
-        { id: 'b-4', bidder: 'Tariq A. (Dubai)', amount: 4800000, time: '1m ago', verified: true },
+        { id: 'b-4', bidder: 'Private Patron (Abuja)', amount: 4800000, time: '1m ago', verified: true },
         { id: 'b-5', bidder: 'Nairobi Heritage Fund', amount: 4600000, time: '14m ago', verified: true }
+      ]
+    },
+    {
+      id: 'lot-live-803',
+      lotNumber: '803',
+      title: 'Sacred Bronze & Ochre Study III',
+      artistName: 'Nkechi Uduma',
+      artistAvatar: '',
+      image: '',
+      medium: 'Acrylic & Earth Pigment on Canvas',
+      country: 'Lagos, Nigeria 🇳🇬',
+      currentBid: 2950000,
+      totalBids: 11,
+      endTimeHours: 36,
+      activeViewers: 52,
+      recentBids: [
+        { id: 'b-6', bidder: 'Diaspora Collector (London)', amount: 2950000, time: '4m ago', verified: true }
+      ]
+    },
+    {
+      id: 'lot-live-804',
+      lotNumber: '804',
+      title: 'Ancestral Equilibrium IV',
+      artistName: 'Peace Ogbua',
+      artistAvatar: '',
+      image: '',
+      medium: 'Mixed Media & Gold Leaf on Canvas',
+      country: 'Lagos, Nigeria 🇳🇬',
+      currentBid: 3650000,
+      totalBids: 17,
+      endTimeHours: 44,
+      activeViewers: 61,
+      recentBids: [
+        { id: 'b-7', bidder: 'Institutional Patron (New York)', amount: 3650000, time: '6m ago', verified: true }
       ]
     }
   ];
 
   // Active Exhibitions data
   const liveExhibitions = (exhibitions && exhibitions.length > 0)
-    ? exhibitions.slice(0, 2).map((ex, i) => ({
+    ? exhibitions.slice(0, 4).map((ex, i) => ({
         id: ex.id || `ex-${i + 1}`,
         hall: `HALL 0${i + 1}`,
         title: ex.title,
@@ -115,35 +149,61 @@ export default function LiveAuctionExhibitionHub() {
         curatorRole: ex.curatorRole || 'Chief Conservator',
         coverImage: (ex.coverImage && !ex.coverImage.includes('unsplash.com')) ? ex.coverImage : '',
         activeVisitors: ex.liveVisitors || 120,
-        artworksCount: ex.artworksCount || (ex.artworks ? ex.artworks.length : 12),
+        artworksCount: ex.featuredArtworksCount || ex.artworksCount || (ex.artworks ? ex.artworks.length : 12),
         audioGuideTitle: `Curator Commentary (${ex.curator || 'Curatorial Board'})`,
         status: '🟢 LIVE 3D ROOM'
       }))
     : [
         {
-          id: 'ex-1',
+          id: 'ex-101',
           hall: 'HALL 01',
-          title: 'Echoes of Ancestral Royalty',
-          theme: 'Pre-colonial Benin bronzes & terra cotta artifacts',
-          curator: 'Artellium Curatorial Board',
-          curatorRole: 'Chief Conservator',
+          title: 'Dynasties of the Niger: Benin Bronze & Sacred Timber',
+          theme: 'West African bronze foundry casting & sacred timber carving',
+          curator: 'Artellium Curatorial Directorate',
+          curatorRole: 'Senior Directorate of Pan-African Antiquities',
           coverImage: '',
           activeVisitors: 142,
-          artworksCount: 16,
+          artworksCount: 24,
           audioGuideTitle: 'Curator Commentary',
           status: '🟢 LIVE 3D ROOM'
         },
         {
-          id: 'ex-2',
+          id: 'ex-102',
           hall: 'HALL 02',
-          title: 'Afrofuturism: The Digital Frontier',
-          theme: 'Nsibidi cryptograms & 3D speculative visions',
-          curator: 'Artellium Curatorial Archive',
-          curatorRole: 'Biennial Fellow',
+          title: 'Pan-African 3D Spatial Continuum',
+          theme: 'Interactive virtual museum journey connecting global collectors',
+          curator: 'Artellium Spatial Curatorial Council',
+          curatorRole: 'Digital Fine Art & Spatial Curatorial Division',
           coverImage: '',
           activeVisitors: 98,
-          artworksCount: 12,
+          artworksCount: 18,
           audioGuideTitle: 'Atelier Soundscapes',
+          status: '🟢 LIVE 3D ROOM'
+        },
+        {
+          id: 'ex-103',
+          hall: 'HALL 03',
+          title: 'Earth Pigments & Sustainable Living Salon',
+          theme: 'Zero-waste art creation, natural vegetable dyes & mineral soils',
+          curator: 'Artellium Eco-Art Curatorial Desk',
+          curatorRole: 'Eco-Art Practitioners & Curators',
+          coverImage: '',
+          activeVisitors: 86,
+          artworksCount: 14,
+          audioGuideTitle: 'Curator Commentary',
+          status: '🟢 LIVE 3D ROOM'
+        },
+        {
+          id: 'ex-104',
+          hall: 'HALL 04',
+          title: 'African Master Creators: London & Paris Diaspora Biennale',
+          theme: 'Cross-continental biennial showcase for international collectors',
+          curator: 'Artellium International Curatorial Desk',
+          curatorRole: 'Global Diaspora & Institutional Acquisitions Division',
+          coverImage: '',
+          activeVisitors: 115,
+          artworksCount: 20,
+          audioGuideTitle: 'Curator Commentary',
           status: '🟢 LIVE 3D ROOM'
         }
       ];

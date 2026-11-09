@@ -43,11 +43,11 @@ export default function HomePage() {
   const pConfig = homePageConfig || {
     sections: [
       { id: 'sec-hero', type: 'hero', isVisible: true },
-      { id: 'sec-auctions', type: 'auctions', title: 'Live Fine Art Auctions', subtitle: 'Participate in real-time competitive bidding for high-value African masterworks.', badge: 'LIVE BIDDING ARENA', isVisible: true, maxItems: 6 },
+      { id: 'sec-auctions', type: 'auctions', title: 'Live Fine Art Auctions', subtitle: 'Participate in real-time competitive bidding for high-value African masterworks.', badge: 'LIVE BIDDING ARENA', isVisible: true, maxItems: 4 },
       { id: 'sec-newly-listed', type: 'newly_listed', title: 'Newly Listed Artworks', subtitle: 'Fresh creations uploaded directly by verified master painters, sculptors, and digital artists.', badge: 'CURATED MARKETPLACE', isVisible: true, maxItems: 12 },
       { id: 'sec-subscriptions', type: 'subscriptions', title: 'Showcase Your Fine Art with Zero Hindrance', subtitle: 'Join ARTELLIUM as a verified seller. Upload original oil paintings, bronze sculptures, or digital prints with automated backend tracking and international buyer outreach.', badge: 'ARTIST & SELLER SUBSCRIPTION PACKAGES', isVisible: true },
       { id: 'sec-recently-sold', type: 'recently_sold', title: 'Recently Sold Masterpieces', subtitle: 'Transactions logged in our immutable ledger of African creative heritage and authenticity registry.', badge: 'HISTORICAL LEDGER & PROVENANCE', isVisible: true, maxItems: 6 },
-      { id: 'sec-exhibitions', type: 'exhibitions', title: 'Current Exhibitions', subtitle: 'Explore curated virtual gallery halls from top African museum directors and curators.', badge: 'VIRTUAL GALLERY ROOMS', isVisible: true, maxItems: 6 }
+      { id: 'sec-exhibitions', type: 'exhibitions', title: 'Current Exhibitions', subtitle: 'Explore curated virtual gallery halls from top African museum directors and curators.', badge: 'VIRTUAL GALLERY ROOMS', isVisible: true, maxItems: 4 }
     ],
     customPromoBanners: []
   };
@@ -62,57 +62,107 @@ export default function HomePage() {
     return sortArtworksByPriority(realWorks, { sellers, users: usersList, secondarySort: 'newest' }).slice(0, limit);
   };
 
-  const getLiveAuctions = (limit = 6) => {
-    let matching = activeArtworks.filter((art) => (art.status === 'auction' || art.isAuction) && !isMockOrDemo(art));
-    if (matching.length === 0) {
-      matching = [
-        {
-          id: 'lot-live-801',
-          lotNumber: 'Lot #801',
-          title: 'Royal Heritage Canvas I',
-          artistName: 'Ekele Ojogbe Mercy',
-          artistType: 'Heritage Master',
-          category: 'Paintings',
-          medium: 'Acrylic & Mixed Media on Canvas',
-          dimensions: '120 × 90 cm',
-          country: 'Nigeria 🇳🇬',
-          price: 3400000,
-          status: 'auction',
-          isAuction: true,
-          image: '',
-          auction: {
-            currentBid: 3400000,
-            startingBid: 2500000,
-            reservePrice: 3000000,
-            totalBids: 14,
-            lastBidder: 'Verified Collector (Lagos)'
-          }
-        },
-        {
-          id: 'lot-live-802',
-          lotNumber: 'Lot #802',
-          title: 'Sovereign Lineage II',
-          artistName: 'Ekele Ojogbe Mercy',
-          artistType: 'Master Painter',
-          category: 'Paintings',
-          medium: 'Oil on Lined Canvas',
-          dimensions: '150 × 120 cm',
-          country: 'Nigeria 🇳🇬',
-          price: 4800000,
-          status: 'auction',
-          isAuction: true,
-          image: '',
-          auction: {
-            currentBid: 4800000,
-            startingBid: 3800000,
-            reservePrice: 4200000,
-            totalBids: 22,
-            lastBidder: 'Private Patron (Abuja)'
-          }
+  const getLiveAuctions = (limit = 4) => {
+    const fallbackLots = [
+      {
+        id: 'lot-live-801',
+        lotNumber: 'Lot #801',
+        title: 'Royal Heritage Canvas I',
+        artistName: 'Ekele Ojogbe Mercy',
+        artistType: 'Heritage Master',
+        category: 'Paintings',
+        medium: 'Acrylic & Mixed Media on Canvas',
+        dimensions: '120 × 90 cm',
+        country: 'Nigeria 🇳🇬',
+        price: 3400000,
+        status: 'auction',
+        isAuction: true,
+        image: '',
+        auction: {
+          currentBid: 3400000,
+          startingBid: 2500000,
+          reservePrice: 3000000,
+          totalBids: 14,
+          lastBidder: 'Verified Collector (Lagos)'
         }
-      ];
+      },
+      {
+        id: 'lot-live-802',
+        lotNumber: 'Lot #802',
+        title: 'Sovereign Lineage II',
+        artistName: 'Ekele Ojogbe Mercy',
+        artistType: 'Master Painter',
+        category: 'Paintings',
+        medium: 'Oil on Lined Canvas',
+        dimensions: '150 × 120 cm',
+        country: 'Nigeria 🇳🇬',
+        price: 4800000,
+        status: 'auction',
+        isAuction: true,
+        image: '',
+        auction: {
+          currentBid: 4800000,
+          startingBid: 3800000,
+          reservePrice: 4200000,
+          totalBids: 22,
+          lastBidder: 'Private Patron (Abuja)'
+        }
+      },
+      {
+        id: 'lot-live-803',
+        lotNumber: 'Lot #803',
+        title: 'Sacred Bronze & Ochre Study III',
+        artistName: 'Nkechi Uduma',
+        artistType: 'Contemporary Master',
+        category: 'Paintings',
+        medium: 'Acrylic & Earth Pigment on Canvas',
+        dimensions: '110 × 90 cm',
+        country: 'Nigeria 🇳🇬',
+        price: 2950000,
+        status: 'auction',
+        isAuction: true,
+        image: '',
+        auction: {
+          currentBid: 2950000,
+          startingBid: 2200000,
+          reservePrice: 2600000,
+          totalBids: 11,
+          lastBidder: 'Diaspora Collector (London)'
+        }
+      },
+      {
+        id: 'lot-live-804',
+        lotNumber: 'Lot #804',
+        title: 'Ancestral Equilibrium IV',
+        artistName: 'Peace Ogbua',
+        artistType: 'Verified Creator',
+        category: 'Paintings',
+        medium: 'Mixed Media & Gold Leaf on Canvas',
+        dimensions: '140 × 100 cm',
+        country: 'Nigeria 🇳🇬',
+        price: 3650000,
+        status: 'auction',
+        isAuction: true,
+        image: '',
+        auction: {
+          currentBid: 3650000,
+          startingBid: 2800000,
+          reservePrice: 3200000,
+          totalBids: 17,
+          lastBidder: 'Institutional Patron (New York)'
+        }
+      }
+    ];
+    let matching = activeArtworks.filter((art) => (art.status === 'auction' || art.isAuction) && !isMockOrDemo(art));
+    const sorted = sortArtworksByPriority(matching, { sellers, users: usersList });
+    const combined = [...sorted];
+    for (const lot of fallbackLots) {
+      if (combined.length >= limit) break;
+      if (!combined.some(item => item.id === lot.id)) {
+        combined.push(lot);
+      }
     }
-    return sortArtworksByPriority(matching, { sellers, users: usersList }).slice(0, limit);
+    return combined.slice(0, limit);
   };
 
   const getRecentlySold = (limit = 6) => {
@@ -157,7 +207,7 @@ export default function HomePage() {
         return null; // rendered outside main container
 
       case 'auctions': {
-        const auctionsList = getLiveAuctions(sec.maxItems || 6);
+        const auctionsList = getLiveAuctions(4);
         if (auctionsList.length === 0) return null;
         return (
           <section key={sec.id} suppressHydrationWarning className="relative rounded-2xl sm:rounded-3xl bg-white border-2 border-art-gold/30 shadow-[0_8px_30px_rgba(0,0,0,0.06)] p-5 sm:p-8 space-y-6 overflow-hidden">
@@ -301,7 +351,7 @@ export default function HomePage() {
 
       case 'exhibitions': {
         const sortedEx = sortExhibitionsByPriority(exhibitions, sellers, usersList);
-        const exList = sortedEx.slice(0, sec.maxItems || 6);
+        const exList = sortedEx.slice(0, 4);
         return (
           <section key={sec.id} suppressHydrationWarning className="relative rounded-2xl sm:rounded-3xl bg-white border-2 border-art-gold/30 shadow-[0_8px_30px_rgba(0,0,0,0.06)] p-5 sm:p-8 space-y-6 overflow-hidden">
             <div className="absolute top-0 inset-x-8 h-[2px] bg-gradient-to-r from-transparent via-art-gold/50 to-transparent" />
@@ -448,7 +498,7 @@ export default function HomePage() {
     subtitle: 'Participate in real-time competitive bidding for high-value African masterworks.',
     badge: 'LIVE BIDDING ARENA',
     isVisible: true,
-    maxItems: 6
+    maxItems: 4
   };
   const otherSections = (pConfig.sections || []).filter(s => s.type !== 'hero' && s.type !== 'auctions');
 
