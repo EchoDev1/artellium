@@ -574,8 +574,9 @@ export function StoreProvider({ children }) {
                   }))
               : []
           }));
-        setExhibitions(sanitizedEx);
-        safeSetItem('artellium_exhibitions', sanitizedEx);
+        const finalEx = sanitizedEx.length > 0 ? sanitizedEx : VIRTUAL_EXHIBITIONS;
+        setExhibitions(finalEx);
+        safeSetItem('artellium_exhibitions', finalEx);
       }
 
       const savedVideos = safeGetItem('artellium_artist_videos', null);

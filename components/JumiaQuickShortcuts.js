@@ -303,7 +303,7 @@ export default function JumiaQuickShortcuts() {
       id: 'sc-deals',
       label: 'Flash Deals',
       sublabel: 'Shop Now',
-      icon: Icon3DFlash,
+      image: 'https://images.unsplash.com/photo-1524592094714-0f0654e20314?auto=format&fit=crop&q=80&w=600',
       href: '/flash-deals',
       tag: 'HOT DEAL',
       tagBg: 'bg-red-600',
@@ -313,7 +313,7 @@ export default function JumiaQuickShortcuts() {
       id: 'sc-live',
       label: 'Live Auctions',
       sublabel: 'Join Now',
-      icon: Icon3DGavel,
+      image: 'https://images.unsplash.com/photo-1589829545856-d10d557cf95f?auto=format&fit=crop&q=80&w=600',
       href: '/auctions',
       tag: 'LIVE LOTS',
       tagBg: 'bg-amber-600',
@@ -323,7 +323,7 @@ export default function JumiaQuickShortcuts() {
       id: 'sc-rare',
       label: 'Royal Heirlooms',
       sublabel: 'Shop Now',
-      icon: Icon3DCrown,
+      image: 'https://images.unsplash.com/photo-1569683795645-b62e50fbf103?auto=format&fit=crop&q=80&w=600',
       href: '/royal-heirlooms',
       tag: 'HERITAGE',
       tagBg: 'bg-yellow-700'
@@ -332,7 +332,7 @@ export default function JumiaQuickShortcuts() {
       id: 'sc-verified',
       label: 'Verified Masters',
       sublabel: 'Certified Authentic',
-      icon: Icon3DVerified,
+      image: 'https://images.unsplash.com/photo-1513364776144-60967b0f800f?auto=format&fit=crop&q=80&w=600',
       href: '/verified-masters',
       tag: 'MASTERS',
       tagBg: 'bg-emerald-700'
@@ -341,7 +341,7 @@ export default function JumiaQuickShortcuts() {
       id: 'sc-under1m',
       label: 'Under ₦1M Deals',
       sublabel: 'Shop Now',
-      icon: Icon3DTag,
+      image: 'https://images.unsplash.com/photo-1536924940846-227afb31e2a5?auto=format&fit=crop&q=80&w=600',
       href: '/under-1m',
       tag: 'VALUE',
       tagBg: 'bg-blue-700'
@@ -350,7 +350,7 @@ export default function JumiaQuickShortcuts() {
       id: 'sc-provenance',
       label: 'Provenance Ledger',
       sublabel: 'View Registry',
-      icon: Icon3DShield,
+      image: 'https://images.unsplash.com/photo-1455390582262-044cdead277a?auto=format&fit=crop&q=80&w=600',
       href: '/provenance-ledger',
       tag: 'ARCHIVE',
       tagBg: 'bg-stone-700'
@@ -359,7 +359,7 @@ export default function JumiaQuickShortcuts() {
       id: 'sc-curator',
       label: 'Curator Picks',
       sublabel: 'Shop Now',
-      icon: Icon3DSparkle,
+      image: 'https://images.unsplash.com/photo-1500051638674-ff996a0ec29e?auto=format&fit=crop&q=80&w=600',
       href: '/curator-picks',
       tag: 'CURATED',
       tagBg: 'bg-purple-700'
@@ -371,57 +371,56 @@ export default function JumiaQuickShortcuts() {
       <div className="max-w-7xl mx-auto">
         {/* Single-Line Ribbon on Mobile / Responsive 7-Col Grid on Desktop */}
         <div className="flex sm:grid sm:grid-cols-4 lg:grid-cols-7 gap-2 sm:gap-3.5 lg:gap-4 overflow-x-auto sm:overflow-visible pb-1 sm:pb-0 scrollbar-none snap-x snap-mandatory touch-pan-x px-1 sm:px-0">
-          {cards.map((card) => {
-            const IconComponent = card.icon;
-            return (
-              <Link
-                key={card.id}
-                href={card.href}
-                className={`group relative flex flex-col justify-between w-[95px] xs:w-[105px] sm:w-auto shrink-0 snap-start rounded-2xl sm:rounded-3xl overflow-hidden border ${
-                  card.hasBeep 
-                    ? 'border-red-500/50 hover:border-red-500 shadow-[0_4px_16px_rgba(239,68,68,0.25)]' 
-                    : 'border-white/10 hover:border-art-gold/60 shadow-[0_4px_16px_rgba(0,0,0,0.3)]'
-                } bg-gradient-to-b from-[#131824] via-[#0E121A] to-[#080A0F] transition-all duration-300 hover:shadow-[0_12px_28px_rgba(212,175,55,0.2)] hover:-translate-y-1 h-[130px] xs:h-[140px] sm:h-[165px] active:scale-95`}
-                title={`${card.label} - ${card.sublabel}`}
-              >
-                {/* 3D Icon Centerpiece */}
-                <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-85 group-hover:opacity-100 transition-opacity">
-                  {IconComponent && <IconComponent />}
-                </div>
+          {cards.map((card) => (
+            <Link
+              key={card.id}
+              href={card.href}
+              className={`group relative flex flex-col justify-between w-[95px] xs:w-[105px] sm:w-auto shrink-0 snap-start rounded-2xl sm:rounded-3xl overflow-hidden border ${
+                card.hasBeep 
+                  ? 'border-red-500/50 hover:border-red-500 shadow-[0_4px_16px_rgba(239,68,68,0.25)]' 
+                  : 'border-white/10 hover:border-art-gold/60 shadow-[0_4px_16px_rgba(0,0,0,0.3)]'
+              } bg-[#0E121A] transition-all duration-300 hover:shadow-[0_12px_28px_rgba(212,175,55,0.2)] hover:-translate-y-1 h-[130px] xs:h-[140px] sm:h-[165px] active:scale-95`}
+              title={`${card.label} - ${card.sublabel}`}
+            >
+              {/* Real Editorial Photograph Background */}
+              <img
+                src={card.image}
+                alt={card.label}
+                className="absolute inset-0 w-full h-full object-cover object-center group-hover:scale-110 transition-transform duration-700 brightness-85 group-hover:brightness-100"
+              />
 
-                {/* Cinematic Vignette Gradient Overlay */}
-                <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-black/20 group-hover:from-black/80 transition-colors duration-300 pointer-events-none" />
+              {/* Cinematic Vignette Gradient Overlay */}
+              <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-black/20 group-hover:from-black/80 transition-colors duration-300 pointer-events-none" />
 
-                {/* Top Tag & Status Indicator */}
-                <div className="relative z-10 p-2 sm:p-2.5 flex items-center justify-between w-full">
-                  {card.tag && (
-                    <span className={`px-2 py-0.5 rounded-full text-[8px] sm:text-[9px] font-black font-sans uppercase tracking-wider text-white shadow-md ${card.tagBg}`}>
-                      {card.tag}
-                    </span>
-                  )}
-                  {card.hasBeep && (
-                    <span className="flex h-2 w-2 relative">
-                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75" />
-                      <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500" />
-                    </span>
-                  )}
-                </div>
-
-                {/* Bottom Real Write-Up Typography */}
-                <div className="relative z-10 p-2 sm:p-2.5 text-center space-y-0.5">
-                  <span className="font-serif font-bold text-white text-[11px] sm:text-xs tracking-tight line-clamp-1 group-hover:text-art-gold transition-colors block drop-shadow-[0_2px_4px_rgba(0,0,0,0.9)]">
-                    {card.label}
+              {/* Top Tag & Status Indicator */}
+              <div className="relative z-10 p-2 sm:p-2.5 flex items-center justify-between w-full">
+                {card.tag && (
+                  <span className={`px-2 py-0.5 rounded-full text-[8px] sm:text-[9px] font-black font-sans uppercase tracking-wider text-white shadow-md ${card.tagBg}`}>
+                    {card.tag}
                   </span>
-                  <span className="text-[8px] sm:text-[10px] text-amber-300 font-sans tracking-wide block uppercase font-bold line-clamp-1 drop-shadow-[0_1px_3px_rgba(0,0,0,0.9)]">
-                    {card.sublabel}
+                )}
+                {card.hasBeep && (
+                  <span className="flex h-2 w-2 relative">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75" />
+                    <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500" />
                   </span>
-                </div>
+                )}
+              </div>
 
-                {/* Subtle inner gloss highlight border */}
-                <div className="absolute inset-0 rounded-2xl sm:rounded-3xl border border-white/20 group-hover:border-art-gold/60 transition-colors duration-300 pointer-events-none" />
-              </Link>
-            );
-          })}
+              {/* Bottom Real Write-Up Typography */}
+              <div className="relative z-10 p-2 sm:p-2.5 text-center space-y-0.5">
+                <span className="font-serif font-bold text-white text-[11px] sm:text-xs tracking-tight line-clamp-1 group-hover:text-art-gold transition-colors block drop-shadow-[0_2px_4px_rgba(0,0,0,0.9)]">
+                  {card.label}
+                </span>
+                <span className="text-[8px] sm:text-[10px] text-amber-300 font-sans tracking-wide block uppercase font-bold line-clamp-1 drop-shadow-[0_1px_3px_rgba(0,0,0,0.9)]">
+                  {card.sublabel}
+                </span>
+              </div>
+
+              {/* Subtle inner gloss highlight border */}
+              <div className="absolute inset-0 rounded-2xl sm:rounded-3xl border border-white/20 group-hover:border-art-gold/60 transition-colors duration-300 pointer-events-none" />
+            </Link>
+          ))}
         </div>
       </div>
     </div>
