@@ -7,6 +7,7 @@ import CategoryBar from '@/components/CategoryBar';
 import { useStore } from '@/context/store-context';
 import { isCategoryMatch } from '@/lib/category-utils';
 import { sortArtworksByPriority } from '@/lib/priority-utils';
+import { isDummyArtworkRecord } from '@/lib/uuid-utils';
 import { Search, Filter, Sparkles, SlidersHorizontal } from 'lucide-react';
 
 function ExploreContent() {
@@ -43,6 +44,7 @@ function ExploreContent() {
 
   // Filter artworks
   const filtered = artworks.filter((art) => {
+    if (!art || art.isDemo === true || isDummyArtworkRecord(art)) return false;
     const term = searchTerm.trim().toLowerCase();
     const matchesQuery = !term || (
       art.title?.toLowerCase().includes(term) ||

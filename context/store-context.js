@@ -1188,27 +1188,55 @@ export function StoreProvider({ children }) {
             });
 
           setRealArtworks((prevReal) => {
+            const dbIdSet = new Set(dbReal.map((d) => String(d.id || '').trim()));
+            const nowMs = Date.now();
             const map = new Map();
-            INITIAL_REAL_ARTWORKS.filter(a => !isDummyArtworkRecord(a) && !isEntityDeleted('artworks', a)).forEach(initA => map.set(initA.id, initA));
-            prevReal.forEach(r => {
-              if (r && r.id && !isDummyArtworkRecord(r) && !isEntityDeleted('artworks', r)) {
-                map.set(r.id, r);
-              }
-            });
-            dbReal.forEach(dbA => {
+
+            // 1. Authoritative cloud artworks (merged with local high-res image fallback if needed)
+            const seedLookup = new Map(
+              (INITIAL_REAL_ARTWORKS || [])
+                .filter((a) => !isDummyArtworkRecord(a) && !isEntityDeleted('artworks', a))
+                .map((a) => [String(a.id || '').trim(), a])
+            );
+            const prevLookup = new Map(
+              (prevReal || [])
+                .filter((a) => a && a.id && !isDummyArtworkRecord(a) && !isEntityDeleted('artworks', a))
+                .map((a) => [String(a.id || '').trim(), a])
+            );
+
+            dbReal.forEach((dbA) => {
               if (dbA && dbA.id && !isDummyArtworkRecord(dbA) && !isEntityDeleted('artworks', dbA)) {
-                const existing = map.get(dbA.id) || {};
+                const key = String(dbA.id).trim();
+                const existing = prevLookup.get(key) || seedLookup.get(key) || {};
                 const isCorrupted = typeof dbA.image === 'string' && dbA.image.includes('photo-1579783900882-c0d3dad7b119');
-                map.set(dbA.id, {
+                map.set(key, {
                   ...existing,
                   ...dbA,
                   isDemo: false,
-                  image: (!isCorrupted && dbA.image) ? dbA.image : (existing.image || dbA.image)
+                  image: (!isCorrupted && dbA.image) ? dbA.image : (existing.image || dbA.image),
                 });
               }
             });
+
+            // 2. Keep any brand-new local upload created within the last 60s that is still syncing to Supabase;
+            //    any older local/seed artwork missing from Supabase was deleted in the cloud and must be tombstoned!
+            if (dbReal.length > 0) {
+              (prevReal || []).forEach((r) => {
+                if (!r || !r.id || isDummyArtworkRecord(r) || isEntityDeleted('artworks', r)) return;
+                const rKey = String(r.id).trim();
+                if (dbIdSet.has(rKey)) return;
+                const createdTime = r.created_at ? new Date(r.created_at).getTime() : 0;
+                const isJustUploaded = createdTime > 0 && (nowMs - createdTime) < 60000;
+                if (isJustUploaded) {
+                  map.set(rKey, r);
+                } else {
+                  markEntityDeleted('artworks', rKey, [getArtworkCompositeKey(r)].filter(Boolean));
+                }
+              });
+            }
+
             const mergedReal = Array.from(map.values())
-              .filter(a => !isDummyArtworkRecord(a) && !isEntityDeleted('artworks', a))
+              .filter((a) => !isDummyArtworkRecord(a) && !isEntityDeleted('artworks', a))
               .sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
 
             safeSetItem('artellium_real_artworks', mergedReal);

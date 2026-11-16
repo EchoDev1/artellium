@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { useStore } from '@/context/store-context';
 import { isCategoryMatch } from '@/lib/category-utils';
 import { sortArtworksByPriority } from '@/lib/priority-utils';
+import { isDummyArtworkRecord } from '@/lib/uuid-utils';
 import ArtworkCard from '@/components/ArtworkCard';
 import { 
   Palette, 
@@ -178,6 +179,7 @@ export default function CategoryPage() {
   // Filter artworks strictly for this category and user search queries
   const matchingArtworks = useMemo(() => {
     return artworks.filter((art) => {
+      if (!art || art.isDemo === true || isDummyArtworkRecord(art)) return false;
       const artCat = (art.category || '').toLowerCase();
       const artMed = (art.medium || '').toLowerCase();
       const targetCat = (categoryConfig.storeCategory || '').toLowerCase();

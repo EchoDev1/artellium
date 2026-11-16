@@ -7,10 +7,12 @@ import { ShoppingBag, Star, ShieldCheck, Eye, Sparkles, CheckCircle, Tag, Heart,
 import VerificationBadge from '@/components/VerificationBadge';
 import { DEFAULT_FALLBACK_IMAGE, getCategoryFallback } from '@/lib/image-utils';
 import { isPriorityArtist } from '@/lib/priority-utils';
+import { isEntityDeleted } from '@/lib/deletion-registry';
 
 export default function ArtworkCard({ artwork }) {
   const { addToCart, currency, wishlist, addToWishlist, removeFromWishlist, usdExchangeRate = 1480, currentUser, getArtistRating } = useStore();
   const [quickViewOpen, setQuickViewOpen] = useState(false);
+  if (!artwork || isEntityDeleted('artworks', artwork)) return null;
   const isWishlisted = wishlist?.includes(artwork.id);
   const isArtistRole = currentUser?.role === 'artist' || currentUser?.role === 'seller';
   const hasRealImage = Boolean(artwork.image && !String(artwork.image).includes('unsplash.com') && !artwork.isDemo);
