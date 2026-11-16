@@ -21,7 +21,8 @@ import {
   Monitor,
   ArrowUpRight,
   RotateCcw,
-  Check
+  Check,
+  Trash2
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -30,6 +31,7 @@ export default function ArtistLiveAuctionConsole({ artistName }) {
     artworks = [], 
     updateArtwork, 
     addArtwork, 
+    deleteArtwork,
     currency, 
     usdExchangeRate = 1480,
     liveAuctionActive,
@@ -356,12 +358,29 @@ export default function ArtistLiveAuctionConsole({ artistName }) {
                         </Link>
 
                         <button
+                          type="button"
                           onClick={() => handleExtendLotTime(art)}
                           className="px-3.5 py-2 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 font-bold text-xs flex items-center gap-1.5 transition cursor-pointer"
                         >
                           <Clock className="w-3.5 h-3.5" />
                           <span>Extend Bidding (+5 Mins)</span>
                         </button>
+
+                        {deleteArtwork && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              deleteArtwork(art.id);
+                              setSubmissionSuccess(`🗑️ Live Auction Lot "${art.title}" has been permanently deleted.`);
+                              setTimeout(() => setSubmissionSuccess(''), 5000);
+                            }}
+                            className="px-3.5 py-2 rounded-xl bg-red-500/20 hover:bg-red-500/30 text-red-300 border border-red-500/40 font-bold text-xs flex items-center gap-1.5 transition cursor-pointer"
+                            title="Delete this auction lot permanently"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                            <span>Delete Lot</span>
+                          </button>
+                        )}
                       </div>
 
                       <button

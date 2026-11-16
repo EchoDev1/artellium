@@ -619,10 +619,9 @@ export default function AdminVideoModeration() {
                       )}
 
                       <button
+                        type="button"
                         onClick={() => {
-                          if (confirm(`Permanently delete video record for ${vid.artistName}?`)) {
-                            deleteVideo(vid.id);
-                          }
+                          deleteVideo(vid.id);
                         }}
                         className="p-1.5 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 transition cursor-pointer"
                         title="Delete video record"

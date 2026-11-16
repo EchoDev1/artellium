@@ -779,10 +779,9 @@ export default function AdminUserGovernance({
                           {/* Delete Account */}
                           {user.role !== 'admin' && (
                             <button
+                              type="button"
                               onClick={() => {
-                                if (confirm(`Permanently delete user account "${user.name}"?`)) {
-                                  deleteUser(user.id);
-                                }
+                                deleteUser(user.id);
                               }}
                               className="p-1.5 rounded-lg bg-red-50 hover:bg-red-100 text-red-600 transition cursor-pointer"
                               title="Delete Account"

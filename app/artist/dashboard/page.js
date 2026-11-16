@@ -297,6 +297,7 @@ export default function ArtistDashboardPage() {
   // Artwork Edit Modal State
   const [editingArt, setEditingArt] = useState(null);
   const [editArtForm, setEditArtForm] = useState({});
+  const [deleteArtNotice, setDeleteArtNotice] = useState('');
 
   // Self-Service Artwork Upload Form state
   const [artForm, setArtForm] = useState({
@@ -546,13 +547,27 @@ export default function ArtistDashboardPage() {
     );
   }
 
-  // Filter artworks by this specific artist
+  // Filter artworks by this specific artist (normalized across name, profile, seller, and user ID)
   const myArtworks = artworks.filter((a) => {
-    const nameMatch = myArtistName && a.artistName?.toLowerCase().includes(myArtistName.toLowerCase());
-    const idMatch = currentUser?.id && (a.artistId === currentUser.id || a.artist_id === currentUser.id);
-    const userMatch = currentUser?.name && a.artistName?.toLowerCase() === currentUser.name.toLowerCase();
+    if (!a) return false;
+    const artArtist = String(a.artistName || a.artist_name || a.artist || '').split(' (')[0].trim().toLowerCase();
+    const artFullArtist = String(a.artistName || a.artist_name || a.artist || '').trim().toLowerCase();
+    const myNorm = String(myArtistName || '').split(' (')[0].trim().toLowerCase();
+    const userNorm = String(currentUser?.name || '').split(' (')[0].trim().toLowerCase();
+    const sellerNorm = String(mySellerProfile?.name || '').split(' (')[0].trim().toLowerCase();
+    const profileNorm = String(artistProfileForm?.name || '').split(' (')[0].trim().toLowerCase();
+
+    const candidateNames = [myNorm, userNorm, sellerNorm, profileNorm].filter(n => n && n !== 'master artist');
+    const nameMatch = candidateNames.some(
+      cand => artArtist === cand || artFullArtist === cand || (artArtist && (artArtist.includes(cand) || cand.includes(artArtist)))
+    );
+
+    const idMatch = Boolean(
+      (currentUser?.id && (a.artistId === currentUser.id || a.artist_id === currentUser.id || a.seller_id === currentUser.id)) ||
+      (mySellerProfile?.id && (a.artistId === mySellerProfile.id || a.artist_id === mySellerProfile.id || a.seller_id === mySellerProfile.id))
+    );
     const liveUploadMatch = !a.isDemo && a.id && String(a.id).startsWith('art-live-');
-    return Boolean(nameMatch || idMatch || userMatch || (liveUploadMatch && (!myArtistName || myArtistName === 'Master Artist')));
+    return Boolean(nameMatch || idMatch || (liveUploadMatch && candidateNames.length === 0));
   });
 
   // Commissions and earnings for this artist (100% direct studio asking price payout)
@@ -3108,8 +3123,19 @@ export default function ArtistDashboardPage() {
                 <span className="text-xs font-mono font-bold text-slate-500">{myArtworks.length} Total</span>
               </div>
 
+              {deleteArtNotice && (
+                <div className="p-3 rounded-xl bg-red-50 border border-red-200 text-red-800 text-xs font-bold flex items-center justify-between gap-2 animate-fade-in">
+                  <span>{deleteArtNotice}</span>
+                  <button type="button" onClick={() => setDeleteArtNotice('')} className="text-red-500 hover:text-red-800">✕</button>
+                </div>
+              )}
+
               <div className="space-y-3 max-h-96 overflow-y-auto pr-1">
-                {myArtworks.map((art) => (
+                {myArtworks.length === 0 ? (
+                  <p className="text-slate-400 text-xs italic text-center py-6">
+                    No artworks currently in your studio inventory.
+                  </p>
+                ) : myArtworks.map((art) => (
                   <div key={art.id} className="p-3 bg-slate-50 border border-slate-200 rounded-xl flex items-center gap-3">
                     <img src={art.image} alt={art.title} className="w-12 h-12 object-cover rounded-lg border border-slate-200 shrink-0" />
                     <div className="flex-1 min-w-0">
@@ -3126,6 +3152,7 @@ export default function ArtistDashboardPage() {
                     
                     <div className="flex items-center gap-1.5 shrink-0">
                       <button
+                        type="button"
                         onClick={() => {
                           setEditingArt(art);
                           setEditArtForm({
@@ -3144,20 +3171,23 @@ export default function ArtistDashboardPage() {
                             status: art.status
                           });
                         }}
-                        className="p-1.5 bg-white border border-slate-200 hover:border-art-gold text-slate-600 hover:text-art-gold rounded-lg transition"
+                        className="p-1.5 bg-white border border-slate-200 hover:border-art-gold text-slate-600 hover:text-art-gold rounded-lg transition cursor-pointer"
                         title="Edit Artwork"
                       >
                         <Edit className="w-3.5 h-3.5" />
                       </button>
 
                       <button
-                        onClick={() => {
-                          if (confirm(`Remove "${art.title}" from your studio inventory?`)) {
-                            deleteArtwork(art.id);
-                          }
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          const removedTitle = art.title || 'Artwork';
+                          deleteArtwork(art.id);
+                          setDeleteArtNotice(`🗑️ "${removedTitle}" has been permanently deleted from your studio and marketplace.`);
+                          setTimeout(() => setDeleteArtNotice(''), 5000);
                         }}
-                        className="p-1.5 bg-white border border-slate-200 hover:border-red-500 text-slate-400 hover:text-red-600 rounded-lg transition"
-                        title="Delete Artwork"
+                        className="p-1.5 bg-white border border-slate-200 hover:border-red-500 hover:bg-red-50 text-red-500 hover:text-red-700 rounded-lg transition cursor-pointer"
+                        title="Delete Artwork Permanently"
                       >
                         <Trash2 className="w-3.5 h-3.5" />
                       </button>
@@ -3285,20 +3315,37 @@ export default function ArtistDashboardPage() {
                   />
                 </div>
 
-                <div className="flex justify-end gap-2 pt-2 border-t border-slate-100">
+                <div className="flex items-center justify-between gap-2 pt-2 border-t border-slate-100">
                   <button
                     type="button"
-                    onClick={() => setEditingArt(null)}
-                    className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl"
+                    onClick={() => {
+                      const removedTitle = editingArt.title || 'Artwork';
+                      deleteArtwork(editingArt.id);
+                      setEditingArt(null);
+                      setDeleteArtNotice(`🗑️ "${removedTitle}" has been permanently deleted from your studio and marketplace.`);
+                      setTimeout(() => setDeleteArtNotice(''), 5000);
+                    }}
+                    className="px-4 py-2 bg-red-50 hover:bg-red-100 border border-red-200 text-red-700 font-bold rounded-xl flex items-center gap-1.5 cursor-pointer"
                   >
-                    Cancel
+                    <Trash2 className="w-3.5 h-3.5" />
+                    <span>Delete Artwork</span>
                   </button>
-                  <button
-                    type="submit"
-                    className="px-5 py-2 bg-art-gold hover:brightness-110 text-art-black font-bold uppercase rounded-xl transition shadow"
-                  >
-                    Save Changes
-                  </button>
+
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setEditingArt(null)}
+                      className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl cursor-pointer"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      className="px-5 py-2 bg-art-gold hover:brightness-110 text-art-black font-bold uppercase rounded-xl transition shadow cursor-pointer"
+                    >
+                      Save Changes
+                    </button>
+                  </div>
                 </div>
               </form>
             </div>

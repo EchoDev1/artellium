@@ -4784,13 +4784,12 @@ export default function AdminDashboardPage() {
                         </button>
 
                         <button
+                          type="button"
                           onClick={() => {
-                            if (confirm(`Delete "${art.title}" from marketplace?`)) {
-                              deleteArtwork(art.id);
-                              logSandboxAction(`Deleted artwork "${art.title}"`);
-                            }
+                            deleteArtwork(art.id);
+                            logSandboxAction(`Deleted artwork "${art.title}"`);
                           }}
-                          className="p-1.5 rounded-lg bg-red-50 hover:bg-red-100 text-red-600 font-semibold"
+                          className="p-1.5 rounded-lg bg-red-50 hover:bg-red-100 text-red-600 font-semibold cursor-pointer"
                           title="Delete Artwork"
                         >
                           <Trash2 className="w-3.5 h-3.5" />

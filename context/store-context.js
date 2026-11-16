@@ -49,6 +49,15 @@ import {
   isDummyVideoRecord,
   isDummyExhibitionRecord,
 } from '@/lib/uuid-utils';
+import {
+  markEntityDeleted,
+  unmarkEntityDeleted,
+  isEntityDeleted,
+  filterDeletedEntities,
+  mergeServerDeletedIds,
+  hydrateDeletionRegistryFromIdb,
+  getArtworkCompositeKey,
+} from '@/lib/deletion-registry';
 const StoreContext = createContext();
 
 export function StoreProvider({ children }) {
@@ -64,21 +73,25 @@ export function StoreProvider({ children }) {
     demoTransitionModeRef.current = demoTransitionMode;
   }, [demoTransitionMode]);
 
-  const [realArtworks, setRealArtworks] = useState(() => INITIAL_REAL_ARTWORKS || []);
-  const [artworks, setArtworks] = useState(() => [...(INITIAL_REAL_ARTWORKS || [])]);
+  const [realArtworks, setRealArtworks] = useState(() =>
+    (INITIAL_REAL_ARTWORKS || []).filter(a => a && !isDummyArtworkRecord(a) && !isEntityDeleted('artworks', a))
+  );
+  const [artworks, setArtworks] = useState(() =>
+    (INITIAL_REAL_ARTWORKS || []).filter(a => a && !isDummyArtworkRecord(a) && !isEntityDeleted('artworks', a))
+  );
   const [orders, setOrders] = useState(INITIAL_ORDERS || []);
   const [payments, setPayments] = useState(INITIAL_PAYMENTS || []);
   const [commissions, setCommissions] = useState(INITIAL_COMMISSIONS || []);
 
   const [videos, setVideos] = useState(() => {
-    const seed = Array.isArray(ARTIST_VIDEOS) ? ARTIST_VIDEOS.filter(v => v && v.videoUrl && !isDummyVideoRecord(v)) : [];
+    const seed = Array.isArray(ARTIST_VIDEOS) ? ARTIST_VIDEOS.filter(v => v && v.videoUrl && !isDummyVideoRecord(v) && !isEntityDeleted('videos', v)) : [];
     if (typeof window !== 'undefined') {
       try {
         const raw = localStorage.getItem('artellium_artist_videos');
         if (raw) {
           const parsed = JSON.parse(raw);
           if (Array.isArray(parsed)) {
-            const cleanLocal = parsed.filter(v => v && v.videoUrl && !isDummyVideoRecord(v));
+            const cleanLocal = parsed.filter(v => v && v.videoUrl && !isDummyVideoRecord(v) && !isEntityDeleted('videos', v));
             if (cleanLocal.length > 0) return cleanLocal;
           }
         }
@@ -86,7 +99,9 @@ export function StoreProvider({ children }) {
     }
     return seed;
   });
-  const [exhibitions, setExhibitions] = useState(VIRTUAL_EXHIBITIONS);
+  const [exhibitions, setExhibitions] = useState(() =>
+    (VIRTUAL_EXHIBITIONS || []).filter(ex => ex && !isEntityDeleted('exhibitions', ex))
+  );
 
   // Cart & Checkout State
   const [cart, setCart] = useState([]);
@@ -202,9 +217,10 @@ export function StoreProvider({ children }) {
 
   const [priorityBannerPlacements, setPriorityBannerPlacements] = useState([]);
 
-  // Helper to reliably detect whether an artwork is dummy/mock data
+  // Helper to reliably detect whether an artwork is dummy/mock data or permanently deleted
   const isMockOrDemoArtwork = (a) => {
     if (!a) return true;
+    if (isEntityDeleted('artworks', a)) return true;
     if (isDummyArtworkRecord(a)) return true;
     if (INITIAL_ARTWORKS.some(ia => ia.id === a.id && ia.isDemo !== false)) return true;
     return false;
@@ -213,10 +229,10 @@ export function StoreProvider({ children }) {
   // Progressive Demo Replacement Engine: Assembles active catalogue prioritizing real artist artworks
   const assembleCatalog = (realList = [], demoList = INITIAL_ARTWORKS, mode = 'progressive') => {
     const validReal = Array.isArray(realList) 
-      ? realList.filter(a => a && a.id && !isMockOrDemoArtwork(a)).map(a => ({ ...a, isDemo: false }))
+      ? realList.filter(a => a && a.id && !isMockOrDemoArtwork(a) && !isEntityDeleted('artworks', a)).map(a => ({ ...a, isDemo: false }))
       : [];
     const validDemo = Array.isArray(demoList) 
-      ? demoList.filter(a => a && a.id && a.isDemo !== false).map(a => ({ ...a, isDemo: true }))
+      ? demoList.filter(a => a && a.id && a.isDemo !== false && !isEntityDeleted('artworks', a)).map(a => ({ ...a, isDemo: true }))
       : [];
 
     // Sort real artworks strictly prioritizing Subscribed Priority Artists at the top, then newest
@@ -399,17 +415,19 @@ export function StoreProvider({ children }) {
       const activeMode = (savedMode === 'live_only' || savedMode === 'hybrid' || savedMode === 'progressive') ? savedMode : 'live_only';
       setDemoTransitionMode(activeMode);
 
-      // Load Real Artist Artworks (Seeded with genuine artist uploads, immune to fair-lady corruption)
-      let loadedReal = [...INITIAL_REAL_ARTWORKS].filter(a => !isDummyArtworkRecord(a));
+      // Load Real Artist Artworks (Seeded with genuine artist uploads, respecting permanent deletions)
+      let loadedReal = [...INITIAL_REAL_ARTWORKS].filter(a => !isDummyArtworkRecord(a) && !isEntityDeleted('artworks', a));
       const savedReal = localStorage.getItem('artellium_real_artworks');
       if (savedReal) {
         try {
           const parsedReal = JSON.parse(savedReal);
-          if (Array.isArray(parsedReal) && parsedReal.length > 0) {
+          if (Array.isArray(parsedReal)) {
             const map = new Map();
-            loadedReal.forEach(a => map.set(a.id, a));
+            loadedReal.forEach(a => {
+              if (!isEntityDeleted('artworks', a)) map.set(a.id, a);
+            });
             parsedReal.forEach(a => {
-              if (a && a.id && !isDummyArtworkRecord(a)) {
+              if (a && a.id && !isDummyArtworkRecord(a) && !isEntityDeleted('artworks', a)) {
                 const existing = map.get(a.id);
                 const isCorrupted = typeof a.image === 'string' && a.image.includes('photo-1579783900882-c0d3dad7b119');
                 if (existing) {
@@ -424,20 +442,20 @@ export function StoreProvider({ children }) {
               }
             });
             loadedReal = Array.from(map.values())
-              .filter(a => !isDummyArtworkRecord(a))
+              .filter(a => !isDummyArtworkRecord(a) && !isEntityDeleted('artworks', a))
               .sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
           }
         } catch (e) {}
       }
 
-      // Also harvest any real artworks from artellium_artworks that were previously saved
+      // Also harvest any real artworks from artellium_artworks that were previously saved (excluding deleted ones)
       const savedArtworks = localStorage.getItem('artellium_artworks');
       if (savedArtworks) {
         try {
           const parsed = JSON.parse(savedArtworks);
           if (Array.isArray(parsed)) {
             parsed.forEach(a => {
-              if (!isDummyArtworkRecord(a) && !loadedReal.some(r => r.id === a.id)) {
+              if (!isDummyArtworkRecord(a) && !isEntityDeleted('artworks', a) && !loadedReal.some(r => r.id === a.id)) {
                 loadedReal.push({
                   ...a,
                   isDemo: false,
@@ -570,7 +588,7 @@ export function StoreProvider({ children }) {
       const savedExhibitions = safeGetItem('artellium_exhibitions', null);
       if (Array.isArray(savedExhibitions) && savedExhibitions.length > 0) {
         const sanitizedEx = savedExhibitions
-          .filter(ex => !isDummyExhibitionRecord(ex))
+          .filter(ex => !isDummyExhibitionRecord(ex) && !isEntityDeleted('exhibitions', ex))
           .map((ex) => ({
             ...ex,
             curatorAvatar: isCleanRealPhoto(ex.curatorAvatar) ? ex.curatorAvatar : '',
@@ -580,7 +598,7 @@ export function StoreProvider({ children }) {
               : [],
             exhibitedArtworks: Array.isArray(ex.exhibitedArtworks)
               ? ex.exhibitedArtworks
-                  .filter(ea => !isDummyArtworkRecord(ea))
+                  .filter(ea => !isDummyArtworkRecord(ea) && !isEntityDeleted('artworks', ea))
                   .map((ea) => ({
                     ...ea,
                     image: isCleanRealPhoto(ea?.image) ? ea.image : ''
@@ -590,11 +608,11 @@ export function StoreProvider({ children }) {
         const exMap = new Map();
         sanitizedEx.forEach(ex => ex && ex.id && exMap.set(ex.id, ex));
         (VIRTUAL_EXHIBITIONS || []).forEach(vex => {
-          if (vex && vex.id && !exMap.has(vex.id)) {
+          if (vex && vex.id && !exMap.has(vex.id) && !isEntityDeleted('exhibitions', vex)) {
             exMap.set(vex.id, vex);
           }
         });
-        const finalEx = exMap.size > 0 ? Array.from(exMap.values()) : VIRTUAL_EXHIBITIONS;
+        const finalEx = exMap.size > 0 ? Array.from(exMap.values()) : (VIRTUAL_EXHIBITIONS || []).filter(vex => !isEntityDeleted('exhibitions', vex));
         setExhibitions(finalEx);
         safeSetItem('artellium_exhibitions', finalEx);
       }
@@ -602,7 +620,7 @@ export function StoreProvider({ children }) {
       const savedVideos = safeGetItem('artellium_artist_videos', null);
       if (Array.isArray(savedVideos)) {
         const sanitized = savedVideos
-          .filter(v => v && v.videoUrl && !isDummyVideoRecord(v))
+          .filter(v => v && v.videoUrl && !isDummyVideoRecord(v) && !isEntityDeleted('videos', v))
           .map(v => ({
             ...v,
             id: toValidUuid(v.id),
@@ -611,7 +629,7 @@ export function StoreProvider({ children }) {
             featuredOnHero: v.featuredOnHero !== undefined ? v.featuredOnHero : true,
             isDemo: false
           }));
-        const fallbackSeed = Array.isArray(ARTIST_VIDEOS) ? ARTIST_VIDEOS.filter(v => v && v.videoUrl && !isDummyVideoRecord(v)) : [];
+        const fallbackSeed = Array.isArray(ARTIST_VIDEOS) ? ARTIST_VIDEOS.filter(v => v && v.videoUrl && !isDummyVideoRecord(v) && !isEntityDeleted('videos', v)) : [];
         const finalVids = sanitized.length > 0 ? sanitized : fallbackSeed;
         setVideos(finalVids);
         safeSetItem('artellium_artist_videos', finalVids);
@@ -891,49 +909,53 @@ export function StoreProvider({ children }) {
         try { setPrivateOffers(JSON.parse(savedPrivateOffers)); } catch (e) {}
       }
 
-      // Recover large media datasets from IndexedDB Vault if stored there
-      idbGetItem('artellium_artist_videos').then((idbVids) => {
-        if (Array.isArray(idbVids) && idbVids.length > 0) {
-          setVideos((prev) => {
-            const map = new Map();
-            (prev || []).forEach(v => {
-              if (v && v.id && v.videoUrl && !isDummyVideoRecord(v)) {
-                const uid = toValidUuid(v.id);
-                map.set(uid, { ...v, id: uid, thumbnail: isCleanRealPhoto(v.thumbnail) ? v.thumbnail : '', status: v.status || 'approved', isDemo: false });
-              }
-            });
-            idbVids.forEach(v => {
-              if (v && v.id && v.videoUrl && !isDummyVideoRecord(v)) {
-                const uid = toValidUuid(v.id);
-                if (!map.has(uid)) {
+      // Recover large media datasets from IndexedDB Vault if stored there (strictly honoring permanent deletion registry)
+      hydrateDeletionRegistryFromIdb().finally(() => {
+        idbGetItem('artellium_artist_videos').then((idbVids) => {
+          if (Array.isArray(idbVids) && idbVids.length > 0) {
+            setVideos((prev) => {
+              const map = new Map();
+              (prev || []).forEach(v => {
+                if (v && v.id && v.videoUrl && !isDummyVideoRecord(v) && !isEntityDeleted('videos', v)) {
+                  const uid = toValidUuid(v.id);
                   map.set(uid, { ...v, id: uid, thumbnail: isCleanRealPhoto(v.thumbnail) ? v.thumbnail : '', status: v.status || 'approved', isDemo: false });
                 }
-              }
+              });
+              idbVids.forEach(v => {
+                if (v && v.id && v.videoUrl && !isDummyVideoRecord(v) && !isEntityDeleted('videos', v)) {
+                  const uid = toValidUuid(v.id);
+                  if (!map.has(uid)) {
+                    map.set(uid, { ...v, id: uid, thumbnail: isCleanRealPhoto(v.thumbnail) ? v.thumbnail : '', status: v.status || 'approved', isDemo: false });
+                  }
+                }
+              });
+              return Array.from(map.values());
             });
-            return Array.from(map.values());
-          });
-        }
-      }).catch(() => {});
+          }
+        }).catch(() => {});
 
-      idbGetItem('artellium_priority_placements').then((idbPlacements) => {
-        if (Array.isArray(idbPlacements) && idbPlacements.length > 0) {
-          setPriorityBannerPlacements(idbPlacements);
-        }
-      }).catch(() => {});
+        idbGetItem('artellium_priority_placements').then((idbPlacements) => {
+          if (Array.isArray(idbPlacements) && idbPlacements.length > 0) {
+            setPriorityBannerPlacements(
+              idbPlacements.filter(p => p && !isEntityDeleted('banners', p) && (!p.artworkId || !isEntityDeleted('artworks', p.artworkId)))
+            );
+          }
+        }).catch(() => {});
 
-      idbGetItem('artellium_real_artworks').then((idbReal) => {
-        if (Array.isArray(idbReal) && idbReal.length > 0) {
-          setRealArtworks((prev) => {
-            const map = new Map();
-            (prev || []).forEach(a => a && a.id && !isDummyArtworkRecord(a) && map.set(a.id, a));
-            idbReal.forEach(a => a && a.id && !isDummyArtworkRecord(a) && map.set(a.id, a));
-            const merged = Array.from(map.values()).sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
-            const currentMode = demoTransitionModeRef.current || 'live_only';
-            setArtworks(assembleCatalog(merged, INITIAL_ARTWORKS, currentMode));
-            return merged;
-          });
-        }
-      }).catch(() => {});
+        idbGetItem('artellium_real_artworks').then((idbReal) => {
+          if (Array.isArray(idbReal) && idbReal.length > 0) {
+            setRealArtworks((prev) => {
+              const map = new Map();
+              (prev || []).forEach(a => a && a.id && !isDummyArtworkRecord(a) && !isEntityDeleted('artworks', a) && map.set(a.id, a));
+              idbReal.forEach(a => a && a.id && !isDummyArtworkRecord(a) && !isEntityDeleted('artworks', a) && map.set(a.id, a));
+              const merged = Array.from(map.values()).sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
+              const currentMode = demoTransitionModeRef.current || 'live_only';
+              setArtworks(assembleCatalog(merged, INITIAL_ARTWORKS, currentMode));
+              return merged;
+            });
+          }
+        }).catch(() => {});
+      });
 
       idbGetItem('artellium_user_photos_vault').then((idbVault) => {
         if (idbVault && typeof idbVault === 'object') {
@@ -1082,7 +1104,7 @@ export function StoreProvider({ children }) {
             const merged = [];
             const combined = [...vData.videos, ...(prev || [])];
             for (const v of combined) {
-              if (!v || !v.videoUrl || isDemoVideoItem(v) || /\/videos\/artist-(savannah|studio|turtle|nature)\.mp4/i.test(String(v.videoUrl))) continue;
+              if (!v || !v.videoUrl || isDemoVideoItem(v) || isEntityDeleted('videos', v) || /\/videos\/artist-(savannah|studio|turtle|nature)\.mp4/i.test(String(v.videoUrl))) continue;
               if (seenIds.has(v.id) || seenUrls.has(v.videoUrl)) continue;
               seenIds.add(v.id);
               seenUrls.add(v.videoUrl);
@@ -1106,10 +1128,27 @@ export function StoreProvider({ children }) {
     async function loadSupabaseData() {
       loadHeroVideosImmediate();
       try {
-        const { data: dbArtworks, error: artError } = await supabase.from('artworks').select('*');
-        if (!artError && dbArtworks && dbArtworks.length > 0) {
+        // Fetch server-side deletedIds + artworks via authoritative /api/artworks first, fallback to direct supabase query
+        let serverArtworks = null;
+        try {
+          const artApiRes = await fetch('/api/artworks');
+          const artApiData = await artApiRes.json();
+          if (artApiData && Array.isArray(artApiData.deletedIds) && artApiData.deletedIds.length > 0) {
+            mergeServerDeletedIds('artworks', artApiData.deletedIds);
+          }
+          if (artApiData && Array.isArray(artApiData.artworks)) {
+            serverArtworks = artApiData.artworks;
+          }
+        } catch (apiErr) {}
+
+        const { data: supaArtworks, error: artError } = serverArtworks
+          ? { data: serverArtworks, error: null }
+          : await supabase.from('artworks').select('*');
+        const dbArtworks = supaArtworks || [];
+
+        if (!artError && Array.isArray(dbArtworks)) {
           const dbReal = dbArtworks
-            .filter(a => !isDummyArtworkRecord(a))
+            .filter(a => !isDummyArtworkRecord(a) && !isEntityDeleted('artworks', a))
             .map(a => {
               const isAuction = a.status === 'auction' || Boolean(a.is_auction || a.isAuction);
               const isExhibition = a.status === 'exhibition' || Boolean(a.is_exhibition || a.isExhibition);
@@ -1148,51 +1187,49 @@ export function StoreProvider({ children }) {
               };
             });
 
-          if (dbReal.length > 0) {
-            setRealArtworks((prevReal) => {
-              const map = new Map();
-              INITIAL_REAL_ARTWORKS.filter(a => !isDummyArtworkRecord(a)).forEach(initA => map.set(initA.id, initA));
-              prevReal.forEach(r => {
-                if (r && r.id && !isDummyArtworkRecord(r)) {
-                  map.set(r.id, r);
-                }
-              });
-              dbReal.forEach(dbA => {
-                if (dbA && dbA.id && !isDummyArtworkRecord(dbA)) {
-                  const existing = map.get(dbA.id) || {};
-                  const isCorrupted = typeof dbA.image === 'string' && dbA.image.includes('photo-1579783900882-c0d3dad7b119');
-                  map.set(dbA.id, {
-                    ...existing,
-                    ...dbA,
-                    isDemo: false,
-                    image: (!isCorrupted && dbA.image) ? dbA.image : (existing.image || dbA.image)
-                  });
-                }
-              });
-              const mergedReal = Array.from(map.values())
-                .filter(a => !isDummyArtworkRecord(a))
-                .sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
-
-              safeSetItem('artellium_real_artworks', mergedReal);
-
-              setArtworks(() => {
-                const currentMode = demoTransitionModeRef.current || (typeof window !== 'undefined' ? localStorage.getItem('artellium_demo_transition_mode') : null) || 'live_only';
-                const assembled = assembleCatalog(mergedReal, INITIAL_ARTWORKS, currentMode);
-                safeSetItem('artellium_artworks', assembled);
-                return assembled;
-              });
-
-              return mergedReal;
+          setRealArtworks((prevReal) => {
+            const map = new Map();
+            INITIAL_REAL_ARTWORKS.filter(a => !isDummyArtworkRecord(a) && !isEntityDeleted('artworks', a)).forEach(initA => map.set(initA.id, initA));
+            prevReal.forEach(r => {
+              if (r && r.id && !isDummyArtworkRecord(r) && !isEntityDeleted('artworks', r)) {
+                map.set(r.id, r);
+              }
             });
-          }
+            dbReal.forEach(dbA => {
+              if (dbA && dbA.id && !isDummyArtworkRecord(dbA) && !isEntityDeleted('artworks', dbA)) {
+                const existing = map.get(dbA.id) || {};
+                const isCorrupted = typeof dbA.image === 'string' && dbA.image.includes('photo-1579783900882-c0d3dad7b119');
+                map.set(dbA.id, {
+                  ...existing,
+                  ...dbA,
+                  isDemo: false,
+                  image: (!isCorrupted && dbA.image) ? dbA.image : (existing.image || dbA.image)
+                });
+              }
+            });
+            const mergedReal = Array.from(map.values())
+              .filter(a => !isDummyArtworkRecord(a) && !isEntityDeleted('artworks', a))
+              .sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
+
+            safeSetItem('artellium_real_artworks', mergedReal);
+
+            setArtworks(() => {
+              const currentMode = demoTransitionModeRef.current || (typeof window !== 'undefined' ? localStorage.getItem('artellium_demo_transition_mode') : null) || 'live_only';
+              const assembled = assembleCatalog(mergedReal, INITIAL_ARTWORKS, currentMode);
+              safeSetItem('artellium_artworks', assembled);
+              return assembled;
+            });
+
+            return mergedReal;
+          });
         }
 
         const { data: dbSellers, error: sellError } = await supabase.from('sellers').select('*');
         if (!sellError && dbSellers && dbSellers.length > 0) {
           setSellers(prev => {
-            const map = new Map((prev || []).filter(s => !isDummyUserRecord(s)).map(s => [s.id, s]));
+            const map = new Map((prev || []).filter(s => !isDummyUserRecord(s) && !isEntityDeleted('sellers', s)).map(s => [s.id, s]));
             dbSellers.forEach(ds => {
-              if (isDummyUserRecord(ds)) return;
+              if (isDummyUserRecord(ds) || isEntityDeleted('sellers', ds)) return;
               const localS = map.get(ds.id) || {};
               const cleanPhoto = resolveReconciledPhoto(localS) || resolveReconciledPhoto(ds) || '';
               if (cleanPhoto) savePhotoToVault({ id: ds.user_id || ds.id, email: ds.email, name: ds.name }, cleanPhoto);
@@ -1230,7 +1267,7 @@ export function StoreProvider({ children }) {
               const merged = [];
               const combined = [...vData.videos, ...(prev || [])];
               for (const v of combined) {
-                if (!v || !v.videoUrl || isDemoVideoItem(v) || /\/videos\/artist-(savannah|studio|turtle|nature)\.mp4/i.test(String(v.videoUrl))) continue;
+                if (!v || !v.videoUrl || isDemoVideoItem(v) || isEntityDeleted('videos', v) || /\/videos\/artist-(savannah|studio|turtle|nature)\.mp4/i.test(String(v.videoUrl))) continue;
                 if (seenIds.has(v.id) || seenUrls.has(v.videoUrl)) continue;
                 seenIds.add(v.id);
                 seenUrls.add(v.videoUrl);
@@ -1779,6 +1816,7 @@ export function StoreProvider({ children }) {
   };
 
   const deleteUser = (userId) => {
+    markEntityDeleted('users', userId);
     setUsersList(prev => {
       const updated = prev.filter(u => u.id !== userId);
       try {
@@ -1836,6 +1874,7 @@ export function StoreProvider({ children }) {
   };
 
   const deleteSeller = (sellerId) => {
+    markEntityDeleted('sellers', sellerId);
     setSellers(prev => {
       const updated = prev.filter(s => s.id !== sellerId);
       safeSetItem('artellium_sellers', updated);
@@ -1908,12 +1947,16 @@ export function StoreProvider({ children }) {
   };
 
   const deleteExhibition = (idOrSlug) => {
+    markEntityDeleted('exhibitions', idOrSlug);
     setExhibitions(prev => {
       const updated = prev.filter(ex => ex.id !== idOrSlug && ex.slug !== idOrSlug);
       safeSetItem('artellium_exhibitions', updated);
       broadcastAdminChange('exhibitions', updated);
       return updated;
     });
+    try {
+      supabase.from('exhibitions').delete().eq('id', idOrSlug).then(() => {});
+    } catch (e) {}
   };
 
   // Artworks CRUD with Progressive Real-First Replacement Engine
@@ -1975,6 +2018,8 @@ export function StoreProvider({ children }) {
       artistName: newArt.artistName || currentUser?.name || 'Master Artist',
       artistId: newArt.artistId || currentUser?.id || `artist-${Date.now()}`
     };
+
+    unmarkEntityDeleted('artworks', created.id, [getArtworkCompositeKey(created)].filter(Boolean));
 
     setRealArtworks((prevReal) => {
       const updatedReal = [created, ...prevReal.filter(r => r.id !== created.id)];
@@ -2150,14 +2195,34 @@ export function StoreProvider({ children }) {
   };
 
   const deleteArtwork = (artworkId) => {
+    const normId = String(artworkId || '').trim();
+    if (!normId) return;
+
+    // Locate artwork metadata before deletion so we can tombstone both ID and title::artist composite key
+    const targetArt =
+      (realArtworks || []).find((a) => a && String(a.id || '').trim() === normId) ||
+      (artworks || []).find((a) => a && String(a.id || '').trim() === normId) ||
+      null;
+
+    const compKey = targetArt ? getArtworkCompositeKey(targetArt) : '';
+    markEntityDeleted('artworks', normId, compKey ? [compKey] : []);
+
+    const isSameArtwork = (art) => {
+      if (!art) return false;
+      if (String(art.id || '').trim() === normId) return true;
+      if (compKey && getArtworkCompositeKey(art) === compKey) return true;
+      return isEntityDeleted('artworks', art);
+    };
+
     setRealArtworks((prevReal) => {
-      const updatedReal = prevReal.filter((art) => art.id !== artworkId);
+      const updatedReal = (prevReal || []).filter((art) => !isSameArtwork(art));
       try {
         safeSetItem('artellium_real_artworks', updatedReal);
+        broadcastAdminChange('real_artworks', updatedReal);
       } catch (e) {}
 
-      const activeMode = demoTransitionModeRef.current || demoTransitionMode || 'progressive';
-      const assembled = assembleCatalog(updatedReal, INITIAL_ARTWORKS, activeMode);
+      const activeMode = demoTransitionModeRef.current || demoTransitionMode || 'live_only';
+      const assembled = assembleCatalog(updatedReal, INITIAL_ARTWORKS, activeMode).filter((art) => !isSameArtwork(art));
       setArtworks(assembled);
       try {
         safeSetItem('artellium_artworks', assembled);
@@ -2167,16 +2232,61 @@ export function StoreProvider({ children }) {
     });
 
     setArtworks((prev) => {
-      const updated = prev.filter((art) => art.id !== artworkId);
+      const updated = (prev || []).filter((art) => !isSameArtwork(art));
       try {
         safeSetItem('artellium_artworks', updated);
       } catch (e) {}
       return updated;
     });
 
-    supabase.from('artworks').delete().eq('id', artworkId).then(({ error }) => {
+    // Cascade-clean related references (banners, flash deals, curator picks, cart, wishlist, offers, questions, exhibitions)
+    setPriorityBannerPlacements((prev) => {
+      const next = (prev || []).filter((p) => p && String(p.artworkId || '').trim() !== normId);
+      safeSetItem('artellium_priority_placements', next);
+      return next;
+    });
+    setFlashDeals((prev) => {
+      const next = (prev || []).filter((d) => d && String(d.artworkId || '').trim() !== normId);
+      safeSetItem('artellium_flash_deals', next);
+      return next;
+    });
+    setCuratorPicks((prev) => {
+      const next = (prev || []).filter((cp) => cp && String(cp.artworkId || '').trim() !== normId);
+      safeSetItem('artellium_curator_picks', next);
+      return next;
+    });
+    setCart((prev) => (prev || []).filter((item) => item && String(item.id || '').trim() !== normId));
+    setWishlist((prev) => (prev || []).filter((id) => String(id || '').trim() !== normId));
+    setCollectorOffers((prev) => (prev || []).filter((o) => o && String(o.artworkId || '').trim() !== normId));
+    setArtworkQuestions((prev) => (prev || []).filter((q) => q && String(q.artworkId || '').trim() !== normId));
+    setExhibitions((prev) => {
+      const next = (prev || []).map((ex) => ({
+        ...ex,
+        exhibitedArtworks: Array.isArray(ex?.exhibitedArtworks)
+          ? ex.exhibitedArtworks.filter((ea) => !isSameArtwork(ea))
+          : [],
+      }));
+      safeSetItem('artellium_exhibitions', next);
+      return next;
+    });
+
+    // Permanently delete from Server API (service-role Supabase + server seed tombstone) and client Supabase
+    try {
+      const params = new URLSearchParams({ id: normId });
+      if (targetArt?.title) params.set('title', String(targetArt.title).trim());
+      if (targetArt?.artistName || targetArt?.artist_name) {
+        params.set('artistName', String(targetArt.artistName || targetArt.artist_name).trim());
+      }
+      fetch(`/api/artworks?${params.toString()}`, { method: 'DELETE' }).catch(() => {});
+    } catch (e) {}
+
+    supabase.from('artworks').delete().eq('id', normId).then(({ error }) => {
       if (error) console.warn('Supabase delete artwork notice:', error.message);
     });
+
+    broadcastNotification(
+      `🗑️ Artwork${targetArt?.title ? ` "${targetArt.title.trim()}"` : ''} permanently deleted from studio and marketplace catalog.`
+    );
   };
 
   const setArtworkStatusSold = (artworkId, buyerName, soldPrice) => {
@@ -2563,8 +2673,9 @@ export function StoreProvider({ children }) {
   };
 
   const deleteVideo = (id) => {
+    markEntityDeleted('videos', id, [toValidUuid(id)].filter(Boolean));
     setVideos((prev) => {
-      const updated = prev.filter((v) => v.id !== id);
+      const updated = prev.filter((v) => v.id !== id && toValidUuid(v.id) !== toValidUuid(id));
       safeSetItem('artellium_artist_videos', updated);
       broadcastAdminChange('artist_videos', updated);
       return updated;
@@ -4646,6 +4757,7 @@ export function StoreProvider({ children }) {
   };
 
   const deletePriorityBannerPlacement = (placementId) => {
+    markEntityDeleted('banners', placementId);
     setPriorityBannerPlacements(prev => {
       const next = prev.filter(p => p.id !== placementId);
       safeSetItem('artellium_priority_placements', next);
@@ -4715,6 +4827,7 @@ export function StoreProvider({ children }) {
   };
 
   const deleteFlashDeal = (id) => {
+    markEntityDeleted('flashDeals', id);
     setFlashDeals(prev => {
       const updated = prev.filter(d => d.id !== id);
       safeSetItem('artellium_flash_deals', updated);
