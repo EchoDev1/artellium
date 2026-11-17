@@ -840,6 +840,12 @@ export function StoreProvider({ children }) {
                 }
               });
             }
+            if (parsed && Array.isArray(parsed.socialLinks)) {
+              const hasTikTok = parsed.socialLinks.some(s => String(s?.platform || '').toLowerCase().includes('tiktok') || String(s?.platform || '').toLowerCase().includes('tik tok'));
+              if (!hasTikTok) {
+                parsed.socialLinks.push({ id: 'soc-5', platform: 'TikTok', url: 'https://tiktok.com', isVisible: true });
+              }
+            }
             setFooterConfig(parsed);
           }
         } catch (e) {

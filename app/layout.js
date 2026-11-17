@@ -12,6 +12,7 @@ import MobileBottomNav from '@/components/MobileBottomNav';
 import SystemHealthGuardian from '@/components/SystemHealthGuardian';
 import UniversalBackButton from '@/components/UniversalBackButton';
 import ArtelliumSchemaPlugin from '@/components/ArtelliumSchemaPlugin';
+import WhatsAppFloatingWidget from '@/components/WhatsAppFloatingWidget';
 
 export const metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || 'https://artellium.africa'),
@@ -98,6 +99,7 @@ export default function RootLayout({ children }) {
             <CheckoutModal />
             <SidebarDrawer />
             <CustodianModal />
+            <WhatsAppFloatingWidget />
             <MobileBottomNav />
           </StoreProvider>
         </LanguageProvider>
